@@ -18,3 +18,5 @@ export * from './contracts/core.js';
 export * from './goal/goal-compiler.js';
 export * from './organization/organization-planner.js';
 export * from './genome/genome-compiler.js';
+export * from './routing/decision-provider.js';
+export * from './routing/cognitive-router.js';
