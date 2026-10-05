@@ -16,3 +16,4 @@ export const GENESIS_ENGINEERING_RULE =
 
 export * from './contracts/core.js';
 export * from './goal/goal-compiler.js';
+export * from './organization/organization-planner.js';
