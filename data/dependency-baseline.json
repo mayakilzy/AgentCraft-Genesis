@@ -56,7 +56,7 @@
       "events": "https://github.com/ag-ui-protocol/ag-ui/blob/main/docs/concepts/events.mdx",
       "status": "stable",
       "npm_sdk": "@ag-ui/core@1.0.1 (verified 2026-10-05)",
-      "probe": "PENDING — TASK-004"
+      "probe": "PASS — PROTOCOL_VERSION 1.0; 31 event types incl. subagent + reasoning (tests/protocol-probe.test.ts)"
     },
     "mcp": {
       "spec": "2026-07-28 final",
@@ -64,7 +64,7 @@
       "spec_planning": "https://plan.modelcontextprotocol.io/seps",
       "status": "stable",
       "npm_sdk": "@modelcontextprotocol/sdk@1.32.1 (latest dist-tag, verified 2026-10-05)",
-      "probe": "PENDING — TASK-004",
+      "probe": "PASS — in-process client/server over InMemoryTransport; tool register/list/call verified (tests/protocol-probe.test.ts)",
       "watch": "v2 docs line is live but the npm latest dist-tag is 1.32.1; verify v2 SDK availability before deep integration"
     },
     "a2a": {
@@ -74,7 +74,7 @@
       "status": "stable-standard",
       "internal_use": "deferred — prefer simpler Bot-to-Bot primitives until true agent independence is required",
       "npm_sdk": "@a2a-js/sdk@1.3.0 (verified 2026-10-05)",
-      "probe": "PENDING — TASK-004"
+      "probe": "PASS — AgentCard.fromJSON + canonicalizeAgentCard + task-state enum verified; integration into Genesis remains DEFER"
     }
   },
   "jev": {

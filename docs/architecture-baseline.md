@@ -46,9 +46,9 @@ All 22 canonical links listed in the machine-readable baseline returned HTTP 200
 
 | Protocol | Version | SDK (npm, verified 2026-10-05) | Probe |
 | --- | --- | --- | --- |
-| AG-UI | 1.0 | `@ag-ui/core@1.0.1` | TASK-004 (pending) |
-| MCP | 2026-07-28 final | `@modelcontextprotocol/sdk@1.32.1` | TASK-004 (pending) |
-| A2A | 1.0.0 | `@a2a-js/sdk@1.3.0` | TASK-004 (pending) |
+| AG-UI | 1.0 | `@ag-ui/core@1.0.1` | **PASS** — [protocol-probe.md](protocol-probe.md) |
+| MCP | 2026-07-28 final | `@modelcontextprotocol/sdk@1.32.1` | **PASS** — [protocol-probe.md](protocol-probe.md) |
+| A2A | 1.0.0 | `@a2a-js/sdk@1.3.0` | **PASS** (integration deferred) — [protocol-probe.md](protocol-probe.md) |
 | Jev | — | none (experimental, unverified access) | deferred |
 
 ## Toolchain baseline
