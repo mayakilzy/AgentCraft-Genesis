@@ -10,6 +10,7 @@ import {
   detectPackageManager,
   deriveEngineeringGates,
   httpProbeCommand,
+  killPortServerCommand,
   previewServerCommand,
 } from '../../src/work/dev-runtime.js';
 import { startComputerProcess } from '../../src/runtime/openbot/computer-process.js';
@@ -149,6 +150,74 @@ describe('preview process helpers', () => {
     // The shell quoting must survive a round trip: no unescaped inner quote.
     expect(command.match(/'/g)?.length ?? 0).toBe(2);
   });
+});
+
+describe('killPortServerCommand — stale-server cleanup that cannot self-match', () => {
+  // Regression (experiment-002 mission 210312): the demo gate's old
+  // `pkill -f 'serve.mjs 4273'` prefix killed the probing shell itself —
+  // the pattern appears verbatim in that shell's own command line, so
+  // every pass exited -1 with empty stderr and the gate could never open.
+  test('the probing shell survives its own kill prefix', () => {
+    // The real probe's shape: kill prefix, then a command line that
+    // literally contains the server invocation string (here as a no-op
+    // echo, so the chain cannot fail on a missing directory).
+    const command =
+      `${killPortServerCommand(4273)}; sleep 0.3; ` +
+      `echo 'nohup node demo/serve.mjs 4273 > .demo.log 2>&1 &' && ` +
+      `echo probe-shell-survived`;
+    const out = execFileSync('bash', ['-c', command], {
+      encoding: 'utf8',
+      timeout: 20_000,
+    });
+    expect(out).toContain('probe-shell-survived');
+  });
+
+  test('a real listener on the port dies, and an unrelated process is untouched', () => {
+    const port = 42733;
+    const portHolders = (): string =>
+      // `; true` normalizes lsof's exit 1 when nothing holds the port.
+      execFileSync('bash', ['-c', `lsof -t -i:${port} 2>/dev/null; true`], {
+        encoding: 'utf8',
+      }).trim();
+    // A real server holding the port (a detached child of a short-lived
+    // shell — the survival pattern this environment allows).
+    execFileSync(
+      'bash',
+      [
+        '-c',
+        'nohup node -e "require(\'http\').createServer((q,s)=>s.end(\'x\'))' +
+          `.listen(${port},'127.0.0.1',()=>{console.log('listening')})" ` +
+          '> /dev/null 2>&1 &',
+      ],
+      { timeout: 20_000 },
+    );
+    // Wait for the bind: killing before the listen socket exists would
+    // make this test vacuously pass.
+    const bindDeadline = Date.now() + 5_000;
+    while (portHolders() === '' && Date.now() < bindDeadline) {
+      execFileSync('sleep', ['0.1']);
+    }
+    expect(portHolders()).not.toBe('');
+    // A process NOT holding the port is out of the kill's scope and must
+    // survive it.
+    const bystander = Number(
+      execFileSync('bash', ['-c', 'nohup sleep 30 > /dev/null 2>&1 & echo $!'], {
+        encoding: 'utf8',
+      }).trim(),
+    );
+    expect(Number.isFinite(bystander)).toBe(true);
+    execFileSync('bash', ['-c', killPortServerCommand(port)], {
+      timeout: 20_000,
+    });
+    const killDeadline = Date.now() + 5_000;
+    while (portHolders() !== '' && Date.now() < killDeadline) {
+      execFileSync('sleep', ['0.1']);
+    }
+    // The holder died and the port is free; the bystander still lives.
+    expect(portHolders()).toBe('');
+    expect(() => process.kill(bystander, 0)).not.toThrow();
+    process.kill(bystander, 'SIGKILL');
+  }, 20_000);
 });
 
 maybeLive('TASK-017 live acceptance — a fixture project builds and runs inside the runtime', () => {

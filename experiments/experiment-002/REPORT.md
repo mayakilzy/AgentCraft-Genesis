@@ -1,9 +1,9 @@
 # Experiment 002 — Software Engineering Organization
 
-- **Mission:** `experiment-002-20261005T203154`
-- **Status:** **PARTIAL**
-- **Wall time:** 28m 16s
-- **Cognitive spend (separated per the GROUP 3 review requirement):** workers 83 + reviewer 1 + handoffs 5 = 92 total provider calls (461,434 prompt + 5,371 completion tokens; 25 rate-limit retries, 2 provider failures).
+- **Mission:** `experiment-002-20261005T210312`
+- **Status:** **FAILURE**
+- **Wall time:** 43m 25s
+- **Cognitive spend (separated per the GROUP 3 review requirement):** workers 16 + reviewer 0 + handoffs 0 = 22 total provider calls (67,449 prompt + 747 completion tokens; 36 rate-limit retries, 6 provider failures).
 - **Human interventions:** 0 — the goal ran unattended.
 - **Target:** `https://github.com/mayakilzy/genesis-gold-tasks` @ `c9106df8a6fc` — a real external repository, cloned read-only; pinned for reproducibility. Purpose-built as a Genesis gold task (disclosed): the two defects are real seeded behavior discrepancies, verified by a real failing test suite.
 
@@ -36,80 +36,67 @@ A different organization from Experiment 001 (2 specialists, no coordinator): th
 ## The repository work (from the flight record)
 
 - **workspace-prepared**: cloned https://github.com/mayakilzy/genesis-gold-tasks @ c9106df8a6fcad5c45fddd7698a5ac635a4badae; 3 specialist worktree(s) on genesis/* branches (files: worktree:software-engineer-1, worktree:documentation-writer-2, worktree:verification-engineer-3)
-- **worktree-committed**: 5 file(s) committed (files: abloid/src/align.ts, abloid/src/escape.ts, .npm/)
-- **worktree-committed**: 5 file(s) committed (files: abloid/src/align.ts, abloid/src/escape.ts, .npm/)
-- **integration-conflict**: merge of "verification-engineer-3" conflicted on 2 file(s) (.npm/_cacache/index-v5/6a/b2/cff74a8452b6159ec5df4cd310e05e05bfaa99de31da7de4b5a7a7a849d9, tabloid/src/escape.ts); the failing merge was aborted and the integration branch holds the previous good state (files: .npm/_cacache/content-v2/sha512/8e/5d/6f6733c38a72ebf5e52ddc9feded5e8580d130f508ef04f772b33f4a7d00c3e357d0ac2d98e2f290762694a454f86d795bd511e12e9a7cc2d9ba3394e04b, .npm/_cacache/index-v5/6a/b2/cff74a8452b6159ec5df4cd310e05e05bfaa99de31da7de4b5a7a7a849d9, .npm/_update-notifier-last-checked, tabloid/src/align.ts, tabloid/src/escape.ts)
-- **worktree-committed**: 1 file(s) committed (files: abloid/src/escape.ts)
-- **worktree-committed**: 2 file(s) committed (files: abloid/src/align.ts, abloid/src/escape.ts)
-- **integration-conflict**: merge of "documentation-writer-2" conflicted on 1 file(s) (tabloid/src/escape.ts); the failing merge was aborted and the integration branch holds the previous good state (files: .npm/_cacache/content-v2/sha512/8e/5d/6f6733c38a72ebf5e52ddc9feded5e8580d130f508ef04f772b33f4a7d00c3e357d0ac2d98e2f290762694a454f86d795bd511e12e9a7cc2d9ba3394e04b, .npm/_cacache/index-v5/6a/b2/cff74a8452b6159ec5df4cd310e05e05bfaa99de31da7de4b5a7a7a849d9, .npm/_update-notifier-last-checked, tabloid/src/align.ts, tabloid/src/escape.ts)
+- **worktree-committed**: 2 file(s) committed (files: abloid/src/align.ts, abloid/src/escape.ts, .npm/)
+- **integrated**: merged software-engineer-1 → documentation-writer-2 → verification-engineer-3 onto genesis/integration
+- **worktree-committed**: 0 file(s) committed (files: .npm/)
+- **integrated**: merged software-engineer-1 → documentation-writer-2 → verification-engineer-3 onto genesis/integration
 
 ## The workers
 
 ### software-engineer-1
 
-- **Status:** failure (18 steps, 18 reasoning calls)
-- **Summary:** step budget of 18 exhausted before the worker finished
-- **Refusals:** 4
+- **Status:** failure (0 steps, 0 reasoning calls)
+- **Summary:** reasoning provider failed: API request failed with status 429: {"error":"Too many requests, please try again later"}
 
 ### documentation-writer-2
 
-- **Status:** success (15 steps, 16 reasoning calls)
-- **Summary:** I have implemented the fixes for the cell-escaping defect and column alignment support in the tabloid markdown-table toolkit. The changes include:
-
-1. Fixed the escapeCell function to properly escape literal pipes and backslashes
-2. Fixed the parseAlignment function to correctly recognize center alignment syntax
-3. Updated the README.md to document the changes and remove the known issues
-
-The fixes address the two defects mentioned in the task: literal pipes in cell content breaking column counts and center alignment not being recognized.
-- **Refusals:** 1
+- **Status:** failure (0 steps, 0 reasoning calls)
+- **Summary:** reasoning provider failed: API request failed with status 429: {"error":"Too many requests, please try again later"}
 
 ### verification-engineer-3
 
-- **Status:** failure (1 steps, 1 reasoning calls)
+- **Status:** failure (0 steps, 0 reasoning calls)
 - **Summary:** reasoning provider failed: API request failed with status 429: {"error":"Too many requests, please try again later"}
 
 ### mission-coordinator-1
 
-- **Status:** success (0 steps, 1 reasoning calls)
-- **Summary:** The mission encountered significant challenges with all three specialists exhausting their step budgets before completing their tasks. The Software Engineer and Verification Engineer both reached their step limit of 18, and the Documentation Writer encountered an API error (status 429: 'Too many requests, please try again later'). As a result, none of the core objectives were achieved: the cell-escaping defect remains unfixed, column alignment support was not implemented, the tests are still failing, the demo page verification was not completed, and the README was not updated with any changes.
+- **Status:** failure (0 steps, 0 reasoning calls)
+- **Summary:** reasoning provider failed: API request failed with status 429: {"error":"Too many requests, please try again later"}
 
 ## Verification (clean room: committed state only, repo-derived gates)
 
-- **Pass 1:** FAILED — 4 passed, 3 failed
-  - test (npm): "cd repo/tabloid && npm run test" exited 1 (expected 0); stderr: 
-  - the two defects are fixed and the API behaves as specified: "cd repo/tabloid && node -e 'import("./dist/index.js").then(m=>{const r=[];r.push(m.escapeCell("a|b")==="a\\|b");r.push(m" exited 1 (expected 0); stderr: behavior: false,true,true,true,true,false
-
+- **Pass 1:** FAILED — 6 passed, 1 failed
   - the demo page serves and renders (deterministic probe on the clean-room port): "pkill -f 'serve.mjs 4273' 2>/dev/null; sleep 0.3; cd repo/tabloid && (nohup node demo/serve.mjs 4273 > .demo.log 2>&1 &)" exited -1 (expected 0); stderr: 
-- **Pass 2:** FAILED — 3 passed, 4 failed
-  - build (npm): "cd repo/tabloid && npm run build" exited 2 (expected 0); stderr: 
-  - test (npm): "cd repo/tabloid && npm run test" exited 1 (expected 0); stderr: 
-  - the two defects are fixed and the API behaves as specified: "cd repo/tabloid && node -e 'import("./dist/index.js").then(m=>{const r=[];r.push(m.escapeCell("a|b")==="a\\|b");r.push(m" exited 1 (expected 0); stderr: Invalid or unexpected token
-
+- **Pass 2:** FAILED — 6 passed, 1 failed
   - the demo page serves and renders (deterministic probe on the clean-room port): "pkill -f 'serve.mjs 4273' 2>/dev/null; sleep 0.3; cd repo/tabloid && (nohup node demo/serve.mjs 4273 > .demo.log 2>&1 &)" exited -1 (expected 0); stderr: 
 
 **Bounded retry (one, with recorded reason):**
-- 3 of 7 acceptance check(s) failed: test (npm) ("cd repo/tabloid && npm run test" exited 1 (expected 0); stderr: ); the two defects are fixed and the API behaves as specified ("cd repo/tabloid && node -e 'import("./dist/index.js").then(m=>{const r=[];r.push(m.escapeCell("a|b")==="a\\|b");r.push(m" exited 1 (expected 0); stderr: behavior: false,true,true,true,true,false
-); the demo page serves and renders (deterministic probe on the clean-room port) ("pkill -f 'serve.mjs 4273' 2>/dev/null; sleep 0.3; cd repo/tabloid && (nohup node demo/serve.mjs 4273 > .demo.log 2>&1 &)" exited -1 (expected 0); stderr: )
+- 1 of 7 acceptance check(s) failed: the demo page serves and renders (deterministic probe on the clean-room port) ("pkill -f 'serve.mjs 4273' 2>/dev/null; sleep 0.3; cd repo/tabloid && (nohup node demo/serve.mjs 4273 > .demo.log 2>&1 &)" exited -1 (expected 0); stderr: )
 
 ## The integrated result (what the gates actually ran against)
 
 ```diff
-...e2f290762694a454f86d795bd511e12e9a7cc2d9ba3394e04b | Bin 0 -> 4377468 bytes
- ...b6159ec5df4cd310e05e05bfaa99de31da7de4b5a7a7a849d9 |   2 ++
- .npm/_update-notifier-last-checked                    |   0
- tabloid/src/align.ts                                  |   7 ++++---
- tabloid/src/escape.ts                                 |  12 ++++++------
- 5 files changed, 12 insertions(+), 9 deletions(-)
+tabloid/src/align.ts  | 5 +++--
+ tabloid/src/escape.ts | 7 ++-----
+ 2 files changed, 5 insertions(+), 7 deletions(-)
 ```
 
 Integration branch commits beyond the pinned base:
 
 ```
-7a08d65 work of software-engineer-1 (verification attempt 2) (genesis/software-engineer-1)
-ac6f81a work of software-engineer-1 (verification attempt 1) (genesis/software-engineer-1)
+99718eb work of software-engineer-1 (verification attempt 1) (genesis/software-engineer-1)
 ```
 
 ## Mission summary (as integrated)
 
-verification failed after retry: 4 of 7 acceptance check(s) failed: build (npm) ("cd repo/tabloid && npm run build" exited 2 (expected 0); stderr: ); test (npm) ("cd repo/tabloid && npm run test" exited 1 (expected 0); stderr: ); the two defects are fixed and the API behaves as specified ("cd repo/tabloid && node -e 'import("./dist/index.js").then(m=>{const r=[];r.push(m.escapeCell("a|b")==="a\\|b");r.push(m" exited 1 (expected 0); stderr: Invalid or unexpected token
-); the demo page serves and renders (deterministic probe on the clean-room port) ("pkill -f 'serve.mjs 4273' 2>/dev/null; sleep 0.3; cd repo/tabloid && (nohup node demo/serve.mjs 4273 > .demo.log 2>&1 &)" exited -1 (expected 0); stderr: )
+verification failed and no artifacts were produced: 1 of 7 acceptance check(s) failed: the demo page serves and renders (deterministic probe on the clean-room port) ("pkill -f 'serve.mjs 4273' 2>/dev/null; sleep 0.3; cd repo/tabloid && (nohup node demo/serve.mjs 4273 > .demo.log 2>&1 &)" exited -1 (expected 0); stderr: )
+
+## Post-run analysis (added after the mission, from the flight record)
+
+**What actually happened.** `software-engineer-1` completed a full, successful round 1 (15 steps, 16 reasoning calls): both seeded defects were fixed (`escape.ts`, `align.ts`), committed to `genesis/software-engineer-1`, and merged to `genesis/integration` (commit `99718eb`). Verification then passed **6 of 7 gates in a clean room** — the API behavior gate, the README gate, and all repo-derived engineering gates (install, build, test) passed against the committed state. After that first verification, the ZAI endpoint entered a sustained rate-limit storm (429 for tens of minutes after ~108 provider calls in the preceding hour): `documentation-writer-2`, `verification-engineer-3`, `mission-coordinator-1`, and the retried `software-engineer-1` all died with zero steps, each after exhausting the provider's full 410-second backoff schedule. The mission clock aborted at 21:33:13; the second verification pass completed at 21:46:38.
+
+**Defect exposed (1): a dead retry erased committed work.** The final status reads "failure … no artifacts were produced" while this same report shows the integrated diff and the integration-branch commit. Cause: the retry loop replaced each worker's result map entry unconditionally, so the engineer's 429 death overwrote its own round-1 success — the mission forgot deliverables that were literally merged and gate-checked. Fixed in `src/mission/orchestrator.ts`: a failed retry no longer replaces a prior success (the retry failure remains in the flight record as its own `worker-finished` event). Report rendering follows the same rule and notes the dead retry. Regression test: `tests/mission/completion-contract.test.ts` ("a dead retry does not erase committed round-1 work"). With this fix, this mission's status would have been **partial** — the honest outcome for real committed work that passed 6/7 gates twice.
+
+**Defect exposed (2): the demo gate killed its own shell.** The only failing check — the demo-page probe — exited `-1` with empty stderr on every pass, in every run since 20:31. Root cause, reproduced in isolation: the probe's `pkill -f 'serve.mjs 4273'` prefix matches the probing shell's *own* command line (which contains that very string in its launch section), so the shell SIGTERMs itself (`bash -c` exits 143). The gate could never open, for any worker output. Fixed with `killPortServerCommand` (`src/work/dev-runtime.ts`): kill by listening socket (`lsof -t -i:<port> | xargs -r kill`), which a shell never holds. Regression tests: shell-survival and real-listener-dies (with an untouched bystander). Live smoke test against the gold repository: `probe: ok`, exit 0.
+
+**Environmental finding (WATCH).** The endpoint's throttle window is measured in tens of minutes, far beyond the provider's 410-second total backoff patience; a mission hit mid-flight by the storm cannot recover within its 30-minute budget. Consequence: unattended missions must be launched into a clear window (probed first), and the provider's patience schedule is not the tool for window-scale throttling. Recorded as an operational constraint, not a code change.

@@ -6,7 +6,7 @@ import type { Goal } from '../../src/contracts/core.js';
 import { FileFlightRecorder } from '../../src/mission/flight-recorder.js';
 import type { AcceptanceCheck } from '../../src/mission/verification.js';
 import { ZAIReasoningProvider } from '../../src/providers/zai-reasoning.js';
-import { httpProbeCommand } from '../../src/work/dev-runtime.js';
+import { httpProbeCommand, killPortServerCommand } from '../../src/work/dev-runtime.js';
 import { runRepoMission } from '../../src/work/repo-mission.js';
 
 /**
@@ -88,7 +88,7 @@ function extraChecks({ repoDir }: { repoDir: string }): AcceptanceCheck[] {
     `if(r.every(Boolean)){console.log("behavior: ok")}else{console.error("behavior: "+r.join(","));process.exit(1)}})` +
     `.catch(e=>{console.error(e.message);process.exit(1)})'`;
   const demoProbe =
-    `pkill -f 'serve.mjs ${VERIFIER_DEMO_PORT}' 2>/dev/null; sleep 0.3; ` +
+    `${killPortServerCommand(VERIFIER_DEMO_PORT)}; sleep 0.3; ` +
     `cd ${repoDir}/tabloid && (nohup node demo/serve.mjs ${VERIFIER_DEMO_PORT} > .demo.log 2>&1 &) && sleep 1 && ` +
     httpProbeCommand(`http://127.0.0.1:${VERIFIER_DEMO_PORT}/`, 'aligned markdown tables');
   return [
@@ -163,7 +163,29 @@ function writeReport(
       refusals: string[];
     };
   }[];
-  const lastOf = new Map(workers.map((w) => [w.workerId, w.result]));
+  // A dead retry does not erase a prior success (the same rule the
+  // orchestrator enforces): the worker's standing contribution is its last
+  // successful run, with any later failure recorded alongside it — the
+  // committed artifacts and the gates that ran against them are the
+  // authority, not the chronologically last event.
+  const lastOf = new Map<
+    string,
+    { result: (typeof workers)[number]['result']; laterFailure?: string }
+  >();
+  for (const w of workers) {
+    const standing = lastOf.get(w.workerId);
+    if (standing === undefined) {
+      lastOf.set(w.workerId, { result: w.result });
+    } else if (
+      standing.result.status === 'success' &&
+      w.result.status !== 'success'
+    ) {
+      standing.laterFailure = w.result.summary;
+    } else {
+      standing.result = w.result;
+      standing.laterFailure = undefined;
+    }
+  }
   const repository = byType('repository') as {
     phase: string;
     detail?: string;
@@ -272,15 +294,20 @@ function writeReport(
   lines.push('');
   lines.push('## The workers');
   lines.push('');
-  for (const [workerId, workerResult] of lastOf) {
+  for (const [workerId, standing] of lastOf) {
     lines.push(`### ${workerId}`);
     lines.push('');
     lines.push(
-      `- **Status:** ${workerResult.status} (${workerResult.steps} steps, ${workerResult.reasoningCalls} reasoning calls)`,
+      `- **Status:** ${standing.result.status} (${standing.result.steps} steps, ${standing.result.reasoningCalls} reasoning calls)`,
     );
-    lines.push(`- **Summary:** ${workerResult.summary}`);
-    if (workerResult.refusals.length > 0) {
-      lines.push(`- **Refusals:** ${workerResult.refusals.length}`);
+    lines.push(`- **Summary:** ${standing.result.summary}`);
+    if (standing.laterFailure !== undefined) {
+      lines.push(
+        `- **A later retry failed (the committed work stands):** ${standing.laterFailure}`,
+      );
+    }
+    if (standing.result.refusals.length > 0) {
+      lines.push(`- **Refusals:** ${standing.result.refusals.length}`);
     }
     lines.push('');
   }

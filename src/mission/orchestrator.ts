@@ -496,7 +496,25 @@ export class MissionOrchestrator {
                 controller.signal,
                 record,
               );
-              countWorker(result);
+              // A dead retry must not erase real work. The round-1 result
+              // describes artifacts committed to the integration branch,
+              // and the post-retry verification runs against exactly that
+              // branch — replacing a success with a provider-death failure
+              // made the mission "forget" its own deliverables (observed
+              // live in experiment-002 mission 210312: round-1 fixes were
+              // merged and 6/7 gates passed, yet the final status claimed
+              // no artifacts existed). The retry failure itself remains in
+              // the flight record as its own worker-finished event.
+              const prior = results.get(result.workerId);
+              if (
+                result.status === 'failure' &&
+                prior !== undefined &&
+                prior.status === 'success'
+              ) {
+                reasoningCalls += result.reasoningCalls;
+              } else {
+                countWorker(result);
+              }
             }
 
             const retriedSources = this.collectArtifacts(participants, results);

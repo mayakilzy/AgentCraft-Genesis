@@ -202,6 +202,19 @@ export function previewServerCommand(
 }
 
 /**
+ * Kill whatever holds a TCP port — by socket, never by command-line
+ * pattern. A `pkill -f 'serve.mjs 4273'` prefix kills the probing shell
+ * itself: the pattern appears verbatim in that shell's own command line
+ * (observed live in experiment-002 mission 210312 — the demo gate exited
+ * -1 with empty stderr on every pass; reproduced in the regression test
+ * for this helper). lsof selects by listening socket, which the shell
+ * never holds, so the command cannot self-match.
+ */
+export function killPortServerCommand(port: number): string {
+  return `lsof -t -i:${port} 2>/dev/null | xargs -r kill 2>/dev/null; true`;
+}
+
+/**
  * A deterministic HTTP probe that runs inside any computer with node:
  * fetch a URL and require a substring of the response body. Used for
  * preview verification (TASK-018) without a curl dependency.

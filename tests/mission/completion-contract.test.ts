@@ -342,4 +342,108 @@ describe('TASK-019 — completion contract and metric separation', () => {
     expect(finished.handoff_calls).toBe(1);
     expect(finished.total_provider_calls).toBeUndefined();
   });
+
+  // Experiment-002 mission 210312, live: the engineer succeeded in round 1
+  // (fixes committed, 6/7 clean-room gates passing), then the provider was
+  // rate-limited to death and the retry round failed — and the mission
+  // "forgot" its own committed artifacts, reporting failure with no
+  // deliverables. A dead retry must not erase real work: the gates run
+  // against the integration branch, which still carries it.
+  it('a dead retry does not erase committed round-1 work', async () => {
+    class DyingRetryReasoning implements ReasoningProvider {
+      readonly name = 'dying-retry';
+      private engineerCalls = 0;
+      async reason(input: ReasoningInput): Promise<ReasoningOutput> {
+        const system = input.system ?? '';
+        if (system.includes('You are Software Engineer')) {
+          this.engineerCalls += 1;
+          if (this.engineerCalls === 1) {
+            return {
+              text: JSON.stringify({
+                action: 'write_file',
+                path: 'convert.ts',
+                contents: 'export const cToF = (c: number) => c * 9 / 5 + 32;',
+              }),
+            };
+          }
+          if (this.engineerCalls === 2) {
+            return {
+              text: JSON.stringify({
+                action: 'finish',
+                summary: 'converter implemented',
+                artifacts: ['convert.ts'],
+              }),
+            };
+          }
+          // The retry dies the way a rate-limited provider really does.
+          throw new Error(
+            'reasoning provider failed: API request failed with status 429',
+          );
+        }
+        if (system.includes('You are Documentation Writer')) {
+          return {
+            text: JSON.stringify({ action: 'finish', summary: 'nothing to add' }),
+          };
+        }
+        if (system.includes('a mission verification reviewer')) {
+          return {
+            text: JSON.stringify({
+              rootCause: 'the deliverable check cannot pass',
+              retryable: true,
+              guidance: 'try again',
+            }),
+          };
+        }
+        throw new Error('no script for a worker in this mission');
+      }
+    }
+
+    const runtime = new MemoryRuntime();
+    const recorder = new MemoryFlightRecorder();
+    const reasoning = new DyingRetryReasoning();
+    const orchestrator = buildOrchestrator(reasoning, runtime, recorder, {
+      // A gate that never opens: verification fails, the bounded retry
+      // round runs, and in it the engineer's provider dies.
+      checks: () => [
+        {
+          kind: 'file',
+          label: 'the deliverable exists',
+          path: 'artifacts/never-produced.md',
+        },
+      ],
+    });
+
+    const result = await orchestrator.run(SOFTWARE_GOAL);
+
+    // The round-1 deliverable stands: the mission remembers its own
+    // committed work instead of claiming none existed.
+    expect(result.status).toBe('partial');
+    expect(result.summary).toContain('verification failed after retry');
+
+    // The full story stays on the flight record: the engineer succeeded
+    // in round 1 and died in the retry — both events, in that order.
+    const engineerRuns = recorder.events.filter(
+      (e) =>
+        e.type === 'worker-finished' &&
+        (e as { workerId?: string }).workerId === 'software-engineer-1',
+    );
+    expect(engineerRuns).toHaveLength(2);
+    const statuses = engineerRuns.map(
+      (e) => (e as { result: { status: string } }).result.status,
+    );
+    expect(statuses).toEqual(['success', 'failure']);
+
+    // The round-1 evidence survives into the mission result (a failed
+    // retry does not retract the evidence of real work).
+    expect(result.evidence.length).toBeGreaterThan(0);
+
+    // Metrics honesty: completed reasoning calls only — the engineer's 2
+    // round-1 calls plus the writer's 2 (round 1 + retry). The dead retry
+    // call counts 0 here by design; raw provider-call totals (including
+    // dead ones) are the providerCallsSource's job.
+    const finished = recorder.events.find((e) => e.type === 'mission-finished');
+    if (finished?.type === 'mission-finished') {
+      expect(finished.worker_reasoning_calls).toBe(4);
+    }
+  });
 });
