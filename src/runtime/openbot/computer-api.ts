@@ -1,7 +1,10 @@
 import type {
+  BrowserSurface,
   ExecOptions,
   ExecResult,
+  NavigateResult,
   ReadResult,
+  ScreenshotEvidence,
   WorkspaceEntry,
   WriteResult,
 } from '../computer.js';
@@ -18,6 +21,9 @@ import type {
  *   - `POST /files/write`     { path, contents, append? };
  *   - `POST /files/read`      { path };
  *   - `POST /files/list`      { path? };
+ *   - `POST /navigate`        { url } → { url, title, text, truncated, ... };
+ *     http(s) only (TASK-018 verified: file:// is refused by design);
+ *   - `GET  /screenshot`      { base64, width, height, url, capturedAt };
  *   - `POST /computers/stop`  stop the browser, keep profile and workspace;
  *   - `POST /computers/reset` forget everything (deletes the profile);
  *   - `GET  /health`          liveness, no token needed.
@@ -171,6 +177,52 @@ export class ComputerApiClient {
     return (await this.call('/computers/stop', { method: 'POST' })) as {
       stopped: boolean;
       wasRunning: boolean;
+    };
+  }
+
+  /** Navigate this computer's browser (TASK-018; upstream `/navigate`). */
+  async navigate(url: string): Promise<NavigateResult> {
+    return (await this.call('/navigate', {
+      method: 'POST',
+      body: { url },
+    })) as NavigateResult;
+  }
+
+  /** Screenshot the current page (TASK-018; upstream `/screenshot`). */
+  async screenshotRaw(): Promise<{
+    base64: string;
+    width: number;
+    height: number;
+    capturedAt: string;
+    url: string;
+  }> {
+    return (await this.call('/screenshot', { method: 'GET' })) as {
+      base64: string;
+      width: number;
+      height: number;
+      capturedAt: string;
+      url: string;
+    };
+  }
+
+  /**
+   * The browser surface for a worker computer: navigate + screenshot,
+   * with screenshot pixels summarized as evidence instead of shipped as
+   * a base64 blob (the pixel data has no consumer in a text worker loop).
+   */
+  browserSurface(): BrowserSurface {
+    return {
+      navigate: (url: string) => this.navigate(url),
+      screenshot: async (): Promise<ScreenshotEvidence> => {
+        const raw = await this.screenshotRaw();
+        return {
+          bytes: raw.base64.length,
+          width: raw.width,
+          height: raw.height,
+          url: raw.url,
+          capturedAt: raw.capturedAt,
+        };
+      },
     };
   }
 }

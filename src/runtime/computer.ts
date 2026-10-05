@@ -53,17 +53,53 @@ export interface ExecOptions {
   readonly timeoutMs?: number;
 }
 
+/** Result of navigating the computer's browser (OpenBot `/navigate` contract). */
+export interface NavigateResult {
+  readonly url: string;
+  readonly title: string;
+  /** Readable page text — the verification-relevant content. */
+  readonly text: string;
+  readonly truncated: boolean;
+  readonly elapsedMs: number;
+  /** Upstream challenge signal (e.g. CDN interstitials), passed through. */
+  readonly challenge?: unknown;
+}
+
+/** Result of a screenshot (OpenBot `/screenshot` contract, minus pixels). */
+export interface ScreenshotEvidence {
+  readonly bytes: number;
+  readonly width: number;
+  readonly height: number;
+  readonly url: string;
+  readonly capturedAt: string;
+}
+
+/**
+ * The browser surface of one worker's computer (TASK-018): navigate to an
+ * http(s) URL and capture screenshot evidence. Mirrors the upstream
+ * agent-computer endpoints exactly — navigation errors come back as the
+ * computer's own error responses, which is precisely the useful failure
+ * evidence the verification loop wants.
+ */
+export interface BrowserSurface {
+  navigate(url: string): Promise<NavigateResult>;
+  screenshot(): Promise<ScreenshotEvidence>;
+}
+
 /**
  * The hands of one worker: a single worker's computer, already bound to that
  * worker's identity. Implementations confine every path to the worker's own
  * workspace and run every command with the workspace as cwd — exactly the
- * upstream semantics.
+ * upstream semantics. The browser surface is optional: it exists exactly
+ * when the worker's genome was granted a browser (TASK-018).
  */
 export interface WorkerComputer {
   exec(command: string, options?: ExecOptions): Promise<ExecResult>;
   writeFile(path: string, contents: string): Promise<WriteResult>;
   readFile(path: string): Promise<ReadResult>;
   listFiles(path?: string): Promise<readonly WorkspaceEntry[]>;
+  /** Present iff this computer exposes its browser (browser-granted workers). */
+  readonly browser?: BrowserSurface;
 }
 
 /**

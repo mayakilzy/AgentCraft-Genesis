@@ -122,6 +122,9 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime {
       writeFile: (path, contents) => client.writeFile(path, contents),
       readFile: (path) => client.readFile(path),
       listFiles: (path) => client.listFiles(path),
+      // TASK-018: the browser surface every upstream computer exposes;
+      // whether a worker may USE it is decided by its genome grants.
+      browser: client.browserSurface(),
     };
   }
 

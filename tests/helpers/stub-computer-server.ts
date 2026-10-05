@@ -30,6 +30,17 @@ export interface StubComputerServer {
     stdout?: string;
     stderr?: string;
   }): void;
+  /** Browser page served by POST /navigate (null → upstream-style 502). */
+  setBrowserPage(page: {
+    url: string;
+    title: string;
+    text: string;
+  } | null): void;
+  /** Screenshot served by GET /screenshot (null → upstream-style 502). */
+  setScreenshot(shot: {
+    width?: number;
+    height?: number;
+  } | null): void;
   stop(): Promise<void>;
 }
 
@@ -49,6 +60,8 @@ export async function startStubComputer(
     stdout: '',
     stderr: '',
   };
+  let browserPage: { url: string; title: string; text: string } | null = null;
+  let screenshot: { width: number; height: number } | null = null;
 
   const json = (body: unknown, status = 200): { body: string; status: number } => ({
     body: JSON.stringify(body),
@@ -133,6 +146,38 @@ export async function startStubComputer(
         case '/computers/stop':
           finish(json({ stopped: true, wasRunning: false }));
           break;
+        case '/navigate': {
+          if (browserPage === null) {
+            finish(json({ error: 'Navigation failed: net::ERR_CONNECTION_REFUSED' }, 502));
+            break;
+          }
+          finish(
+            json({
+              url: browserPage.url,
+              title: browserPage.title,
+              text: browserPage.text,
+              truncated: false,
+              elapsedMs: 12,
+            }),
+          );
+          break;
+        }
+        case '/screenshot': {
+          if (screenshot === null) {
+            finish(json({ error: 'Screenshot failed: no page open.' }, 502));
+            break;
+          }
+          finish(
+            json({
+              base64: 'ZmFrZS1zY3JlZW5zaG90',
+              width: screenshot.width,
+              height: screenshot.height,
+              capturedAt: new Date().toISOString(),
+              url: browserPage?.url ?? 'about:blank',
+            }),
+          );
+          break;
+        }
         default:
           finish(json({ error: 'Not found.' }, 404));
       }
@@ -159,6 +204,12 @@ export async function startStubComputer(
         stdout: result.stdout ?? '',
         stderr: result.stderr ?? '',
       };
+    },
+    setBrowserPage(page) {
+      browserPage = page;
+    },
+    setScreenshot(shot) {
+      screenshot = shot === null ? null : { width: shot.width ?? 1280, height: shot.height ?? 800 };
     },
     async stop() {
       await new Promise<void>((resolve) => server.close(() => resolve()));

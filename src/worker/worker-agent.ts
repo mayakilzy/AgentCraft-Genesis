@@ -41,6 +41,11 @@ export type WorkerAction =
   | { readonly action: 'read_file'; readonly path: string }
   | { readonly action: 'list_files'; readonly path?: string }
   | {
+      readonly action: 'browser_navigate';
+      readonly url: string;
+    }
+  | { readonly action: 'browser_screenshot' }
+  | {
       readonly action: 'ask_worker';
       readonly target: string;
       readonly task: string;
@@ -105,6 +110,7 @@ export interface WorkerAgentOptions {
 
 const GRANT_SHELL = 'openbot:shell-execution';
 const GRANT_FILES = 'openbot:workspace-files';
+const GRANT_BROWSER = 'openbot:browser-chromium';
 
 /** v0.1 default step ceiling — generous for real work, small enough to bound cost. */
 export const DEFAULT_MAX_WORKER_STEPS = 10;
@@ -152,6 +158,16 @@ export class WorkerAgent {
       granted.push('write_file', 'read_file', 'list_files');
     } else {
       examples.splice(0, 3);
+    }
+    if (
+      this.genome.tools.includes(GRANT_BROWSER) &&
+      this.computer?.browser !== undefined
+    ) {
+      granted.push('browser_navigate', 'browser_screenshot');
+      examples.push(
+        '{"action":"browser_navigate","url":"http://127.0.0.1:4173/"} — open an http(s) URL in your real browser; the observation returns the page title and readable text (start any local server you need with run_command first)',
+        '{"action":"browser_screenshot"} — capture evidence of the current page (dimensions, size, url)',
+      );
     }
     const canCollaborate =
       this.genome.skills.includes('collaboration') && this.handoffs !== undefined;
@@ -216,6 +232,9 @@ export class WorkerAgent {
       case 'read_file':
       case 'list_files':
         return this.genome.tools.includes(GRANT_FILES) ? null : GRANT_FILES;
+      case 'browser_navigate':
+      case 'browser_screenshot':
+        return this.genome.tools.includes(GRANT_BROWSER) ? null : GRANT_BROWSER;
       case 'ask_worker':
         return this.genome.skills.includes('collaboration') && this.handoffs !== undefined
           ? null
@@ -289,6 +308,53 @@ export class WorkerAgent {
                 })
               : JSON.stringify({ entries });
           return { ok: true, observation };
+        }
+        case 'browser_navigate': {
+          const browser = this.computer.browser;
+          if (browser === undefined) {
+            return {
+              ok: false,
+              observation:
+                'refused: this worker\'s computer exposes no browser surface',
+            };
+          }
+          try {
+            const page = await browser.navigate(action.url);
+            const text =
+              page.text.length > OBSERVATION_STDOUT_LIMIT
+                ? `${page.text.slice(0, OBSERVATION_STDOUT_LIMIT)}…[truncated]`
+                : page.text;
+            return {
+              ok: true,
+              observation: JSON.stringify({
+                url: page.url,
+                title: page.title,
+                truncated: page.truncated,
+                elapsedMs: page.elapsedMs,
+                textChars: page.text.length,
+                text,
+              }),
+            };
+          } catch (error) {
+            // Navigation failures are the useful evidence: the computer's
+            // own error (502 with reason) comes back to the worker intact.
+            return {
+              ok: false,
+              observation: `navigation failed: ${(error as Error).message.slice(0, 300)}`,
+            };
+          }
+        }
+        case 'browser_screenshot': {
+          const browser = this.computer.browser;
+          if (browser === undefined) {
+            return {
+              ok: false,
+              observation:
+                'refused: this worker\'s computer exposes no browser surface',
+            };
+          }
+          const shot = await browser.screenshot();
+          return { ok: true, observation: JSON.stringify(shot) };
         }
         default:
           return { ok: false, observation: 'refused: unknown action' };
