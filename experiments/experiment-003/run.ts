@@ -3,8 +3,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { FileFlightRecorder } from '../../src/mission/flight-recorder.js';
+import type { ReasoningProvider } from '../../src/contracts/core.js';
 import { ZAIReasoningProvider } from '../../src/providers/zai-reasoning.js';
 import { runRepoMission } from '../../src/work/repo-mission.js';
+import {
+  DevelopmentFallbackProvider,
+  type FallbackUsage,
+} from './dev-fallback.js';
 import {
   buildDiagnosticGoal,
   EXP002_MISSION_ID,
@@ -65,6 +70,19 @@ const ZAI_SDK_PATH =
  *  fix+verify+document load). */
 const MAX_WORKER_STEPS = 30;
 const MISSION_TIMEOUT_MS = 30 * 60_000;
+
+/**
+ * DEVELOPMENT FALLBACK mode (TASK-022 rule): the external provider is
+ * already demonstrated unavailable (BLOCKED-PROVIDER.md), so this run
+ * substitutes reasoning through the declared development fallback —
+ * replace reasoning, never execution. No provider probe is performed.
+ * The mission timeout is raised because fallback latency (a human-speed
+ * actor answering a file journal) dominates wall time; the deviation is
+ * reported, and MISSION TIME is still measured honestly.
+ */
+const DEV_FALLBACK = process.env.DEV_FALLBACK === '1';
+const DEV_FALLBACK_TIMEOUT_MS = 120 * 60_000;
+const FALLBACK_PER_CALL_TIMEOUT_MS = 15 * 60_000;
 
 interface FlightLine {
   at: string;
@@ -161,6 +179,7 @@ function writeReport(
     totalTokens: number;
   },
   integrationPath: string,
+  fallback: FallbackUsage | null,
 ): string {
   const flight = readFlight(missionId);
   const byType = (type: string): FlightLine[] => flight.filter((e) => e.type === type);
@@ -228,17 +247,51 @@ function writeReport(
   const lines: string[] = [];
   lines.push('# Experiment 003 — Diagnostic Organization');
   lines.push('');
+  lines.push(
+    `- **EXECUTION MODE:** **${
+      fallback === null ? 'REAL PROVIDER' : 'DEVELOPMENT FALLBACK'
+    }**${
+      fallback === null
+        ? ''
+        : ' — the external provider was unavailable (429, evidence in BLOCKED-PROVIDER.md); ' +
+          'every reasoning call was served by the declared GLM Primary Builder fallback. ' +
+          'Organization, tools, computers, git, integration and verification all ran for real. ' +
+          'This run is development evidence, never provider evidence.'
+    }`,
+  );
   lines.push(`- **Mission:** \`${missionId}\``);
   lines.push(`- **Status:** **${result.status.toUpperCase()}**`);
-  lines.push(`- **Wall time:** ${fmtMs(result.cost.wallMs)}`);
+  lines.push(`- **Wall time:** ${fmtMs(result.cost.wallMs)}${
+    fallback === null ? '' : ' (inflated by fallback actor latency — not work complexity)'
+  }`);
+  if (fallback === null) {
+    lines.push(
+      `- **Cognitive spend (separated per the GROUP 3 review requirement):** ` +
+        `workers ${finished?.worker_reasoning_calls ?? '?'} + reviewer ${finished?.reviewer_calls ?? '?'} + handoffs ${finished?.handoff_calls ?? '?'} = ` +
+        `${finished?.total_provider_calls ?? usage.calls} total provider calls ` +
+        `(${usage.promptTokens.toLocaleString()} prompt + ${usage.completionTokens.toLocaleString()} completion tokens; ` +
+        `${usage.rateLimitRetries} rate-limit retries, ${usage.failures} provider failures).`,
+    );
+  } else {
+    lines.push(
+      `- **Cognitive spend (separated, development fallback):** ` +
+        `EXTERNAL PROVIDER CALLS = 0 (unavailable before launch; not probed, not retried). ` +
+        `DEVELOPMENT FALLBACK CALLS = ${fallback.calls}` +
+        ` (${fallback.promptChars.toLocaleString()} prompt chars + ${fallback.completionChars.toLocaleString()} completion chars; ` +
+        `${fallback.timeouts} timeout(s)). Role separation: workers ${finished?.worker_reasoning_calls ?? '?'} + ` +
+        `reviewer ${finished?.reviewer_calls ?? '?'} + handoffs ${finished?.handoff_calls ?? '?'}. ` +
+        `Token/latency/cost figures for the external provider are deliberately NOT reported — ` +
+        `this run is not provider evidence.`,
+    );
+  }
   lines.push(
-    `- **Cognitive spend (separated per the GROUP 3 review requirement):** ` +
-      `workers ${finished?.worker_reasoning_calls ?? '?'} + reviewer ${finished?.reviewer_calls ?? '?'} + handoffs ${finished?.handoff_calls ?? '?'} = ` +
-      `${finished?.total_provider_calls ?? usage.calls} total provider calls ` +
-      `(${usage.promptTokens.toLocaleString()} prompt + ${usage.completionTokens.toLocaleString()} completion tokens; ` +
-      `${usage.rateLimitRetries} rate-limit retries, ${usage.failures} provider failures).`,
+    `- **Human interventions:** 0 — the mission loop ran unattended; ${
+      fallback === null
+        ? 'no human touched the orchestrator, workspaces or verification.'
+        : 'the declared fallback actor answered reasoning calls ONLY through the file journal ' +
+          '(request → response), with no access to the orchestrator, workspaces, git or verification.'
+    }`,
   );
-  lines.push(`- **Human interventions:** 0 — the goal ran unattended.`);
   lines.push(
     `- **Target:** \`${GOLD_SOURCE}\` @ \`${GOLD_REF.slice(0, 12)}\` — same pinned repository as ` +
       `Experiment 002; the flaky-orders diagnostic case. Disclosed ground truth (gold task): ` +
@@ -378,6 +431,31 @@ async function main(): Promise<void> {
     throw new Error(`OpenBot checkout not found at ${OPENBOT_CHECKOUT} — set GENESIS_OPENBOT_DIR`);
   }
 
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\..+$/, '');
+  const missionId = `experiment-003-${stamp}`;
+  const runRoot = join(WORK_ROOT, missionId);
+  mkdirSync(runRoot, { recursive: true });
+
+  const recorder = new FileFlightRecorder({ dir: FLIGHT_DIR, missionId });
+
+  // DEVELOPMENT FALLBACK mode: the provider's unavailability is already
+  // evidenced (BLOCKED-PROVIDER.md) — no probe, no retry, no waiting; the
+  // declared fallback serves reasoning through the file journal instead.
+  if (DEV_FALLBACK) {
+    console.log('[experiment-003] EXECUTION MODE: DEVELOPMENT FALLBACK (declared)');
+    const fallback = new DevelopmentFallbackProvider({
+      queueDir: join(runRoot, 'fallback-queue'),
+      missionId,
+      recorder,
+      waitTimeoutMs: FALLBACK_PER_CALL_TIMEOUT_MS,
+    });
+    await runMission(missionId, runRoot, recorder, fallback, fallback, null);
+    return;
+  }
+
   try {
     await probeProvider();
   } catch (error) {
@@ -404,19 +482,26 @@ async function main(): Promise<void> {
     process.exit(3);
   }
 
-  const stamp = new Date()
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\..+$/, '');
-  const missionId = `experiment-003-${stamp}`;
-  const runRoot = join(WORK_ROOT, missionId);
-  mkdirSync(runRoot, { recursive: true });
-
-  const recorder = new FileFlightRecorder({ dir: FLIGHT_DIR, missionId });
   const reasoning = new ZAIReasoningProvider({ sdkPath: ZAI_SDK_PATH });
+  await runMission(missionId, runRoot, recorder, reasoning, reasoning, reasoning);
+}
+
+async function runMission(
+  missionId: string,
+  runRoot: string,
+  recorder: FileFlightRecorder,
+  reasoning: ReasoningProvider,
+  reviewer: ReasoningProvider,
+  zai: ZAIReasoningProvider | null,
+): Promise<void> {
+  const fallback =
+    reasoning instanceof DevelopmentFallbackProvider ? reasoning : null;
 
   console.log(`[experiment-003] mission ${missionId} starting...`);
   console.log(`[experiment-003] target: ${GOLD_SOURCE} @ ${GOLD_REF.slice(0, 12)}`);
+  if (fallback !== null) {
+    console.log(`[experiment-003] fallback journal: ${join(runRoot, 'fallback-queue')}`);
+  }
 
   const run = await runRepoMission({
     goal: buildDiagnosticGoal(),
@@ -426,25 +511,36 @@ async function main(): Promise<void> {
     computersRoot: join(runRoot, 'computers'),
     openbotCheckout: OPENBOT_CHECKOUT,
     reasoning,
-    reviewer: reasoning,
+    reviewer,
     recorder,
     missionId,
     projectDir: 'flaky-orders',
     gates: false,
     extraChecks,
     maxWorkerSteps: MAX_WORKER_STEPS,
-    missionTimeoutMs: MISSION_TIMEOUT_MS,
+    missionTimeoutMs: fallback === null ? MISSION_TIMEOUT_MS : DEV_FALLBACK_TIMEOUT_MS,
     costSource: () => {
-      const usage = reasoning.usage();
-      return { usd: 0, tokens: usage.totalTokens };
+      if (zai !== null) {
+        return { usd: 0, tokens: zai.usage().totalTokens };
+      }
+      return { usd: 0, tokens: 0 };
     },
-    providerCallsSource: () => reasoning.usage().calls,
+    providerCallsSource: () =>
+      zai !== null ? zai.usage().calls : fallback!.currentUsage().calls,
   });
 
   recorder.close();
 
-  const usage = reasoning.usage();
-  const report = writeReport(missionId, run.result, usage, run.integration.path);
+  const usage = zai !== null ? zai.usage() : {
+    calls: 0,
+    failures: 0,
+    rateLimitRetries: 0,
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+  };
+  const fallbackUsage = fallback !== null ? fallback.currentUsage() : null;
+  const report = writeReport(missionId, run.result, usage, run.integration.path, fallbackUsage);
   writeFileSync(REPORT_PATH, report, 'utf8');
 
   console.log(`[experiment-003] status: ${run.result.status.toUpperCase()}`);
@@ -452,6 +548,12 @@ async function main(): Promise<void> {
   console.log(`[experiment-003] report: ${REPORT_PATH}`);
   console.log(`[experiment-003] flight record: ${join(FLIGHT_DIR, `${missionId}.jsonl`)}`);
   console.log(`[experiment-003] mission workspace (evidence) kept at: ${runRoot}`);
+  if (fallbackUsage !== null) {
+    console.log(
+      `[experiment-003] development fallback: ${fallbackUsage.calls} call(s), ` +
+        `${fallbackUsage.timeouts} timeout(s) — journal preserved at ${join(runRoot, 'fallback-queue')}`,
+    );
+  }
   await run.runtime.close();
 
   process.exit(run.result.status === 'success' ? 0 : 1);

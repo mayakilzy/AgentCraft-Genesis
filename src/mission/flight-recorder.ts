@@ -117,6 +117,26 @@ export interface MissionEventRepository {
   readonly detail?: string;
 }
 
+/**
+ * Reasoning substitution (GROUP 3, TASK-022 development fallback rule): one
+ * event per reasoning call served by the declared development fallback
+ * instead of the configured external provider. Structural visibility — a
+ * fallback-served mission can never be confused with a real-provider run.
+ */
+export interface MissionEventReasoningFallback {
+  readonly type: 'reasoning-fallback';
+  readonly missionId: string;
+  readonly seq: number;
+  readonly phase: 'requested' | 'answered' | 'timeout';
+  readonly reasoning_source: 'DEVELOPMENT_REASONING_FALLBACK';
+  readonly external_provider: 'unavailable';
+  readonly fallback_actor: 'GLM_PRIMARY_BUILDER';
+  readonly tier: string;
+  readonly waitMs?: number;
+  readonly promptChars?: number;
+  readonly completionChars?: number;
+}
+
 /** The structured flight record vocabulary. */
 export type FlightEvent =
   | MissionEventMissionStarted
@@ -128,6 +148,7 @@ export type FlightEvent =
   | MissionEventMissionFinished
   | MissionEventHumanIntervention
   | MissionEventRepository
+  | MissionEventReasoningFallback
   | WorkerLoopEvent
   | HandoffEvent;
 
