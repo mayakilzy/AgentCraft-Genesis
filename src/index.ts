@@ -20,3 +20,8 @@ export * from './organization/organization-planner.js';
 export * from './genome/genome-compiler.js';
 export * from './routing/decision-provider.js';
 export * from './routing/cognitive-router.js';
+export * from './runtime/computer.js';
+export * from './runtime/openbot/computer-api.js';
+export * from './runtime/openbot/computer-process.js';
+export * from './runtime/openbot/adapter.js';
+export * from './worker/worker-agent.js';

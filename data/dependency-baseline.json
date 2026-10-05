@@ -24,7 +24,14 @@
       "observed_release_at_founding_doc": "v0.0.15 (architecture baseline observation)",
       "verified_release": "v0.1.0 (published 2026-10-03, verified 2026-10-05 via GitHub API)",
       "package_manifest_observed": "Bun 1.3.14; Playwright Core 1.62.1 (per founding architecture baseline)",
-      "integration_rule": "thin HTTP/protocol adapters only; no private workspace imports; never restructure upstream"
+      "integration_rule": "thin HTTP/protocol adapters only; no private workspace imports; never restructure upstream",
+      "runtime_integration": {
+        "task": "TASK-010",
+        "boundary": "documented agent-computer HTTP API: /health, /exec, /files/write, /files/read, /files/list, /files/download, /computers, /computers/stop, /computers/reset; bearer COMPUTER_TOKEN + x-openbot-bot-id header",
+        "verified_live": "2026-10-05 — real agent-computer processes (bun 1.3.14 == Dockerfile pin) exec/write/read/list against the live upstream service, per-worker isolated WORKSPACE_DIR/PROFILES_DIR/port/token",
+        "deployment_mode": "process-per-worker where no container runtime exists (EGRESS_POLICY_REQUIRED=0 per v0.1.0 release notes for computers run without the API server); supervisor containers remain the canonical mode on Docker-capable infrastructure",
+        "supervisor_api_observed": "POST /computers/:botId/ensure|stop|reset, GET /computers, GET /health — verified from source at tag v0.1.0; not exercised (no container runtime in sandbox); drop-in behind the same RuntimeAdapter boundary"
+      }
     },
     "openmuse": {
       "repository": "https://github.com/CopilotKit/openmuse",
