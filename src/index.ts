@@ -26,3 +26,5 @@ export * from './runtime/openbot/computer-process.js';
 export * from './runtime/openbot/adapter.js';
 export * from './worker/worker-agent.js';
 export * from './worker/handoff.js';
+export * from './mission/flight-recorder.js';
+export * from './mission/orchestrator.js';
