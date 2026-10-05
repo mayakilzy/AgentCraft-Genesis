@@ -25,3 +25,4 @@ export * from './runtime/openbot/computer-api.js';
 export * from './runtime/openbot/computer-process.js';
 export * from './runtime/openbot/adapter.js';
 export * from './worker/worker-agent.js';
+export * from './worker/handoff.js';

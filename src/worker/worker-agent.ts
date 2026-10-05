@@ -4,6 +4,7 @@ import type {
   WorkerGenome,
 } from '../contracts/core.js';
 import type { WorkerComputer } from '../runtime/computer.js';
+import type { HandoffSink } from './handoff.js';
 
 /**
  * The Genesis Worker (TASK-010): one genome, one brain, one pair of hands.
@@ -29,7 +30,7 @@ import type { WorkerComputer } from '../runtime/computer.js';
  * working memory; what leaves this loop is actions, observations and results.
  */
 
-/** The actions a worker can take. `ask_worker` joins in TASK-011. */
+/** The actions a worker can take. */
 export type WorkerAction =
   | { readonly action: 'run_command'; readonly command: string }
   | {
@@ -39,6 +40,13 @@ export type WorkerAction =
     }
   | { readonly action: 'read_file'; readonly path: string }
   | { readonly action: 'list_files'; readonly path?: string }
+  | {
+      readonly action: 'ask_worker';
+      readonly target: string;
+      readonly task: string;
+      readonly constraints?: readonly string[];
+      readonly answerShape: string;
+    }
   | {
       readonly action: 'finish';
       readonly summary: string;
@@ -86,6 +94,8 @@ export interface WorkerAgentOptions {
   readonly computer: WorkerComputer | null;
   /** The assignment: objective, mission context, upstream results. */
   readonly taskBrief: string;
+  /** The mission's worker-to-worker channel (TASK-011), when one exists. */
+  readonly handoffs?: HandoffSink;
   readonly maxSteps?: number;
   readonly signal?: AbortSignal;
   readonly onEvent?: WorkerEventSink;
@@ -105,6 +115,7 @@ export class WorkerAgent {
   private readonly reasoning: ReasoningProvider;
   private readonly computer: WorkerComputer | null;
   private readonly taskBrief: string;
+  private readonly handoffs: HandoffSink | undefined;
   private readonly maxSteps: number;
   private readonly signal: AbortSignal | undefined;
   private readonly onEvent: WorkerEventSink | undefined;
@@ -114,33 +125,51 @@ export class WorkerAgent {
     this.reasoning = options.reasoning;
     this.computer = options.computer;
     this.taskBrief = options.taskBrief;
+    this.handoffs = options.handoffs;
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_WORKER_STEPS;
     this.signal = options.signal;
     this.onEvent = options.onEvent;
   }
 
   private systemPrompt(): string {
-    const tools: string[] = [];
+    const granted: string[] = [];
+    const examples: string[] = [
+      '{"action":"run_command","command":"..."} — run a bash command in your workspace',
+      '{"action":"write_file","path":"...","contents":"..."} — write a text file',
+      '{"action":"read_file","path":"..."} — read a text file',
+      '{"action":"list_files","path":"."} — list workspace contents',
+    ];
     if (this.genome.tools.includes(GRANT_SHELL)) {
-      tools.push('run_command');
+      granted.push('run_command');
+    } else {
+      examples.splice(0, 1);
     }
     if (this.genome.tools.includes(GRANT_FILES)) {
-      tools.push('write_file', 'read_file', 'list_files');
+      granted.push('write_file', 'read_file', 'list_files');
+    } else {
+      examples.splice(0, 3);
     }
-    tools.push('finish');
+    const canCollaborate =
+      this.genome.skills.includes('collaboration') && this.handoffs !== undefined;
+    if (canCollaborate) {
+      granted.push('ask_worker');
+      examples.push(
+        '{"action":"ask_worker","target":"worker-id","task":"...","constraints":["..."],"answerShape":"..."} — ask a colleague in this mission to do work and answer with evidence',
+      );
+    }
+    granted.push('finish');
+    examples.push(
+      '{"action":"finish","summary":"...","artifacts":["path",...]} — the task is done (or blocked); list deliverable files',
+    );
     return [
       `You are ${this.genome.identity.displayName}, a ${this.genome.role}.`,
       `Objective: ${this.genome.objective}`,
       'You have your own private workspace computer. All file paths are relative to your workspace.',
       '',
       'You act ONE STEP AT A TIME. Every reply is exactly ONE JSON object and nothing else:',
-      '{"action":"run_command","command":"..."} — run a bash command in your workspace',
-      '{"action":"write_file","path":"...","contents":"..."} — write a text file',
-      '{"action":"read_file","path":"..."} — read a text file',
-      '{"action":"list_files","path":"."} — list workspace contents',
-      '{"action":"finish","summary":"...","artifacts":["path",...]} — the task is done (or blocked); list deliverable files',
+      ...examples,
       '',
-      `Granted actions: ${tools.join(', ')}.`,
+      `Granted actions: ${granted.join(', ')}.`,
       'Rules:',
       '- Reply with ONE JSON object only. No prose, no code fences.',
       '- Paths are workspace-relative; never absolute, never "..".',
@@ -176,6 +205,10 @@ export class WorkerAgent {
       case 'read_file':
       case 'list_files':
         return this.genome.tools.includes(GRANT_FILES) ? null : GRANT_FILES;
+      case 'ask_worker':
+        return this.genome.skills.includes('collaboration') && this.handoffs !== undefined
+          ? null
+          : 'the collaboration skill and a mission handoff channel';
       case 'finish':
         return null;
       default:
@@ -188,6 +221,21 @@ export class WorkerAgent {
   ): Promise<{ ok: boolean; observation: string }> {
     if (action.action === 'finish') {
       return { ok: true, observation: 'finished' };
+    }
+    if (action.action === 'ask_worker') {
+      const result = await this.handoffs!.ask({
+        from: this.genome.identity.id,
+        to: action.target,
+        task: action.task,
+        ...(action.constraints === undefined || action.constraints.length === 0
+          ? {}
+          : { constraints: action.constraints }),
+        answerShape: action.answerShape,
+      });
+      return {
+        ok: result.ok,
+        observation: JSON.stringify(result),
+      };
     }
     if (this.computer === null) {
       return {
