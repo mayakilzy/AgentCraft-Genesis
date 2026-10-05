@@ -106,6 +106,10 @@ const NEED_RULES: readonly NeedRule[] = [
       'build', 'implement', 'fix', 'refactor', 'test', 'deploy', 'code', 'app',
       'application', 'service', 'repository', 'repo', 'compile', 'run',
       'execute', 'reproduce', 'dashboard', 'website', 'api',
+      // TASK-015 integration fix: registry/package maintenance work is shell
+      // work — proven by Experiment 001, where its absence made the mission
+      // structurally impossible (no worker could query npm).
+      'npm', 'registry', 'package', 'packages', 'dependency', 'dependencies',
     ],
   },
   {
@@ -127,7 +131,10 @@ const NEED_RULES: readonly NeedRule[] = [
   },
   {
     need: 'browser-verification',
-    signals: ['browser', 'ui', 'e2e', 'end-to-end', 'preview', 'smoke', 'screenshot'],
+    // TASK-015 integration fix: 'ui' dropped — it word-boundary matches
+    // scoped package names like @ag-ui/core and planned a browser worker for
+    // registry queries (Experiment 001 flight record).
+    signals: ['browser', 'e2e', 'end-to-end', 'preview', 'smoke', 'screenshot'],
   },
 ];
 

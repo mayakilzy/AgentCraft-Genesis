@@ -53,7 +53,9 @@ class RoleScriptedReasoning implements ReasoningProvider {
     this.calls.push(input);
     const system = input.system ?? '';
     for (const [marker, queue] of this.queues) {
-      if (system.includes(marker)) {
+      // Identity line match, not any mention: the roster lists colleagues by
+      // role too, so a bare includes() would cross-match scripts.
+      if (system.includes(`You are ${marker}`)) {
         expect(queue.length, `script for "${marker}"`).toBeGreaterThan(0);
         const [next, ...rest] = queue;
         this.queues.set(marker, rest);

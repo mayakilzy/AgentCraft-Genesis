@@ -33,6 +33,7 @@ src/goal/          Goal Compiler — human goal → structured requirements
 src/organization/  Organization Planner — requirements → logical organization
 src/genome/        Genome Compiler — planned roles → runnable worker genomes
 src/routing/       Cognitive Router & decision providers
+src/providers/     real reasoning providers (ZAI behind the frozen contract)
 src/runtime/       execution surface port + OpenBot runtime adapter (thin boundary)
 src/worker/        the Genesis worker — genome + brain + hands acting loop
 data/              machine-readable baselines (dependencies, census, ownership)

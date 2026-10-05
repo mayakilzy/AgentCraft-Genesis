@@ -5,3 +5,6 @@ coverage/
 .env
 .env.*
 .DS_Store
+
+# experiment runtime state (worker computers; flight records are committed as evidence)
+experiments/experiment-001/.computers/

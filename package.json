@@ -10,7 +10,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "experiment:001": "bun experiments/experiment-001/run.ts"
   },
   "dependencies": {
     "yaml": "2.9.1"

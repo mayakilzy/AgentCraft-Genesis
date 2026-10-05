@@ -124,12 +124,17 @@ describe('MissionHandoffs — typed worker-to-worker coordination', () => {
       onEvent: (event) => events.push(event),
     });
 
+    const roster = new Map([
+      ['analyst-1', 'Analyst'],
+      ['verifier-1', 'Verifier'],
+    ]);
     const resultA = await new WorkerAgent({
       genome: genome('analyst-1', 'Analyst'),
       reasoning: reasoningA,
       computer: participants.get('analyst-1')!.computer,
       taskBrief: 'Compute and verify a value.',
       handoffs,
+      roster,
     }).run();
 
     // B really worked: its own computer, its own file.
@@ -142,6 +147,9 @@ describe('MissionHandoffs — typed worker-to-worker coordination', () => {
     // A saw B's typed answer as its observation.
     const askPrompt = reasoningA.seen.at(-1)!;
     expect(askPrompt.prompt).toContain('Verified: the value is 42.');
+
+    // The system prompt named the real colleagues — no guessed ids.
+    expect(reasoningA.seen.every((call) => (call.system ?? '').includes('verifier-1 (Verifier)'))).toBe(true);
   });
 
   it('passes the typed envelope and nothing else — no transcript sharing', async () => {

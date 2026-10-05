@@ -212,6 +212,30 @@ describe('WorkerAgent — the acting loop', () => {
     expect(result.steps).toBe(1);
   });
 
+  it('breaks degenerate repeat loops with a firm refusal (TASK-015 fix)', async () => {
+    const computer = memoryComputer();
+    const loop = JSON.stringify({ action: 'list_files', path: '.' });
+    const reasoning = new ScriptedReasoning([
+      loop,
+      loop, // immediate repeat -> breaker fires
+      JSON.stringify({ action: 'write_file', path: 'out.txt', contents: 'recovered' }),
+      JSON.stringify({ action: 'finish', summary: 'Recovered after the loop breaker.', artifacts: ['out.txt'] }),
+    ]);
+    const result = await new WorkerAgent({
+      genome: genome(),
+      reasoning,
+      computer,
+      taskBrief: 'a task a weak model might loop on',
+    }).run();
+
+    expect(result.status).toBe('success');
+    expect(computer.files.get('out.txt')).toBe('recovered');
+    // The repeat was refused loudly...
+    expect(result.refusals.some((r) => r.includes('repeated action refused'))).toBe(true);
+    // ...and never executed twice (no side effects from repeats).
+    expect(result.steps).toBe(3); // first list_files + breaker + write
+  });
+
   it('supports abort mid-loop', async () => {
     const controller = new AbortController();
     const reasoning = new ScriptedReasoning([

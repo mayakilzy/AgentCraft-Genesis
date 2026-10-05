@@ -29,3 +29,5 @@ export * from './worker/handoff.js';
 export * from './mission/flight-recorder.js';
 export * from './mission/orchestrator.js';
 export * from './mission/verification.js';
+export * from './goal/llm-understanding.js';
+export * from './providers/zai-reasoning.js';

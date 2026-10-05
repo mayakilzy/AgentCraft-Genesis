@@ -96,6 +96,8 @@ export interface WorkerAgentOptions {
   readonly taskBrief: string;
   /** The mission's worker-to-worker channel (TASK-011), when one exists. */
   readonly handoffs?: HandoffSink;
+  /** Colleagues this worker may address: worker id → role (TASK-015 fix). */
+  readonly roster?: ReadonlyMap<string, string>;
   readonly maxSteps?: number;
   readonly signal?: AbortSignal;
   readonly onEvent?: WorkerEventSink;
@@ -116,6 +118,7 @@ export class WorkerAgent {
   private readonly computer: WorkerComputer | null;
   private readonly taskBrief: string;
   private readonly handoffs: HandoffSink | undefined;
+  private readonly roster: ReadonlyMap<string, string> | undefined;
   private readonly maxSteps: number;
   private readonly signal: AbortSignal | undefined;
   private readonly onEvent: WorkerEventSink | undefined;
@@ -126,6 +129,7 @@ export class WorkerAgent {
     this.computer = options.computer;
     this.taskBrief = options.taskBrief;
     this.handoffs = options.handoffs;
+    this.roster = options.roster;
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_WORKER_STEPS;
     this.signal = options.signal;
     this.onEvent = options.onEvent;
@@ -153,8 +157,13 @@ export class WorkerAgent {
       this.genome.skills.includes('collaboration') && this.handoffs !== undefined;
     if (canCollaborate) {
       granted.push('ask_worker');
+      const colleagues = [...(this.roster ?? new Map<string, string>())]
+        .filter(([id]) => id !== this.genome.identity.id)
+        .map(([id, role]) => `${id} (${role})`);
       examples.push(
-        '{"action":"ask_worker","target":"worker-id","task":"...","constraints":["..."],"answerShape":"..."} — ask a colleague in this mission to do work and answer with evidence',
+        colleagues.length > 0
+          ? `{"action":"ask_worker","target":"<colleague-id>","task":"...","constraints":["..."],"answerShape":"..."} — ask a colleague in this mission to do work and answer with evidence. Your colleagues (target must be one of these exact ids): ${colleagues.join(', ')}`
+          : '{"action":"ask_worker","target":"<colleague-id>","task":"...","constraints":["..."],"answerShape":"..."} — ask a colleague in this mission to do work and answer with evidence (no colleagues are addressable in this mission)',
       );
     }
     granted.push('finish');
@@ -174,6 +183,8 @@ export class WorkerAgent {
       '- Reply with ONE JSON object only. No prose, no code fences.',
       '- Paths are workspace-relative; never absolute, never "..".',
       '- Check your own work with commands before finishing.',
+      '- Be efficient: batch related work into single commands (for example one shell loop) instead of many small steps.',
+      '- If your assignment requires an action you have NOT been granted, do not loop: finish immediately and state exactly what you lack.',
       '- When done, finish with a concise summary and your artifact paths.',
       '- If blocked, finish anyway and say plainly what blocked you.',
     ].join('\n');
@@ -270,7 +281,14 @@ export class WorkerAgent {
         }
         case 'list_files': {
           const entries = await this.computer.listFiles(action.path);
-          return { ok: true, observation: JSON.stringify({ entries }) };
+          const observation =
+            entries.length === 0
+              ? JSON.stringify({
+                  entries,
+                  note: 'the workspace is empty — it starts empty; every fact you need is in your task brief',
+                })
+              : JSON.stringify({ entries });
+          return { ok: true, observation };
         }
         default:
           return { ok: false, observation: 'refused: unknown action' };
@@ -299,6 +317,8 @@ export class WorkerAgent {
     let reasoningCalls = 0;
     let parseFailures = 0;
     let finishSummary = '';
+    let lastActionJson = '';
+    let repeatCount = 0;
 
     const base = (): Omit<WorkerResult, 'status' | 'summary' | 'evidence'> => ({
       workerId,
@@ -374,6 +394,37 @@ export class WorkerAgent {
         refusals.push(refusal);
         scratchpad.push(`step ${steps + 1}: ${JSON.stringify(action)}`, `observation: ${refusal}`);
         steps += 1;
+        this.onEvent?.({
+          type: 'worker-step',
+          workerId,
+          step: steps,
+          action: action.action,
+          ok: false,
+          elapsedMs: 0,
+        });
+        continue;
+      }
+
+      // Anti-degenerate-loop guard (TASK-015 core-loop fix): a model that
+      // repeats the exact same action is stuck, not working. The repeat is
+      // refused with a firm observation pushing it to vary or finish —
+      // proven necessary by the Experiment 001 flight records (14 identical
+      // list_files steps from a worker holding run_command).
+      const actionJson = JSON.stringify(action);
+      if (actionJson === lastActionJson) {
+        repeatCount += 1;
+      } else {
+        repeatCount = 0;
+        lastActionJson = actionJson;
+      }
+      if (repeatCount >= 1) {
+        const breaker =
+          `REFUSED: you have repeated the exact same action ${repeatCount + 1} times. ` +
+          'A repeated action cannot produce a new result. Choose a DIFFERENT ' +
+          'action that advances the task, or finish now and state what you lack.';
+        refusals.push(`repeated action refused: ${actionJson.slice(0, 120)}`);
+        steps += 1;
+        scratchpad.push(`step ${steps}: ${actionJson}`, `observation: ${breaker}`);
         this.onEvent?.({
           type: 'worker-step',
           workerId,

@@ -120,16 +120,19 @@ function newMissionId(): string {
   return `mission-${stamp}-${randomBytes(3).toString('hex')}`;
 }
 
-/** Deterministic task brief: assignment + mission + upstream results. */
+/** Deterministic task brief: mission-first, then assignment and inputs. */
 export function renderTaskBrief(
   worker: PlannedWorker,
   requirements: GoalRequirements,
   upstream: readonly { worker: PlannedWorker; result: WorkerResult }[],
 ): string {
   const lines = [
-    `Your assignment: ${worker.responsibility}.`,
     `Mission: "${requirements.source.outcome}"`,
+    `Your assignment in it: ${worker.responsibility}.`,
   ];
+  if (requirements.source.context !== undefined && requirements.source.context.trim() !== '') {
+    lines.push('', `Mission context: ${requirements.source.context}`);
+  }
   if (requirements.hardConstraints.length > 0) {
     lines.push(`Hard constraints: ${requirements.hardConstraints.join('; ')}`);
   }
@@ -155,6 +158,7 @@ export function renderTaskBrief(
     }
   }
   lines.push(
+    'Your workspace starts EMPTY; every fact you need is in this brief. Begin with the core of the work itself, not workspace inspection.',
     'Deliverables go to your own workspace. Finish with your artifact paths when done.',
   );
   return lines.join('\n');
@@ -272,6 +276,13 @@ export class MissionOrchestrator {
         });
       }
 
+      // The mission roster every collaborating worker sees (TASK-015 fix:
+      // workers used to guess colleague ids).
+      const roster = new Map<string, string>();
+      for (const [id, participant] of participants) {
+        roster.set(id, participant.genome.role);
+      }
+
       const handoffs = new MissionHandoffs(participants, {
         signal: controller.signal,
         onEvent: (event) => record(event),
@@ -305,6 +316,7 @@ export class MissionOrchestrator {
           participants.get(worker.id)!,
           brief,
           handoffs,
+          roster,
           controller.signal,
           record,
         );
@@ -329,6 +341,7 @@ export class MissionOrchestrator {
           participants.get(coordinator.id)!,
           brief,
           handoffs,
+          roster,
           controller.signal,
           record,
         );
@@ -413,6 +426,7 @@ export class MissionOrchestrator {
                 participants.get(worker.id)!,
                 brief,
                 handoffs,
+                roster,
                 controller.signal,
                 record,
               );
@@ -491,6 +505,7 @@ export class MissionOrchestrator {
     participant: HandoffParticipant,
     brief: string,
     handoffs: MissionHandoffs,
+    roster: ReadonlyMap<string, string>,
     signal: AbortSignal,
     record: RecordFn,
   ): Promise<WorkerResult> {
@@ -500,6 +515,7 @@ export class MissionOrchestrator {
       computer: participant.computer,
       taskBrief: brief,
       handoffs,
+      roster,
       ...(this.options.maxWorkerSteps === undefined
         ? {}
         : { maxSteps: this.options.maxWorkerSteps }),
