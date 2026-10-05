@@ -256,6 +256,7 @@ export async function runRepoMission(
     missionId: config.missionId,
     beforeVerification,
     checks: () => buildChecks(),
+    workerBriefSuffix: repoWorkerContext(projectDir),
     ...(config.maxWorkerSteps === undefined ? {} : { maxWorkerSteps: config.maxWorkerSteps }),
     ...(config.missionTimeoutMs === undefined
       ? {}
@@ -266,7 +267,11 @@ export async function runRepoMission(
       : { providerCallsSource: config.providerCallsSource }),
   });
 
-  const result = await orchestrator.run(withRepoContext(config.goal, projectDir));
+  // GROUP 3 (Experiment 003 defect) fix: the goal reaches the orchestrator
+  // UNMODIFIED — the repository preamble travels as a worker-brief suffix
+  // instead of goal.context, so it cannot pollute domain classification
+  // (a diagnostic mission on a repository must classify as diagnostic).
+  const result = await orchestrator.run(config.goal);
 
   return {
     result,
@@ -277,21 +282,23 @@ export async function runRepoMission(
 }
 
 /**
- * The goal the orchestrator actually receives: the caller's goal plus the
- * standing repository preamble every worker needs (their workspace IS a
- * checkout; git is owned by the orchestrator). This is context, not a team:
- * no roles, no names, no structure.
+ * The standing repository context every worker needs: their workspace IS a
+ * checkout; git collaboration follows developer semantics. This is worker
+ * instructions, delivered as a task-brief suffix — it deliberately never
+ * enters the goal, so it cannot skew domain classification.
  */
-function withRepoContext(goal: Goal, projectDir: string): Goal {
-  const preamble =
+function repoWorkerContext(projectDir: string): string {
+  return (
     'The mission repository is already checked out in your workspace: your ' +
-    'own git worktree on your own branch. Edit files, run commands (install, ' +
-    'build, test) and create new files directly there' +
+    'own git worktree on your own branch (genesis/<your-worker-id>). Edit ' +
+    'files, run commands (install, build, test) and create new files ' +
+    'directly there' +
     (projectDir === '' ? '' : ` (the project lives in ${projectDir}/)`) +
-    '. Do not run git clone/commit/push or modify branches — the orchestrator ' +
-    'owns repository integration and commits your work for you.';
-  return {
-    ...goal,
-    context: goal.context === undefined ? preamble : `${preamble}\n\n${goal.context}`,
-  };
+    '. Commit your own work on your branch when it is ready ' +
+    '(git add -A && git commit -m "...") — colleagues can only build on ' +
+    'COMMITTED work. You may merge a colleague\u2019s committed branch into ' +
+    'your own worktree to build on or verify it (git merge <branch> ' +
+    '--no-edit). Never push, never touch remotes, never modify main or ' +
+    'another worker\u2019s branch — the orchestrator owns final integration.'
+  );
 }

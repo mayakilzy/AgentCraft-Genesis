@@ -211,3 +211,60 @@ maybeLive('computer process — startup contract', () => {
     rmSync(rootDir, { recursive: true, force: true });
   }, 30_000);
 });
+
+maybeLive('computer process — group stop semantics (docker stop equivalent)', () => {
+  it('a nohup-ed server started inside the computer dies with the computer', async () => {
+    const rootDir = join(tmpdir(), `genesis-openbot-grp-${process.pid}`);
+    // A free port chosen on the test side for the server the worker will
+    // nohup inside its computer (the computers share the host network in
+    // process mode — exactly the deployment where this defect surfaced).
+    const { createServer } = await import('node:net');
+    const port = await new Promise<number>((resolve, reject) => {
+      const probe = createServer();
+      probe.unref();
+      probe.on('error', reject);
+      probe.listen(0, '127.0.0.1', () => {
+        const address = probe.address();
+        const chosen =
+          typeof address === 'object' && address !== null ? address.port : 0;
+        probe.close(() => resolve(chosen));
+      });
+    });
+
+    const computer = await startComputerProcess(
+      { checkoutDir: OPENBOT_CHECKOUT, rootDir },
+      'group-stop-worker-1',
+    );
+    try {
+      const exec = async (command: string): Promise<{ exitCode: number; stdout: string }> => {
+        const response = await fetch(`${computer.baseUrl}/exec`, {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${computer.token}`,
+            'x-openbot-bot-id': computer.botId,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ command, timeoutMs: 15_000 }),
+        });
+        return (await response.json()) as { exitCode: number; stdout: string };
+      };
+      const start = await exec(
+        `nohup node -e 'require("http").createServer((q,s)=>s.end("alive")).listen(${port}, "127.0.0.1")' > server.log 2>&1 & sleep 0.5 && echo started`,
+      );
+      expect(start.exitCode).toBe(0);
+
+      // The server IS alive and reachable from the host.
+      const before = await fetch(`http://127.0.0.1:${port}/`);
+      expect(await before.text()).toBe('alive');
+
+      // Stopping the computer must stop the WHOLE process group — the
+      // nohup-ed server cannot outlive the computer that spawned it.
+      await computer.stop();
+
+      await expect(fetch(`http://127.0.0.1:${port}/`)).rejects.toThrow();
+    } finally {
+      await computer.stop();
+      rmSync(rootDir, { recursive: true, force: true });
+    }
+  }, 60_000);
+});

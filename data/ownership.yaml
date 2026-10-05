@@ -33,14 +33,23 @@ ownership:
     description: Shell command execution inside the worker container
     canonical_owner: openbot
     decision: REUSE
-    satisfies: [code-execution, data-analysis]
-    notes: Commands run inside the container, never on the host.
+    satisfies: [code-execution, data-analysis, browser-verification]
+    notes: >-
+      Commands run inside the container, never on the host. GROUP 3 addition:
+      browser-verification is included because a verification worker must
+      start the preview it verifies (dev server/process lifecycle, TASK-018
+      steps) — a browser with no way to launch anything cannot verify a
+      running application.
   - domain: workspace-files
     description: Persistent /workspace files per worker
     canonical_owner: openbot
     decision: REUSE
-    satisfies: [code-execution, document-authoring]
-    notes: Where code is checked out and artifacts are written.
+    satisfies: [code-execution, document-authoring, browser-verification]
+    notes: >-
+      Where code is checked out and artifacts are written. GROUP 3 addition:
+      browser-verification workers also produce structured verification
+      evidence (reports) in their workspace, so they need the files surface
+      alongside the browser.
   - domain: computer-supervisor
     description: Computer lifecycle supervisor (ensure/stop/reset/list)
     canonical_owner: openbot

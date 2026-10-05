@@ -111,6 +111,44 @@ describe('GitWorkspace (TASK-016) — safe external repository work', () => {
     });
   });
 
+  test('package-manager cache directories are machine state, never committed work', async () => {
+    // GROUP 3 regression (Experiment 002's first integration conflict):
+    // an npm install inside a worktree creates `.npm/` there; committing
+    // it polluted the evidence boundary and conflicted across every
+    // branch that installed anything. The auto-commit excludes it.
+    await withWorkspace(async (workspace, _source, root) => {
+      const w = await workspace.ensureWorktree('installer-1');
+      execFileSync('bash', [
+        '-c',
+        `mkdir -p "${join(w.path, '.npm/_cacache')}" "${join(w.path, 'node_modules/pkg')}" && ` +
+          `echo cache > "${join(w.path, '.npm/_cacache/blob')}" && ` +
+          `echo dep > "${join(w.path, 'node_modules/pkg/index.js')}" && ` +
+          `echo 'the actual fix' > "${join(w.path, 'src/a.txt')}"`,
+      ]);
+      const result = await workspace.commitWorktree('installer-1', 'the fix');
+      expect(result.commit).not.toBeNull();
+      expect(result.files).toBe(1);
+
+      const committed = sh(w.path, ['ls-tree', '-r', '--name-only', 'HEAD']);
+      expect(committed).toContain('src/a.txt');
+      expect(committed).not.toContain('.npm');
+      expect(committed).not.toContain('node_modules');
+
+      // And the clean-room clone agrees: caches never cross the boundary.
+      await workspace.ensureIntegrationWorktree();
+      const merged = await workspace.mergeIntoIntegration('installer-1');
+      expect(merged.ok).toBe(true);
+      const cloneDir = join(root, 'verifier-clone');
+      execFileSync('bash', ['-c', workspace.verifierCloneCommand(cloneDir)], {
+        cwd: root,
+      });
+      expect(existsSync(join(cloneDir, '.npm'))).toBe(false);
+      expect(readFileSync(join(cloneDir, 'src/a.txt'), 'utf8')).toBe(
+        'the actual fix\n',
+      );
+    });
+  });
+
   test('clean-room property: untracked junk in the integration worktree never crosses a clone', async () => {
     await withWorkspace(async (workspace, _source, root) => {
       const w = await workspace.ensureWorktree('writer-1');

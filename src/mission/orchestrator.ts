@@ -99,6 +99,19 @@ export interface MissionOrchestratorOptions {
    */
   readonly providerCallsSource?: () => number;
   /**
+   * GROUP 3 (exposed by Experiment 003 design): operational context
+   * appended to EVERY worker task brief (specialists, coordinator, and the
+   * bounded retry) WITHOUT entering the goal the compiler classifies.
+   * Repository missions previously prepended their preamble to
+   * goal.context, which polluted domain classification with
+   * software-engineering signals ("repository", "install", "build",
+   * "test") and hijacked non-engineering repo missions — a diagnostic
+   * mission on a repository classified as software engineering. The
+   * preamble is worker instructions, not goal semantics; it belongs in the
+   * brief.
+   */
+  readonly workerBriefSuffix?: string;
+  /**
    * Explicit mission id: pass the SAME id to the flight recorder so the
    * durable record file matches the events. Generated when omitted.
    */
@@ -190,6 +203,18 @@ export class MissionOrchestrator {
 
   constructor(options: MissionOrchestratorOptions) {
     this.options = options;
+  }
+
+  /** A task brief plus the caller's operational suffix, when configured. */
+  private briefFor(
+    worker: PlannedWorker,
+    requirements: GoalRequirements,
+    upstream: readonly { worker: PlannedWorker; result: WorkerResult }[],
+  ): string {
+    const brief = renderTaskBrief(worker, requirements, upstream);
+    return this.options.workerBriefSuffix === undefined
+      ? brief
+      : `${brief}\n\n${this.options.workerBriefSuffix}`;
   }
 
   async run(goal: Goal): Promise<MissionResult> {
@@ -335,7 +360,7 @@ export class MissionOrchestrator {
       };
       for (const worker of specialists) {
         if (controller.signal.aborted) break;
-        const brief = renderTaskBrief(
+        const brief = this.briefFor(
           worker,
           requirements,
           upstreamResults(plan, worker, results),
@@ -365,11 +390,15 @@ export class MissionOrchestrator {
           ),
           'Produce the integrated mission summary: what was achieved, with which artifacts, and anything that failed or is missing.',
         ].join('\n');
+        const coordinatorBrief =
+          this.options.workerBriefSuffix === undefined
+            ? brief
+            : `${brief}\n\n${this.options.workerBriefSuffix}`;
         const result = await this.runWorker(
           coordinator,
           genomes.get(coordinator.id)!,
           participants.get(coordinator.id)!,
-          brief,
+          coordinatorBrief,
           handoffs,
           roster,
           controller.signal,
@@ -443,7 +472,7 @@ export class MissionOrchestrator {
             for (const worker of specialists) {
               if (controller.signal.aborted) break;
               const brief =
-                `${renderTaskBrief(
+                `${this.briefFor(
                   worker,
                   requirements,
                   upstreamResults(plan, worker, results),

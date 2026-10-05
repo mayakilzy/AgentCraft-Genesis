@@ -264,7 +264,19 @@ export class GitWorkspace {
     this.assertOpened();
     const state = this.requireWorktree(name);
     const timeoutMs = this.options.timeoutMs ?? 60_000;
-    await run(state.path, ['add', '-A'], timeoutMs);
+    // GROUP 3 fix, exposed by Experiment 002's first integration conflict:
+    // package-manager cache directories (`.npm/` — created by npm installs
+    // inside the worktree when the computer resolves its cache there) are
+    // machine state, not work. Committing them poisoned the evidence
+    // boundary and conflicted across every worker branch that installed
+    // anything. Excluded from the auto-commit exactly like a .gitignore
+    // would; a worker can still commit such paths explicitly if it ever
+    // has a reason to.
+    await run(
+      state.path,
+      ['add', '-A', '--', '.', ':!.npm', ':!node_modules'],
+      timeoutMs,
+    );
     const staged = await run(
       state.path,
       ['diff', '--cached', '--name-only'],

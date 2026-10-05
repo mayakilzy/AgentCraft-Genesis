@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, readdir, readlink, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { ComputerApiClient } from './computer-api.js';
@@ -103,6 +103,51 @@ async function findFreePort(): Promise<number> {
 
 const OUTPUT_TAIL_LIMIT = 8 * 1024;
 
+/**
+ * PIDs of live processes whose working directory is under one of the given
+ * directories — the realistic trail of everything exec'd inside a computer
+ * (upstream runs every command with cwd = the workspace). Upstream gives
+ * each exec'd command its own process group, so a nohup-ed server escapes
+ * a group kill once its parent bash exits; its cwd does not escape.
+ * Excluded: the caller itself and the computer's own pid.
+ */
+async function pidsWorkingUnder(
+  dirs: readonly string[],
+  exclude: ReadonlySet<number>,
+): Promise<number[]> {
+  const pids: number[] = [];
+  let entries: string[] = [];
+  try {
+    entries = await readdir('/proc');
+  } catch {
+    return pids; // not Linux procfs — best effort only
+  }
+  for (const entry of entries) {
+    if (!/^\d+$/.test(entry)) continue;
+    const pid = Number(entry);
+    if (exclude.has(pid)) continue;
+    try {
+      const cwd = await readlink(`/proc/${entry}/cwd`);
+      if (dirs.some((dir) => cwd === dir || cwd.startsWith(`${dir}/`))) {
+        pids.push(pid);
+      }
+    } catch {
+      // process gone, or not ours to inspect — skip it
+    }
+  }
+  return pids;
+}
+
+const signalPids = (pids: readonly number[], signal: NodeJS.Signals): void => {
+  for (const pid of pids) {
+    try {
+      process.kill(pid, signal);
+    } catch {
+      // already gone, or not ours — best effort
+    }
+  }
+};
+
 export async function startComputerProcess(
   config: ComputerProcessConfig,
   botId: string,
@@ -137,6 +182,15 @@ export async function startComputerProcess(
       ...config.extraEnv,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
+    // GROUP 3 fix, exposed by Experiment 002 evidence: a dedicated process
+    // group lets stop() terminate EVERY process the computer spawned
+    // (shells, nohup'd preview servers, Chromium). Without it, a nohup'd
+    // server outlives stop() and poisons later missions on the same port.
+    // The container deployment upstream gets this from `docker stop`
+    // killing the whole PID namespace; this restores those semantics in
+    // process mode. The group persists after the leader exits, so orphans
+    // are still reachable for the kill below.
+    detached: true,
   }) as ChildProcess;
 
   let tail = '';
@@ -183,26 +237,56 @@ export async function startComputerProcess(
   }
 
   const stop = async (): Promise<void> => {
-    // Best-effort graceful browser stop first (upstream /computers/stop),
-    // then terminate the process itself: SIGTERM, SIGKILL after grace.
+    // Best-effort graceful browser stop first (upstream /computers/stop).
+    // Then two-stage termination, restoring `docker stop` semantics as far
+    // as a container-less deployment can:
+    //   1. the computer's own process group (leader + non-detached
+    //      children) — SIGTERM, SIGKILL after grace;
+    //   2. the cwd sweep — upstream runs every exec'd command with its own
+    //      process group (agent-computer/src/shell.ts), so a nohup-ed
+    //      server escapes stage 1 once its parent bash exits; its working
+    //      directory stays inside the workspace, which is what this stage
+    //      catches. In the container deployment stage 2 is what the PID
+    //      namespace provides for free.
     try {
       await probe.stopBrowser();
     } catch {
       // the process may already be gone; the kill below is the real stop
     }
-    if (child.exitCode !== null) return;
-    child.kill('SIGTERM');
-    const grace = new Promise<void>((resolve) => {
-      const timer = setTimeout(() => {
-        child.kill('SIGKILL');
-        resolve();
-      }, 2_000);
-      exited.finally(() => {
-        clearTimeout(timer);
-        resolve();
+    const pgid = child.pid;
+    if (pgid !== undefined) {
+      const killGroup = (signal: NodeJS.Signals): void => {
+        try {
+          process.kill(-pgid, signal);
+        } catch {
+          // the group is already gone — nothing left to stop
+        }
+      };
+      killGroup('SIGTERM');
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(() => {
+          killGroup('SIGKILL');
+          resolve();
+        }, 2_000);
+        exited.finally(() => {
+          clearTimeout(timer);
+          resolve();
+        });
       });
-    });
-    await grace;
+    }
+
+    // Stage 2: processes still working inside this computer's directories.
+    const exclude = new Set<number>([process.pid]);
+    if (child.pid !== undefined) exclude.add(child.pid);
+    const escaped = await pidsWorkingUnder(
+      [workspaceDir, profilesDir],
+      exclude,
+    );
+    if (escaped.length > 0) {
+      signalPids(escaped, 'SIGTERM');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      signalPids(escaped, 'SIGKILL');
+    }
   };
 
   return {

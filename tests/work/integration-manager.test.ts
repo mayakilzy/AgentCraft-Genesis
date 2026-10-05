@@ -119,7 +119,7 @@ describe('IntegrationManager (TASK-020) — merge with the smallest honest layer
   });
 
   it('a conflicting merge fails safely: structured conflict, aborted merge, listed unmerged', async () => {
-    await withTwoWorkers(async (workspace, manager, root) => {
+    await withTwoWorkers(async (workspace, manager) => {
       const w1 = await workspace.ensureWorktree('worker-one');
       const w2 = await workspace.ensureWorktree('worker-two');
       execFileSync('bash', ['-c', `echo one-version > "${join(w1.path, 'src/module-a.ts')}"`]);

@@ -341,4 +341,87 @@ describe('MissionOrchestrator — the Born loop', () => {
     const result = await running;
     expect(result.status).toMatch(/^(failure|partial)$/);
   }, 30_000);
+
+  it('workerBriefSuffix reaches every specialist brief without entering the goal', async () => {
+    // GROUP 3 regression (Experiment 003 defect): repository missions used
+    // to smuggle their operational preamble into goal.context, where it
+    // polluted domain classification. The suffix channel delivers the same
+    // instructions to workers while the goal stays exactly what the caller
+    // wrote.
+    const runtime = new MemoryRuntime();
+    const recorder = new MemoryFlightRecorder();
+    const reasoning = new RoleScriptedReasoning({
+      'Diagnostic Analyst': [
+        JSON.stringify({
+          action: 'write_file',
+          path: 'analysis.md',
+          contents: '# Analysis\nOversell observed under concurrency.',
+        }),
+        JSON.stringify({
+          action: 'finish',
+          summary: 'Analyzed the failure evidence.',
+          artifacts: ['analysis.md'],
+        }),
+      ],
+      'Report Writer': [
+        JSON.stringify({
+          action: 'write_file',
+          path: 'DIAGNOSIS.md',
+          contents: '# Diagnosis\nRoot cause with evidence.',
+        }),
+        JSON.stringify({
+          action: 'finish',
+          summary: 'Wrote the diagnosis report.',
+          artifacts: ['DIAGNOSIS.md'],
+        }),
+      ],
+    });
+    const router = new CognitiveRouter(new RuleDecisionProvider());
+    const SUFFIX =
+      'REPO OPERATIONS: your workspace is a checkout on your own branch; ' +
+      'commit your own work; never push.';
+    const orchestrator = new MissionOrchestrator({
+      goalCompiler: new GoalCompiler(),
+      planner: new OrganizationPlanner(),
+      genomeCompiler: new GenomeCompiler({
+        registry: loadOwnership('data/ownership.yaml'),
+        selectTier: (selection) => router.selectTier(selection),
+      }),
+      runtime,
+      reasoning,
+      recorder,
+      workerBriefSuffix: SUFFIX,
+    });
+
+    const goal: Goal = {
+      outcome:
+        'Diagnose the intermittent failure in a small order system where ' +
+        'the inventory occasionally allows more orders than available ' +
+        'stock: analyze the incident evidence and write a diagnosis report ' +
+        'stating the root cause, the supporting evidence, a confidence ' +
+        'level, and what remains unknown.',
+    };
+    const result = await orchestrator.run(goal);
+
+    expect(result.status).toBe('success');
+
+    // The operational suffix reached BOTH specialists' briefs.
+    for (const role of ['Diagnostic Analyst', 'Report Writer']) {
+      const prompt = reasoning.calls
+        .filter((call) => (call.system ?? '').includes(`You are ${role}`))
+        .at(-1)!.prompt;
+      expect(prompt).toContain('REPO OPERATIONS');
+    }
+
+    // And it never leaked into the classified goal: the diagnostic goal
+    // with no engineering vocabulary compiled as diagnostic, not software
+    // engineering — the compiler saw only what the caller wrote.
+    const requirements = recorder.events.find(
+      (event) => event.type === 'requirements-compiled',
+    ) as { domain: string } | undefined;
+    expect(requirements?.domain).toBe('diagnostic');
+
+    // The caller's goal object was not mutated.
+    expect(goal.context).toBeUndefined();
+  });
 });
