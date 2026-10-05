@@ -1,0 +1,1 @@
+{"action":"run_command","command":"cd flaky-orders && cat evidence/metrics.md && echo '=== incident sample ===' && sed -n '1,30p' evidence/incident-logs.txt && grep -c 'actual:' evidence/incident-logs.txt && grep 'actual:' evidence/incident-logs.txt | sort | uniq -c && echo '=== source ===' && cat src/inventory.mjs src/orders.mjs"}

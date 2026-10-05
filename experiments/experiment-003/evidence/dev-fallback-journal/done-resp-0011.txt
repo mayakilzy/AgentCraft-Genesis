@@ -1,0 +1,1 @@
+{"action":"run_command","command":"cd flaky-orders && git log --oneline -2 && cat repro.mjs | head -12 && for i in 1 2 3; do node repro.mjs; echo \"exit=$?\"; done"}

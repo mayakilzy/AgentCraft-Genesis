@@ -1,0 +1,1 @@
+{"action":"run_command","command":"cd flaky-orders && git add repro.mjs && git commit -m \"diagnosis: deterministic reproduction of the intermittent oversell (repro.mjs)\" && git log --oneline -2 && git status --short"}

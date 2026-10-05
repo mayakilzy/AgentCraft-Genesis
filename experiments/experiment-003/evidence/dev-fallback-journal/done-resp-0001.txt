@@ -1,0 +1,1 @@
+{"action":"run_command","command":"cd flaky-orders && cat README.md package.json evidence/metrics.md && echo '=== incident head ===' && head -40 evidence/incident-logs.txt && echo '=== tree ===' && ls -la src test evidence"}
