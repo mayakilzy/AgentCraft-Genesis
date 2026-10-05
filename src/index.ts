@@ -13,3 +13,5 @@ export const GENESIS_MOTTO = 'Large in capability, small in code.';
 
 export const GENESIS_ENGINEERING_RULE =
   'CONFIGURE → REUSE → WRAP → ADAPT → EXTEND → BUILD';
+
+export * from './contracts/core.js';
