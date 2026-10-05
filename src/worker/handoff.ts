@@ -70,6 +70,8 @@ export interface HandoffEvent {
   readonly to: string;
   readonly ok: boolean;
   readonly reason?: string;
+  /** Reasoning calls the serving worker consumed (GROUP 3 metric separation). */
+  readonly reasoningCalls?: number;
 }
 
 export interface MissionHandoffsOptions {
@@ -175,6 +177,7 @@ export class MissionHandoffs implements HandoffSink {
         from: request.from,
         to: request.to,
         ok: result.ok,
+        reasoningCalls: served.reasoningCalls,
         ...(result.reason === undefined ? {} : { reason: result.reason }),
       });
       return result;

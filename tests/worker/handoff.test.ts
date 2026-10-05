@@ -140,8 +140,16 @@ describe('MissionHandoffs — typed worker-to-worker coordination', () => {
     // B really worked: its own computer, its own file.
     expect(computerB.files.get('check.txt')).toBe('verified: 42');
     expect(resultA.status).toBe('success');
+    // GROUP 3: the event now also carries the serving worker's reasoning
+    // call count, so handoff spend is separable from worker spend.
     expect(events).toEqual([
-      { type: 'handoff', from: 'analyst-1', to: 'verifier-1', ok: true },
+      {
+        type: 'handoff',
+        from: 'analyst-1',
+        to: 'verifier-1',
+        ok: true,
+        reasoningCalls: 3,
+      },
     ]);
 
     // A saw B's typed answer as its observation.

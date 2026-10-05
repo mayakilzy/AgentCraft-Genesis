@@ -83,6 +83,22 @@ export interface MissionOrchestratorOptions {
   /** Reviewer consulted only when verification fails (conflict/risk). */
   readonly reviewer?: ReasoningProvider;
   /**
+   * GROUP 3 (TASK-019): invoked before EVERY verification pass — the first
+   * attempt and the single bounded retry. Repository missions use it to
+   * re-commit worker worktrees and re-integrate before the clean-room
+   * verifier clones the integration branch; without this hook the retry
+   * would verify stale state. Absent → behavior is exactly GROUP 2's.
+   */
+  readonly beforeVerification?: (context: {
+    readonly attempt: 1 | 2;
+  }) => Promise<void>;
+  /**
+   * GROUP 3 metric separation (review requirement): when the provider can
+   * report its TOTAL call count, the flight record can distinguish it from
+   * the mission-scoped counts (workers, reviewer, handoffs).
+   */
+  readonly providerCallsSource?: () => number;
+  /**
    * Explicit mission id: pass the SAME id to the flight recorder so the
    * durable record file matches the events. Generated when omitted.
    */
@@ -283,9 +299,17 @@ export class MissionOrchestrator {
         roster.set(id, participant.genome.role);
       }
 
+      // Metric separation (GROUP 3 review requirement): handoff-served
+      // reasoning calls are counted apart from the asking workers' own.
+      let handoffCalls = 0;
       const handoffs = new MissionHandoffs(participants, {
         signal: controller.signal,
-        onEvent: (event) => record(event),
+        onEvent: (event) => {
+          if (event.type === 'handoff' && event.reasoningCalls !== undefined) {
+            handoffCalls += event.reasoningCalls;
+          }
+          record(event);
+        },
       });
 
       // Specialists run in plan order (upstream results flow along the
@@ -299,6 +323,7 @@ export class MissionOrchestrator {
       );
 
       let reasoningCalls = 0;
+      let reviewerCalls = 0;
       const countWorker = (result: WorkerResult): void => {
         results.set(result.workerId, result);
         reasoningCalls += result.reasoningCalls;
@@ -361,6 +386,12 @@ export class MissionOrchestrator {
 
       let verification: VerificationResult | undefined;
       if (!aborted || artifactSources.length > 0) {
+        // GROUP 3 (TASK-019): missions with an integration step (repository
+        // work) bring the integration branch up to date before the verifier
+        // sees anything. No hook → nothing changes.
+        if (this.options.beforeVerification !== undefined) {
+          await this.options.beforeVerification({ attempt: 1 });
+        }
         const checks =
           this.options.checks?.({
             requirements,
@@ -385,6 +416,7 @@ export class MissionOrchestrator {
           );
 
           verification = await loop.verify(checks, artifactSources, evidence);
+          reviewerCalls += verification.reviewerCalls;
           this.recordVerification(missionId, verification, record);
 
           // One bounded retry: a failing (and retryable) verification sends
@@ -435,11 +467,15 @@ export class MissionOrchestrator {
 
             const retriedSources = this.collectArtifacts(participants, results);
             const retriedEvidence = [...results.values()].flatMap((r) => r.evidence);
+            if (this.options.beforeVerification !== undefined) {
+              await this.options.beforeVerification({ attempt: 2 });
+            }
             verification = await loop.verify(
               checks,
               retriedSources,
               retriedEvidence,
             );
+            reviewerCalls += verification.reviewerCalls;
             this.recordVerification(missionId, verification, record);
           }
         }
@@ -482,6 +518,8 @@ export class MissionOrchestrator {
         startedAt,
         reasoningCalls,
         record,
+        handoffCalls,
+        reviewerCalls,
       );
     } finally {
       clearTimeout(timeout);
@@ -569,16 +607,27 @@ export class MissionOrchestrator {
     startedAt: number,
     reasoningCalls: number,
     record: RecordFn,
+    handoffCalls = 0,
+    reviewerCalls = 0,
   ): MissionResult {
     const wallMs = Date.now() - startedAt;
     const spend = this.options.costSource?.() ?? { usd: 0, tokens: 0 };
+    const providerCalls = this.options.providerCallsSource?.();
     record({
       type: 'mission-finished',
       at: new Date().toISOString(),
       missionId,
       status,
       wallMs,
+      // GROUP 3 metric separation (review requirement): one ambiguous
+      // "LLM calls" number is no longer reported when the components are
+      // distinguishable. `reasoningCalls` keeps its GROUP 2 meaning (the
+      // workers' own loop calls, coordinator included).
       reasoningCalls,
+      worker_reasoning_calls: reasoningCalls,
+      reviewer_calls: reviewerCalls,
+      handoff_calls: handoffCalls,
+      ...(providerCalls === undefined ? {} : { total_provider_calls: providerCalls }),
     });
     return {
       status,

@@ -60,6 +60,8 @@ export interface VerificationResult {
   readonly summary: string;
   /** Present when a reviewer examined a failure. */
   readonly diagnosis?: VerificationDiagnosis;
+  /** How many reviewer (LLM) calls this verification consumed (GROUP 3). */
+  readonly reviewerCalls: number;
 }
 
 /** One artifact to copy into the clean room, with its producing computer. */
@@ -175,12 +177,13 @@ export class VerificationLoop {
           ? `all ${outcomes.length} acceptance check(s) passed`
           : `${failed.length} of ${outcomes.length} acceptance check(s) failed: ` +
             failed.map((f) => `${f.label} (${f.detail})`).join('; '),
+      reviewerCalls: 0,
     };
 
     if (!result.ok && this.options.reviewer !== undefined) {
       const diagnosis = await this.review(failed, artifacts);
       if (diagnosis !== undefined) {
-        return { ...result, diagnosis };
+        return { ...result, diagnosis, reviewerCalls: 1 };
       }
     }
     return result;

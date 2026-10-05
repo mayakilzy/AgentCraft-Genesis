@@ -77,7 +77,17 @@ export interface MissionEventMissionFinished {
   readonly missionId: string;
   readonly status: 'success' | 'partial' | 'failure';
   readonly wallMs: number;
+  /** Workers' own loop reasoning calls, coordinator included (GROUP 2 field). */
   readonly reasoningCalls: number;
+  /**
+   * GROUP 3 metric separation (review requirement): the ambiguous single
+   * "LLM calls" number is decomposed into what the components actually are.
+   * `total_provider_calls` is present when a provider calls source was given.
+   */
+  readonly worker_reasoning_calls: number;
+  readonly reviewer_calls: number;
+  readonly handoff_calls: number;
+  readonly total_provider_calls?: number;
 }
 
 export interface MissionEventHumanIntervention {
