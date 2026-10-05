@@ -217,6 +217,24 @@ export class GitWorkspace {
       .filter((line) => line.length > 0);
   }
 
+  /**
+   * Files the mission base tracks (repo-relative). Consumers: development
+   * runtime discovery (TASK-017) reads lockfiles from the real file list
+   * instead of guessing.
+   */
+  async trackedFiles(): Promise<readonly string[]> {
+    this.assertOpened();
+    const list = await run(
+      this.originPath,
+      ['ls-files', '--', '.'],
+      this.options.timeoutMs ?? 60_000,
+    );
+    return list.stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+  }
+
   /** Uncommitted modifications inside a worktree (before committing). */
   async dirtyFiles(name: string): Promise<readonly string[]> {
     this.assertOpened();

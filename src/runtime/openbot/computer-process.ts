@@ -47,6 +47,13 @@ export interface ComputerProcessConfig {
   readonly checkoutDir: string;
   /** Directory under which per-worker workspace/profile dirs are created. */
   readonly rootDir: string;
+  /**
+   * GROUP 3 (TASK-017): per-worker workspace placement. Repository missions
+   * point a worker's WORKSPACE_DIR at the git worktree that worker owns,
+   * instead of the default rootDir/<botId>/workspace. The default stays
+   * exactly as before when this is absent.
+   */
+  readonly workspaceOf?: (botId: string) => string;
   /** Bun executable (default: `bun`). */
   readonly bunPath?: string;
   /** Startup budget (default 20s). */
@@ -64,6 +71,12 @@ export interface RunningComputer {
   readonly baseUrl: string;
   readonly token: string;
   readonly workspaceDir: string;
+  /**
+   * False when the workspace path was placed by the caller (GROUP 3 repo
+   * missions: a git worktree). Such workspaces are NOT deleted on reset —
+   * their lifecycle belongs to the GitWorkspace that created them.
+   */
+  readonly ownsWorkspaceDir: boolean;
   /** Bounded process output for diagnostics (raw, never treated as learning). */
   readonly outputTail: () => string;
   /** Resolve with the exit code when the process ends. */
@@ -102,7 +115,9 @@ export async function startComputerProcess(
   }
 
   const workingDir = join(config.checkoutDir, 'agent-computer');
-  const workspaceDir = join(config.rootDir, botId, 'workspace');
+  const ownsWorkspaceDir = config.workspaceOf === undefined;
+  const workspaceDir =
+    config.workspaceOf?.(botId) ?? join(config.rootDir, botId, 'workspace');
   const profilesDir = join(config.rootDir, botId, 'profiles');
   await mkdir(workspaceDir, { recursive: true });
   await mkdir(profilesDir, { recursive: true });
@@ -196,6 +211,7 @@ export async function startComputerProcess(
     baseUrl,
     token,
     workspaceDir,
+    ownsWorkspaceDir,
     outputTail: () => tail,
     exited,
     stop,
@@ -207,6 +223,12 @@ export async function resetComputerProcess(
   running: RunningComputer,
 ): Promise<void> {
   await running.stop();
+  if (!running.ownsWorkspaceDir) {
+    // Caller-placed workspace (a git worktree): its lifecycle is owned by
+    // the caller — deleting the parent here could destroy the worktree
+    // root and every sibling worktree with it.
+    return;
+  }
   await rm(join(running.workspaceDir, '..'), {
     recursive: true,
     force: true,
