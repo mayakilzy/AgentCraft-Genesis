@@ -1,4 +1,6 @@
 import type { GoalRequirements } from '../contracts/core.js';
+import { appendFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import type { WorkerLoopEvent } from '../worker/worker-agent.js';
 import type { HandoffEvent } from '../worker/handoff.js';
 
@@ -108,5 +110,119 @@ export class MemoryFlightRecorder implements FlightRecorder {
 
   record(event: FlightEvent): void {
     this.events.push(event);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Durable file recorder (TASK-014)
+// ---------------------------------------------------------------------------
+
+/**
+ * Secret shapes that must never reach a flight record. Redaction is a floor,
+ * not a vault: components simply never record credentials in the first
+ * place; this catches accidental leaks (a token echoed by a command, a
+ * bearer header captured in a diagnostic string).
+ */
+const SECRET_PATTERNS: readonly { pattern: RegExp; replacement: string }[] = [
+  { pattern: /Bearer\s+[A-Za-z0-9._~+/=-]+/gi, replacement: 'Bearer [redacted]' },
+  { pattern: /(token|secret|password|api[_-]?key)["'=:\s]+[A-Za-z0-9._~+/=-]{8,}/gi, replacement: '$1=[redacted]' },
+  { pattern: /(authorization["'=:\s]+)[^\s"',}]+/gi, replacement: '$1[redacted]' },
+];
+
+const SECRET_KEY = /(token|secret|password|authorization|api[-_]?key)/i;
+
+/** Default cap for any single string field in a record. */
+export const DEFAULT_MAX_FIELD_LENGTH = 2_000;
+
+function scrub(text: string): string {
+  let out = text;
+  for (const { pattern, replacement } of SECRET_PATTERNS) {
+    out = out.replace(pattern, replacement);
+  }
+  return out;
+}
+
+/** Deep-walk an event: redact secret-looking keys, bound string length. */
+function sanitize(
+  value: unknown,
+  maxFieldLength: number,
+  depth = 0,
+): unknown {
+  if (depth > 6) return '[depth-capped]';
+  if (typeof value === 'string') {
+    const scrubbed = scrub(value);
+    return scrubbed.length > maxFieldLength
+      ? `${scrubbed.slice(0, maxFieldLength)}…[truncated]`
+      : scrubbed;
+  }
+  if (Array.isArray(value)) {
+    return value.slice(0, 100).map((item) => sanitize(item, maxFieldLength, depth + 1));
+  }
+  if (typeof value === 'object' && value !== null) {
+    const out: Record<string, unknown> = {};
+    for (const [key, inner] of Object.entries(value)) {
+      out[key] = SECRET_KEY.test(key)
+        ? '[redacted]'
+        : sanitize(inner, maxFieldLength, depth + 1);
+    }
+    return out;
+  }
+  return value;
+}
+
+export interface FileFlightRecorderOptions {
+  /** Directory for the mission's records (created if absent). */
+  readonly dir: string;
+  readonly missionId: string;
+  /** Cap for any single string field (default 2000). */
+  readonly maxFieldLength?: number;
+}
+
+/**
+ * The durable flight recorder: a structured JSONL record per mission plus a
+ * SEPARATE raw log for process output. The structured record carries what
+ * happened (organization, decisions, actions, failures, timings); the raw
+ * log carries what the processes printed. Neither stores transcripts as
+ * knowledge, and both are scrubbed of secrets.
+ */
+export class FileFlightRecorder implements FlightRecorder {
+  private readonly structuredPath: string;
+  private readonly rawPath: string;
+  private readonly maxFieldLength: number;
+  private closed = false;
+
+  constructor(options: FileFlightRecorderOptions) {
+    mkdirSync(options.dir, { recursive: true });
+    this.structuredPath = join(options.dir, `${options.missionId}.jsonl`);
+    this.rawPath = join(options.dir, `${options.missionId}.raw.log`);
+    this.maxFieldLength = options.maxFieldLength ?? DEFAULT_MAX_FIELD_LENGTH;
+  }
+
+  record(event: FlightEvent): void {
+    if (this.closed) return;
+    const stamped = {
+      at: new Date().toISOString(),
+      ...(sanitize(event, this.maxFieldLength) as Record<string, unknown>),
+    };
+    appendFileSync(this.structuredPath, `${JSON.stringify(stamped)}\n`, 'utf8');
+  }
+
+  /** Raw process output — separate file, prefixed by source, scrubbed. */
+  raw(source: string, chunk: string): void {
+    if (this.closed) return;
+    const line = `[${new Date().toISOString()}] [${scrub(source)}] ${chunk
+      .split('\n')
+      .map((linePart) => scrub(linePart).slice(0, 2_000))
+      .join('\n')}`;
+    appendFileSync(this.rawPath, `${line}\n`, 'utf8');
+  }
+
+  /** Raw-log sink for a named source (worker computer processes). */
+  rawSink(source: string): (chunk: string) => void {
+    return (chunk: string) => this.raw(source, chunk);
+  }
+
+  close(): void {
+    this.closed = true;
   }
 }

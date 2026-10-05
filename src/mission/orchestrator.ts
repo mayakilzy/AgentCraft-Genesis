@@ -82,6 +82,11 @@ export interface MissionOrchestratorOptions {
   }) => readonly AcceptanceCheck[];
   /** Reviewer consulted only when verification fails (conflict/risk). */
   readonly reviewer?: ReasoningProvider;
+  /**
+   * Explicit mission id: pass the SAME id to the flight recorder so the
+   * durable record file matches the events. Generated when omitted.
+   */
+  readonly missionId?: string;
 }
 
 const COORDINATOR_ROLE = 'Mission Coordinator';
@@ -164,7 +169,7 @@ export class MissionOrchestrator {
 
   async run(goal: Goal): Promise<MissionResult> {
     const startedAt = Date.now();
-    const missionId = newMissionId();
+    const missionId = this.options.missionId ?? newMissionId();
     const recorder = this.options.recorder;
     const record: RecordFn = (event) => {
       recorder?.record(event);

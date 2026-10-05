@@ -53,6 +53,8 @@ export interface ComputerProcessConfig {
   readonly startTimeoutMs?: number;
   /** Extra environment for the computer process. */
   readonly extraEnv?: Readonly<Record<string, string>>;
+  /** Raw process output sink (flight recorder raw log). Diagnostics only. */
+  readonly onOutput?: (chunk: string) => void;
 }
 
 /** One running upstream computer process bound to a single worker. */
@@ -124,7 +126,9 @@ export async function startComputerProcess(
 
   let tail = '';
   const append = (chunk: Buffer | string): void => {
-    tail = (tail + String(chunk)).slice(-OUTPUT_TAIL_LIMIT);
+    const text = String(chunk);
+    tail = (tail + text).slice(-OUTPUT_TAIL_LIMIT);
+    config.onOutput?.(text);
   };
   child.stdout?.on('data', append);
   child.stderr?.on('data', append);

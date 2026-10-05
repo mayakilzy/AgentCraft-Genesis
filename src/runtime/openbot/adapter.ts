@@ -30,6 +30,8 @@ import {
 export interface OpenBotAdapterOptions extends ComputerProcessConfig {
   /** Per-call computer API timeout (default 60s). */
   readonly apiTimeoutMs?: number;
+  /** Raw output per worker computer (flight recorder raw log). */
+  readonly onWorkerOutput?: (workerId: string, chunk: string) => void;
 }
 
 /** A running worker inside the OpenBot runtime. */
@@ -89,7 +91,18 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime {
       return this.handleOf(botId, null);
     }
 
-    const computer = await startComputerProcess(this.options, botId);
+    const computer = await startComputerProcess(
+      {
+        ...this.options,
+        ...(this.options.onWorkerOutput === undefined
+          ? {}
+          : {
+              onOutput: (chunk: string) =>
+                this.options.onWorkerOutput!(botId, chunk),
+            }),
+      },
+      botId,
+    );
     this.workers.set(botId, { genome, computer });
     this.computers.set(botId, this.makeComputer(computer));
     return this.handleOf(botId, computer.port);
