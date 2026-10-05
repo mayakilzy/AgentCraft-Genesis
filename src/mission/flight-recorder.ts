@@ -96,6 +96,27 @@ export interface MissionEventHumanIntervention {
   readonly note: string;
 }
 
+/**
+ * Repository mission progress (GROUP 3, TASK-020): the state of the mission
+ * workspace — worktrees committed, integration merged or conflicted,
+ * rollback — so the durable record rebuilds the repository side of a
+ * mission the same way worker events rebuild the cognitive side.
+ */
+export interface MissionEventRepository {
+  readonly type: 'repository';
+  readonly missionId: string;
+  readonly phase:
+    | 'workspace-prepared'
+    | 'worktree-committed'
+    | 'integration-conflict'
+    | 'integrated'
+    | 'rolled-back';
+  readonly workerId?: string;
+  readonly branch?: string;
+  readonly changedFiles?: readonly string[];
+  readonly detail?: string;
+}
+
 /** The structured flight record vocabulary. */
 export type FlightEvent =
   | MissionEventMissionStarted
@@ -106,6 +127,7 @@ export type FlightEvent =
   | MissionEventWorkerRetry
   | MissionEventMissionFinished
   | MissionEventHumanIntervention
+  | MissionEventRepository
   | WorkerLoopEvent
   | HandoffEvent;
 

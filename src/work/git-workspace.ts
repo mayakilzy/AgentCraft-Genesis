@@ -338,11 +338,14 @@ export class GitWorkspace {
    * A clone command the clean-room verifier runs inside ITS OWN computer:
    * clones the committed integration state — never untracked or modified
    * files in the worktree — and checks out the integration branch by name.
-   * Shell-quoted; composed only from paths this workspace created.
+   * Idempotent: a retry re-clones from scratch, so a previous attempt's
+   * clone can never leak into this one. Shell-quoted; composed only from
+   * paths this workspace created.
    */
   verifierCloneCommand(targetDir: string): string {
     const integration = this.integrationPath();
     return (
+      `rm -rf ${shellQuote(targetDir)} && ` +
       `git clone -q --no-hardlinks ${shellQuote(integration)} ${shellQuote(targetDir)} ` +
       `&& git -C ${shellQuote(targetDir)} checkout -q genesis/integration`
     );

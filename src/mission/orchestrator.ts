@@ -174,7 +174,12 @@ export function renderTaskBrief(
     }
   }
   lines.push(
-    'Your workspace starts EMPTY; every fact you need is in this brief. Begin with the core of the work itself, not workspace inspection.',
+    // GROUP 3 (TASK-020) accuracy fix: repository missions pre-populate the
+    // workspace with the mission's own checkout, so "starts empty" would be
+    // false there. The line covers both worlds truthfully.
+    'Your workspace may already hold the mission\u2019s repository checkout; ' +
+      'otherwise it starts empty — every fact you need is in this brief. ' +
+      'Begin with the core of the work itself, not workspace inspection.',
     'Deliverables go to your own workspace. Finish with your artifact paths when done.',
   );
   return lines.join('\n');
