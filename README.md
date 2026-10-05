@@ -18,7 +18,7 @@ CopilotKit Intelligence, AG-UI, MCP, A2A) and invents only what they do not prov
 
 | Group | Scope | State |
 | --- | --- | --- |
-| GROUP 1 | Foundation + Genesis Born Core (`TASK-001…009`) | in progress |
+| GROUP 1 | Foundation + Genesis Born Core (`TASK-001…009`) | **done** — Goal → Requirements → Plan → Genomes → Provider Decisions |
 
 The locked source-of-truth for versions, links and decisions is
 [docs/architecture-baseline.md](docs/architecture-baseline.md) with its machine-readable
