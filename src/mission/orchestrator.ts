@@ -22,6 +22,13 @@ import {
   type HandoffParticipant,
 } from '../worker/handoff.js';
 import type { FlightEvent, FlightRecorder } from './flight-recorder.js';
+import {
+  VerificationLoop,
+  deriveChecks,
+  type AcceptanceCheck,
+  type ArtifactSource,
+  type VerificationResult,
+} from './verification.js';
 
 /** Emission helper signature used throughout the orchestrator. */
 type RecordFn = (event: FlightEvent) => void;
@@ -64,9 +71,41 @@ export interface MissionOrchestratorOptions {
    * MissionCost contract is honored either way (zeros when absent).
    */
   readonly costSource?: () => { usd: number; tokens: number };
+  /**
+   * Acceptance checks tied to the task. When absent, the structural floor
+   * applies: every produced artifact must exist in the clean room.
+   */
+  readonly checks?: (context: {
+    readonly requirements: GoalRequirements;
+    readonly genomes: readonly WorkerGenome[];
+    readonly artifacts: readonly ArtifactSource[];
+  }) => readonly AcceptanceCheck[];
+  /** Reviewer consulted only when verification fails (conflict/risk). */
+  readonly reviewer?: ReasoningProvider;
 }
 
 const COORDINATOR_ROLE = 'Mission Coordinator';
+
+/**
+ * The clean-room verifier: an orchestrator-owned utility computer, granted
+ * exactly the shell and file access deterministic checks need. It is not a
+ * planned organization member and never reasons — the reviewer (an LLM) is
+ * consulted only on failure.
+ */
+function verifierGenome(): WorkerGenome {
+  return {
+    identity: { id: 'mission-verifier-1', displayName: 'Mission Verifier' },
+    role: 'Mission Verifier',
+    objective: 'Run acceptance checks in a clean room',
+    model: 'cheap',
+    skills: ['verification'],
+    tools: ['openbot:shell-execution', 'openbot:workspace-files'],
+    computer: { required: true, browser: false, shell: true, workspace: true },
+    memory: 'none',
+    budget: { maxUsd: 0.5, maxTier: 'cheap' },
+    autonomy: 'autonomous',
+  };
+}
 
 function newMissionId(): string {
   const stamp = new Date()
@@ -294,49 +333,133 @@ export class MissionOrchestrator {
         }
       }
 
-      // Built-in structural gate (TASK-013 replaces this with the real
-      // acceptance-check loop): the mission claims nothing the workers did
-      // not actually produce.
+      // TASK-013: the mission is not successful because workers said so —
+      // acceptance checks run in a clean room and decide.
+      const artifactSources = this.collectArtifacts(participants, results);
       const allResults = [...results.values()];
-      const artifacts = allResults.flatMap((r) => r.artifacts);
       const evidence = allResults.flatMap((r) => r.evidence);
-      const failures = allResults.filter((r) => r.status === 'failure');
+      const workerFailures = allResults.filter((r) => r.status === 'failure');
       const aborted = controller.signal.aborted;
+
+      let verification: VerificationResult | undefined;
+      if (!aborted || artifactSources.length > 0) {
+        const checks =
+          this.options.checks?.({
+            requirements,
+            genomes: [...genomes.values()],
+            artifacts: artifactSources,
+          }) ?? deriveChecks(artifactSources);
+
+        if (checks.length > 0) {
+          const verifierGenomeForMission = verifierGenome();
+          const verifierHandle = await this.options.runtime.ensureWorker(
+            verifierGenomeForMission,
+          );
+          ensured.push({
+            handle: verifierHandle,
+            genome: verifierGenomeForMission,
+          });
+          const loop = new VerificationLoop(
+            this.options.runtime.computer(verifierHandle),
+            this.options.reviewer === undefined
+              ? {}
+              : { reviewer: this.options.reviewer },
+          );
+
+          verification = await loop.verify(checks, artifactSources, evidence);
+          this.recordVerification(missionId, verification, record);
+
+          // One bounded retry: a failing (and retryable) verification sends
+          // the specialists back to work once, with the failures in their
+          // briefs. A second failure stands.
+          if (
+            !verification.ok &&
+            !controller.signal.aborted &&
+            verification.diagnosis?.retryable !== false
+          ) {
+            const reason =
+              verification.diagnosis?.rootCause ?? verification.summary;
+            record({
+              type: 'worker-retry',
+              missionId,
+              workerId: 'specialists',
+              reason,
+            });
+            for (const worker of specialists) {
+              if (controller.signal.aborted) break;
+              const brief =
+                `${renderTaskBrief(
+                  worker,
+                  requirements,
+                  upstreamResults(plan, worker, results),
+                )}\n\n` +
+                `A previous attempt failed verification: ${reason}\n` +
+                `Failed checks: ${verification.outcomes
+                  .filter((o) => !o.ok)
+                  .map((o) => `${o.label} (${o.detail})`)
+                  .join('; ')}\n` +
+                (verification.diagnosis?.guidance === undefined
+                  ? ''
+                  : `Reviewer guidance: ${verification.diagnosis.guidance}\n`) +
+                'Fix the issues and produce correct deliverables.';
+              const result = await this.runWorker(
+                worker,
+                genomes.get(worker.id)!,
+                participants.get(worker.id)!,
+                brief,
+                handoffs,
+                controller.signal,
+                record,
+              );
+              countWorker(result);
+            }
+
+            const retriedSources = this.collectArtifacts(participants, results);
+            const retriedEvidence = [...results.values()].flatMap((r) => r.evidence);
+            verification = await loop.verify(
+              checks,
+              retriedSources,
+              retriedEvidence,
+            );
+            this.recordVerification(missionId, verification, record);
+          }
+        }
+      }
+
+      const finalArtifacts = this.collectArtifacts(participants, results);
+      const finalEvidence = [...results.values()].flatMap((r) => r.evidence);
 
       let status: MissionResult['status'];
       let summary: string;
       if (aborted) {
-        status = artifacts.length > 0 ? 'partial' : 'failure';
+        status = finalArtifacts.length > 0 ? 'partial' : 'failure';
         summary = 'mission aborted (timeout or cancellation) before completion';
-      } else if (failures.length === 0 && artifacts.length > 0) {
-        status = 'success';
-        summary = coordinatorSummary || assembleSummary(specialists, results);
-      } else if (artifacts.length > 0) {
+      } else if (verification === undefined || verification.ok) {
+        if (finalArtifacts.length === 0 && workerFailures.length > 0) {
+          status = 'failure';
+          summary = `all worker runs failed: ${workerFailures
+            .map((f) => f.summary)
+            .join('; ')}`;
+        } else if (finalArtifacts.length === 0) {
+          status = 'failure';
+          summary = 'no worker produced a deliverable';
+        } else {
+          status = 'success';
+          summary = coordinatorSummary || assembleSummary(specialists, results);
+        }
+      } else if (finalArtifacts.length > 0) {
         status = 'partial';
-        summary =
-          `${failures.length} worker run(s) failed, but artifacts were ` +
-          `produced: ${failures.map((f) => `${f.workerId} (${f.summary})`).join('; ')}`;
+        summary = `verification failed after retry: ${verification.summary}`;
       } else {
         status = 'failure';
-        summary = failures.every((f) => f.summary.length === 0)
-          ? 'no worker produced a deliverable'
-          : `all worker runs failed: ${failures.map((f) => f.summary).join('; ')}`;
+        summary = `verification failed and no artifacts were produced: ${verification.summary}`;
       }
-
-      record({
-        type: 'verification',
-        missionId,
-        ok: status === 'success',
-        passed: artifacts.length,
-        failed: failures.length,
-        failures: failures.map((f) => `${f.workerId}: ${f.summary}`),
-      });
 
       return this.finishMission(
         missionId,
         status,
         summary,
-        evidence,
+        finalEvidence,
         startedAt,
         reasoningCalls,
         record,
@@ -380,6 +503,41 @@ export class MissionOrchestrator {
     });
     const result = await agent.run();
     return result;
+  }
+
+  /** Artifact sources for the clean room: each producer's computer + paths. */
+  private collectArtifacts(
+    participants: ReadonlyMap<string, HandoffParticipant>,
+    results: ReadonlyMap<string, WorkerResult>,
+  ): ArtifactSource[] {
+    const sources: ArtifactSource[] = [];
+    for (const [workerId, result] of results) {
+      const participant = participants.get(workerId);
+      if (participant === undefined || participant.computer === null) continue;
+      if (result.artifacts.length === 0) continue;
+      sources.push({
+        workerId,
+        computer: participant.computer,
+        paths: [...result.artifacts],
+      });
+    }
+    return sources;
+  }
+
+  private recordVerification(
+    missionId: string,
+    verification: VerificationResult,
+    record: RecordFn,
+  ): void {
+    const failed = verification.outcomes.filter((outcome) => !outcome.ok);
+    record({
+      type: 'verification',
+      missionId,
+      ok: verification.ok,
+      passed: verification.outcomes.length - failed.length,
+      failed: failed.length,
+      failures: failed.map((outcome) => `${outcome.label}: ${outcome.detail}`),
+    });
   }
 
   private finishMission(

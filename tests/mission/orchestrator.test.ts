@@ -216,6 +216,7 @@ describe('MissionOrchestrator — the Born loop', () => {
     // Every ensured worker was retired.
     expect(runtime.stopped.sort()).toEqual([
       'documentation-writer-2',
+      'mission-verifier-1',
       'software-engineer-1',
     ]);
 
@@ -257,7 +258,7 @@ describe('MissionOrchestrator — the Born loop', () => {
     const planEvent = recorder.events.find((e) => e.type === 'plan-created')!;
     expect(planEvent.workers).toHaveLength(1);
     expect(planEvent.workers[0].role).toBe('Sole Operator');
-    expect(runtime.stopped).toEqual(['sole-operator-1']);
+    expect(runtime.stopped.sort()).toEqual(['mission-verifier-1', 'sole-operator-1']);
   });
 
   it('fails loudly when a worker fails — no silent success', async () => {

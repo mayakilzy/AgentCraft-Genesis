@@ -28,3 +28,4 @@ export * from './worker/worker-agent.js';
 export * from './worker/handoff.js';
 export * from './mission/flight-recorder.js';
 export * from './mission/orchestrator.js';
+export * from './mission/verification.js';
