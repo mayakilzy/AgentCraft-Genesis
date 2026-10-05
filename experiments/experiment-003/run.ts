@@ -2,33 +2,44 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { Goal } from '../../src/contracts/core.js';
 import { FileFlightRecorder } from '../../src/mission/flight-recorder.js';
-import type { AcceptanceCheck } from '../../src/mission/verification.js';
 import { ZAIReasoningProvider } from '../../src/providers/zai-reasoning.js';
 import { runRepoMission } from '../../src/work/repo-mission.js';
+import {
+  buildDiagnosticGoal,
+  EXP002_MISSION_ID,
+  extraChecks,
+  GOLD_REF,
+  GOLD_SOURCE,
+} from './mission.js';
 
 /**
  * EXPERIMENT 003 — Diagnostic Organization (TASK-022).
  *
- * A diagnostic goal on the same real external repository (pinned commit):
- * the flaky-orders case — a real seeded concurrency defect (disclosed:
- * the non-atomic read-check-write in InventoryService.reserve) whose
- * observable symptom is an intermittently failing test suite (~80% at the
+ * A diagnostic goal on the same real external repository as Experiment 002
+ * (pinned commit): the flaky-orders case — a real seeded concurrency defect
+ * (disclosed: the non-atomic read-check-write in InventoryService.reserve)
+ * whose observable symptom is an intermittently failing suite (~80% at the
  * pinned commit, per the committed evidence bundle).
  *
- * What this experiment proves: given a DIAGNOSTIC goal (outcome, not team),
- * Genesis designs a genuinely different organization — Reproduction
- * Engineer, Diagnostic Analyst, Report Writer under a Mission Coordinator —
- * no force-fit coding workers — and the mission's success is decided by
- * clean-room checks on the DIAGNOSIS's structure, its correctness against
- * the disclosed ground truth, a deterministic reproduction, and the
- * objective presence of the race in the integrated state.
+ * What this experiment tests is NOT "can Genesis do diagnosis" but a sharper
+ * claim: given a goal whose NATURE differs (diagnose an incident vs fix and
+ * verify code), does the organization Genesis designs differ — and does it
+ * differ because the capability requirements differ? The goal names no
+ * roles; GoalCompiler → OrganizationPlanner → GenomeCompiler decide the
+ * team, exactly as in Experiment 002. The comparison at the end is computed
+ * from both flight records — if the organizations are effectively the same,
+ * the report says NO.
  *
- * The engineering gates are deliberately OFF: the repository's test suite
- * is the SYMPTOM under diagnosis (it fails intermittently on the pinned
- * commit by design); using it as a gate would mislabel every diagnosis
- * mission. There is no build and no dependencies to install.
+ * The epistemic contract (OBSERVED / INFERRED / UNKNOWN / HYPOTHESIS /
+ * RECOMMENDED CHECK; unknown stays unknown) is carried by the goal and
+ * enforced by deterministic gates (see mission.ts).
+ *
+ * Provider policy (review instruction): ONE lightweight availability probe
+ * before the mission; if the provider is throttled, report
+ * TASK-022 BLOCKED — EXTERNAL PROVIDER UNAVAILABLE with the probe evidence
+ * and stop. No repeated retries, no waiting, no redesign. If available, the
+ * mission runs ONCE under the standing bounded-retry policy.
  *
  * Usage:
  *   GENESIS_OPENBOT_DIR=../OpenBot \
@@ -41,6 +52,7 @@ const REPO = join(HERE, '..', '..');
 const WORK_ROOT = join(HERE, '.runs');
 const FLIGHT_DIR = join(REPO, 'data', 'flight-records');
 const REPORT_PATH = join(HERE, 'REPORT.md');
+const BLOCKED_PATH = join(HERE, 'BLOCKED-PROVIDER.md');
 
 const OPENBOT_CHECKOUT =
   process.env.GENESIS_OPENBOT_DIR ?? join(REPO, '..', 'OpenBot');
@@ -48,89 +60,11 @@ const ZAI_SDK_PATH =
   process.env.ZAI_SDK_PATH ??
   '/home/z/.bun/install/global/node_modules/z-ai-web-dev-sdk/dist/index.js';
 
-/** The pinned external target (same repository as Experiment 002). */
-const GOLD_SOURCE = 'https://github.com/mayakilzy/genesis-gold-tasks';
-const GOLD_REF = 'c9106df8a6fcad5c45fddd7698a5ac635a4badae';
-
-function buildGoal(): Goal {
-  return {
-    outcome:
-      'Diagnose the intermittent failure in the flaky-orders order system (the flaky-orders ' +
-      'directory of the mission workspace): CI reports its suite failing on the same commit in ' +
-      'about 80% of runs, with three different assertions failing across runs. The symptom is ' +
-      'an oversell: more orders accepted than available stock. Analyze the provided evidence ' +
-      'bundle (incident logs and observed pass/fail metrics), reproduce the fault, and deliver ' +
-      'a written diagnosis report as flaky-orders/DIAGNOSIS.md stating the root cause with ' +
-      'supporting evidence, an explicit confidence level, and explicit unknowns.',
-    context:
-      'The evidence bundle is in flaky-orders/evidence/. Commit a deterministic reproduction ' +
-      'script as flaky-orders/repro.mjs that prints RACE REPRODUCED and exits with status 0 ' +
-      'exactly when it demonstrates the oversell on the unmodified source. This mission is a ' +
-      'diagnosis — do not repair or modify the source.',
-    constraints: [
-      'this is a diagnosis mission: identify and explain the root cause; do not repair or modify the source',
-      'the diagnosis report must state a confidence level and explicit unknowns',
-      'the reproduction must be deterministic and committed as flaky-orders/repro.mjs',
-    ],
-    budget: { maxUsd: 6, tier: 'default' },
-  };
-}
-
-/**
- * Task-specific assertions, composed against the verifier's clean-room
- * clone of the integration branch. The ground truth (the seeded defect)
- * is disclosed here and in the report: this is a gold task.
- */
-function extraChecks({ repoDir }: { repoDir: string }): AcceptanceCheck[] {
-  const root = `${repoDir}/flaky-orders`;
-  return [
-    {
-      kind: 'command',
-      label: 'a structured diagnosis exists (root cause, evidence, confidence, unknowns)',
-      command:
-        `cd ${root} && test -f DIAGNOSIS.md && ` +
-        `grep -qi 'root cause' DIAGNOSIS.md && ` +
-        `grep -qi 'confidence' DIAGNOSIS.md && ` +
-        `grep -qi 'unknown' DIAGNOSIS.md && ` +
-        `grep -qiE 'evidence|reproduc' DIAGNOSIS.md`,
-    },
-    {
-      kind: 'command',
-      label:
-        'the diagnosis identifies the actual defect: the inventory reserve path and a ' +
-        'concurrency mechanism (disclosed ground truth)',
-      command:
-        `cd ${root} && grep -qi 'inventory' DIAGNOSIS.md && ` +
-        `grep -qi 'reserve' DIAGNOSIS.md && ` +
-        `grep -qiE 'race|atomic|interleav|concurrent|serial|lock|critical' DIAGNOSIS.md`,
-    },
-    {
-      kind: 'command',
-      label: 'the committed reproduction demonstrates the oversell on the unmodified source',
-      command:
-        `cd ${root} && test -f repro.mjs && node repro.mjs 2>&1 | grep -q 'RACE REPRODUCED'`,
-    },
-    {
-      kind: 'command',
-      label: 'the diagnosis references the provided evidence bundle (incident logs / rates)',
-      command:
-        `cd ${root} && grep -qiE 'incident|metrics|80%|pass.?fail|failure rate' DIAGNOSIS.md`,
-    },
-    {
-      kind: 'command',
-      label:
-        'the race is objectively present in the integrated state (independent instrumented ' +
-        'probe, latency pinned so every concurrent reservation reads the same stock)',
-      command:
-        `cd ${root} && node -e "Math.random=()=>0.999; import('./src/inventory.mjs').then(async m => { ` +
-        `const inv = new m.InventoryService({ widget: 8 }); ` +
-        `const rs = await Promise.all(Array.from({ length: 12 }, () => inv.reserve('widget', 1))); ` +
-        `const a = rs.filter(Boolean).length; ` +
-        `if (a > 8) { console.log('GATE: RACE PRESENT accepted=' + a); process.exit(0); } ` +
-        `console.log('GATE: no oversell accepted=' + a); process.exit(1); })"`,
-    },
-  ];
-}
+/** Evidence-calibrated per-worker bounds (EXP002 lesson: 18 steps starved
+ *  the sole producing specialist through two rounds; 30 carried the full
+ *  fix+verify+document load). */
+const MAX_WORKER_STEPS = 30;
+const MISSION_TIMEOUT_MS = 30 * 60_000;
 
 interface FlightLine {
   at: string;
@@ -152,6 +86,69 @@ function fmtMs(ms: number): string {
   return `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`;
 }
 
+interface PlanLine {
+  workers: { id: string; role: string; needs: string[] }[];
+  rationale: string;
+}
+interface RequirementsLine {
+  domain: string;
+  capabilityNeeds: string[];
+}
+
+/**
+ * The organization comparison, computed from the two flight records — never
+ * narrated in advance. If the organizations are effectively the same, this
+ * returns NO and says why; that would be an important finding before
+ * TASK-023, and manipulating the planner to force YES is forbidden.
+ */
+function organizationComparison(flight003: FlightLine[]): string {
+  const exp2 = readFlight(EXP002_MISSION_ID);
+  const req2 = exp2.find((e) => e.type === 'requirements-compiled') as
+    | RequirementsLine
+    | undefined;
+  const plan2 = exp2.find((e) => e.type === 'plan-created') as PlanLine | undefined;
+  const req3 = flight003.find((e) => e.type === 'requirements-compiled') as
+    | RequirementsLine
+    | undefined;
+  const plan3 = flight003.find((e) => e.type === 'plan-created') as PlanLine | undefined;
+  if (!req2 || !plan2 || !req3 || !plan3) {
+    return ['(organization comparison unavailable: flight records incomplete)'].join(
+      '\n',
+    );
+  }
+  const specialists = (plan: PlanLine) =>
+    plan.workers.filter((w) => w.role !== 'Mission Coordinator');
+  const roles2 = specialists(plan2).map((w) => w.role);
+  const roles3 = specialists(plan3).map((w) => w.role);
+  const needs2 = [...req2.capabilityNeeds].sort();
+  const needs3 = [...req3.capabilityNeeds].sort();
+  const rolesDisjoint = roles2.every((role) => !roles3.includes(role));
+  const needsDiffer = needs2.join(',') !== needs3.join(',');
+  const different = rolesDisjoint && needsDiffer;
+  const only3 = needs3.filter((need) => !needs2.includes(need));
+  const only2 = needs2.filter((need) => !needs3.includes(need));
+  const shared = needs2.filter((need) => needs3.includes(need));
+  const why = [
+    `EXP002 (domain ${req2.domain}) required [${needs2.join(', ')}] and staffed ${roles2.join(', ')}.`,
+    `EXP003 (domain ${req3.domain}) required [${needs3.join(', ')}] and staffed ${roles3.join(', ')}.`,
+    needsDiffer
+      ? `Capability needs differ: [${only3.join(', ')}] appear only in EXP003; [${only2.join(', ')}] only in EXP002; shared: [${shared.join(', ') || 'none'}].`
+      : 'The capability needs are identical.',
+    rolesDisjoint
+      ? 'No specialist role is shared between the two organizations.'
+      : `Roles overlap: ${roles2.filter((r) => roles3.includes(r)).join(', ')}.`,
+    `Plan sizes: EXP002 ${plan2.workers.length} workers, EXP003 ${plan3.workers.length} workers — the comparison is about composition driven by the goal, not headcount.`,
+  ].join(' ');
+  return [
+    `EXP002 WORKERS = ${plan2.workers.map((w) => `${w.id} (${w.role})`).join(', ')}`,
+    `EXP003 WORKERS = ${plan3.workers.map((w) => `${w.id} (${w.role})`).join(', ')}`,
+    `EXP002 CAPABILITY NEEDS = ${needs2.join(', ')}`,
+    `EXP003 CAPABILITY NEEDS = ${needs3.join(', ')}`,
+    `ORGANIZATION STRUCTURALLY DIFFERENT = ${different ? 'YES' : 'NO'}`,
+    `WHY = ${why}`,
+  ].join('\n');
+}
+
 function writeReport(
   missionId: string,
   result: { status: string; summary: string; cost: { wallMs: number } },
@@ -168,9 +165,7 @@ function writeReport(
   const flight = readFlight(missionId);
   const byType = (type: string): FlightLine[] => flight.filter((e) => e.type === type);
 
-  const plan = byType('plan-created')[0] as
-    | { workers: { id: string; role: string; needs: string[] }[]; rationale: string }
-    | undefined;
+  const plan = byType('plan-created')[0] as PlanLine | undefined;
   const genomes = byType('genomes-compiled')[0] as
     | { workers: { id: string; tier: string; tools: string[]; computerRequired: boolean }[] }
     | undefined;
@@ -253,11 +248,17 @@ function writeReport(
   lines.push('');
   lines.push('## The goal (given, not a team)');
   lines.push('');
-  lines.push(`> ${buildGoal().outcome}`);
+  lines.push(`> ${buildDiagnosticGoal().outcome}`);
   lines.push('');
   lines.push('## The organization Genesis designed');
   lines.push('');
   if (plan !== undefined) {
+    lines.push(
+      'Designed by the pipeline from the goal alone — GoalCompiler → ' +
+        'OrganizationPlanner → GenomeCompiler. No roles were prescribed by the ' +
+        'experiment; the goal names no workers.',
+    );
+    lines.push('');
     lines.push(`Rationale: ${plan.rationale}`);
     lines.push('');
     lines.push('| Worker | Role | Capability needs |');
@@ -267,13 +268,12 @@ function writeReport(
     }
     lines.push('');
     lines.push(
-      'A genuinely different organization from both earlier experiments — no force-fit ' +
-        'coding workers: Experiment 001 ran a Software Engineer + Documentation Writer; ' +
-        'Experiment 002 added a Verification Engineer for browser acceptance. A diagnostic ' +
-        'goal produces a diagnostic team: a Reproduction Engineer (reproduces the fault, ' +
-        'tests hypotheses hands-on), a Diagnostic Analyst (isolates the fault from ' +
-        'telemetry and code), a Report Writer, and a Mission Coordinator.',
+      '## Organization comparison — Experiment 002 vs Experiment 003 (computed from flight records)',
     );
+    lines.push('');
+    lines.push('```');
+    lines.push(organizationComparison(flight));
+    lines.push('```');
     lines.push('');
   }
   if (genomes !== undefined) {
@@ -317,9 +317,12 @@ function writeReport(
   lines.push(
     'Engineering gates are off by design: the repository\u2019s own test suite is the ' +
       'symptom under diagnosis (it fails intermittently on the pinned commit). The gates ' +
-      'below decide instead on the diagnosis\u2019s structure, its correctness against the ' +
-      'disclosed ground truth, a deterministic reproduction, and the objective presence ' +
-      'of the race in the integrated state.',
+      'decide on the diagnosis\u2019s structure, its epistemic honesty (OBSERVED/INFERRED/' +
+      'UNKNOWN/HYPOTHESIS/RECOMMENDED CHECK, evidence-cited observations, no unhedged ' +
+      'certainty about environments the evidence does not cover), its correctness against ' +
+      'the disclosed ground truth, a deterministic reproduction, the objective presence ' +
+      'of the race in the integrated state, and that the source under diagnosis was not ' +
+      'modified. Deterministic wherever practical; the LLM reviewer engages only on failure.',
   );
   lines.push('');
   for (const [index, verification] of verifications.entries()) {
@@ -358,9 +361,47 @@ function writeReport(
   return lines.join('\n');
 }
 
+/** ONE lightweight provider availability probe — no retry, per instruction. */
+async function probeProvider(): Promise<void> {
+  const probe = new ZAIReasoningProvider({ sdkPath: ZAI_SDK_PATH, retryBackoffMs: [] });
+  const started = Date.now();
+  await probe.reason({
+    system: 'Availability probe. Reply with the single word: ready.',
+    prompt: 'ping',
+    tier: 'cheap',
+  });
+  console.log(`[experiment-003] provider probe: available (${Date.now() - started}ms)`);
+}
+
 async function main(): Promise<void> {
   if (!existsSync(join(OPENBOT_CHECKOUT, 'agent-computer', 'src', 'index.ts'))) {
     throw new Error(`OpenBot checkout not found at ${OPENBOT_CHECKOUT} — set GENESIS_OPENBOT_DIR`);
+  }
+
+  try {
+    await probeProvider();
+  } catch (error) {
+    const detail = (error as Error).message.slice(0, 500);
+    writeFileSync(
+      BLOCKED_PATH,
+      [
+        '# TASK-022 BLOCKED — EXTERNAL PROVIDER UNAVAILABLE',
+        '',
+        `- Probe time (UTC): ${new Date().toISOString()}`,
+        '- Probe: single ZAIReasoningProvider call, retryBackoffMs [] (no retry), tier cheap',
+        `- Result: FAILED — ${detail}`,
+        '- Classification: external provider constraint (same class as the Experiment 002',
+        '  throttle window recorded in the recovery gate); not a Genesis defect.',
+        '- Per instruction: no repeated retries, no waiting, no redesign.',
+        '- Action: STOP. No mission was launched; no Experiment 003 evidence was produced.',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+    console.log('[experiment-003] TASK-022 BLOCKED — EXTERNAL PROVIDER UNAVAILABLE');
+    console.log(`[experiment-003] probe failure: ${detail}`);
+    console.log(`[experiment-003] evidence: ${BLOCKED_PATH}`);
+    process.exit(3);
   }
 
   const stamp = new Date()
@@ -378,7 +419,7 @@ async function main(): Promise<void> {
   console.log(`[experiment-003] target: ${GOLD_SOURCE} @ ${GOLD_REF.slice(0, 12)}`);
 
   const run = await runRepoMission({
-    goal: buildGoal(),
+    goal: buildDiagnosticGoal(),
     source: GOLD_SOURCE,
     ref: GOLD_REF,
     missionRoot: join(runRoot, 'mission'),
@@ -391,8 +432,8 @@ async function main(): Promise<void> {
     projectDir: 'flaky-orders',
     gates: false,
     extraChecks,
-    maxWorkerSteps: 18,
-    missionTimeoutMs: 22 * 60_000,
+    maxWorkerSteps: MAX_WORKER_STEPS,
+    missionTimeoutMs: MISSION_TIMEOUT_MS,
     costSource: () => {
       const usage = reasoning.usage();
       return { usd: 0, tokens: usage.totalTokens };
