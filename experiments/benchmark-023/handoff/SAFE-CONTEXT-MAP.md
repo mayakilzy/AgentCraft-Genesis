@@ -32,6 +32,12 @@ data/upstream-capabilities.yaml
 data/dependency-baseline.json
 
 experiments/benchmark-023/handoff/**          this package
+experiments/benchmark-023/handoff/execution-base/**   TASK-023C frozen
+                                              common execution base: git
+                                              bundle + integrity manifest
+                                              + restoration instructions
+                                              (RESTORE.md) — the ONE base
+                                              every arm must run on
 experiments/benchmark-023/run.ts              arm runner (launch mechanics)
 experiments/benchmark-023/mission.ts          public goal + arm planner definitions
 experiments/benchmark-023/preflight.ts        safe preflight (prints PASS/FAIL only)
@@ -157,9 +163,16 @@ npm test
 npm run typecheck
 npm run lint
 
-# TASK-023 safe preflight — run BEFORE any arm; every line must say PASS
-# and the final line "PREFLIGHT OVERALL: PASS" (exit code 0)
+# TASK-023 safe preflight — run BEFORE any arm. Every line must say
+# PASS with ONE documented between-arms exception (the pre-first-arm
+# 'mission root is empty' line — see BENCHMARK-EXECUTION-PROTOCOL.md
+# R4) ; every base/control line must say PASS
 bun experiments/benchmark-023/preflight.ts
+
+# common execution base — verify/restore (NEVER run the generator):
+# see handoff/execution-base/RESTORE.md
+bash -c 'git -C /home/z/my-project/target-repos/worklog rev-parse HEAD'
+# must print 12a448c4b9284b9063987d8cbaa7fcb2a7c1300a
 
 # launch one permitted arm (see BENCHMARK-EXECUTION-PROTOCOL.md for the
 # full procedure; the declaration file is mandatory)

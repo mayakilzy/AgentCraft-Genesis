@@ -4,9 +4,9 @@
   "local_path": "/home/z/my-project/AgentCraft-Genesis",
   "branch": "build/group-03-repository-work",
   "head_sha_resolution": {
-    "instruction": "Resolve HEAD of build/group-03-repository-work (local and remote must match). The expected top commit is the TASK-023B handoff commit with message 'docs(task-023b): freeze safe blind-session handoff'; its parent must equal task_023a_closure_sha. If not, STOP and report.",
-    "task_023a_closure_sha": "496bb60ebdf807637461132993ad0f7053bd8fe3",
-    "expected_top_commit_message": "docs(task-023b): freeze safe blind-session handoff"
+    "instruction": "Resolve HEAD of build/group-03-repository-work (local and remote must match). The expected top commit is the TASK-023C common-execution-base commit with message 'task-023c: freeze common execution base'; its parent must equal the frozen Arm-A evidence commit 55aaebdbf760bed6779a7d8efa1a27fa49d43fd4. If not, STOP and report.",
+    "arm_a_evidence_sha": "55aaebdbf760bed6779a7d8efa1a27fa49d43fd4",
+    "expected_top_commit_message": "task-023c: freeze common execution base"
   },
   "group": "GROUP_3",
   "current_task": "TASK-023",
@@ -15,9 +15,10 @@
     "CURRENT_TASK": "TASK_023",
     "TASK_023A": "PASS",
     "TASK_023B": "PASS",
-    "NEXT_EXECUTION": "ARM_A",
+    "TASK_023C": "PASS (this commit)",
+    "NEXT_EXECUTION": "ARM_B",
     "NEXT_SESSION_REQUIREMENT": "FRESH_ZERO_MEMORY_GLM",
-    "ARM_A": "NOT_VALIDLY_EXECUTED",
+    "ARM_A": "VALIDLY EXECUTED — ACCEPTED (evidence frozen at 55aaebdbf760bed6779a7d8efa1a27fa49d43fd4; accepted by TASK-023C after the common execution base was frozen, persisted and restoration-tested)",
     "ARM_B": "NOT_STARTED",
     "ARM_C": "NOT_STARTED",
     "TASK_024": "NOT_STARTED"
@@ -34,19 +35,31 @@
     "TASK_023_ATTEMPT_1": "INVALID (benchmark serving-harness failure / no scoreable result)",
     "TASK_023_ATTEMPT_2": "INVALID (builder/fallback knowledge contamination)",
     "TASK_023A_BENCHMARK_INTEGRITY_RECOVERY": "PASS",
-    "TASK_023B_SAFE_BLIND_SESSION_HANDOFF": "PASS (this commit)"
+    "TASK_023B_SAFE_BLIND_SESSION_HANDOFF": "PASS",
+    "TASK_023_ATTEMPT_003_ARM_A": "PASS — PROVISIONALLY ACCEPTED at evidence freeze, ACCEPTED by TASK-023C",
+    "TASK_023C_COMMON_EXECUTION_BASE_FREEZE": "PASS (this commit)"
   },
   "current_quality_state": {
     "full_tests": "161/161 PASS",
     "typecheck": "PASS",
     "lint": "PASS",
-    "verified_at": "TASK-023B freeze, on the tree that includes this handoff"
+    "verified_at": "TASK-023C freeze, on the tree that includes this handoff update"
   },
   "benchmark_status": {
-    "state": "BLOCKED PENDING CLEAN INDEPENDENT REASONING ACTOR",
-    "blocker_resolution": "a fresh zero-memory GLM conversation assigned to exactly one arm (see ARM-HANDOFF-TEMPLATE.md)",
+    "state": "ARM A EXECUTED AND ACCEPTED — ARM B READY (fresh zero-memory session required)",
+    "blocker_resolution": "none for Arm B: open a fresh zero-memory GLM conversation assigned to Arm B only (see ARM-HANDOFF-TEMPLATE.md section 3)",
     "benchmark_freeze_sha": "5eb6abc5c43537311290d63feb2d4a234fe20caa",
-    "benchmark_base_commit": "176ac5eaf3c4ba54747e8d05091b2763bac21a46",
+    "safe_handoff_freeze_sha": "321e8c673c28edbc6a52ade34a6f04c30997c157",
+    "benchmark_base_commit": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
+    "original_frozen_base_commit": "176ac5eaf3c4ba54747e8d05091b2763bac21a46 (host-only original, lost to environment reset; content-equivalence to the current base verified by TASK-023C via frozen-definition identity + deterministic controls)",
+    "task_023_common_execution_base_sha": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
+    "execution_base_artifact": {
+      "path": "experiments/benchmark-023/handoff/execution-base/task-023-execution-base.bundle",
+      "sha256": "1154868edd525f371590ae930b3298671623a0a5907cb7382073766d1acbef56",
+      "manifest": "experiments/benchmark-023/handoff/execution-base/MANIFEST.json",
+      "restore_instructions": "experiments/benchmark-023/handoff/execution-base/RESTORE.md",
+      "rule": "ARMS B AND C MUST NOT RUN THE WORKLOAD GENERATOR. RESTORE THE BASE FROM THIS ARTIFACT (IF MISSING) AND VERIFY THE HEAD SHA EXACTLY. IF SHA DOES NOT MATCH: STOP."
+    },
     "invalid_mission_ids_never_reuse": [
       "mission-20261006T014358-e8c2f2",
       "mission-20261006T021653-12073e"
@@ -62,13 +75,14 @@
     }
   },
   "current_glm_classification": {
-    "role_of_session_that_wrote_this_handoff": "BENCHMARK AUTHORITY / BUILDER",
-    "that_session_may_serve_arm_reasoning": "NO",
-    "that_session_status": "CLOSED PERMANENTLY AFTER TASK-023B"
+    "role_of_session_that_wrote_this_handoff": "ARM A EXECUTOR (attempt-003, reasoning actor GLM-FRESH-ARM-A-SESSION-001), acting for TASK-023C as benchmark authority for integrity/persistence closure only, per explicit supervisor authorization",
+    "that_session_may_serve_arm_reasoning": "NO — it may never serve Arm B or Arm C reasoning",
+    "that_session_status": "CLOSED PERMANENTLY AFTER TASK-023C"
   },
-  "next_action": "Open a fresh zero-memory GLM conversation, give it the ARM-A bootstrap prompt from handoff/ARM-HANDOFF-TEMPLATE.md with the verified TASK-023B SHA, and let it execute Arm A only.",
+  "next_action": "Open a fresh zero-memory GLM-B conversation, give it the ARM B bootstrap prompt from handoff/ARM-HANDOFF-TEMPLATE.md section 3 with the verified TASK-023C SHA, and let it execute Arm B only (restoring/verifying the common execution base first).",
   "allowed_entrypoints": {
     "handoff_entry": "experiments/benchmark-023/handoff/README.md",
+    "execution_base_restore": "experiments/benchmark-023/handoff/execution-base/RESTORE.md",
     "quality_gates": ["npm test", "npm run typecheck", "npm run lint"],
     "safe_preflight": "bun experiments/benchmark-023/preflight.ts",
     "arm_launch": "bun experiments/benchmark-023/run.ts --arm A|B|C --declaration <declaration.json>",

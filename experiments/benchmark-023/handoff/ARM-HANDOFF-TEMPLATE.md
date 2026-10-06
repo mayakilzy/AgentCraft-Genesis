@@ -114,11 +114,78 @@ resulting SHA/state, and STOP. Your conversation closes permanently
 after Arm A.
 ```
 
-## 3. Bootstrap prompts — Arms B and C
+## 3. Bootstrap prompt — ARM B (ready to paste, written by TASK-023C)
 
-Same pattern with three changes each: the assigned arm letter
-(`--arm B` / `--arm C`), the expected SHA (the then-current
-authoritative head, verified against the previous arms' frozen evidence
-commits), and the additional forbidden paths (all earlier arms' mission
-roots and results). Do not generate or send these until the previous
-arms' evidence is frozen and pushed.
+The operator pastes this into a brand-new GLM conversation after the
+TASK-023C commit is pushed. Replace `<TASK-023C-SHA>` with the verified
+final SHA of the TASK-023C commit (the authority's TASK-023C report
+provides it; it is also the head of `build/group-03-repository-work` on
+GitHub whose parent is `55aaebdbf760bed6779a7d8efa1a27fa49d43fd4`).
+
+```text
+You are entering an existing AgentCraft Genesis project with ZERO prior
+memory.
+
+GitHub persisted state is authoritative.
+
+Repository: https://github.com/mayakilzy/AgentCraft-Genesis.git
+Local checkout: /home/z/my-project/AgentCraft-Genesis
+Branch: build/group-03-repository-work
+Exact SHA: <TASK-023C-SHA>
+
+Verify the checkout resolves to exactly this SHA, that its top commit is
+the TASK-023C common-execution-base commit (message 'task-023c: freeze
+common execution base') and its parent is
+55aaebdbf760bed6779a7d8efa1a27fa49d43fd4. Clone or fetch if needed.
+
+Read ONLY the safe handoff entry point:
+
+  experiments/benchmark-023/handoff/README.md
+
+Follow its reading order and restrictions exactly.
+
+You are assigned TASK-023 — ARM B ONLY.
+
+TASK_023_COMMON_EXECUTION_BASE_SHA =
+12a448c4b9284b9063987d8cbaa7fcb2a7c1300a
+
+Before launching, verify the broken target repository at
+/home/z/my-project/target-repos/worklog is at EXACTLY that SHA; if it is
+missing, restore it ONLY from the persisted execution-base artifact per
+experiments/benchmark-023/handoff/execution-base/RESTORE.md.
+
+DO NOT RUN THE WORKLOAD GENERATOR — the exact frozen base is persisted;
+regenerating it would invalidate your arm. If the restored/verified SHA
+does not match exactly: STOP and report.
+
+Do not inspect any forbidden path (the handoff's SAFE-CONTEXT-MAP.md
+defines them; default-deny applies to everything unlisted). This
+includes Arm A's mission root, journals, ARM-RESULT and any report of
+Arm A's performance.
+Do not inspect previous invalid Arm reasoning.
+Do not modify the frozen static-team organization of Arm B.
+Do not redesign the benchmark.
+Do not execute Arm A or Arm C.
+Do not start TASK-024.
+
+If the handoff is incomplete, contradictory, unsafe, or the expected SHA
+does not match, STOP and report the discrepancy instead of guessing.
+
+Execute only after the handoff's pre-launch integrity requirements pass
+(state verification, environment hygiene, common execution base
+verification, quality gates, safe preflight per the documented
+between-arms expectation, and a truthful epistemic declaration).
+
+At completion, freeze Arm B evidence, commit and push it, report the
+resulting SHA/state, and STOP. Your conversation closes permanently
+after Arm B.
+```
+
+## 4. Bootstrap prompt — ARM C (pattern)
+
+Same pattern with three changes from the ARM B prompt: the assigned arm
+letter (`--arm C`), the expected SHA (the then-current authoritative
+head, verified against the frozen Arm-A and Arm-B evidence commits),
+and the additional forbidden paths (Arm A and Arm B mission roots,
+journals, results). Generate it only after Arm B's evidence is frozen
+and pushed.

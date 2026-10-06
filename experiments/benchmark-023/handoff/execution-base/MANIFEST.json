@@ -1,0 +1,84 @@
+{
+  "task": "TASK-023C — FREEZE COMMON BENCHMARK EXECUTION BASE",
+  "created_at": "2026-10-06T10:39:03Z",
+  "created_by": "benchmark authority (TASK-023C integrity/persistence closure)",
+
+  "benchmark_execution_base_sha": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
+  "task_023_common_execution_base_sha": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
+
+  "artifact_name": "task-023-execution-base.bundle",
+  "artifact_path": "experiments/benchmark-023/handoff/execution-base/task-023-execution-base.bundle",
+  "artifact_sha256": "1154868edd525f371590ae930b3298671623a0a5907cb7382073766d1acbef56",
+  "artifact_size_bytes": 12829,
+  "artifact_format": "git bundle (single-ref bundle of refs/heads/main + HEAD; complete history)",
+
+  "source_benchmark_freeze_sha": "5eb6abc5c43537311290d63feb2d4a234fe20caa",
+  "safe_handoff_freeze_sha": "321e8c673c28edbc6a52ade34a6f04c30997c157",
+  "arm_a_mission_id": "mission-20261006T044842-d29f38",
+  "arm_a_result_sha": "55aaebdbf760bed6779a7d8efa1a27fa49d43fd4",
+
+  "original_frozen_base_sha": "176ac5eaf3c4ba54747e8d05091b2763bac21a46",
+  "original_base_status": "host-only repository destroyed by the environment reset; full SHA preserved in frozen records (handoff STATE.json at TASK-023B, evidence/PREFLIGHT-FREEZE-5eb6abc.md, INTEGRITY-RECOVERY.md)",
+
+  "creation_reason": "Arm A (benchmark-023-attempt-003) executed validly on the reconstructed fresh-host base 12a448c4 after the original host-only base 176ac5ea was lost to an environment reset. The frozen generator plus frozen inputs (byte-identical to freeze 5eb6abc) reproduced a content-equivalent base before Arm A launched; deterministic controls matched the freeze-time values exactly. TASK-023C freezes that exact base as the ONE common execution base for Arms A, B and C so that no future arm session ever regenerates it. This is Git-identity/creation-metadata drift only; no benchmark semantics changed.",
+
+  "restoration_command": "git clone /home/z/my-project/AgentCraft-Genesis/experiments/benchmark-023/handoff/execution-base/task-023-execution-base.bundle /home/z/my-project/target-repos/worklog",
+  "restoration_command_existing_repo": "git -C /home/z/my-project/target-repos/worklog rev-parse HEAD",
+  "restoration_verified": true,
+  "restoration_test": {
+    "performed_at": "2026-10-06T10:38:30Z",
+    "method": "cloned from the bundle into a clean empty directory (no workload generator involved), then verified",
+    "restored_head_sha": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
+    "restored_head_exact_match": true,
+    "restored_tree_sha": "1fd3aae10844a8f400f9127021495092e57d7117",
+    "canonical_tree_sha": "1fd3aae10844a8f400f9127021495092e57d7117",
+    "tree_sha_match": true,
+    "commit_count": 1,
+    "tracked_file_count": 12,
+    "working_tree_clean": true,
+    "gold_suite_on_restored_base": "23 failing (exactly the frozen expected broken-state value; identical to what safe preflight reports)"
+  },
+
+  "equivalence_evidence": {
+    "generator_and_inputs_unchanged_since_freeze": "git diff 5eb6abc..HEAD on workload/pristine/, workload/generate.ts, workload/verify-docs.mjs, evaluate.ts, mission.ts, preflight.ts is EMPTY (byte-identical)",
+    "sealed_gold_manifest": "every sealed gold file SHA-256 matches the manifest; manifest bound to base 12a448c4",
+    "base_state": "clean, exactly 1 commit, at pinned SHA, 12 tracked files",
+    "deterministic_controls_recomputed": {
+      "gold_suite_failures_on_base": 23,
+      "evaluator_negative_control_gates": "6/10 (fails G3, G4, G5, G6)",
+      "evaluator_positive_control_gates": "10/10",
+      "genesis_full_tests": "161/161 PASS",
+      "typecheck": "PASS",
+      "lint": "PASS"
+    },
+    "freeze_time_control_values": {
+      "gold_suite_failures_on_base": 23,
+      "evaluator_negative_control_gates": "6/10",
+      "evaluator_positive_control_gates": "10/10",
+      "source": "experiments/benchmark-023/evidence/PREFLIGHT-FREEZE-5eb6abc.md"
+    },
+    "values_match_freeze": true,
+    "generator_rerun_during_task_023c": false
+  },
+
+  "required_base_for": {
+    "arm_a": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
+    "arm_b_required_base": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
+    "arm_c_required_base": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a"
+  },
+
+  "concept_distinction": {
+    "benchmark_definition_freeze": "5eb6abc5c43537311290d63feb2d4a234fe20caa (the frozen benchmark definition: design, workload, sealed gold, harness, preflight)",
+    "safe_handoff_freeze": "321e8c673c28edbc6a52ade34a6f04c30997c157 (the TASK-023B safe blind-session handoff)",
+    "common_execution_base": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a (the exact broken target repository commit every arm must execute on)"
+  },
+
+  "arm_a_classification_after_task_023c": {
+    "arm_a_execution": "PASS",
+    "arm_a_epistemic_isolation": "PASS",
+    "arm_a_final_result": "ACCEPTED",
+    "note": "authority-side classification update only; Arm A raw evidence untouched"
+  },
+
+  "secret_discipline": "This manifest contains only commit identities, hashes, counts and commands. It deliberately contains no defect descriptions, no gold truth, no pristine solution, no evaluator internals, and no Arm A reasoning."
+}

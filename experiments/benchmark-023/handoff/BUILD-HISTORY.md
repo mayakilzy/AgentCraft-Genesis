@@ -33,9 +33,27 @@ TASK-023A Benchmark Integrity Recovery
           STATUS = PASS
 
 TASK-023B Safe Blind-Session Handoff
-          STATUS = PASS (this package; see the handoff commit)
+          STATUS = PASS
 
-TASK-023  STATUS = BLOCKED PENDING CLEAN INDEPENDENT REASONING ACTOR
+TASK-023 ATTEMPT 3, ARM A (strong single agent)
+          STATUS = VALIDLY EXECUTED — ACCEPTED
+          Mission = mission-20261006T044842-d29f38 (success)
+          Evidence frozen at 55aaebdbf760bed6779a7d8efa1a27fa49d43fd4
+          Epistemic isolation declaration = PASS (gold_access=false,
+          builder_context_access=false, prior_arm_context_access=false)
+
+TASK-023C Common Execution Base Freeze
+          STATUS = PASS
+          (the exact Arm-A execution base 12a448c4… frozen as the ONE
+          common base for Arms A/B/C; persisted as a git bundle under
+          handoff/execution-base/ with manifest + restoration
+          instructions; restoration-tested to reproduce the exact SHA;
+          deterministic controls matched the freeze-time values exactly;
+          Arm A promoted from PROVISIONALLY ACCEPTED to ACCEPTED)
+
+TASK-023  STATUS = IN PROGRESS — ARM A ACCEPTED; ARM B READY FOR A
+          FRESH ZERO-MEMORY SESSION (restore/verify the common base;
+          never run the workload generator)
 
 TASK-024  STATUS = NOT STARTED
 ```
@@ -139,14 +157,29 @@ preserved only as invalidation records under forbidden paths (see
 
 TASK-023A then froze the evidence, restored the authority/actor boundary,
 installed the machine-checked pre-launch epistemic gate, and verified the
-frozen benchmark infrastructure — PASS. The benchmark remains BLOCKED
-until a genuinely independent reasoning actor exists: a fresh GLM
-conversation (you, if assigned an arm) is exactly that actor.
+frozen benchmark infrastructure — PASS. Attempt 003 then executed Arm A
+validly in a fresh session (mission above), and TASK-023C closed the
+base-identity question: the fresh-host reconstruction had re-pinned the
+base SHA (the original host-only base was lost to an environment reset;
+the frozen generator and inputs — byte-identical to the freeze —
+reproduced a content-equivalent base before Arm A), so TASK-023C froze
+that exact base as the single common execution base for all three arms,
+persisted it as a restoration-tested git bundle, and accepted Arm A.
+Arms B and C must run on exactly that base (restore/verify per
+`handoff/execution-base/RESTORE.md`; never regenerate). The deep
+comparative evaluation across arms happens only after all three arms
+are frozen, in the authority's clean room — never inside an arm
+session.
 
 ## 7. Benchmark integrity state (safe to record)
 
 ```text
 benchmark definition = frozen at 5eb6abc5c43537311290d63feb2d4a234fe20caa
+safe handoff          = frozen at 321e8c673c28edbc6a52ade34a6f04c30997c157
+common execution base = 12a448c4b9284b9063987d8cbaa7fcb2a7c1300a
+                       (frozen by TASK-023C; the ONLY valid base for any
+                       arm; persisted as a git bundle under
+                       handoff/execution-base/ — never regenerate it)
 workload             = KEEP
 gold suite           = KEEP (sealed; contents forbidden)
 evaluator            = KEEP (contents forbidden)
@@ -157,21 +190,34 @@ Genesis-arm definition   (Arm C) = KEEP
 benchmark base repo  = pinned, clean, single commit
 ```
 
+These are three DIFFERENT concepts and must not be conflated: the
+benchmark definition freeze (what the benchmark is), the safe handoff
+freeze (what a fresh session may read), and the common execution base
+(the exact broken target commit every arm executes on).
+
 The workload is valid. Its validity for YOU depends only on your
 blindness: the same repository is a fair benchmark for a fresh reasoning
 actor precisely because the builder's knowledge of it disqualifies the
 builder, not the workload.
 
-## 8. Current quality state (verified at TASK-023B freeze)
+## 8. Current quality state (re-verified at TASK-023C)
 
-Re-verified on the TASK-023B tree before committing this package — not
-copied from older reports:
+Re-verified on the TASK-023C tree before committing — not copied from
+older reports:
 
 ```text
 FULL TESTS = 161/161 PASS   (24 test files, vitest)
 TYPECHECK  = PASS           (tsc --noEmit, strict)
 LINT       = PASS           (eslint)
 ```
+
+Environment note (host restoration artifact, not a content change):
+the host may lose file permission bits across environment restores
+(all files appear 100755). Normalize with `git config core.fileMode
+false` per repository and never commit mode-only changes. The TASK-023C
+re-verification also re-downloaded the Playwright Chromium build the
+frozen live browser test requires — restoring the documented
+reconstruction environment, not modifying any gate.
 
 ## 9. What comes after TASK-023
 

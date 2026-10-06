@@ -22,9 +22,12 @@ benchmark. Do not inspect forbidden paths even if technically accessible.
 This is the TASK-023B handoff: a complete, self-contained, safe context
 package written by the project's previous GLM session before it closed
 permanently. That session acted as the **benchmark builder / authority**
-and is now closed. You are a fresh session being asked to continue the
-project — most likely by executing exactly ONE arm of the TASK-023
-benchmark, or by auditing what state the project is in.
+and is now closed. It was updated once, minimally, by TASK-023C (the
+common execution base freeze) on top of the frozen Arm-A evidence;
+`STATE.json` reflects the current state. You are a fresh session being
+asked to continue the project — most likely by executing exactly ONE
+arm of the TASK-023 benchmark, or by auditing what state the project
+is in.
 
 Two facts shape everything in this package:
 
@@ -45,29 +48,31 @@ Two facts shape everything in this package:
 REPOSITORY   = https://github.com/mayakilzy/AgentCraft-Genesis.git
 BRANCH       = build/group-03-repository-work
 LOCAL PATH   = /home/z/my-project/AgentCraft-Genesis
-TASK-023A CLOSURE SHA = 496bb60ebdf807637461132993ad0f7053bd8fe3
+ARM A EVIDENCE SHA     = 55aaebdbf760bed6779a7d8efa1a27fa49d43fd4
 ```
 
-The TASK-023B handoff commit is the one directly on top of
-`496bb60ebdf807637461132993ad0f7053bd8fe3` with the message:
+The TASK-023C common-execution-base commit is the one directly on top
+of `55aaebdbf760bed6779a7d8efa1a27fa49d43fd4` with the message:
 
 ```text
-docs(task-023b): freeze safe blind-session handoff
+task-023c: freeze common execution base
 ```
 
 Verification procedure (run from the repository root):
 
 ```bash
-git rev-parse HEAD          # must be the TASK-023B commit
-git log --oneline -2        # top = handoff commit, parent = 496bb60
-git status --porcelain      # must be empty
+git rev-parse HEAD          # must be the TASK-023C commit
+git log --oneline -2        # top = task-023c commit, parent = 55aaebd
+git status --porcelain      # must be empty (see the mode-bit note in
+                            # BENCHMARK-EXECUTION-PROTOCOL.md R2 if it
+                            # shows only 100644→100755 mode changes)
 git ls-remote origin build/group-03-repository-work   # must equal HEAD
 ```
 
 If your operator gave you an expected SHA and it does not match, or the
-branch head is not the handoff commit, or the tree is dirty in unexpected
-ways: **STOP and report the discrepancy.** Do not silently repair
-history. Do not guess.
+branch head is not the expected commit, or the tree is dirty in
+unexpected ways: **STOP and report the discrepancy.** Do not silently
+repair history. Do not guess.
 
 ## 3. Reading order (mandatory)
 

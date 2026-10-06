@@ -97,17 +97,54 @@ fresh: STOP and report.
 ## 6. Pre-launch requirements (all must pass, in order)
 
 ```text
-R1. State verification: HEAD is the TASK-023B handoff commit on
+R1. State verification: HEAD is the TASK-023C common-execution-base
+    commit (message 'task-023c: freeze common execution base', parent
+    = the frozen Arm-A evidence commit 55aaebdb…) on
     build/group-03-repository-work; local == remote; clean tree.
+    Host mode-bit note: if `git status` shows ONLY `old mode 100644 /
+    new mode 100755` changes (zero content changes), that is a host
+    restoration artifact — run `git config core.fileMode false` in the
+    repository and re-check; never commit mode-only changes.
 R2. Environment hygiene: no live benchmark/agent-computer processes;
-    /home/z/my-project/missions contains no unfinished mission roots;
-    OpenBot checkout present; node_modules present.
+    /home/z/my-project/missions contains no unfinished mission roots
+    (prior arms' FROZEN evidence roots are expected and must remain —
+    verify each mission directory contains both ARM-RESULT.json and
+    EXIT-CODE, and that loose files are prior launch logs/declarations
+    only; anything incomplete or unexpected → STOP); OpenBot checkout
+    present; node_modules present.
+R2b. Common execution base: verify the broken target repository is at
+    exactly TASK_023_COMMON_EXECUTION_BASE_SHA
+    (12a448c4b9284b9063987d8cbaa7fcb2a7c1300a). If the repository is
+    missing, restore it from the persisted bundle per
+    handoff/execution-base/RESTORE.md — NEVER run the workload
+    generator. If the SHA does not match exactly: STOP.
 R3. Quality gates green: npm test (161/161), typecheck, lint.
 R4. Safe preflight: bun experiments/benchmark-023/preflight.ts — every
-    line must say PASS and the final line must read "PREFLIGHT OVERALL:
-    PASS" (exit code 0). Any FAIL → STOP and report.
+    line must say PASS, with ONE documented between-arms exception
+    (below), and every base/control line must say PASS. Any other
+    FAIL → STOP and report.
 R5. Epistemic declaration written and TRUE.
 ```
+
+R4 between-arms expectation (TASK-023C, applies from Arm B onward):
+the harness is frozen and its `mission root is empty (no cross-arm
+artifacts)` line is a pre-FIRST-arm check. After any prior arm's
+evidence has been frozen in `/home/z/my-project/missions` (which is by
+design — the epistemic gate reads prior ARM-RESULT.json declarations
+from there), that line will report the frozen-evidence entry count
+instead of 0, and `PREFLIGHT OVERALL` will read FAIL on that line
+alone. In that state you must INSTEAD verify mechanically, before
+launching: every mission directory in /home/z/my-project/missions
+contains both ARM-RESULT.json and EXIT-CODE (complete frozen evidence),
+and no unexpected or unfinished entry exists. Any incomplete entry →
+STOP. Every OTHER preflight line — base pin, base cleanliness, single
+commit, sealed manifest, goal compilation, the three organizations,
+gold-suite failure count on the base, evaluator negative control
+(6/10, failing G3/G4/G5/G6), evaluator positive control (10/10), no
+leftover processes, OpenBot present — must still say PASS exactly. No
+gate code may be modified to make preflight pass: any harness change
+after an arm has run forces a full benchmark restart per the frozen
+design.
 
 The declaration is a small JSON file you create (keep it OUTSIDE the
 repository, e.g. /home/z/my-project/missions/<attempt>-declaration.json):
@@ -164,7 +201,11 @@ arm/benchmark vocabulary reaches workers), clones the pinned broken
 target repository into per-worker worktrees, runs the mission via the
 real runtime (OpenBot computers, git, verification), and at the end
 freezes evidence in place at `/home/z/my-project/missions/<missionId>/`
-(`ARM-RESULT.json` + `EXIT-CODE`) — never modified afterwards.
+(`ARM-RESULT.json` + `EXIT-CODE`) — never modified afterwards. The
+pinned target the runner clones is the TASK-023C common execution
+base; if it is missing, restore it from the persisted bundle
+(handoff/execution-base/RESTORE.md) — do NOT run the workload
+generator.
 
 If the gate blocks: the runner exits with code 3, prints
 `BENCHMARK BLOCKED — EPISTEMIC ISOLATION NOT PROVEN`, and launches
@@ -244,12 +285,19 @@ not serve another arm or inspect any other arm's evidence, ever.
 
 ```text
 S1. Expected SHA / branch / handoff commit mismatch.
-S2. Working tree dirty in unexpected ways; frozen evidence altered.
-S3. Preflight FAIL on any line.
+S2. Working tree dirty in unexpected ways (mode-only 100644→100755
+    drift is the documented host artifact — normalize with
+    core.fileMode, never commit it); frozen evidence altered.
+S3. Preflight FAIL on any line other than the documented between-arms
+    mission-root line (R4), or any incomplete prior-arm mission root.
 S4. Epistemic gate blocks the launch (exit 3).
 S5. You cannot truthfully declare all three access fields false.
 S6. A needed path is not on the safe list.
-S7. The broken target repository is missing or not at its pinned commit.
+S7. The broken target repository is missing or not at exactly
+    TASK_023_COMMON_EXECUTION_BASE_SHA
+    (12a448c4b9284b9063987d8cbaa7fcb2a7c1300a). Never regenerate it —
+    restore from handoff/execution-base/RESTORE.md; if restoration
+    does not reproduce the exact SHA: STOP.
 S8. Orphaned benchmark/agent-computer processes found before launch.
 S9. The handoff contradicts observed reality anywhere.
 S10. Any instruction asks you to reveal benchmark secrets or inspect
