@@ -5,6 +5,25 @@
   "authority_start_sha": "1fc74b0d5742a3345cc4b9cedca5cfd8d7db2470",
   "branch": "build/group-03-repository-work",
 
+  "corrigendum": {
+    "issued": true,
+    "document": "experiments/benchmark-023/TASK-023-FINAL-AUTHORITY-CORRIGENDUM.md",
+    "issued_at": "2026-10-06T19:20:00Z",
+    "remediation_evidence": "experiments/benchmark-023/TASK-023-DIRTYFILES-REMEDIATION-AND-CONFIRMATION.md",
+    "defect_classification": "TELEMETRY-ONLY",
+    "summary": "The original ARM B/C 8/10 scores and the PRIMARY VERDICT 'GENESIS LOSES' are INVALIDATED. The corrected primary verdict is 'BENCHMARK INCONCLUSIVE' for comparative final solution quality. Arm A 10/10 remains verified. Arm B/C quality status is INCONCLUSIVE (historical target content unavailable). See the corrigendum for full details."
+  },
+
+  "corrected_verdict": {
+    "primary_verdict": "BENCHMARK INCONCLUSIVE (for comparative final solution quality)",
+    "arm_a_quality_status": "VERIFIED 10/10 (GOLD-EVAL PASS)",
+    "arm_b_quality_status": "INCONCLUSIVE — HISTORICAL TARGET CONTENT UNAVAILABLE",
+    "arm_c_quality_status": "INCONCLUSIVE — HISTORICAL TARGET CONTENT UNAVAILABLE",
+    "original_arm_b_8_10_status": "INVALIDATED (reconstruction artifact from corrupted telemetry)",
+    "original_arm_c_8_10_status": "INVALIDATED (reconstruction artifact from corrupted telemetry)",
+    "note": "The fields below (frozen_evaluator_score, gold_eval_result, primary_verdict, genesis_vs_*) preserve the ORIGINAL authority report's values for audit-trail integrity. They are SUPERSEDED by 'corrected_verdict' above per the corrigendum."
+  },
+
   "benchmark_integrity": "PASS",
   "integrity_anchors_verified": {
     "benchmark_definition_freeze": "5eb6abc5c43537311290d63feb2d4a234fe20caa",
