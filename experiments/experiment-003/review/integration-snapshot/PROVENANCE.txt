@@ -1,0 +1,50 @@
+INTEGRATION SNAPSHOT PROVENANCE
+================================
+
+Purpose: the mission workspace (git worktrees + integration branch) is
+runtime state, gitignored by design (`experiments/*/.runs/`). This snapshot
+makes the three integrated deliverables reviewable from GitHub without
+touching the frozen review scope (`6621a28` on `build/group-03-repository-work`).
+
+Source of this snapshot (local, preserved):
+  experiments/experiment-003/.runs/experiment-003-20261005T231628/mission/origin
+  branch: genesis/integration  (merge head 08dacc0)
+  base:     c9106df8a6fcad5c45fddd7698a5ac635a4badae (pinned gold base)
+
+Integration branch commits beyond base:
+  08dacc0  Merge branch 'genesis/diagnostic-analyst-3' into genesis/integration
+  b826fbc  Merge branch 'genesis/report-writer-2' into genesis/integration
+  a6ac42c  work of report-writer-2 (verification attempt 1)  [runtime commit]
+  ff76fe2  diagnosis: analyst working analysis with hands-on probes
+  1889359  diagnosis: deterministic reproduction of the intermittent oversell (repro.mjs)
+
+Files (exactly the integration diff vs base — 3 files, 204 insertions, 0 deletions):
+
+  file            lines  git blob (genesis/integration)          sha-256
+  ANALYSIS.md        73  39ee0ff0413028563e91cc03ca3ee6692056f748  10b1a2e3592492501677f216083d7fa4c61c4e63ef0aea6aa2e605e3aa08a3c8
+  DIAGNOSIS.md       95  69f0600a67933181c401b1c0f8733b141a622491  b70ddeba19c79f9ef92d9d533980cd7ea59ea0ebca614d4d38a05795ceef673b
+  repro.mjs          36  c7dfd6a7a7e32177106c68547147613d095b68ca  169c755419f98bc2d479165518bef92f81150d1eee693c91fc79a67fbd9d6085
+
+Independent verification paths (no trust in this snapshot required):
+
+  1. Journal cross-check: the fallback journal at
+     experiments/experiment-003/evidence/dev-fallback-journal/ records the
+     worker actions that created each file —
+       repro.mjs     = write_file action in done-resp-0004.txt
+       DIAGNOSIS.md  = write_file action in done-resp-0018.txt
+       ANALYSIS.md   = heredoc in the run_command of done-resp-0023.txt
+     The file contents there must equal these snapshots byte-for-byte.
+
+  2. Report cross-check: experiments/experiment-003/REPORT.md "The integrated
+     result" section lists the same diffstat (3 files / 204 insertions) and
+     the same commit list.
+
+  3. Gate cross-check: mission gate 7 (`git diff --quiet <base> HEAD --
+     flaky-orders/src flaky-orders/test flaky-orders/package.json
+     flaky-orders/evidence`) passed in the clean room, so everything outside
+     these three new files is identical to the pinned base.
+
+  4. Behavioral: run `node repro.mjs` in this directory — expected output
+     `RACE REPRODUCED: 12 orders accepted against stock 8 (oversell 4)`,
+     exit 0 (this requires the src/ of the gold task, present in the mission
+     workspace and in github.com/mayakilzy/genesis-gold-tasks @ c9106df).
