@@ -1,5 +1,34 @@
 # TASK-023 — Contamination Review (Step 2 hard gate)
 
+> ## ⛔ INVALIDATED — TASK-023A, 2026-10-06
+>
+> The verdict of this review was **FALSE in practice** and the benchmark
+> execution it authorized is classified INVALID.
+>
+> This document asserted (§2, §5, §7) that "the persistent builder
+> session serves NOTHING" and that every response would come from a
+> fresh, stateless GLM session. No such fresh-session mechanism exists
+> in this environment. When the dispatcher approach failed (attempt 1,
+> 02:14Z), serving switched to the operator session — the same GLM
+> session that had authored the pristine implementation, the gold tests
+> and the defect generator — which then served 7 Arm A reasoning
+> requests (02:30–03:10Z) under the false `GLM_FRESH_ISOLATED_SESSION`
+> label. The fallback actor knew the hidden solution before Arm A
+> began: exactly the condition §5 of this review denied.
+>
+> The correct Step-2 verdict was `BENCHMARK DESIGN CONTAMINATED`.
+>
+> The document below is preserved UNMODIFIED as evidence of the failed
+> review. Its verdict is superseded by `INTEGRITY-RECOVERY.md` and the
+> machine-checked pre-launch gate (`epistemic-gate.ts`). Full evidence:
+> `evidence/invalid-attempt-001/RECORD.md`.
+>
+> The gate this review failed to be: an actor claim is now valid only
+> if declared per launch, machine-checked (`gold_access = false`,
+> `builder_context_access = false`, `prior_arm_context_access = false`
+> — literal booleans, UNKNOWN never downgraded), and permanently
+> recorded in the arm's frozen evidence.
+
 Question this document must answer before any arm runs:
 
 > Can GLM — which is simultaneously the PRIMARY BUILDER (author of the

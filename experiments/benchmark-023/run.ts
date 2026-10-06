@@ -4,17 +4,23 @@
  * with integrity checks between them; each arm runs ONCE, and whatever
  * happens is the result.
  *
- *   usage: bun experiments/benchmark-023/run.ts --arm A|B|C
+ *   usage: bun experiments/benchmark-023/run.ts --arm A|B|C \
+ *             --declaration <actor-declaration.json>
  *   env:  GENESIS_OPENBOT_DIR (default: ../OpenBot)
+ *
+ * TASK-023A (integrity recovery): no arm may launch without an epistemic
+ * actor declaration that passes the hard pre-launch gate — the reasoning
+ * actor must declare, machine-checkably, no gold access, no builder
+ * context access and no prior-arm context access, with a per-arm unique
+ * reasoning context (see epistemic-gate.ts). The declared actor id is
+ * the honest `fallback_actor` label; the harness no longer hardcodes any
+ * actor claim (attempt 001's `GLM_FRESH_ISOLATED_SESSION` label was false
+ * and invalidated the run — see evidence/invalid-attempt-001/).
  *
  * Design points pinned by BENCHMARK-DESIGN.md:
  *
- *   - DEVELOPMENT_FALLBACK reasoning for every arm, labeled
- *     reasoning_source=DEVELOPMENT_REASONING_FALLBACK,
- *     external_provider=unavailable,
- *     fallback_actor=GLM_FRESH_ISOLATED_SESSION (every response is
- *     served by a fresh stateless GLM session through the file journal;
- *     the persistent builder session serves NOTHING).
+ *   - Reasoning mode per the declaration (DEVELOPMENT_FALLBACK or an
+ *     external provider), labeled with the DECLARED actor identity.
  *   - The ONLY variable across arms is the organization planner:
  *       A  StrongSingleAgentPlanner (harness-fixed single Sole Operator)
  *       B  StaticTeamPlanner        (harness-fixed four-role team)
@@ -29,7 +35,7 @@
  *     and fallback journals are already durable), never modified again.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -42,6 +48,13 @@ import {
   StrongSingleAgentPlanner,
   benchmarkExtraChecks,
 } from './mission.js';
+import {
+  BLOCKED_MESSAGE,
+  checkCrossArm,
+  parseDeclaration,
+  type EpistemicDeclaration,
+  type PriorArmDeclaration,
+} from './epistemic-gate.js';
 
 const HERE = new URL('.', import.meta.url).pathname;
 const REPO = join(HERE, '..', '..');
@@ -61,11 +74,92 @@ const ARM = ((): 'A' | 'B' | 'C' => {
   const idx = process.argv.indexOf('--arm');
   const value = idx === -1 ? undefined : process.argv[idx + 1];
   if (value !== 'A' && value !== 'B' && value !== 'C') {
-    console.error('usage: bun experiments/benchmark-023/run.ts --arm A|B|C');
+    console.error(
+      'usage: bun experiments/benchmark-023/run.ts --arm A|B|C --declaration <actor-declaration.json>',
+    );
     process.exit(2);
   }
   return value;
 })();
+
+const DECLARATION_PATH = ((): string => {
+  const idx = process.argv.indexOf('--declaration');
+  const value = idx === -1 ? undefined : process.argv[idx + 1];
+  if (value === undefined || value === '') {
+    console.error(
+      'usage: bun experiments/benchmark-023/run.ts --arm A|B|C --declaration <actor-declaration.json>',
+    );
+    console.error('no arm may launch without an epistemic actor declaration');
+    process.exit(2);
+  }
+  return value;
+})();
+
+/** Load the declaration and enforce the pre-launch gate. Prior arms'
+ *  declarations are read from every frozen ARM-RESULT.json under the
+ *  missions root (each arm's evidence is frozen in place and never
+ *  modified, so the scan is a complete record of what already ran). */
+function loadDeclaration(): EpistemicDeclaration {
+  if (!existsSync(DECLARATION_PATH)) {
+    console.error(`${BLOCKED_MESSAGE}`);
+    console.error(`declaration file not found: ${DECLARATION_PATH}`);
+    process.exit(3);
+  }
+  const parsed = parseDeclaration(readFileSync(DECLARATION_PATH, 'utf8'));
+  if (!parsed.ok) {
+    console.error(BLOCKED_MESSAGE);
+    for (const f of parsed.failures) console.error(`  ${f.field}: ${f.problem}`);
+    process.exit(3);
+  }
+  if (parsed.declaration.arm_id !== ARM) {
+    console.error(BLOCKED_MESSAGE);
+    console.error(
+      `  arm_id: declaration says arm ${parsed.declaration.arm_id} but runner was invoked for arm ${ARM}`,
+    );
+    process.exit(3);
+  }
+
+  const priors: PriorArmDeclaration[] = [];
+  if (existsSync(WORK_ROOT)) {
+    for (const entry of readdirSync(WORK_ROOT)) {
+      const resultPath = join(WORK_ROOT, entry, 'ARM-RESULT.json');
+      if (!existsSync(resultPath)) continue;
+      try {
+        const prior = JSON.parse(readFileSync(resultPath, 'utf8')) as {
+          declaration?: {
+            benchmark_attempt_id?: string;
+            arm_id?: string;
+            reasoning_context_id?: string;
+          };
+        };
+        if (
+          prior.declaration?.benchmark_attempt_id &&
+          prior.declaration?.arm_id &&
+          prior.declaration?.reasoning_context_id
+        ) {
+          priors.push({
+            benchmark_attempt_id: prior.declaration.benchmark_attempt_id,
+            arm_id: prior.declaration.arm_id,
+            reasoning_context_id: prior.declaration.reasoning_context_id,
+            source: entry,
+          });
+        }
+      } catch {
+        // unreadable prior evidence must not silently pass as absence
+        console.error(BLOCKED_MESSAGE);
+        console.error(`  cannot read prior arm evidence: ${resultPath}`);
+        process.exit(3);
+      }
+    }
+  }
+  const crossArm = checkCrossArm(parsed.declaration, priors);
+  if (crossArm.length > 0) {
+    console.error(BLOCKED_MESSAGE);
+    for (const f of crossArm) console.error(`  ${f.field}: ${f.problem}`);
+    process.exit(3);
+  }
+  return parsed.declaration;
+}
 
 interface FlightLine {
   type: string;
@@ -83,6 +177,10 @@ function readFlight(missionId: string): FlightLine[] {
 }
 
 async function main(): Promise<void> {
+  // Hard pre-launch gate — nothing runs (no mission root, no process,
+  // no journal) unless the epistemic declaration passes.
+  const declaration = loadDeclaration();
+
   if (!existsSync(join(OPENBOT_CHECKOUT, 'agent-computer', 'src', 'index.ts'))) {
     throw new Error(`OpenBot checkout not found at ${OPENBOT_CHECKOUT}`);
   }
@@ -110,13 +208,16 @@ async function main(): Promise<void> {
         : undefined;
 
   console.log(`[arm ${ARM}] mission ${missionId} starting (target pinned at ${BASE_COMMIT.slice(0, 12)})`);
+  console.log(
+    `[arm ${ARM}] epistemic declaration: attempt=${declaration.benchmark_attempt_id} actor=${declaration.reasoning_actor_id} mode=${declaration.reasoning_mode} context=${declaration.reasoning_context_id}`,
+  );
 
   const fallback = new DevelopmentFallbackProvider({
     queueDir: join(runRoot, 'fallback-queue'),
     missionId,
     recorder,
     waitTimeoutMs: PER_CALL_TIMEOUT_MS,
-    fallbackActor: 'GLM_FRESH_ISOLATED_SESSION',
+    fallbackActor: declaration.reasoning_actor_id,
   });
 
   let status = 'crashed';
@@ -173,6 +274,7 @@ async function main(): Promise<void> {
     missionId,
     runRoot,
     baseCommit: BASE_COMMIT,
+    declaration,
     status,
     summary,
     wallMs,
@@ -185,7 +287,8 @@ async function main(): Promise<void> {
           : 'real OrganizationPlanner (adaptive chain)',
     goal: BENCHMARK_GOAL,
     fallback: {
-      actor: 'GLM_FRESH_ISOLATED_SESSION',
+      actor: declaration.reasoning_actor_id,
+      mode: declaration.reasoning_mode,
       calls: usage.calls,
       promptChars: usage.promptChars,
       completionChars: usage.completionChars,
