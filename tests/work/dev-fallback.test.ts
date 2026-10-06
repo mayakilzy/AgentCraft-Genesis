@@ -15,8 +15,9 @@ import { MemoryFlightRecorder } from '../../src/mission/flight-recorder.js';
  *
  *   - a reasoning call is journaled as a request file containing EXACTLY
  *     the provider input (system, prompt, tier) plus its fallback labels —
- *     the audit trail that the fallback actor saw only worker-visible
- *     context;
+ *     the audit trail of exactly what the fallback actor was shown for
+ *     that call (per-instance isolation is pinned separately, in
+ *     fallback-isolation.test.ts, by TASK-022A);
  *   - a plain-text response file is consumed as the ReasoningOutput and
  *     both journal files are archived (done-*) so the pending queue holds
  *     only unanswered requests;

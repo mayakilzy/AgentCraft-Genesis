@@ -132,6 +132,12 @@ export interface MissionEventReasoningFallback {
   readonly external_provider: 'unavailable';
   readonly fallback_actor: 'GLM_PRIMARY_BUILDER';
   readonly tier: string;
+  /**
+   * TASK-022A: the logical worker instance this call belongs to (present on
+   * instance-scoped views only; mission-scope calls, e.g. the reviewer, have
+   * none). Maps the event to the instance's journal directory.
+   */
+  readonly instance?: string;
   readonly waitMs?: number;
   readonly promptChars?: number;
   readonly completionChars?: number;

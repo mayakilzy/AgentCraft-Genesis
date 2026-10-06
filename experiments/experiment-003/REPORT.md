@@ -102,3 +102,35 @@ ff76fe2 diagnosis: analyst working analysis with hands-on probes
 ## Mission summary (as integrated)
 
 Mission integrated. The flaky-orders intermittent oversell is diagnosed with high confidence (within the supplied evidence): the root cause is the unsynchronized read-check-write sequence in InventoryService.reserve — concurrent reservations that read the same stock level before any write lands all accept, and stale out-of-order writes corrupt the stock field in both directions (oversell, and stranded stock where the last write's stale read wins). Deliverables: flaky-orders/DIAGNOSIS.md (the structured report: OBSERVED / INFERRED / HYPOTHESIS / UNKNOWN / RECOMMENDED CHECK, with a stated confidence level and explicit unknowns — staging impact not established, no telemetry in the bundle), flaky-orders/repro.mjs (deterministic reproduction on the unmodified source: RACE REPRODUCED, 12 accepted against stock 8, exit 0, identical every run), and flaky-orders/ANALYSIS.md (the analyst's working analysis with hands-on probes: a 10-run distribution, a sequential control, and an instrumented interleaving proving a stale write can restore a higher stock value after a fresher one). All three assertions in the failing suite are explained as one race seen from three angles, matching the varying failing assertion across runs and the ~80% failure rate. The source under diagnosis was not modified anywhere. Nothing failed; the one limitation to carry forward is epistemic, not operational: staging/production behavior remains explicitly unknown pending telemetry.
+
+---
+
+## Addendum — 2026-10-06 (TASK-022A, post-review correction; nothing above this line is rewritten)
+
+The independent review of this experiment (frozen scope: commit
+`6621a28cf437942de910ed97fa2fc20a78730c95`, mission
+`experiment-003-20261005T231628`) established that one process property did
+NOT hold in this run:
+
+**PER-WORKER-INSTANCE FALLBACK EPISTEMIC ISOLATION = FAIL.**
+
+The single persistent Development Fallback reasoning actor was reused across
+logically isolated worker instances inside this mission — one shared file
+journal served every instance — so the actor answering one instance could
+draw on knowledge supplied only to another. Contaminated responses:
+`11, 12, 15, 21, 22, 23`; response `24` is classified QUESTIONABLE.
+
+Historical isolation claim invalidated by independent review: strict
+per-instance epistemic isolation did not hold in this run. The mission
+outcome and the organization-emergence, real-execution, artifact-correctness,
+clean-room-verification and reasoning/execution-separation evidence remain
+valid. Fixed prospectively by TASK-022A (per-instance fallback contexts:
+one journal directory per logical worker instance).
+
+The final historical classification of Experiment 003 is therefore:
+
+**PASS WITH PROCESS CONTAMINATION**
+
+Everything above this addendum is the original report of 2026-10-05, unchanged.
+The flight record, the 25 historical journal request/response pairs and all
+frozen evidence are preserved unmodified; Experiment 003 was not rerun.

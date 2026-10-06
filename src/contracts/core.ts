@@ -325,6 +325,29 @@ export interface ReasoningProvider {
   reason(input: ReasoningInput): Promise<ReasoningOutput>;
 }
 
+/**
+ * TASK-022A (fallback instance isolation): OPTIONAL capability of STATEFUL
+ * reasoning providers. The known case is the development fallback, where one
+ * human actor serves a whole mission through a file journal — without
+ * scoping, that actor becomes a hidden shared-memory channel between
+ * logically isolated worker instances (the process contamination the
+ * Experiment 003 review found). A provider that may retain anything between
+ * calls must be able to hand out a view whose retained knowledge starts empty
+ * for one logical worker instance, so a worker may know what Genesis gives
+ * it — not what the actor remembers from another worker. Stateless providers
+ * (normal LLM APIs) never implement this and are completely unaffected.
+ */
+export interface ScopeableReasoningProvider extends ReasoningProvider {
+  /**
+   * A provider view scoped to one logical worker instance. `instanceKey`
+   * must be unique per mission (two instances sharing a key is a caller
+   * error and must fail loudly). Calls through the view may know only what
+   * those calls explicitly supply; same-instance continuity is allowed,
+   * cross-instance hidden memory is not.
+   */
+  forInstance(instanceKey: string): ReasoningProvider;
+}
+
 // ---------------------------------------------------------------------------
 // Cognitive routing contract (TASK-008 consumer, TASK-009 producer)
 // ---------------------------------------------------------------------------

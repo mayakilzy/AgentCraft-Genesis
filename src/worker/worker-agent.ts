@@ -1,6 +1,7 @@
 import type {
   Evidence,
   ReasoningProvider,
+  ScopeableReasoningProvider,
   WorkerGenome,
 } from '../contracts/core.js';
 import type { WorkerComputer } from '../runtime/computer.js';
@@ -25,6 +26,15 @@ import type { HandoffSink } from './handoff.js';
  *      artifacts in its workspace, and TASK-013's verification loop — not the
  *      worker's own word — decides whether the mission succeeded.
  *   3. Boundedness: step cap, consecutive parse-failure cap, abort signal.
+ *
+ * TASK-022A: one WorkerAgent construction = one LOGICAL worker instance
+ * (a specialist's main run, its bounded retry, the coordinator, and every
+ * handoff-served invocation are each separate instances). If the injected
+ * reasoning provider may retain state between calls, it is scoped to this
+ * instance at construction, so no knowledge can cross instance boundaries
+ * implicitly — a worker may know what Genesis gives it, not what a shared
+ * reasoning actor remembers from another worker. Stateless providers
+ * (normal LLM APIs) pass through untouched.
  *
  * No hidden chain-of-thought is stored: the scratchpad is worker-private
  * working memory; what leaves this loop is actions, observations and results.
@@ -106,6 +116,12 @@ export interface WorkerAgentOptions {
   readonly maxSteps?: number;
   readonly signal?: AbortSignal;
   readonly onEvent?: WorkerEventSink;
+  /**
+   * TASK-022A: identity of this LOGICAL worker instance for reasoning
+   * providers that retain state between calls (the development fallback).
+   * Default: `<workerId>#<ordinal>`, unique per constructed instance.
+   */
+  readonly instanceKey?: string;
 }
 
 const GRANT_SHELL = 'openbot:shell-execution';
@@ -117,6 +133,20 @@ export const DEFAULT_MAX_WORKER_STEPS = 10;
 
 const MAX_PARSE_FAILURES = 2;
 const OBSERVATION_STDOUT_LIMIT = 4_000;
+
+/** Ordinal source for auto-minted instance keys — unique per process. */
+let nextInstanceOrdinal = 0;
+
+/** Scope a stateful reasoning provider to one logical instance (no-op otherwise). */
+function scopedReasoning(
+  provider: ReasoningProvider,
+  instanceKey: string,
+): ReasoningProvider {
+  const scopeable = provider as ScopeableReasoningProvider;
+  return typeof scopeable.forInstance === 'function'
+    ? scopeable.forInstance(instanceKey)
+    : provider;
+}
 
 export class WorkerAgent {
   private readonly genome: WorkerGenome;
@@ -131,7 +161,11 @@ export class WorkerAgent {
 
   constructor(options: WorkerAgentOptions) {
     this.genome = options.genome;
-    this.reasoning = options.reasoning;
+    this.reasoning = scopedReasoning(
+      options.reasoning,
+      options.instanceKey ??
+        `${options.genome.identity.id}#${(nextInstanceOrdinal += 1)}`,
+    );
     this.computer = options.computer;
     this.taskBrief = options.taskBrief;
     this.handoffs = options.handoffs;
