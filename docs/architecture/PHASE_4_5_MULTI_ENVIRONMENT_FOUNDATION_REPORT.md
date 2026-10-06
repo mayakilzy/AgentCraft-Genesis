@@ -3,7 +3,7 @@
 **Phase:** 4.5
 **Date:** 2026-10-07
 **Start SHA:** `42189435cf5ea893532932ef622066244238bd05`
-**Final SHA:** _(recorded after commit)_
+**Final SHA:** `6ae517896efd1ea79eaf71913a10d128820d328e`
 **Branch:** `build/group-03-repository-work`
 
 ---
@@ -373,7 +373,7 @@ All 25 success-gate conditions satisfied:
 
 ## 25. Exact Final SHA
 
-_(recorded after commit)_
+`6ae517896efd1ea79eaf71913a10d128820d328e`
 
 ---
 
