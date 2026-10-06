@@ -111,6 +111,93 @@ describe('GitWorkspace (TASK-016) — safe external repository work', () => {
     });
   });
 
+  /**
+   * TASK-023 DIRTYFILES REMEDIATION REGRESSION.
+   *
+   * Reproduces the exact observed flight-record condition from Arms B and C:
+   * a Documentation-Writer-style worker that uses `write_file` (which modifies
+   * tracked files WITHOUT staging them) on `README.md` and `docs/api.md`.
+   *
+   * Pre-fix expectation (the bug): dirtyFiles() returns the FIRST CHARACTER
+   * EATEN from every modified-not-staged path:
+   *   README.md   → EADME.md
+   *   docs/api.md → ocs/api.md
+   * because `git status --porcelain` emits `XY<space><path>` and modified-
+   * not-staged files have a LEADING SPACE in the X field. The previous parser
+   * `line.trim().slice(3).trim()` stripped that leading space first, shifting
+   * `.slice(3)` one byte into the path itself.
+   *
+   * Post-fix expectation: dirtyFiles() returns the paths UNCHANGED.
+   *
+   * The single-character filename `a` guards the latent skip risk: if the
+   * bug ever returns, that file would be reduced to an empty string and the
+   * `if (dirty.length === 0) continue` check in repo-mission.ts would skip
+   * the worker's commit entirely — silent data loss.
+   *
+   * NOTE: this test does NOT use the `withWorkspace` helper, because that
+   * helper clones the source BEFORE the test body runs — so any file added
+   * in the test body would be untracked in the worktree, not tracked-modified.
+   * The bug only manifests for ` M` (modified, not staged) lines, which
+   * require the file to be tracked in the base commit. We build the source
+   * fixture manually with all target files committed in the base, then open
+   * the workspace, then modify-without-staging in the worktree.
+   */
+  test('dirtyFiles returns correct paths for modified-not-staged files (TASK-023 regression)', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'g3-ws-dirty-'));
+    const source = fixtureRepo(join(root, 'source-repo'));
+    // Commit ALL target files in the base so they are tracked in the worktree.
+    source.write('README.md', '# fixture\n');
+    source.write('src/a.txt', 'alpha\n');
+    source.write('docs/api.md', 'original api docs\n');
+    source.write('a', 'single char\n');
+    source.commit('init with docs and single-char file');
+
+    const workspace = new GitWorkspace({
+      source: source.path,
+      rootDir: join(root, 'mission'),
+    });
+    await workspace.open();
+    try {
+      const w = await workspace.ensureWorktree('doc-writer');
+      // Modify tracked files WITHOUT staging — exactly what `write_file` does.
+      // No `git add`, no `git commit` from the worker side.
+      execFileSync('bash', [
+        '-c',
+        `echo 'modified readme' > "${join(w.path, 'README.md')}"`,
+      ]);
+      execFileSync('bash', [
+        '-c',
+        `echo 'modified api' > "${join(w.path, 'docs/api.md')}"`,
+      ]);
+      execFileSync('bash', [
+        '-c',
+        `echo 'modified single' > "${join(w.path, 'a')}"`,
+      ]);
+      // One untracked file as a control — untracked files have NO leading
+      // space (`?? path`), so the bug never affected them.
+      execFileSync('bash', [
+        '-c',
+        `echo 'new file' > "${join(w.path, 'newfile.txt')}"`,
+      ]);
+
+      const dirty = await workspace.dirtyFiles('doc-writer');
+
+      // Required: paths preserved exactly.
+      expect(dirty).toContain('README.md');
+      expect(dirty).toContain('docs/api.md');
+      expect(dirty).toContain('a');
+      expect(dirty).toContain('newfile.txt');
+
+      // Explicit negative assertions for the bug's signature.
+      expect(dirty).not.toContain('EADME.md');
+      expect(dirty).not.toContain('ocs/api.md');
+      // Single-char latent-skip guard: must not be reduced to ''.
+      expect(dirty.filter((p) => p.length === 0)).toHaveLength(0);
+    } finally {
+      await workspace.destroy().catch(() => undefined);
+    }
+  });
+
   test('package-manager cache directories are machine state, never committed work', async () => {
     // GROUP 3 regression (Experiment 002's first integration conflict):
     // an npm install inside a worktree creates `.npm/` there; committing

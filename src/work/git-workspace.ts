@@ -246,7 +246,7 @@ export class GitWorkspace {
     );
     return status.stdout
       .split('\n')
-      .map((line) => line.trim().slice(3).trim())
+      .map((line) => line.slice(3).trim())
       .filter((line) => line.length > 0);
   }
 
