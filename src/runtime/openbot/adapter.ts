@@ -2,6 +2,7 @@ import type { RuntimeHandle, WorkerGenome } from '../../contracts/core.js';
 import type {
   WorkerComputer,
   WorkerRuntime,
+  WorkerSurfaces,
 } from '../computer.js';
 import { ComputerApiClient } from './computer-api.js';
 import {
@@ -137,6 +138,18 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime {
       );
     }
     return bound;
+  }
+
+  /**
+   * PHASE 4.5. Provider-neutral surface bundle. Returns `{ computer }` when
+   * the worker has a computer, or `{}` when it does not. The orchestrator
+   * calls this instead of the conditional `computer()` pattern, so it no
+   * longer assumes every worker is a computer worker.
+   */
+  surfaces(handle: RuntimeHandle): WorkerSurfaces {
+    const botId = this.botIdOf(handle);
+    const bound = this.computers.get(botId);
+    return bound === undefined ? {} : { computer: bound };
   }
 
   async stopWorker(handle: RuntimeHandle): Promise<void> {

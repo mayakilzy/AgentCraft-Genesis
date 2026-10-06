@@ -306,6 +306,11 @@ export class MissionOrchestrator {
       }
 
       // Materialize workers in the real runtime.
+      // PHASE 4.5: dispatch through the generalized surfaces() method
+      // instead of the conditional computer() pattern. The orchestrator no
+      // longer assumes every worker is a computer worker — it reads whatever
+      // surfaces the runtime provides. For Phase 4.5 the OpenBot adapter
+      // returns { computer } or {}; Phase 4.6/4.7 will add workspace/job.
       const participants = new Map<string, HandoffParticipant>();
       const genomes = new Map<string, WorkerGenome>();
       for (const result of compilation.results) {
@@ -313,12 +318,11 @@ export class MissionOrchestrator {
         const handle = await this.options.runtime.ensureWorker(genome);
         ensured.push({ handle, genome });
         genomes.set(genome.identity.id, genome);
+        const surfaces = this.options.runtime.surfaces(handle);
         participants.set(genome.identity.id, {
           genome,
           reasoning: this.options.reasoning,
-          computer: genome.computer.required
-            ? this.options.runtime.computer(handle)
-            : null,
+          computer: surfaces.computer ?? null,
         });
       }
 
@@ -442,8 +446,18 @@ export class MissionOrchestrator {
             handle: verifierHandle,
             genome: verifierGenomeForMission,
           });
+          // PHASE 4.5: the verifier always needs a computer (clean-room
+          // checks need shell + files). Read it through the generalized
+          // surfaces() method for consistency with the specialist dispatch.
+          const verifierSurfaces = this.options.runtime.surfaces(verifierHandle);
+          const verifierComputer = verifierSurfaces.computer;
+          if (verifierComputer === undefined) {
+            throw new Error(
+              'verifier worker has no computer surface — verification requires shell + files',
+            );
+          }
           const loop = new VerificationLoop(
-            this.options.runtime.computer(verifierHandle),
+            verifierComputer,
             this.options.reviewer === undefined
               ? {}
               : { reviewer: this.options.reviewer },

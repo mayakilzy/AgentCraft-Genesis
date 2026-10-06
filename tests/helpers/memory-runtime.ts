@@ -2,7 +2,11 @@ import type {
   RuntimeHandle,
   WorkerGenome,
 } from '../../src/contracts/core.js';
-import type { WorkerComputer, WorkerRuntime } from '../../src/runtime/computer.js';
+import type {
+  WorkerComputer,
+  WorkerRuntime,
+  WorkerSurfaces,
+} from '../../src/runtime/computer.js';
 
 /**
  * Shared in-memory WorkerRuntime for mission-level tests (the live OpenBot
@@ -73,6 +77,11 @@ export class MemoryRuntime implements WorkerRuntime {
     const computer = this.computers.get(handle.workerId);
     if (!computer) throw new Error(`no computer for ${handle.workerId}`);
     return computer;
+  }
+
+  surfaces(handle: RuntimeHandle): WorkerSurfaces {
+    const computer = this.computers.get(handle.workerId);
+    return computer === undefined ? {} : { computer };
   }
 
   async stopWorker(handle: RuntimeHandle): Promise<void> {

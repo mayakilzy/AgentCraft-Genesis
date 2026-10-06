@@ -19,7 +19,9 @@ import type { AcceptanceCheck } from '../../src/mission/verification.js';
 import { OrganizationPlanner } from '../../src/organization/organization-planner.js';
 import { CognitiveRouter } from '../../src/routing/cognitive-router.js';
 import { RuleDecisionProvider } from '../../src/routing/decision-provider.js';
-import type { WorkerComputer, WorkerRuntime } from '../../src/runtime/computer.js';
+import type { WorkerComputer,
+  WorkerRuntime,
+  WorkerSurfaces } from '../../src/runtime/computer.js';
 
 /**
  * TASK-019 — the Software Engineering Completion Contract:
@@ -80,6 +82,12 @@ class MemoryRuntime implements WorkerRuntime {
     const computer = this.computers.get(handle.workerId);
     if (!computer) throw new Error(`no computer for ${handle.workerId}`);
     return computer;
+  }
+
+
+  surfaces(handle: RuntimeHandle): WorkerSurfaces {
+    const computer = this.computers.get(handle.workerId);
+    return computer === undefined ? {} : { computer };
   }
 
   async stopWorker(handle: RuntimeHandle): Promise<void> {

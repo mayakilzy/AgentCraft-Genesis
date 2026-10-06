@@ -39,6 +39,8 @@ const GENOME_FIELDS = [
   'memory',
   'budget',
   'autonomy',
+  // PHASE 4.5: operationalNeeds is the provider-neutral requirement field.
+  'operationalNeeds',
 ] as const;
 
 let compiler: GoalCompiler;
@@ -228,7 +230,7 @@ describe('GenomeCompiler v0.1 (TASK-008)', () => {
     expect(soleGenome.identity.id).toBe('sole-operator-1');
   });
 
-  it('produces genomes with exactly the ten baseline fields — no subclasses, no extras', async () => {
+  it('produces genomes with exactly the baseline fields — no subclasses, no extras', async () => {
     const compilation = await genomeCompiler.compilePlan(
       plans.get(DIAGNOSTIC_GOAL)!,
       requirements.get(DIAGNOSTIC_GOAL)!,

@@ -7,6 +7,7 @@ import type {
   ComputerSpec,
   GoalRequirements,
   MemorySpec,
+  OperationalNeed,
   OrganizationPlan,
   PlannedWorker,
   TierSelection,
@@ -247,6 +248,19 @@ export class GenomeCompiler {
       workspace: grantedDomains.has(COMPUTER_FLAG_DOMAINS.workspace),
     };
 
+    // PHASE 4.5: derive provider-neutral operationalNeeds from the same
+    // granted domains that drive the computer spec. This is the provider-
+    // neutral projection of what the worker needs. Future adapters
+    // (OpenDots, OpenMuse) will read operationalNeeds instead of computer.
+    const operationalNeeds: OperationalNeed[] = [];
+    if (computer.shell) operationalNeeds.push({ kind: 'shell-execution' });
+    if (computer.browser) operationalNeeds.push({ kind: 'browser' });
+    if (computer.workspace) operationalNeeds.push({ kind: 'workspace-files' });
+    // collaborative-workspace and durable-delegation are NOT produced here
+    // in Phase 4.5 — no capability need maps to them yet. Phase 4.6/4.7
+    // will extend the compiler (or planner) to declare them when a goal
+    // requires collaborative or durable work.
+
     const tier = await this.options.selectTier({
       roleId: worker.id,
       role: worker.role,
@@ -282,6 +296,7 @@ export class GenomeCompiler {
       memory,
       budget,
       autonomy,
+      operationalNeeds,
     };
     return { worker, genome };
   }

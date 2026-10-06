@@ -219,11 +219,80 @@ export interface WorkerBudget {
  */
 export type AutonomyLevel = 'autonomous' | 'supervised';
 
+// ---------------------------------------------------------------------------
+// PHASE 4.5 — Operational requirements (provider-neutral)
+// ---------------------------------------------------------------------------
+
+/**
+ * PHASE 4.5. A provider-neutral operational requirement. The genome says
+ * WHAT a worker needs; the GenomeCompiler + runtime adapters determine HOW
+ * those needs are realized.
+ *
+ * Semantic review (Phase 4.5): the five kinds below are not all the same
+ * ontological category — shell-execution/browser/workspace-files are
+ * execution resources, collaborative-workspace is an environment concept,
+ * durable-delegation is a lifecycle concept. They are unified under ONE
+ * compact vocabulary because they share a common property: each is an
+ * operational requirement that a provider adapter must satisfy. The
+ * compiler resolves each need to a provider; the runtime provides a surface.
+ *
+ * Intentionally excluded from this vocabulary:
+ *   - human-review — already expressed by `autonomy: 'supervised'`.
+ *   - persistent-context — already expressed by `memory: 'shared-thread'`.
+ * Adding them here would duplicate existing genome fields and create
+ * ambiguity (two ways to express the same thing).
+ *
+ * No "hybrid" special case: a worker with multiple needs simply has multiple
+ * needs. Hybrid emerges naturally from the needs array.
+ *
+ * Phase 4.5: only shell-execution, browser, workspace-files are resolvable
+ * (via the existing OpenBot adapter). collaborative-workspace and
+ * durable-delegation are declared but NOT YET resolvable — they are the
+ * seams for Phase 4.6 (OpenDots) and Phase 4.7 (OpenMuse).
+ */
+export type OperationalNeedKind =
+  | 'shell-execution'
+  | 'browser'
+  | 'workspace-files'
+  | 'collaborative-workspace'
+  | 'durable-delegation';
+
+export interface OperationalNeed {
+  readonly kind: OperationalNeedKind;
+  /**
+   * Optional constraints on the need (e.g., `{ minDiskMb: 512 }` for
+   * workspace-files). Disciplined: the compiler validates known constraints;
+   * unknown constraints fail loudly. Phase 4.5 sets no constraints.
+   */
+  readonly constraints?: Readonly<Record<string, string | number | boolean>>;
+}
+
+/**
+ * PHASE 4.5. A resolved operational need: which need was declared and which
+ * provider realized it. Recorded in Experience v2 for cross-provider
+ * organizational learning. For Phase 4.5, the provider is always 'openbot'
+ * for resolvable needs (shell-execution, browser, workspace-files).
+ */
+export interface ResolvedNeed {
+  readonly kind: OperationalNeedKind;
+  /** The provider that realized this need ('openbot', 'opendots', 'openmuse', ...). */
+  readonly provider: string;
+  /** Adapter version, when known (for telemetry, never for plan content). */
+  readonly adapterVersion?: string;
+}
+
 /**
  * The Minimal Worker Genome v0.1 — exactly the ten baseline fields from the
  * founding architecture: identity, role, objective, model, skills, tools,
  * computer, memory, budget, autonomy. No MuseWorker/DotWorker/BotWorker
  * subclasses exist or will exist: flavors are presets over this genome.
+ *
+ * PHASE 4.5: the optional `operationalNeeds` field is a provider-neutral
+ * expression of what the worker needs. When absent, needs are derived from
+ * the legacy `computer` field (backward compatible). The `computer` field
+ * remains the source of truth for the OpenBot adapter's computer flag logic;
+ * `operationalNeeds` is the provider-neutral projection that future adapters
+ * (OpenDots, OpenMuse) will read.
  */
 export interface WorkerGenome {
   readonly identity: WorkerIdentity;
@@ -238,6 +307,12 @@ export interface WorkerGenome {
   readonly memory: MemorySpec;
   readonly budget: WorkerBudget;
   readonly autonomy: AutonomyLevel;
+  /**
+   * PHASE 4.5. Provider-neutral operational requirements. Optional — when
+   * absent, the GenomeCompiler derives needs from the `computer` field.
+   * Multiple needs represent combination naturally (no "hybrid" enum).
+   */
+  readonly operationalNeeds?: readonly OperationalNeed[];
 }
 
 /**

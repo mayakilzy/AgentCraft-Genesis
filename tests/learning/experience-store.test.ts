@@ -11,7 +11,9 @@ import { MissionOrchestrator } from '../../src/mission/orchestrator.js';
 import { GenomeCompiler, loadOwnership } from '../../src/genome/genome-compiler.js';
 import { CognitiveRouter } from '../../src/routing/cognitive-router.js';
 import { RuleDecisionProvider } from '../../src/routing/decision-provider.js';
-import type { WorkerComputer, WorkerRuntime } from '../../src/runtime/computer.js';
+import type { WorkerComputer,
+  WorkerRuntime,
+  WorkerSurfaces } from '../../src/runtime/computer.js';
 import {
   FileExperienceStore,
   MemoryExperienceStore,
@@ -66,6 +68,12 @@ class MemoryRuntime implements WorkerRuntime {
     if (!computer) throw new Error(`no computer for ${handle.workerId}`);
     return computer;
   }
+
+  surfaces(handle: RuntimeHandle): WorkerSurfaces {
+    const computer = this.computers.get(handle.workerId);
+    return computer === undefined ? {} : { computer };
+  }
+
   async stopWorker(handle: RuntimeHandle): Promise<void> {
     this.stopped.push(handle.workerId);
   }
@@ -156,7 +164,7 @@ describe('TASK-024 — Experience Store', () => {
     });
 
     // Compact: schemaVersion, goal, organization, contributions, outcome.
-    expect(experience.schemaVersion).toBe(1);
+    expect(experience.schemaVersion).toBe(2);
     expect(experience.id).toBe(`exp-${missionId}`);
     expect(experience.goal.domain).toBe('diagnostic');
     expect(experience.organization.workerCount).toBeGreaterThan(0);
@@ -202,7 +210,7 @@ describe('TASK-024 — Experience Store', () => {
     const experience: Experience = {
       id: 'exp-test-1',
       recordedAt: '2026-10-07T00:00:00Z',
-      schemaVersion: 1,
+      schemaVersion: 2,
       goal: { outcome: 'Test goal', domain: 'diagnostic', capabilityNeeds: ['data-analysis'] },
       organization: { workerCount: 1, roles: ['Sole Operator'], collaborationEdges: 0, rationale: 'test' },
       contributions: [{ workerId: 'sole-operator-1', role: 'Sole Operator', reasoningCalls: 1, artifactsCount: 1, status: 'success' }],
@@ -225,7 +233,7 @@ describe('TASK-024 — Experience Store', () => {
       const experience: Experience = {
         id: 'exp-durable-1',
         recordedAt: '2026-10-07T00:00:00Z',
-        schemaVersion: 1,
+        schemaVersion: 2,
         goal: { outcome: 'Durable test', domain: 'research', capabilityNeeds: ['web-research'] },
         organization: { workerCount: 2, roles: ['Web Researcher', 'Report Writer'], collaborationEdges: 1, rationale: 'test' },
         contributions: [],
@@ -243,7 +251,7 @@ describe('TASK-024 — Experience Store', () => {
       // The file is human-readable JSONL.
       const raw = readFileSync(join(dir, 'experiences.jsonl'), 'utf8');
       expect(raw).toContain('"id":"exp-durable-1"');
-      expect(raw).toContain('"schemaVersion":1');
+      expect(raw).toContain('"schemaVersion":2');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -256,7 +264,7 @@ describe('TASK-024 — Experience Store', () => {
       const base: Experience = {
         id: 'exp-replace-1',
         recordedAt: '2026-10-07T00:00:00Z',
-        schemaVersion: 1,
+        schemaVersion: 2,
         goal: { outcome: 'v1', domain: 'diagnostic', capabilityNeeds: [] },
         organization: { workerCount: 1, roles: ['Sole Operator'], collaborationEdges: 0, rationale: 'v1' },
         contributions: [],

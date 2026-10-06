@@ -69,6 +69,7 @@ describe('GROUP 1 — Born Core pipeline (end-to-end)', () => {
           'memory',
           'model',
           'objective',
+          'operationalNeeds',
           'role',
           'skills',
           'tools',

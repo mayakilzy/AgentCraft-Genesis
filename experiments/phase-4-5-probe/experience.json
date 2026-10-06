@@ -1,0 +1,68 @@
+{
+  "id": "exp-phase-4-5-probe-1325b9",
+  "recordedAt": "2026-10-06T23:22:51.164Z",
+  "schemaVersion": 2,
+  "goal": {
+    "outcome": "Implement a small CLI utility that converts temperatures between Celsius and Fahrenheit, with tests.",
+    "domain": "software-engineering",
+    "capabilityNeeds": [
+      "code-execution"
+    ]
+  },
+  "organization": {
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "collaborationEdges": 0,
+    "rationale": "Scope \"minimal\" in domain \"software-engineering\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified."
+  },
+  "contributions": [
+    {
+      "workerId": "sole-operator-1",
+      "role": "Sole Operator",
+      "reasoningCalls": 3,
+      "artifactsCount": 2,
+      "status": "success",
+      "resolvedNeeds": [
+        {
+          "kind": "shell-execution",
+          "provider": "openbot"
+        },
+        {
+          "kind": "workspace-files",
+          "provider": "openbot"
+        }
+      ]
+    }
+  ],
+  "outcome": {
+    "status": "success",
+    "summary": "Sole Operator: Implemented convert.ts and convert.test.ts.",
+    "reasoningCalls": 3,
+    "wallMs": 4,
+    "retries": 0,
+    "humanInterventions": 0
+  },
+  "verification": {
+    "ok": true,
+    "passed": 2,
+    "failed": 0
+  },
+  "evidence": [
+    {
+      "kind": "artifact",
+      "description": "Sole Operator deliverable at convert.ts",
+      "location": "sole-operator-1:convert.ts"
+    },
+    {
+      "kind": "artifact",
+      "description": "Sole Operator deliverable at convert.test.ts",
+      "location": "sole-operator-1:convert.test.ts"
+    }
+  ],
+  "provenance": {
+    "missionId": "phase-4-5-probe-1325b9",
+    "source": "real-mission"
+  }
+}

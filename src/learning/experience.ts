@@ -30,6 +30,8 @@ import type {
   MissionDomain,
   MissionResult,
   OrganizationPlan,
+  ResolvedNeed,
+  WorkerGenome,
 } from '../contracts/core.js';
 import type { FlightEvent } from '../mission/flight-recorder.js';
 
@@ -41,6 +43,12 @@ import type { FlightEvent } from '../mission/flight-recorder.js';
  * Compact per-worker contribution summary. Captured from the flight record so
  * learning can detect redundant or under-utilized roles WITHOUT copying the
  * record's payloads.
+ *
+ * PHASE 4.5: the optional `resolvedNeeds` field records which operational
+ * needs were declared for this worker and which provider realized each.
+ * Absent on schemaVersion 1 experiences (historical — interpreted as "not
+ * explicitly recorded"; consumers may compatibly infer all-OpenBot-computer
+ * from the known historical architecture, but the stored record is honest).
  */
 export interface WorkerContribution {
   /** Worker id from the plan (e.g. "reproduction-engineer-1"). */
@@ -52,6 +60,12 @@ export interface WorkerContribution {
   readonly artifactsCount: number;
   /** The worker's run status (from worker-finished event). */
   readonly status: 'success' | 'failure';
+  /**
+   * PHASE 4.5. Resolved operational needs: which need was declared and which
+   * provider realized it. Optional — absent on schemaVersion 1 experiences
+   * and when genomes are not passed to deriveExperience.
+   */
+  readonly resolvedNeeds?: readonly ResolvedNeed[];
 }
 
 /**
@@ -69,7 +83,7 @@ export interface Experience {
   /** ISO timestamp the experience was recorded. */
   readonly recordedAt: string;
   /** Schema version — bump when the shape changes; never mutate old records. */
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
 
   readonly goal: {
     readonly outcome: string;
@@ -161,6 +175,13 @@ export interface DeriveExperienceInput {
   readonly source?: 'real-mission' | 'synthetic';
   /** Override the recorded-at timestamp (tests / deterministic runs). */
   readonly recordedAt?: string;
+  /**
+   * PHASE 4.5. The compiled worker genomes. When provided, each contribution
+   * gains `resolvedNeeds` — the provider-neutral needs declared for the
+   * worker plus the provider that realized each. When absent, contributions
+   * have no `resolvedNeeds` (interpreted as "not explicitly recorded").
+   */
+  readonly genomes?: readonly WorkerGenome[];
 }
 
 /**
@@ -178,24 +199,41 @@ export function deriveExperience(input: DeriveExperienceInput): Experience {
     repositorySha,
     source = 'real-mission',
     recordedAt = new Date().toISOString(),
+    genomes,
   } = input;
+
+  // Build a genome lookup by worker id, when genomes were provided.
+  const genomeById = new Map<string, WorkerGenome>();
+  if (genomes !== undefined) {
+    for (const genome of genomes) {
+      genomeById.set(genome.identity.id, genome);
+    }
+  }
 
   // Per-worker contributions: read worker-finished events for reasoningCalls
   // and artifacts, falling back to 0 when a worker never finished. The
   // worker-finished event carries a WorkerResult; we read its summary fields
   // without copying its evidence or summary body into the experience.
+  // PHASE 4.5: when genomes are available, each contribution gains
+  // `resolvedNeeds` — the provider-neutral needs + the provider that
+  // realized each (derived from the genome's operationalNeeds + tools).
   const contributions: WorkerContribution[] = plan.workers.map((worker) => {
     const finished = events.find(
       (event): event is Extract<FlightEvent, { type: 'worker-finished' }> =>
         event.type === 'worker-finished' && event.workerId === worker.id,
     );
-    return {
+    const base = {
       workerId: worker.id,
       role: worker.role,
       reasoningCalls: finished?.result.reasoningCalls ?? 0,
       artifactsCount: finished?.result.artifacts.length ?? 0,
-      status: finished?.result.status ?? 'failure',
+      status: finished?.result.status ?? 'failure' as const,
     };
+    const genome = genomeById.get(worker.id);
+    if (genome === undefined) return base;
+    const resolvedNeeds = resolveNeeds(genome);
+    if (resolvedNeeds.length === 0) return base;
+    return { ...base, resolvedNeeds };
   });
 
   // Verification outcome: the last verification event in the stream is the
@@ -221,7 +259,7 @@ export function deriveExperience(input: DeriveExperienceInput): Experience {
   return {
     id: `exp-${missionId}`,
     recordedAt,
-    schemaVersion: 1,
+    schemaVersion: 2,
     goal: {
       outcome: clip(requirements.source.outcome),
       domain: requirements.domain,
@@ -262,4 +300,44 @@ export function deriveExperience(input: DeriveExperienceInput): Experience {
       source,
     },
   };
+}
+
+/**
+ * PHASE 4.5. Resolve a genome's operationalNeeds to ResolvedNeed[] by joining
+ * each need kind with the provider that realized it (extracted from the
+ * genome's `tools` grants, which are `<owner>:<domain>` keys).
+ *
+ * The join maps each OperationalNeedKind to the ownership-registry domain
+ * that satisfies it:
+ *   shell-execution      → shell-execution
+ *   browser              → browser-chromium
+ *   workspace-files      → workspace-files
+ *   collaborative-workspace → (Phase 4.6 — no provider yet)
+ *   durable-delegation   → (Phase 4.7 — no provider yet)
+ *
+ * For Phase 4.5, only the first three resolve (provider: 'openbot').
+ * Unresolved needs are omitted from the result (not falsely attributed).
+ */
+const NEED_KIND_TO_DOMAIN: Readonly<Record<string, string>> = {
+  'shell-execution': 'shell-execution',
+  browser: 'browser-chromium',
+  'workspace-files': 'workspace-files',
+  // Phase 4.6 will add: 'collaborative-workspace': 'collaborative-workspace'
+  // Phase 4.7 will add: 'durable-delegation': 'durable-delegation'
+};
+
+function resolveNeeds(genome: WorkerGenome): ResolvedNeed[] {
+  const needs = genome.operationalNeeds;
+  if (needs === undefined || needs.length === 0) return [];
+  const resolved: ResolvedNeed[] = [];
+  for (const need of needs) {
+    const domain = NEED_KIND_TO_DOMAIN[need.kind];
+    if (domain === undefined) continue; // unresolved need kind (future phase)
+    // Find the tool grant matching `<owner>:<domain>`.
+    const grant = genome.tools.find((tool) => tool.endsWith(`:${domain}`));
+    if (grant === undefined) continue; // no provider realized this need
+    const provider = grant.split(':')[0]!;
+    resolved.push({ kind: need.kind, provider });
+  }
+  return resolved;
 }

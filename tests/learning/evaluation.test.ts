@@ -17,7 +17,7 @@ function exp(overrides: Partial<Experience> = {}): Experience {
   return {
     id: 'exp-1',
     recordedAt: '2026-10-07T00:00:00Z',
-    schemaVersion: 1,
+    schemaVersion: 2,
     goal: { outcome: 'x', domain: 'diagnostic', capabilityNeeds: ['data-analysis'] },
     organization: { workerCount: 4, roles: ['Diagnostic Analyst', 'Reproduction Engineer', 'Report Writer', 'Mission Coordinator'], collaborationEdges: 3, rationale: 'x' },
     contributions: [
