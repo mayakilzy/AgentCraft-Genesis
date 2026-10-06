@@ -146,6 +146,13 @@ export interface GenomeCompilerOptions {
   readonly registry: OwnershipRegistry;
   /** Tier selection port — satisfied by the CognitiveRouter (TASK-009). */
   readonly selectTier: TierSelector;
+  /**
+   * PHASE 4.6. Optional extra operational needs to add to specific workers,
+   * keyed by worker id. This lets a caller (e.g. the Phase 4.6 probe) inject
+   * `collaborative-workspace` without changing the planner. The planner
+   * remains provider-neutral; the caller declares the collaborative intent.
+   */
+  readonly extraOperationalNeeds?: Readonly<Record<string, readonly OperationalNeed[]>>;
 }
 
 export interface WorkerGenomeResult {
@@ -256,10 +263,26 @@ export class GenomeCompiler {
     if (computer.shell) operationalNeeds.push({ kind: 'shell-execution' });
     if (computer.browser) operationalNeeds.push({ kind: 'browser' });
     if (computer.workspace) operationalNeeds.push({ kind: 'workspace-files' });
-    // collaborative-workspace and durable-delegation are NOT produced here
-    // in Phase 4.5 — no capability need maps to them yet. Phase 4.6/4.7
-    // will extend the compiler (or planner) to declare them when a goal
-    // requires collaborative or durable work.
+    // PHASE 4.6: add extra operational needs declared by the caller (e.g.
+    // collaborative-workspace for a collaborative mission). The caller
+    // declares the intent; the compiler records it on the genome so the
+    // composite runtime can resolve it to the right adapter.
+    const extra = this.options.extraOperationalNeeds?.[worker.id];
+    if (extra !== undefined) {
+      for (const need of extra) {
+        // Avoid duplicates.
+        if (!operationalNeeds.some((n) => n.kind === need.kind)) {
+          operationalNeeds.push(need);
+        }
+        // PHASE 4.6: add the provider grant for collaborative-workspace.
+        // The composite runtime reads genome.tools to determine which adapter
+        // provides the workspace surface. The grant format matches the
+        // existing `<owner>:<domain>` convention.
+        if (need.kind === 'collaborative-workspace') {
+          grants.add('opendots:collaborative-workspace');
+        }
+      }
+    }
 
     const tier = await this.options.selectTier({
       roleId: worker.id,

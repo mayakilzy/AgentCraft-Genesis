@@ -1,0 +1,89 @@
+{
+  "id": "exp-phase-4-6-probe-062a60",
+  "recordedAt": "2026-10-06T23:46:33.248Z",
+  "schemaVersion": 2,
+  "goal": {
+    "outcome": "Produce a one-page collaborative research brief on the topic: \"Is AgentCraft Genesis architecturally extensible?\" Two specialists must co-author the brief in a shared workspace, each contributing a distinct section, and the final artifact must persist in the workspace.",
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ]
+  },
+  "organization": {
+    "workerCount": 2,
+    "roles": [
+      "Web Researcher",
+      "Report Writer"
+    ],
+    "collaborationEdges": 1,
+    "rationale": "Scope \"standard\" in domain \"research\" with 2 capability needs. Planned 2 specialist role(s): Web Researcher [web-research], Report Writer [document-authoring]. No coordinator: fewer than 3 specialists."
+  },
+  "contributions": [
+    {
+      "workerId": "web-researcher-1",
+      "role": "Web Researcher",
+      "reasoningCalls": 1,
+      "artifactsCount": 0,
+      "status": "success",
+      "resolvedNeeds": [
+        {
+          "kind": "browser",
+          "provider": "openbot"
+        },
+        {
+          "kind": "collaborative-workspace",
+          "provider": "opendots"
+        }
+      ]
+    },
+    {
+      "workerId": "report-writer-2",
+      "role": "Report Writer",
+      "reasoningCalls": 1,
+      "artifactsCount": 0,
+      "status": "success",
+      "resolvedNeeds": [
+        {
+          "kind": "workspace-files",
+          "provider": "openbot"
+        },
+        {
+          "kind": "collaborative-workspace",
+          "provider": "opendots"
+        }
+      ]
+    }
+  ],
+  "outcome": {
+    "status": "failure",
+    "summary": "no worker produced a deliverable",
+    "reasoningCalls": 2,
+    "wallMs": 12,
+    "retries": 0,
+    "humanInterventions": 0
+  },
+  "evidence": [],
+  "provenance": {
+    "missionId": "phase-4-6-probe-062a60",
+    "source": "real-mission"
+  },
+  "providerInvocations": [
+    {
+      "provider": "opendots",
+      "need": "collaborative-workspace",
+      "operation": "append-content",
+      "workerId": "web-researcher-1",
+      "observed": true,
+      "resultRef": "opendots:fc224d5e-67d8-4a12-aaf0-139a6eba6251:d2a640b9-71ed-4327-b06f-d45805234dfc"
+    },
+    {
+      "provider": "opendots",
+      "need": "collaborative-workspace",
+      "operation": "append-content",
+      "workerId": "report-writer-2",
+      "observed": true,
+      "resultRef": "opendots:fc224d5e-67d8-4a12-aaf0-139a6eba6251:d2a640b9-71ed-4327-b06f-d45805234dfc"
+    }
+  ]
+}

@@ -29,6 +29,7 @@ import type {
   GoalRequirements,
   MissionDomain,
   MissionResult,
+  OperationalNeedKind,
   OrganizationPlan,
   ResolvedNeed,
   WorkerGenome,
@@ -66,6 +67,34 @@ export interface WorkerContribution {
    * and when genomes are not passed to deriveExperience.
    */
   readonly resolvedNeeds?: readonly ResolvedNeed[];
+}
+
+/**
+ * PHASE 4.6. A record that a provider adapter was actually invoked (not just
+ * resolved). This is the INVOKED + OBSERVED layer of the evidence distinction:
+ * - RESOLVED: `resolvedNeeds` on WorkerContribution (a need was declared and a
+ *   provider was selected).
+ * - INVOKED: this `providerInvocations` array (the adapter performed an
+ *   operation).
+ * - OBSERVED: `observed: true` + `resultRef` on the invocation (a real result
+ *   was confirmed).
+ *
+ * Minimal: one record per provider operation. Not a telemetry warehouse —
+ * just enough for learning to distinguish "selected" from "used successfully."
+ */
+export interface ProviderInvocation {
+  /** The provider that was invoked ('openbot', 'opendots', 'openmuse', ...). */
+  readonly provider: string;
+  /** The operational need kind that drove the invocation. */
+  readonly need: OperationalNeedKind;
+  /** The operation performed ('create-space', 'append-content', 'exec', ...). */
+  readonly operation: string;
+  /** The Genesis worker that triggered the invocation. */
+  readonly workerId: string;
+  /** Whether a real result was observed (vs. the invocation failed/unconfirmed). */
+  readonly observed: boolean;
+  /** Provider-specific reference to the result (e.g. OpenDots pageId, revision). */
+  readonly resultRef?: string;
 }
 
 /**
@@ -129,6 +158,20 @@ export interface Experience {
   }[];
 
   /**
+   * PHASE 4.6. Provider invocation evidence — distinguishes RESOLVED (a need
+   * was declared and a provider was selected) from INVOKED (the adapter
+   * actually performed an operation) from OBSERVED (a real result was
+   * observed). Absent on schemaVersion 1 and 2 experiences that don't record
+   * invocations.
+   *
+   * This is the Phase 4.6 honesty gate: it must be impossible for learning to
+   * mistake "provider was selected" for "provider was actually used
+   * successfully." Each invocation record names the provider, the operation,
+   * and whether a result was observed.
+   */
+  readonly providerInvocations?: readonly ProviderInvocation[];
+
+  /**
    * Provenance: enough to recover the authoritative ground truth for this
    * experience. Never copies flight-record payloads — only references.
    */
@@ -182,6 +225,13 @@ export interface DeriveExperienceInput {
    * have no `resolvedNeeds` (interpreted as "not explicitly recorded").
    */
   readonly genomes?: readonly WorkerGenome[];
+  /**
+   * PHASE 4.6. Provider invocation records — the INVOKED + OBSERVED evidence.
+   * When provided, the experience gains a `providerInvocations` array that
+   * distinguishes "adapter was invoked" from "need was resolved." Absent when
+   * no provider invocations were recorded (Phase 4.5 behavior).
+   */
+  readonly providerInvocations?: readonly ProviderInvocation[];
 }
 
 /**
@@ -200,6 +250,7 @@ export function deriveExperience(input: DeriveExperienceInput): Experience {
     source = 'real-mission',
     recordedAt = new Date().toISOString(),
     genomes,
+    providerInvocations,
   } = input;
 
   // Build a genome lookup by worker id, when genomes were provided.
@@ -299,6 +350,11 @@ export function deriveExperience(input: DeriveExperienceInput): Experience {
       ...(repositorySha === undefined ? {} : { repositorySha }),
       source,
     },
+    // PHASE 4.6: include provider invocation evidence when provided. Absent
+    // when no invocations were recorded (Phase 4.5 behavior).
+    ...(providerInvocations === undefined || providerInvocations.length === 0
+      ? {}
+      : { providerInvocations }),
   };
 }
 
@@ -322,7 +378,11 @@ const NEED_KIND_TO_DOMAIN: Readonly<Record<string, string>> = {
   'shell-execution': 'shell-execution',
   browser: 'browser-chromium',
   'workspace-files': 'workspace-files',
-  // Phase 4.6 will add: 'collaborative-workspace': 'collaborative-workspace'
+  // PHASE 4.6: collaborative-workspace is resolved by the OpenDots adapter.
+  // The tool grant is `opendots:collaborative-workspace` (added by the
+  // GenomeCompiler when extraOperationalNeeds declares it). The provider
+  // is extracted from the grant prefix.
+  'collaborative-workspace': 'collaborative-workspace',
   // Phase 4.7 will add: 'durable-delegation': 'durable-delegation'
 };
 

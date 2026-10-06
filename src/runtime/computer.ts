@@ -146,6 +146,71 @@ export interface WorkerRuntime extends RuntimeAdapter {
  */
 export interface WorkerSurfaces {
   readonly computer?: WorkerComputer;
-  // Phase 4.6 will add: readonly workspace?: WorkspaceSurface;
+  /** PHASE 4.6: collaborative workspace surface (OpenDots adapter). */
+  readonly workspace?: WorkspaceSurface;
   // Phase 4.7 will add: readonly job?: JobSurface;
+}
+
+// ---------------------------------------------------------------------------
+// PHASE 4.6 — Collaborative workspace surface (OpenDots)
+// ---------------------------------------------------------------------------
+
+/**
+ * PHASE 4.6. A handle to a collaborative workspace that persists across
+ * worker interactions. Obtained from {@link WorkspaceSurface.ensureWorkspace}
+ * when a worker's genome declares the `collaborative-workspace` operational
+ * need. The same handle can be shared across multiple workers so they
+ * collaborate on the same persistent artifact.
+ *
+ * Provider-neutral: the fields describe WHAT Genesis needs (a shared space
+ * with a persistent page), not HOW OpenDots implements it. Provider-specific
+ * IDs (OpenDots spaceId, pageId) live here at the surface boundary, not on
+ * WorkerGenome.
+ */
+export interface WorkspaceHandle {
+  /** Provider that realized this workspace ('opendots', future providers). */
+  readonly provider: string;
+  /** Provider-specific space identifier (e.g. OpenDots space UUID). */
+  readonly spaceId: string;
+  /** Provider-specific page identifier for the shared artifact. */
+  readonly pageId: string;
+  /** The current revision of the page (for optimistic concurrency). */
+  readonly revision: number;
+}
+
+/**
+ * PHASE 4.6. The collaborative workspace surface. Allows a worker to read
+ * and update a shared persistent artifact (an OpenDots Page). Multiple
+ * workers sharing the same {@link WorkspaceHandle} collaborate on the same
+ * artifact.
+ *
+ * The surface is deliberately minimal: read, append, update. It does NOT
+ * expose page creation (the adapter creates the space+page during
+ * ensureWorkspace), page deletion, conversation threading, or any
+ * OpenDots-specific feature. Genesis orchestration needs shared artifact
+ * read/write; everything else is owned by OpenDots.
+ */
+export interface WorkspaceSurface {
+  /** The handle identifying this workspace (space + page + revision). */
+  readonly handle: WorkspaceHandle;
+
+  /**
+   * Read the current content of the shared page. Returns the full content
+   * string and the current revision.
+   */
+  readPage(): Promise<{ content: string; revision: number }>;
+
+  /**
+   * Append content to the shared page. Uses optimistic concurrency: if the
+   * page was modified since the handle's revision, the adapter re-reads and
+   * retries once. The contributor identifies which Genesis worker wrote this
+   * section (for provenance — recorded in the page content as a header).
+   */
+  appendContent(contributor: string, section: string): Promise<{ revision: number }>;
+
+  /**
+   * Replace the full page content. Uses optimistic concurrency on the
+   * handle's revision. Fails loudly on conflict after one retry.
+   */
+  updatePage(content: string): Promise<{ revision: number }>;
 }
