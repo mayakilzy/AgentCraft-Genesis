@@ -1,0 +1,124 @@
+{
+  "project": "AgentCraft Genesis",
+  "repository": "https://github.com/mayakilzy/AgentCraft-Genesis.git",
+  "local_path": "/home/z/my-project/AgentCraft-Genesis",
+  "branch": "build/group-03-repository-work",
+  "head_sha_resolution": {
+    "instruction": "Resolve HEAD of build/group-03-repository-work (local and remote must match). The expected top commit is the TASK-023B handoff commit with message 'docs(task-023b): freeze safe blind-session handoff'; its parent must equal task_023a_closure_sha. If not, STOP and report.",
+    "task_023a_closure_sha": "496bb60ebdf807637461132993ad0f7053bd8fe3",
+    "expected_top_commit_message": "docs(task-023b): freeze safe blind-session handoff"
+  },
+  "group": "GROUP_3",
+  "current_task": "TASK-023",
+  "safe_state_machine": {
+    "CURRENT_PHASE": "GROUP_3",
+    "CURRENT_TASK": "TASK_023",
+    "TASK_023A": "PASS",
+    "TASK_023B": "PASS",
+    "NEXT_EXECUTION": "ARM_A",
+    "NEXT_SESSION_REQUIREMENT": "FRESH_ZERO_MEMORY_GLM",
+    "ARM_A": "NOT_VALIDLY_EXECUTED",
+    "ARM_B": "NOT_STARTED",
+    "ARM_C": "NOT_STARTED",
+    "TASK_024": "NOT_STARTED"
+  },
+  "completed_tasks": {
+    "GROUP_1_TASK_001_TO_009": "PASS",
+    "GROUP_2_TASK_010_TO_015": "PASS",
+    "GROUP_3_TASK_016_TO_020": "PASS"
+  },
+  "historical_experiment_statuses": {
+    "TASK_021_EXPERIMENT_002": "PASS WITH PARTIAL EXPERIMENT EVIDENCE",
+    "TASK_022_EXPERIMENT_003": "PASS WITH PROCESS CONTAMINATION (historical evidence preserved)",
+    "TASK_022A_DEVELOPMENT_FALLBACK_INSTANCE_ISOLATION": "PASS - ACCEPTED",
+    "TASK_023_ATTEMPT_1": "INVALID (benchmark serving-harness failure / no scoreable result)",
+    "TASK_023_ATTEMPT_2": "INVALID (builder/fallback knowledge contamination)",
+    "TASK_023A_BENCHMARK_INTEGRITY_RECOVERY": "PASS",
+    "TASK_023B_SAFE_BLIND_SESSION_HANDOFF": "PASS (this commit)"
+  },
+  "current_quality_state": {
+    "full_tests": "161/161 PASS",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "verified_at": "TASK-023B freeze, on the tree that includes this handoff"
+  },
+  "benchmark_status": {
+    "state": "BLOCKED PENDING CLEAN INDEPENDENT REASONING ACTOR",
+    "blocker_resolution": "a fresh zero-memory GLM conversation assigned to exactly one arm (see ARM-HANDOFF-TEMPLATE.md)",
+    "benchmark_freeze_sha": "5eb6abc5c43537311290d63feb2d4a234fe20caa",
+    "benchmark_base_commit": "176ac5eaf3c4ba54747e8d05091b2763bac21a46",
+    "invalid_mission_ids_never_reuse": [
+      "mission-20261006T014358-e8c2f2",
+      "mission-20261006T021653-12073e"
+    ],
+    "integrity_classifications": {
+      "workload": "KEEP",
+      "gold_suite": "KEEP",
+      "evaluator": "KEEP",
+      "preflight": "KEEP",
+      "arm_a_single_agent_definition": "KEEP",
+      "arm_b_static_team_definition": "KEEP",
+      "arm_c_genesis_definition": "KEEP"
+    }
+  },
+  "current_glm_classification": {
+    "role_of_session_that_wrote_this_handoff": "BENCHMARK AUTHORITY / BUILDER",
+    "that_session_may_serve_arm_reasoning": "NO",
+    "that_session_status": "CLOSED PERMANENTLY AFTER TASK-023B"
+  },
+  "next_action": "Open a fresh zero-memory GLM conversation, give it the ARM-A bootstrap prompt from handoff/ARM-HANDOFF-TEMPLATE.md with the verified TASK-023B SHA, and let it execute Arm A only.",
+  "allowed_entrypoints": {
+    "handoff_entry": "experiments/benchmark-023/handoff/README.md",
+    "quality_gates": ["npm test", "npm run typecheck", "npm run lint"],
+    "safe_preflight": "bun experiments/benchmark-023/preflight.ts",
+    "arm_launch": "bun experiments/benchmark-023/run.ts --arm A|B|C --declaration <declaration.json>",
+    "detached_launcher": "bun /home/z/my-project/scripts/launch-detached.ts <logfile> <command...>"
+  },
+  "forbidden_paths": {
+    "repository_relative": [
+      "experiments/benchmark-023/workload/pristine/",
+      "experiments/benchmark-023/workload/generate.ts",
+      "experiments/benchmark-023/workload/verify-docs.mjs",
+      "experiments/benchmark-023/evaluate.ts",
+      "experiments/benchmark-023/BENCHMARK-DESIGN.md",
+      "experiments/benchmark-023/CONTAMINATION-REVIEW.md",
+      "experiments/benchmark-023/INTEGRITY-RECOVERY.md",
+      "experiments/benchmark-023/evidence/",
+      "data/flight-records/ (historical; your own arm's new record is allowed)",
+      "experiments/experiment-003/evidence/dev-fallback-journal/"
+    ],
+    "host_absolute": [
+      "/home/z/my-project/target-repos/.worklog-gold/",
+      "/home/z/my-project/benchmark-evidence/",
+      "/home/z/my-project/worklog.md",
+      "/home/z/my-project/scripts/ (everything except launch-detached.ts)",
+      "/home/z/my-project/download/",
+      "/home/z/my-project/missions/ (any mission root that is not your own)"
+    ],
+    "regardless_of_path": [
+      "pristine reference implementation",
+      "sealed gold and hidden gold tests",
+      "defect generator, transformation, defect map",
+      "evaluator implementation and internals",
+      "gold expected outputs not public in the mission specification",
+      "invalid Arm A reasoning journals",
+      "previous Arm private reasoning",
+      "benchmark-builder debugging notes revealing defects",
+      "contaminated operator reasoning",
+      "git history CONTENT of any forbidden path (git metadata is safe)"
+    ],
+    "default_deny": "Everything not explicitly listed as SAFE in handoff/SAFE-CONTEXT-MAP.md is forbidden."
+  },
+  "stop_conditions": [
+    "expected SHA, branch, or handoff commit mismatch",
+    "dirty tree or altered frozen evidence",
+    "preflight FAIL on any line",
+    "epistemic gate blocks the launch (exit 3)",
+    "cannot truthfully declare gold_access/builder_context_access/prior_arm_context_access all false",
+    "a needed path is not on the safe list",
+    "broken target repository missing or not at pinned commit",
+    "orphaned benchmark/agent-computer processes before launch",
+    "handoff contradicts observed reality",
+    "any request to reveal benchmark secrets or inspect forbidden paths"
+  ]
+}
