@@ -17,3 +17,4 @@ export * from './candidate.js';
 export * from './candidate-generator.js';
 export * from './evaluation.js';
 export * from './pattern.js';
+export * from './evolution.js';
