@@ -87,9 +87,11 @@ export class StatisticalCandidateGenerator implements CandidateGenerator {
 
   /**
    * REDUNDANT-ROLE signal: a role that appears in EVERY experience of this
-   * domain but produced zero artifacts AND zero reasoning calls in EVERY one.
-   * That role contributed nothing observable to any past attempt of this kind
-   * — a falsifiable hypothesis that it can be omitted.
+   * domain but produced ZERO artifacts in EVERY one. A role that produces no
+   * artifacts contributes nothing to the deliverable — a falsifiable
+   * hypothesis that it can be omitted. (Reasoning calls are NOT counted
+   * here: a worker that thinks and decides "nothing to do" still made 0
+   * contribution to the deliverable.)
    */
   private detectRedundantRoles(
     domain: string,
@@ -108,26 +110,23 @@ export class StatisticalCandidateGenerator implements CandidateGenerator {
       );
       if (roleContribs.some((contrib) => contrib === undefined)) continue;
 
-      const allZero =
-        roleContribs.every(
-          (contrib) =>
-            contrib!.artifactsCount === 0 && contrib!.reasoningCalls === 0,
-        );
-      if (!allZero) continue;
+      const allZeroArtifacts = roleContribs.every(
+        (contrib) => contrib!.artifactsCount === 0,
+      );
+      if (!allZeroArtifacts) continue;
 
       const supportIds = bucket.map((exp) => exp.id);
       const evidenceStrength = supportIds.length / (supportIds.length + 0);
       const effect: CandidateEffect = {
         kind: 'avoid-role',
-        description: `Omit the "${role}" role for ${domain} missions; it produced no artifacts and no reasoning calls across ${supportIds.length} supporting experience(s).`,
+        description: `Omit the "${role}" role for ${domain} missions; it produced no artifacts across ${supportIds.length} supporting experience(s).`,
         targetRole: role,
       };
       candidates.push({
         id: `cand-${domain}-avoid-${slugify(role)}`,
         hypothesis:
           `The "${role}" role is redundant for ${domain} missions: across ` +
-          `${supportIds.length} experience(s) it contributed no artifacts and ` +
-          `no reasoning calls.`,
+          `${supportIds.length} experience(s) it produced no artifacts.`,
         applicableContext: { domain: domain as never },
         proposedEffect: effect,
         supportingExperienceIds: supportIds,

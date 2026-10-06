@@ -364,8 +364,6 @@ export class OrganizationPlanner {
     }
 
     let specialists = buildSpecialists(needs, requirements.domain);
-    const wantsCoordinator = specialists.length >= 3;
-    const ceiling = wantsCoordinator ? this.maxWorkers - 1 : this.maxWorkers;
 
     // GROUP 4: apply advisory patterns to the specialist build. Each applied
     // pattern is recorded with a one-line effect description. Patterns are
@@ -379,6 +377,14 @@ export class OrganizationPlanner {
         applied.push({ patternId: pattern.id, effect: result.effect });
       }
     }
+
+    // The coordinator decision is made AFTER patterns are applied — a pattern
+    // that removes a redundant specialist may bring the count below 3, in
+    // which case no coordinator is needed. This is the cascading learning
+    // effect: omitting a redundant role also removes the need for a
+    // coordinator that was only there to integrate it.
+    const wantsCoordinator = specialists.length >= 3;
+    const ceiling = wantsCoordinator ? this.maxWorkers - 1 : this.maxWorkers;
 
     const clamped = clampToMax(specialists, ceiling);
     specialists = clamped.workers;

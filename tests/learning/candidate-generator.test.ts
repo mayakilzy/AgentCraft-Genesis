@@ -78,8 +78,8 @@ describe('TASK-025 — Learning Candidate Generator', () => {
     expect(prefer!.supportingExperienceIds).toEqual(['exp-1', 'exp-2']);
   });
 
-  it('does NOT flag a role as redundant when it contributed in any experience', () => {
-    // The Reproduction Engineer contributed in exp2 — no avoid-role candidate.
+  it('does NOT flag a role as redundant when it produced artifacts in any experience', () => {
+    // The Reproduction Engineer produced artifacts in exp2 — no avoid-role candidate.
     const exp1 = syntheticExperience({ id: 'exp-1' });
     const exp2 = syntheticExperience({
       id: 'exp-2',

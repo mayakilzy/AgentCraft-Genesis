@@ -206,7 +206,9 @@ export class RuleCandidateEvaluator implements CandidateEvaluator {
    * where the proposed effect's target role behaved OPPOSITE to the
    * hypothesis. For 'avoid-role'/'prefer-role', a contradiction is an
    * experience in the same domain where the target role produced artifacts
-   * (for avoid) or zero artifacts (for prefer).
+   * (for avoid) or zero artifacts (for prefer). Artifact production is the
+   * contribution signal — reasoning calls are not counted (a worker that
+   * thinks and decides "nothing to do" still made 0 contribution).
    */
   private findContradictions(
     candidate: LearningCandidate,
@@ -222,12 +224,12 @@ export class RuleCandidateEvaluator implements CandidateEvaluator {
       const contrib = exp.contributions.find((c) => c.role === targetRole);
       if (contrib === undefined) return false;
       if (candidate.proposedEffect.kind === 'avoid-role') {
-        // Contradiction: the role DID contribute in this experience.
-        return contrib.artifactsCount > 0 || contrib.reasoningCalls > 0;
+        // Contradiction: the role DID produce artifacts in this experience.
+        return contrib.artifactsCount > 0;
       }
       if (candidate.proposedEffect.kind === 'prefer-role') {
-        // Contradiction: the role did NOT contribute in this experience.
-        return contrib.artifactsCount === 0 && contrib.reasoningCalls === 0;
+        // Contradiction: the role did NOT produce artifacts in this experience.
+        return contrib.artifactsCount === 0;
       }
       return false;
     });
