@@ -137,6 +137,11 @@ export interface CollaborationEdge {
 /**
  * The logical organization designed for one mission. Consumed by the Genome
  * Compiler (TASK-008); materialized into runtime workers in GROUP 2.
+ *
+ * GROUP 4 (TASK-027): the optional `learned` field records how promoted
+ * organizational patterns influenced this plan. Absent when no patterns were
+ * consulted (the planner remains the owner of organization design — patterns
+ * are advisory, never commands).
  */
 export interface OrganizationPlan {
   /** Human-readable justification of this organization shape. */
@@ -145,6 +150,30 @@ export interface OrganizationPlan {
   readonly collaboration: readonly CollaborationEdge[];
   /** The capability needs this plan is accountable for covering. */
   readonly capabilityNeeds: readonly CapabilityNeed[];
+  /**
+   * GROUP 4: pattern influence record. Present only when the planner
+   * consulted promoted organizational patterns. Patterns are advisory — the
+   * planner may accept or ignore each one, and records its decision here so
+   * the learning loop can observe whether retrieved patterns actually
+   * influenced planning (TASK-027 gate).
+   */
+  readonly learned?: LearnedPatternInfluence;
+}
+
+/**
+ * GROUP 4 (TASK-027): how promoted organizational patterns influenced one
+ * plan. The planner remains the owner of organization design; this record
+ * makes the advisory influence auditable.
+ */
+export interface LearnedPatternInfluence {
+  /** Pattern ids the retriever surfaced for this goal's requirements. */
+  readonly considered: readonly string[];
+  /**
+   * Patterns the planner actually applied, with a one-line description of
+   * the effect each had on the plan (e.g. "omitted Reproduction Engineer
+   * role per avoid-role pattern").
+   */
+  readonly applied: readonly { readonly patternId: string; readonly effect: string }[];
 }
 
 // ---------------------------------------------------------------------------

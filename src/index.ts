@@ -31,3 +31,4 @@ export * from './mission/orchestrator.js';
 export * from './mission/verification.js';
 export * from './goal/llm-understanding.js';
 export * from './providers/zai-reasoning.js';
+export * from './learning/index.js';

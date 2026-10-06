@@ -2,10 +2,32 @@ import type {
   CapabilityNeed,
   CollaborationEdge,
   GoalRequirements,
+  LearnedPatternInfluence,
   MissionDomain,
   OrganizationPlan,
   PlannedWorker,
 } from '../contracts/core.js';
+
+/**
+ * GROUP 4 (TASK-027): an advisory organizational pattern the planner may
+ * consult. Defined here (not imported from learning/) so the planner stays
+ * decoupled from the learning subsystem — the planner depends only on the
+ * contracts it needs. The learning module's `OrganizationalPattern` is
+ * structurally compatible.
+ */
+export interface AdvisoryPattern {
+  readonly id: string;
+  readonly applicableContext: {
+    readonly domain?: MissionDomain;
+    readonly capabilityNeeds?: readonly CapabilityNeed[];
+  };
+  readonly proposedEffect: {
+    readonly kind: 'avoid-role' | 'prefer-role' | 'prefer-shape' | 'avoid-shape';
+    readonly description: string;
+    readonly targetRole?: string;
+    readonly targetShape?: { readonly workerCount?: number };
+  };
+}
 
 /**
  * Organization Planner v0.1 (TASK-007).
@@ -18,11 +40,25 @@ import type {
  *
  * The planner knows nothing about providers, models or runtimes: those are
  * Genome Compiler (TASK-008) and Cognitive Router (TASK-009) concerns.
+ *
+ * GROUP 4 (TASK-027): the planner now OPTIONALLY accepts promoted
+ * organizational patterns via the constructor. Patterns are advisory — the
+ * planner remains the owner of organization design. A retrieved pattern can
+ * shape the specialist build (currently: 'avoid-role' removes a redundant
+ * specialist when its capability needs are covered by another specialist),
+ * but it can never override hard capability coverage. The plan records which
+ * patterns were considered and which were applied (the `learned` field on
+ * OrganizationPlan) so the learning loop can observe real influence.
  */
 
 export interface OrganizationPlannerOptions {
   /** Hard upper bound on workers per plan (default 5). */
   readonly maxWorkers?: number;
+  /**
+   * GROUP 4: promoted organizational patterns the planner may consult.
+   * Advisory — the planner remains the owner of organization design.
+   */
+  readonly patterns?: readonly AdvisoryPattern[];
 }
 
 /** v0.1 default upper bound — small by design. */
@@ -260,9 +296,16 @@ function buildEdges(workers: readonly PlannedWorker[]): CollaborationEdge[] {
 /**
  * Plans the logical organization for one mission. Deterministic: identical
  * requirements always produce an identical plan.
+ *
+ * GROUP 4: when the planner was constructed with promoted patterns, it
+ * retrieves those matching the requirements' domain (and capability needs
+ * when present) and applies each one as advisory guidance. The plan's
+ * `learned` field records which patterns were considered and which were
+ * applied — making the learning loop's influence on planning auditable.
  */
 export class OrganizationPlanner {
   private readonly maxWorkers: number;
+  private readonly patterns: readonly AdvisoryPattern[];
 
   constructor(options: OrganizationPlannerOptions = {}) {
     this.maxWorkers = options.maxWorkers ?? DEFAULT_MAX_WORKERS;
@@ -273,15 +316,27 @@ export class OrganizationPlanner {
     ) {
       throw new Error('maxWorkers must be an integer between 1 and 12');
     }
+    this.patterns = options.patterns === undefined ? [] : [...options.patterns];
   }
 
   plan(requirements: GoalRequirements): OrganizationPlan {
     const needs = [...requirements.capabilityNeeds];
     const scope = assessScope(requirements);
 
+    // GROUP 4: retrieve advisory patterns matching this goal. The retriever
+    // is the planner's own deterministic matcher (domain + capability needs);
+    // the learning module's RulePatternRetriever is the canonical
+    // implementation, but the planner cannot depend on it without creating a
+    // cycle, so the matching rule is duplicated here as the smallest seam.
+    const considered = this.retrievePatterns(requirements);
+
     // Conservative shapes: an undifferentiated or minimal mission gets ONE
     // worker — spawning specialists without signal is worker explosion.
     if (requirements.domain === 'general' || scope === 'minimal') {
+      // Even the Sole Operator plan records pattern influence: a Sole Operator
+      // plan never applies avoid-role/prefer-role effects (there are no
+      // specialists to filter), but the considered list is preserved so the
+      // learning loop can see the planner did consult its patterns.
       return {
         rationale:
           `Scope "${scope}" in domain "${requirements.domain}" with ` +
@@ -297,12 +352,34 @@ export class OrganizationPlanner {
         ],
         collaboration: [],
         capabilityNeeds: needs,
+        ...(considered.length === 0
+          ? {}
+          : {
+              learned: {
+                considered: considered.map((pattern) => pattern.id),
+                applied: [],
+              } satisfies LearnedPatternInfluence,
+            }),
       };
     }
 
     let specialists = buildSpecialists(needs, requirements.domain);
     const wantsCoordinator = specialists.length >= 3;
     const ceiling = wantsCoordinator ? this.maxWorkers - 1 : this.maxWorkers;
+
+    // GROUP 4: apply advisory patterns to the specialist build. Each applied
+    // pattern is recorded with a one-line effect description. Patterns are
+    // advisory: a pattern is applied ONLY when it does not break capability
+    // coverage (the role's needs must be covered by another specialist).
+    const applied: { patternId: string; effect: string }[] = [];
+    for (const pattern of considered) {
+      const result = applyAdvisoryPattern(pattern, specialists);
+      if (result.applied) {
+        specialists = result.specialists;
+        applied.push({ patternId: pattern.id, effect: result.effect });
+      }
+    }
+
     const clamped = clampToMax(specialists, ceiling);
     specialists = clamped.workers;
 
@@ -336,12 +413,146 @@ export class OrganizationPlanner {
         `${clamped.merges} merge(s) applied to respect the worker ceiling of ${this.maxWorkers}.`,
       );
     }
+    if (applied.length > 0) {
+      rationaleParts.push(
+        `Applied ${applied.length} promoted pattern(s): ` +
+          applied.map((entry) => `${entry.patternId} (${entry.effect})`).join('; ') +
+          '.',
+      );
+    }
 
     return {
       rationale: rationaleParts.join(' '),
       workers,
       collaboration,
       capabilityNeeds: needs,
+      ...(considered.length === 0
+        ? {}
+        : {
+            learned: {
+              considered: considered.map((pattern) => pattern.id),
+              applied,
+            } satisfies LearnedPatternInfluence,
+          }),
     };
   }
+
+  /**
+   * Deterministic pattern retrieval: domain match (exact) AND (when the
+   * pattern names capability needs) at least one need intersects the
+   * requirements' needs. Mirrors RulePatternRetriever — duplicated here as
+   * the smallest seam to avoid a learning→planner dependency cycle.
+   */
+  private retrievePatterns(
+    requirements: GoalRequirements,
+  ): readonly AdvisoryPattern[] {
+    return this.patterns.filter((pattern) => {
+      if (
+        pattern.applicableContext.domain !== undefined &&
+        pattern.applicableContext.domain !== requirements.domain
+      ) {
+        return false;
+      }
+      const patternNeeds = pattern.applicableContext.capabilityNeeds ?? [];
+      if (patternNeeds.length > 0) {
+        const reqNeeds = new Set(requirements.capabilityNeeds as readonly string[]);
+        const hasIntersection = patternNeeds.some((need) => reqNeeds.has(need));
+        if (!hasIntersection) return false;
+      }
+      return true;
+    });
+  }
+}
+
+/**
+ * Apply one advisory pattern to the specialist build. Returns the (possibly
+ * modified) specialists and whether the pattern was applied.
+ *
+ * Currently supported effects:
+ *   - 'avoid-role': remove the target role's specialist and REDISTRIBUTE its
+ *     capability needs to the remaining specialists (preserving capability
+ *     coverage — the hard constraint). If no specialists remain, the needs
+ *     stay with a single Generalist. The pattern is applied whenever the
+ *     target role is present; it is NOT applied when the role is absent
+ *     (the pattern is trivially satisfied).
+ *
+ * Other effects ('prefer-role', 'prefer-shape', 'avoid-shape') are recognized
+ * but do not modify the build in v0.1 — they are recorded as considered but
+ * not applied. The seam is open for future planners.
+ */
+function applyAdvisoryPattern(
+  pattern: AdvisoryPattern,
+  specialists: PlannedWorker[],
+): { applied: boolean; effect: string; specialists: PlannedWorker[] } {
+  if (pattern.proposedEffect.kind === 'avoid-role') {
+    const targetRole = pattern.proposedEffect.targetRole;
+    if (targetRole === undefined) {
+      return { applied: false, effect: 'no target role', specialists };
+    }
+    const target = specialists.find((worker) => worker.role === targetRole);
+    if (target === undefined) {
+      // The role isn't in the build — pattern is satisfied trivially.
+      return { applied: false, effect: 'role not present', specialists };
+    }
+    // Remove the target specialist and redistribute its capability needs to
+    // preserve coverage. The needs go to the first remaining specialist (a
+    // deterministic choice); if no specialists remain, a Generalist carries
+    // them. This is the same semantics as clampToMax's merge — the role is
+    // absorbed by the rest of the organization.
+    const remaining = specialists.filter((worker) => worker.id !== target.id);
+    const redistributed = redistributeNeeds(remaining, target.capabilityNeeds);
+    return {
+      applied: true,
+      effect:
+        `omitted ${targetRole} role per avoid-role pattern; ` +
+        `${target.capabilityNeeds.length} capability need(s) redistributed to remaining specialists`,
+      specialists: redistributed,
+    };
+  }
+  // Other effects are recognized but not yet implemented in v0.1.
+  return {
+    applied: false,
+    effect: `${pattern.proposedEffect.kind} effect not implemented in v0.1`,
+    specialists,
+  };
+}
+
+/**
+ * Redistribute capability needs across specialists, preserving coverage. Any
+ * need not already covered by a remaining specialist is added to the first
+ * specialist (deterministic); when no specialists remain, a Generalist is
+ * created to carry the needs. This mirrors clampToMax's merge semantics.
+ */
+function redistributeNeeds(
+  specialists: PlannedWorker[],
+  needsToAdd: readonly CapabilityNeed[],
+): PlannedWorker[] {
+  if (needsToAdd.length === 0) return specialists;
+  if (specialists.length === 0) {
+    return [
+      {
+        id: 'generalist-worker-1',
+        role: GENERALIST_ROLE[0],
+        responsibility:
+          'Covers capability needs absorbed from an omitted role per a promoted pattern',
+        capabilityNeeds: [...needsToAdd],
+      },
+    ];
+  }
+  const covered = new Set(
+    specialists.flatMap((worker) => worker.capabilityNeeds as readonly string[]),
+  );
+  const uncovered = needsToAdd.filter((need) => !covered.has(need));
+  if (uncovered.length === 0) {
+    // All needs already covered by remaining specialists — nothing to add.
+    return specialists;
+  }
+  const [first, ...rest] = specialists;
+  return [
+    {
+      ...first,
+      capabilityNeeds: [...new Set([...first.capabilityNeeds, ...uncovered])],
+    },
+    ...rest,
+  ];
 }
