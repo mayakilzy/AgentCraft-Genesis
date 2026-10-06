@@ -1,0 +1,5 @@
+node_modules/
+worklog.jsonl
+demo.jsonl
+*.log
+.DS_Store

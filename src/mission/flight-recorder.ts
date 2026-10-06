@@ -130,7 +130,13 @@ export interface MissionEventReasoningFallback {
   readonly phase: 'requested' | 'answered' | 'timeout';
   readonly reasoning_source: 'DEVELOPMENT_REASONING_FALLBACK';
   readonly external_provider: 'unavailable';
-  readonly fallback_actor: 'GLM_PRIMARY_BUILDER';
+  /**
+   * Who actually served the journal. 'GLM_PRIMARY_BUILDER' is the
+   * historical Experiment 003 actor; TASK-023's cross-arm isolation serves
+   * every request from fresh stateless GLM sessions and labels them
+   * 'GLM_FRESH_ISOLATED_SESSION' — the record always names the real actor.
+   */
+  readonly fallback_actor: 'GLM_PRIMARY_BUILDER' | 'GLM_FRESH_ISOLATED_SESSION';
   readonly tier: string;
   /**
    * TASK-022A: the logical worker instance this call belongs to (present on

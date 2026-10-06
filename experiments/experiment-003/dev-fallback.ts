@@ -59,6 +59,17 @@ export interface DevelopmentFallbackOptions {
   readonly waitTimeoutMs?: number;
   /** Journal poll interval (default 2 s). */
   readonly pollIntervalMs?: number;
+  /**
+   * TASK-023: who is actually serving the journal. The historical label
+   * (and the default, preserving all prior evidence semantics) is
+   * GLM_PRIMARY_BUILDER — the builder session answered Experiment 003's
+   * journals itself. TASK-023's cross-arm isolation instead serves every
+   * request from a FRESH stateless GLM session whose input universe is the
+   * frozen serving protocol + the request file + this instance's journal;
+   * those runs label the actor GLM_FRESH_ISOLATED_SESSION so the record
+   * always describes reality. Nothing else changes.
+   */
+  readonly fallbackActor?: 'GLM_PRIMARY_BUILDER' | 'GLM_FRESH_ISOLATED_SESSION';
 }
 
 /** What the journal records about one substituted call. */
@@ -120,6 +131,7 @@ export class DevelopmentFallbackProvider implements ScopeableReasoningProvider {
   private readonly recorder: FlightRecorder | undefined;
   private readonly waitTimeoutMs: number;
   private readonly pollIntervalMs: number;
+  private readonly fallbackActor: 'GLM_PRIMARY_BUILDER' | 'GLM_FRESH_ISOLATED_SESSION';
   private readonly internals: FallbackInternals;
   private seq = 0;
 
@@ -130,6 +142,7 @@ export class DevelopmentFallbackProvider implements ScopeableReasoningProvider {
     this.recorder = options.recorder;
     this.waitTimeoutMs = options.waitTimeoutMs ?? 15 * 60_000;
     this.pollIntervalMs = options.pollIntervalMs ?? 2_000;
+    this.fallbackActor = options.fallbackActor ?? 'GLM_PRIMARY_BUILDER';
     this.internals =
       internals ?? {
         usage: { calls: 0, promptChars: 0, completionChars: 0, timeouts: 0 },
@@ -165,6 +178,9 @@ export class DevelopmentFallbackProvider implements ScopeableReasoningProvider {
         ...(this.recorder === undefined ? {} : { recorder: this.recorder }),
         waitTimeoutMs: this.waitTimeoutMs,
         pollIntervalMs: this.pollIntervalMs,
+        ...(this.fallbackActor === 'GLM_PRIMARY_BUILDER'
+          ? {}
+          : { fallbackActor: this.fallbackActor }),
       },
       {
         usage: this.internals.usage,
@@ -198,7 +214,7 @@ export class DevelopmentFallbackProvider implements ScopeableReasoningProvider {
           at: new Date().toISOString(),
           reasoning_source: 'DEVELOPMENT_REASONING_FALLBACK',
           external_provider: 'unavailable',
-          fallback_actor: 'GLM_PRIMARY_BUILDER',
+          fallback_actor: this.fallbackActor,
           ...(instance === '' ? {} : { instance }),
           system: input.system ?? '',
           prompt: input.prompt,
@@ -216,7 +232,7 @@ export class DevelopmentFallbackProvider implements ScopeableReasoningProvider {
       phase: 'requested',
       reasoning_source: 'DEVELOPMENT_REASONING_FALLBACK',
       external_provider: 'unavailable',
-      fallback_actor: 'GLM_PRIMARY_BUILDER',
+      fallback_actor: this.fallbackActor,
       ...(instance === '' ? {} : { instance }),
       tier: input.tier,
       promptChars: input.prompt.length,
@@ -248,7 +264,7 @@ export class DevelopmentFallbackProvider implements ScopeableReasoningProvider {
           phase: 'answered',
           reasoning_source: 'DEVELOPMENT_REASONING_FALLBACK',
           external_provider: 'unavailable',
-          fallback_actor: 'GLM_PRIMARY_BUILDER',
+          fallback_actor: this.fallbackActor,
           ...(instance === '' ? {} : { instance }),
           tier: input.tier,
           waitMs,
@@ -267,7 +283,7 @@ export class DevelopmentFallbackProvider implements ScopeableReasoningProvider {
       phase: 'timeout',
       reasoning_source: 'DEVELOPMENT_REASONING_FALLBACK',
       external_provider: 'unavailable',
-      fallback_actor: 'GLM_PRIMARY_BUILDER',
+      fallback_actor: this.fallbackActor,
       ...(instance === '' ? {} : { instance }),
       tier: input.tier,
       waitMs: this.waitTimeoutMs,

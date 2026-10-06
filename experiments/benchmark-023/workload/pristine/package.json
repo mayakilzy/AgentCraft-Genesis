@@ -1,0 +1,14 @@
+{
+  "name": "worklog",
+  "version": "1.4.2",
+  "description": "A tiny time-tracking ledger for the command line",
+  "type": "module",
+  "main": "src/lib.mjs",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

@@ -108,4 +108,39 @@ describe('development reasoning fallback (TASK-022 rule)', () => {
     const timeout = events[1] as unknown as Record<string, unknown>;
     expect(timeout.phase).toBe('timeout');
   });
+
+  it('labels the real actor when TASK-023 fresh-session serving is declared', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dev-fallback-'));
+    const recorder = new MemoryFlightRecorder();
+    const provider = new DevelopmentFallbackProvider({
+      queueDir: dir,
+      missionId: 'test-mission',
+      recorder,
+      waitTimeoutMs: 5_000,
+      pollIntervalMs: 20,
+      fallbackActor: 'GLM_FRESH_ISOLATED_SESSION',
+    });
+    const view = provider.forInstance('worker-1#1') as DevelopmentFallbackProvider;
+
+    const pending = view.reason({
+      system: 'You are a worker.',
+      prompt: 'TASK:\nstep\n\nYour next step as ONE JSON object:',
+      tier: 'default',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const requestFile = join(dir, 'instance-worker-1-1', 'req-0001.json');
+    const request = JSON.parse(readFileSync(requestFile, 'utf8')) as Record<string, unknown>;
+    expect(request.fallback_actor).toBe('GLM_FRESH_ISOLATED_SESSION');
+    expect(request.instance).toBe('worker-1#1');
+    writeFileSync(join(dir, 'instance-worker-1-1', 'resp-0001.txt'), '{"action":"finish","summary":"done"}', 'utf8');
+    await pending;
+
+    for (const event of recorder.events) {
+      if (event.type === 'reasoning-fallback') {
+        expect((event as unknown as Record<string, unknown>).fallback_actor).toBe(
+          'GLM_FRESH_ISOLATED_SESSION',
+        );
+      }
+    }
+  });
 });
