@@ -1,0 +1,62 @@
+{
+  "task": "TASK-023D — PERSIST SEALED PREFLIGHT INFRASTRUCTURE",
+  "created_at": "2026-10-06T16:24:00Z",
+  "created_by_task": "TASK-023D",
+  "created_by_role": "benchmark authority (TASK-023D infrastructure persistence closure, fresh-host bootstrap)",
+
+  "artifact_name": "sealed-preflight-infrastructure.tar.gz",
+  "artifact_path": "experiments/benchmark-023/handoff/preflight-infrastructure/sealed-preflight-infrastructure.tar.gz",
+  "artifact_sha256": "2e56a6d167049f19fb7a9c5362a5f76925baeddc9aba16deec41ac3f7f6b3cd1",
+  "artifact_size_bytes": 17470,
+  "artifact_format": "deterministic gzip-compressed tar archive (GNU tar with --sort=name, fixed mtime, owner=0, group=0, numeric-owner)",
+  "file_count_in_archive": 19,
+
+  "source_benchmark_freeze_sha": "5eb6abc5c43537311290d63feb2d4a234fe20caa",
+  "common_execution_base_sha": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
+  "task_023_common_execution_base_sha": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
+
+  "sealed_root_relative_restore_location": "/home/z/my-project/target-repos/.worklog-gold/",
+  "sealed_root_relative_to_repo": "this artifact restores a HOST path, not a repository-relative path — it lives outside the Genesis repository by design (the sealed gold root is forbidden to arms)",
+
+  "restoration_command": "tar -xzf experiments/benchmark-023/handoff/preflight-infrastructure/sealed-preflight-infrastructure.tar.gz -C /home/z/my-project/target-repos",
+  "restoration_command_sha256_verify": "sha256sum experiments/benchmark-023/handoff/preflight-infrastructure/sealed-preflight-infrastructure.tar.gz",
+  "expected_sha256": "2e56a6d167049f19fb7a9c5362a5f76925baeddc9aba16deec41ac3f7f6b3cd1",
+
+  "reconstruction_method": "Authority-side reconstruction of the sealed gold root (.worklog-gold/) from the frozen benchmark definition (5eb6abc5…). The frozen workload/generate.ts is byte-identical to the freeze, so its gold-root construction steps were replicated in an isolated host-side authority script (/home/z/my-project/scripts/reconstruct-sealed-gold.ts) that copies workload/pristine → .worklog-gold/ + workload/verify-docs.mjs → .worklog-gold/tools/, validates pristine (54/0 tests, 0 doc failures), validates the broken tree (23 gold tests fail, 4 doc mismatches), validates traps (2 doc mismatches on gold src + corrupted docs), and emits the sealed manifest with base_sha = 12a448c4 (canonical, read from workload/base-commit.txt — NOT freshly generated). The canonical common execution base at /home/z/my-project/target-repos/worklog was verified before AND after reconstruction to remain at HEAD 12a448c4 with a clean working tree; the workload generator was NOT run as a substitute for the persisted base; workload/base-commit.txt was NOT modified.",
+
+  "verification_status": "verified — frozen preflight (bun experiments/benchmark-023/preflight.ts) reproduces every frozen control line with PASS exactly (base pin, base cleanliness, single commit, sealed manifest matches pinned base, sealed gold holds the test suite and doc harness, goal compiles to software-engineering + code-execution,document-authoring, three arm organizations compile, arm A is exactly one worker, gold suite fails 23 on base, evaluator NEGATIVE control 6/10 with G3/G4/G5/G6 failures, evaluator POSITIVE control 10/10, no leftover processes, mission root clean, OpenBot checkout present). PREFLIGHT OVERALL: PASS.",
+
+  "frozen_control_reproduction": {
+    "base_repository_at_pinned_sha": "PASS (12a448c4b928)",
+    "base_working_tree_clean": "PASS",
+    "base_history_one_commit": "PASS (commits=1)",
+    "sealed_manifest_matches_pinned_base": "PASS",
+    "sealed_gold_holds_tests_and_harness": "PASS",
+    "goal_compiles_to_software_engineering": "PASS",
+    "goal_compiles_to_code_exec_and_doc_authoring": "PASS",
+    "arm_a_organization_compiles": "PASS (Sole Operator)",
+    "arm_b_organization_compiles": "PASS (Mission Coordinator + Software Engineer + Verification Engineer + Documentation Writer)",
+    "arm_c_organization_compiles": "PASS (Software Engineer + Documentation Writer)",
+    "arm_a_exactly_one_worker": "PASS",
+    "gold_suite_fails_on_base": "PASS (23 failing — matches frozen)",
+    "evaluator_negative_control": "PASS (6/10 gates — matches frozen)",
+    "negative_control_fails_G3_G4_G5_G6": "PASS (matches frozen)",
+    "evaluator_positive_control": "PASS (10/10 gates — matches frozen)",
+    "no_leftover_processes": "PASS (0 found)",
+    "mission_root_clean": "PASS (does not exist yet on fresh host — equivalent to the pre-first-arm 'empty' check)",
+    "openbot_checkout_present": "PASS (v0.1.0 at /home/z/my-project/OpenBot)",
+    "preflight_overall": "PASS"
+  },
+
+  "clean_restoration_test": {
+    "performed_at": "2026-10-06T16:24:00Z",
+    "method": "After reconstruction, the host .worklog-gold/ was removed and restored ONLY from this artifact (sha256 verified, tar -xzf to the sanctioned location), then preflight was re-run. All controls reproduced PASS exactly. No workload generator was invoked; no secret inspection was performed.",
+    "required_generator": "NO",
+    "required_secret_inspection": "NO",
+    "preflight_overall_after_clean_restore": "PASS"
+  },
+
+  "default_deny_rule": "The CONTENT of this artifact is FORBIDDEN to all arm sessions. Arm sessions may ONLY: (1) verify the artifact's SHA-256 against the value recorded above; (2) extract the archive directly to the sanctioned restore location (/home/z/my-project/target-repos/.worklog-gold/); (3) run the frozen preflight. Arm sessions may NOT extract, browse, cat, grep, search, diff, or inspect the contents of the archive or the restored sealed root in any way. The artifact PATH is safe to reference; the artifact CONTENT is forbidden. See handoff/SAFE-CONTEXT-MAP.md for the full default-deny rule.",
+
+  "secret_discipline": "This MANIFEST contains only artifact identity (name, path, SHA-256, size, count), source-freeze SHA, common execution base SHA, restore location, reconstruction method (operational description only), verification status, and frozen control reproduction values (PASS/FAIL and counts — no defect descriptions, no gold expected outputs, no pristine solution, no evaluator internals, no Arm A reasoning, no authority-side sealed material). It deliberately contains no defect map, no gold truth, no pristine solution, and no evaluator logic."
+}

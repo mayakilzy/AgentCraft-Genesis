@@ -23,11 +23,21 @@ This is the TASK-023B handoff: a complete, self-contained, safe context
 package written by the project's previous GLM session before it closed
 permanently. That session acted as the **benchmark builder / authority**
 and is now closed. It was updated once, minimally, by TASK-023C (the
-common execution base freeze) on top of the frozen Arm-A evidence;
-`STATE.json` reflects the current state. You are a fresh session being
-asked to continue the project — most likely by executing exactly ONE
-arm of the TASK-023 benchmark, or by auditing what state the project
-is in.
+common execution base freeze) on top of the frozen Arm-A evidence, and
+again by TASK-023D (sealed preflight infrastructure persistence, with
+fresh-host bootstrap and credential rules). `STATE.json` reflects the
+current state. You are a fresh session being asked to continue the
+project — most likely by executing exactly ONE arm of the TASK-023
+benchmark, or by auditing what state the project is in.
+
+A fresh host is **normal**. If your conversation begins with no local
+`AgentCraft-Genesis` checkout, no `/target-repos/`, no previous mission
+directories, and no GitHub credentials, bootstrap from GitHub per the
+`fresh_host_bootstrap` sequence in `STATE.json` and the §5b/§5c sections
+of `BENCHMARK-EXECUTION-PROTOCOL.md`. Only CONTRADICTORY persisted state
+(artifact SHA mismatch, restored manifest `base_sha` ≠ canonical
+`12a448c4b9284b9063987d8cbaa7fcb2a7c1300a`, altered frozen evidence) is
+an integrity failure. Mere absence is not.
 
 Two facts shape everything in this package:
 

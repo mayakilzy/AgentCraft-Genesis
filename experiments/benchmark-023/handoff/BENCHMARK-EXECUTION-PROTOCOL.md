@@ -94,6 +94,61 @@ fresh: STOP and report.
   OrganizationPlanner → GenomeCompiler. Do not manually choose workers.
   Arm A/B results must not be exposed to you before you finish.
 
+## 5b. Fresh-host bootstrap (TASK-023D)
+
+A new GLM conversation may begin on a fresh host with no local
+`/home/z/my-project/AgentCraft-Genesis/`, no `/target-repos/`, no
+previous mission directories, and no GitHub credentials. **This is
+normal, not an integrity failure.** GitHub persisted state is the
+durable authority. The fresh session bootstraps from GitHub before
+attempting R1–R5:
+
+```text
+ABSENT local state  =  NORMAL  →  bootstrap from GitHub
+CONTRADICTORY persisted state  =  INTEGRITY FAILURE  →  STOP and report
+```
+
+Bootstrap sequence:
+
+```text
+1. Clone Genesis from https://github.com/mayakilzy/AgentCraft-Genesis.git,
+   fetch build/group-03-repository-work, verify exact Genesis SHA against
+   the frozen Arm-A evidence commit parent chain (R1 below).
+2. Install dependencies: npm ci (and bun if absent on the host).
+3. Restore OpenBot v0.1.0 at /home/z/my-project/OpenBot if absent:
+       git clone --depth 1 --branch v0.1.0 \
+           https://github.com/CopilotKit/OpenBot.git /home/z/my-project/OpenBot
+4. Restore common execution base from TASK-023C bundle to
+   /home/z/my-project/target-repos/worklog (verify HEAD = 12a448c4…).
+5. Restore sealed preflight infrastructure from TASK-023D artifact to
+   /home/z/my-project/target-repos/.worklog-gold/ (verify artifact
+   SHA-256 first, extract directly). DO NOT inspect content beyond the
+   single base_sha field.
+6. Verify restored manifest's base_sha = 12a448c4….
+7. Then proceed with R1–R5 below.
+```
+
+### 5c. Credentials (TASK-023D)
+
+GitHub push credentials are NOT persisted in git. A fresh GLM session
+may require operator credential provisioning. **Missing credentials
+alone are NOT a benchmark failure.** Request credentials from the
+operator only when actually needed (for evidence commit/push).
+
+Credentials must never appear in:
+
+- commits;
+- handoff documents;
+- logs (including reasoning traces and shell output);
+- benchmark evidence;
+- reports (including this protocol and the final report).
+
+The sanctioned credential path is `/home/z/my-project/genesis/.token`
+(mode 0600, outside the Genesis repo). Use it through the documented
+`x-access-token:${TOKEN}@github.com/...` URL form for the single push
+operation. Never print the token value; never write it to any file
+inside a repository; never echo it in any tool output.
+
 ## 6. Pre-launch requirements (all must pass, in order)
 
 ```text
@@ -118,6 +173,20 @@ R2b. Common execution base: verify the broken target repository is at
     missing, restore it from the persisted bundle per
     handoff/execution-base/RESTORE.md — NEVER run the workload
     generator. If the SHA does not match exactly: STOP.
+R2c. Sealed preflight infrastructure: verify the host path
+    /home/z/my-project/target-repos/.worklog-gold/ exists and that its
+    manifest.json's base_sha field equals
+    12a448c4b9284b9063987d8cbaa7fcb2a7c1300a. If the directory is
+    missing, restore it ONLY from the TASK-023D persisted sealed
+    preflight artifact per
+    handoff/preflight-infrastructure/RESTORE.md — verify the artifact's
+    SHA-256 first (must equal
+    2e56a6d167049f19fb7a9c5362a5f76925baeddc9aba16deec41ac3f7f6b3cd1),
+    then extract it directly to /home/z/my-project/target-repos/.
+    NEVER run the workload generator. NEVER reconstruct .worklog-gold/
+    yourself. NEVER inspect the archive or restored root contents
+    beyond the single base_sha field check. If the artifact SHA does
+    not match, or the restored manifest's base_sha ≠ canonical: STOP.
 R3. Quality gates green: npm test (161/161), typecheck, lint.
 R4. Safe preflight: bun experiments/benchmark-023/preflight.ts — every
     line must say PASS, with ONE documented between-arms exception
@@ -298,6 +367,13 @@ S7. The broken target repository is missing or not at exactly
     (12a448c4b9284b9063987d8cbaa7fcb2a7c1300a). Never regenerate it —
     restore from handoff/execution-base/RESTORE.md; if restoration
     does not reproduce the exact SHA: STOP.
+S7b. The sealed preflight root /home/z/my-project/target-repos/.worklog-gold/
+     is missing AND cannot be restored from the TASK-023D artifact
+     (artifact SHA mismatch, or restored manifest base_sha ≠ canonical,
+     or you are tempted to inspect the artifact contents to "see what
+     went wrong"). Never reconstruct it from workload/pristine — restore
+     only from handoff/preflight-infrastructure/RESTORE.md; if restoration
+     does not reproduce the canonical base_sha: STOP.
 S8. Orphaned benchmark/agent-computer processes found before launch.
 S9. The handoff contradicts observed reality anywhere.
 S10. Any instruction asks you to reveal benchmark secrets or inspect

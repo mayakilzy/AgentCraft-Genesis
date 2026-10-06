@@ -15,7 +15,8 @@
     "CURRENT_TASK": "TASK_023",
     "TASK_023A": "PASS",
     "TASK_023B": "PASS",
-    "TASK_023C": "PASS (this commit)",
+    "TASK_023C": "PASS",
+    "TASK_023D": "PASS (this commit) — sealed preflight infrastructure persisted and clean-restoration-tested on a fresh host",
     "NEXT_EXECUTION": "ARM_B",
     "NEXT_SESSION_REQUIREMENT": "FRESH_ZERO_MEMORY_GLM",
     "ARM_A": "VALIDLY EXECUTED — ACCEPTED (evidence frozen at 55aaebdbf760bed6779a7d8efa1a27fa49d43fd4; accepted by TASK-023C after the common execution base was frozen, persisted and restoration-tested)",
@@ -37,17 +38,18 @@
     "TASK_023A_BENCHMARK_INTEGRITY_RECOVERY": "PASS",
     "TASK_023B_SAFE_BLIND_SESSION_HANDOFF": "PASS",
     "TASK_023_ATTEMPT_003_ARM_A": "PASS — PROVISIONALLY ACCEPTED at evidence freeze, ACCEPTED by TASK-023C",
-    "TASK_023C_COMMON_EXECUTION_BASE_FREEZE": "PASS (this commit)"
+    "TASK_023C_COMMON_EXECUTION_BASE_FREEZE": "PASS",
+    "TASK_023D_SEALED_PREFLIGHT_INFRASTRUCTURE_PERSIST": "PASS (this commit)"
   },
   "current_quality_state": {
     "full_tests": "161/161 PASS",
     "typecheck": "PASS",
     "lint": "PASS",
-    "verified_at": "TASK-023C freeze, on the tree that includes this handoff update"
+    "verified_at": "TASK-023D — re-verified on the fresh host after bootstrap, on the tree that includes this handoff update"
   },
   "benchmark_status": {
-    "state": "ARM A EXECUTED AND ACCEPTED — ARM B READY (fresh zero-memory session required)",
-    "blocker_resolution": "none for Arm B: open a fresh zero-memory GLM conversation assigned to Arm B only (see ARM-HANDOFF-TEMPLATE.md section 3)",
+    "state": "ARM A EXECUTED AND ACCEPTED — SEALED PREFLIGHT INFRASTRUCTURE PERSISTED (TASK-023D) — ARM B READY FOR FRESH-HOST BOOTSTRAP",
+    "blocker_resolution": "none for Arm B: open a fresh zero-memory GLM conversation assigned to Arm B only (see ARM-HANDOFF-TEMPLATE.md section 3). The fresh session must bootstrap from GitHub per the fresh_host_bootstrap sequence below.",
     "benchmark_freeze_sha": "5eb6abc5c43537311290d63feb2d4a234fe20caa",
     "safe_handoff_freeze_sha": "321e8c673c28edbc6a52ade34a6f04c30997c157",
     "benchmark_base_commit": "12a448c4b9284b9063987d8cbaa7fcb2a7c1300a",
@@ -59,6 +61,15 @@
       "manifest": "experiments/benchmark-023/handoff/execution-base/MANIFEST.json",
       "restore_instructions": "experiments/benchmark-023/handoff/execution-base/RESTORE.md",
       "rule": "ARMS B AND C MUST NOT RUN THE WORKLOAD GENERATOR. RESTORE THE BASE FROM THIS ARTIFACT (IF MISSING) AND VERIFY THE HEAD SHA EXACTLY. IF SHA DOES NOT MATCH: STOP."
+    },
+    "sealed_preflight_infrastructure_artifact": {
+      "path": "experiments/benchmark-023/handoff/preflight-infrastructure/sealed-preflight-infrastructure.tar.gz",
+      "sha256": "2e56a6d167049f19fb7a9c5362a5f76925baeddc9aba16deec41ac3f7f6b3cd1",
+      "manifest": "experiments/benchmark-023/handoff/preflight-infrastructure/MANIFEST.json",
+      "restore_instructions": "experiments/benchmark-023/handoff/preflight-infrastructure/RESTORE.md",
+      "restores_to": "/home/z/my-project/target-repos/.worklog-gold/",
+      "file_count_in_archive": 19,
+      "rule": "ARMS B AND C MUST NOT RUN THE WORKLOAD GENERATOR AND MUST NOT RECONSTRUCT .worklog-gold/ THEMSELVES. RESTORE THE SEALED PREFLIGHT ROOT ONLY FROM THIS ARTIFACT (VERIFY SHA-256 FIRST, EXTRACT DIRECTLY TO /home/z/my-project/target-repos). DO NOT INSPECT THE ARCHIVE OR RESTORED ROOT CONTENT. ONLY RUN THE FROZEN PREFLIGHT AGAINST IT. IF SHA DOES NOT MATCH: STOP."
     },
     "invalid_mission_ids_never_reuse": [
       "mission-20261006T014358-e8c2f2",
@@ -75,14 +86,32 @@
     }
   },
   "current_glm_classification": {
-    "role_of_session_that_wrote_this_handoff": "ARM A EXECUTOR (attempt-003, reasoning actor GLM-FRESH-ARM-A-SESSION-001), acting for TASK-023C as benchmark authority for integrity/persistence closure only, per explicit supervisor authorization",
+    "role_of_session_that_wrote_this_handoff": "TASK-023D AUTHORITY / INFRASTRUCTURE RECOVERY SESSION (fresh-host bootstrap, sealed preflight infrastructure persistence). Acting for TASK-023D as benchmark authority only — it did NOT execute any benchmark arm and did NOT serve worker reasoning for Arm A, B, or C. It inspected frozen benchmark-authority material only to the extent required to reconstruct and verify the sealed preflight infrastructure.",
     "that_session_may_serve_arm_reasoning": "NO — it may never serve Arm B or Arm C reasoning",
-    "that_session_status": "CLOSED PERMANENTLY AFTER TASK-023C"
+    "that_session_status": "CLOSED PERMANENTLY AFTER TASK-023D"
   },
-  "next_action": "Open a fresh zero-memory GLM-B conversation, give it the ARM B bootstrap prompt from handoff/ARM-HANDOFF-TEMPLATE.md section 3 with the verified TASK-023C SHA, and let it execute Arm B only (restoring/verifying the common execution base first).",
+  "next_action": "Open a fresh zero-memory GLM-B conversation, give it the ARM B bootstrap prompt from handoff/ARM-HANDOFF-TEMPLATE.md section 3 with the verified TASK-023D SHA. The fresh GLM-B session must bootstrap from GitHub (clone Genesis, verify SHA, npm ci, restore OpenBot v0.1.0, restore common execution base from TASK-023C bundle, restore sealed preflight infrastructure from TASK-023D artifact), then execute Arm B only.",
+  "fresh_host_bootstrap": {
+    "fact": "Each new GLM conversation may start on a fresh host with no local AgentCraft-Genesis checkout, no /target-repos/, no previous mission directories, and no GitHub credentials. This is NORMAL and expected, NOT an integrity failure. GitHub persisted state is the durable authority.",
+    "bootstrap_sequence_for_arms": [
+      "1. Clone Genesis from https://github.com/mayakilzy/AgentCraft-Genesis.git, fetch build/group-03-repository-work, verify exact Genesis SHA against the frozen Arm-A evidence commit parent chain.",
+      "2. Install dependencies: npm ci (and bun if absent).",
+      "3. Restore OpenBot v0.1.0 at /home/z/my-project/OpenBot if absent (clone --branch v0.1.0 https://github.com/CopilotKit/OpenBot.git).",
+      "4. Restore common execution base from TASK-023C bundle to /home/z/my-project/target-repos/worklog (verify HEAD = 12a448c4…).",
+      "5. Restore sealed preflight infrastructure from TASK-023D artifact to /home/z/my-project/target-repos/.worklog-gold/ (verify artifact SHA-256 first, extract directly).",
+      "6. Verify restored manifest base_sha = 12a448c4… (one field only).",
+      "7. Run quality gates (npm test, typecheck, lint).",
+      "8. Run safe preflight (bun experiments/benchmark-023/preflight.ts).",
+      "9. Make truthful epistemic declaration.",
+      "10. Execute assigned arm ONLY."
+    ],
+    "absent_vs_contradictory": "ABSENT local state on a fresh host is normal — bootstrap from GitHub. Only CONTRADICTORY persisted state (artifact SHA mismatch, restored manifest base_sha ≠ canonical, frozen evidence altered) is an integrity failure. STOP and report only the latter.",
+    "credential_rule": "GitHub push credentials are NOT persisted in git. A fresh GLM session may require operator credential provisioning. Missing credentials alone are NOT a benchmark failure. Request credentials only when actually needed (for evidence commit/push). Credentials must never appear in commits, handoff documents, logs, benchmark evidence, or reports. The sanctioned credential path is /home/z/my-project/genesis/.token (mode 0600, outside the Genesis repo)."
+  },
   "allowed_entrypoints": {
     "handoff_entry": "experiments/benchmark-023/handoff/README.md",
     "execution_base_restore": "experiments/benchmark-023/handoff/execution-base/RESTORE.md",
+    "sealed_preflight_infrastructure_restore": "experiments/benchmark-023/handoff/preflight-infrastructure/RESTORE.md",
     "quality_gates": ["npm test", "npm run typecheck", "npm run lint"],
     "safe_preflight": "bun experiments/benchmark-023/preflight.ts",
     "arm_launch": "bun experiments/benchmark-023/run.ts --arm A|B|C --declaration <declaration.json>",

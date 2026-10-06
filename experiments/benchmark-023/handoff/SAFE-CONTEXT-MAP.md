@@ -38,6 +38,18 @@ experiments/benchmark-023/handoff/execution-base/**   TASK-023C frozen
                                               + restoration instructions
                                               (RESTORE.md) — the ONE base
                                               every arm must run on
+experiments/benchmark-023/handoff/preflight-infrastructure/**
+                                              TASK-023D persisted sealed
+                                              preflight infrastructure:
+                                              tar.gz archive + safe
+                                              MANIFEST.json + RESTORE.md.
+                                              An arm session may access the
+                                              PATH of the archive only for:
+                                              (1) SHA-256 verification and
+                                              (2) blind extraction to the
+                                              sanctioned location. The
+                                              CONTENT of the archive is
+                                              FORBIDDEN — see §4 below.
 experiments/benchmark-023/run.ts              arm runner (launch mechanics)
 experiments/benchmark-023/mission.ts          public goal + arm planner definitions
 experiments/benchmark-023/preflight.ts        safe preflight (prints PASS/FAIL only)
@@ -174,6 +186,16 @@ bun experiments/benchmark-023/preflight.ts
 bash -c 'git -C /home/z/my-project/target-repos/worklog rev-parse HEAD'
 # must print 12a448c4b9284b9063987d8cbaa7fcb2a7c1300a
 
+# sealed preflight infrastructure — verify/restore (NEVER reconstruct it,
+# NEVER inspect its contents): see handoff/preflight-infrastructure/RESTORE.md
+sha256sum experiments/benchmark-023/handoff/preflight-infrastructure/sealed-preflight-infrastructure.tar.gz
+# must print 2e56a6d167049f19fb7a9c5362a5f76925baeddc9aba16deec41ac3f7f6b3cd1
+# if SHA matches: extract directly to the sanctioned location:
+#   tar -xzf experiments/benchmark-023/handoff/preflight-infrastructure/sealed-preflight-infrastructure.tar.gz \
+#       -C /home/z/my-project/target-repos
+# then verify one field only (no other content inspection):
+#   python3 -c "import json; m=json.load(open('/home/z/my-project/target-repos/.worklog-gold/manifest.json')); assert m['base_sha']=='12a448c4b9284b9063987d8cbaa7fcb2a7c1300a'"
+
 # launch one permitted arm (see BENCHMARK-EXECUTION-PROTOCOL.md for the
 # full procedure; the declaration file is mandatory)
 bun experiments/benchmark-023/run.ts --arm A --declaration <declaration.json>
@@ -220,3 +242,55 @@ what the pristine implementation does, what the evaluator expects, what
 a previous arm discovered, or any known-failing output. If a summary
 would require such a statement, the summary stops and states that the
 information is benchmark-secret. This applies to your final report too.
+
+## 9. Fresh-host bootstrap (TASK-023D)
+
+A new GLM conversation may begin on a fresh host with no local
+`/home/z/my-project/AgentCraft-Genesis/`, no `/home/z/my-project/
+target-repos/`, no previous mission directories, and no GitHub
+credentials. **This is normal, not an integrity failure.** GitHub
+persisted state is the durable authority. The fresh session bootstraps
+from GitHub:
+
+```text
+ABSENT local state  =  NORMAL  →  bootstrap from GitHub
+CONTRADICTORY persisted state  =  INTEGRITY FAILURE  →  STOP and report
+```
+
+Contradictory persisted state means: an artifact's SHA-256 does not
+match the value recorded in handoff STATE.json; a restored manifest's
+`base_sha` does not equal the canonical
+`12a448c4b9284b9063987d8cbaa7fcb2a7c1300a`; or frozen evidence appears
+altered. Only contradictions trigger STOP. Mere absence does not.
+
+Bootstrap sequence (see handoff/STATE.json `fresh_host_bootstrap` for
+the canonical list): clone Genesis, verify SHA, `npm ci`, restore
+OpenBot v0.1.0, restore the common execution base from the TASK-023C
+bundle, restore the sealed preflight infrastructure from the TASK-023D
+artifact, verify the restored manifest's `base_sha`, run quality gates,
+run the safe preflight, make a truthful epistemic declaration, then
+execute your assigned arm only.
+
+## 10. Default-deny on the sealed preflight artifact's CONTENT (TASK-023D)
+
+The TASK-023D artifact
+(`experiments/benchmark-023/handoff/preflight-infrastructure/
+sealed-preflight-infrastructure.tar.gz`) is NOT a readable
+safe-context document. The artifact's PATH is safe to reference for
+checksum verification and blind extraction. The artifact's CONTENT
+remains forbidden — the default-deny rule of §0 applies to it just as
+it applies to `.worklog-gold/` itself. An arm session may:
+
+```text
+(1) verify the artifact SHA-256 against the value in STATE.json;
+(2) extract the archive directly to /home/z/my-project/target-repos/;
+(3) read the one field `base_sha` of the restored manifest.json
+    (must equal 12a448c4…);
+(4) run the frozen preflight (which consumes the sealed root
+    mechanically and prints only PASS/FAIL lines).
+```
+
+An arm session may NOT: `cat`, `less`, `grep`, `find -exec`, `xxd`,
+`tar -tzvf` (verbose table), `diff`, or otherwise inspect the archive
+contents or the restored root's contents beyond the single `base_sha`
+field check above. Doing so contaminates the arm and forces STOP.

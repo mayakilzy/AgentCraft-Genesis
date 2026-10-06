@@ -114,13 +114,14 @@ resulting SHA/state, and STOP. Your conversation closes permanently
 after Arm A.
 ```
 
-## 3. Bootstrap prompt — ARM B (ready to paste, written by TASK-023C)
+## 3. Bootstrap prompt — ARM B (ready to paste, written by TASK-023C, refreshed by TASK-023D)
 
 The operator pastes this into a brand-new GLM conversation after the
-TASK-023C commit is pushed. Replace `<TASK-023C-SHA>` with the verified
-final SHA of the TASK-023C commit (the authority's TASK-023C report
+TASK-023D commit is pushed. Replace `<TASK-023D-SHA>` with the verified
+final SHA of the TASK-023D commit (the authority's TASK-023D report
 provides it; it is also the head of `build/group-03-repository-work` on
-GitHub whose parent is `55aaebdbf760bed6779a7d8efa1a27fa49d43fd4`).
+GitHub whose parent is `7a4658a06f2c9139e94b7567e0d92024cb1e85a9`, the
+TASK-023C common-execution-base commit).
 
 ```text
 You are entering an existing AgentCraft Genesis project with ZERO prior
@@ -131,12 +132,42 @@ GitHub persisted state is authoritative.
 Repository: https://github.com/mayakilzy/AgentCraft-Genesis.git
 Local checkout: /home/z/my-project/AgentCraft-Genesis
 Branch: build/group-03-repository-work
-Exact SHA: <TASK-023C-SHA>
+Exact SHA: <TASK-023D-SHA>
 
-Verify the checkout resolves to exactly this SHA, that its top commit is
-the TASK-023C common-execution-base commit (message 'task-023c: freeze
-common execution base') and its parent is
-55aaebdbf760bed6779a7d8efa1a27fa49d43fd4. Clone or fetch if needed.
+You may begin on a FRESH HOST with no local checkout, no /target-repos/,
+no previous mission directories, and no GitHub credentials. ABSENT local
+state is normal — bootstrap from GitHub. Only CONTRADICTORY persisted
+state (artifact SHA mismatch, restored SHA mismatch, altered frozen
+evidence) is an integrity failure.
+
+Bootstrap sequence BEFORE R1–R5:
+
+  1. Clone Genesis from https://github.com/mayakilzy/AgentCraft-Genesis.git
+     (branch build/group-03-repository-work). Verify the checkout resolves
+     to exactly <TASK-023D-SHA>, that its top commit is the TASK-023D
+     sealed-preflight-infrastructure commit and its parent is
+     7a4658a06f2c9139e94b7567e0d92024cb1e85a9 (the TASK-023C
+     common-execution-base commit, message 'task-023c: freeze common
+     execution base', whose parent is 55aaebdbf760bed6779a7d8efa1a27fa49d43fd4).
+  2. Install dependencies: npm ci (and bun if absent on the host).
+  3. Restore OpenBot v0.1.0 at /home/z/my-project/OpenBot if absent:
+       git clone --depth 1 --branch v0.1.0 \
+           https://github.com/CopilotKit/OpenBot.git /home/z/my-project/OpenBot
+  4. Restore the common execution base from the TASK-023C bundle to
+     /home/z/my-project/target-repos/worklog. Verify
+       git -C /home/z/my-project/target-repos/worklog rev-parse HEAD
+     prints 12a448c4b9284b9063987d8cbaa7fcb2a7c1300a. See
+     experiments/benchmark-023/handoff/execution-base/RESTORE.md.
+  5. Restore the sealed preflight infrastructure from the TASK-023D
+     artifact to /home/z/my-project/target-repos/.worklog-gold/. First
+     verify the artifact's SHA-256 equals
+     2e56a6d167049f19fb7a9c5362a5f76925baeddc9aba16deec41ac3f7f6b3cd1,
+     then extract directly to /home/z/my-project/target-repos/. See
+     experiments/benchmark-023/handoff/preflight-infrastructure/RESTORE.md.
+     DO NOT inspect the archive or restored root contents beyond the one
+     base_sha field check.
+  6. Verify the restored manifest's base_sha field equals
+     12a448c4b9284b9063987d8cbaa7fcb2a7c1300a.
 
 Read ONLY the safe handoff entry point:
 
@@ -149,19 +180,34 @@ You are assigned TASK-023 — ARM B ONLY.
 TASK_023_COMMON_EXECUTION_BASE_SHA =
 12a448c4b9284b9063987d8cbaa7fcb2a7c1300a
 
-Before launching, verify the broken target repository at
-/home/z/my-project/target-repos/worklog is at EXACTLY that SHA; if it is
-missing, restore it ONLY from the persisted execution-base artifact per
+If the broken target repository at /home/z/my-project/target-repos/worklog
+is missing or its HEAD ≠ canonical: restore it ONLY from the persisted
+execution-base artifact per
 experiments/benchmark-023/handoff/execution-base/RESTORE.md.
 
-DO NOT RUN THE WORKLOAD GENERATOR — the exact frozen base is persisted;
-regenerating it would invalidate your arm. If the restored/verified SHA
+If /home/z/my-project/target-repos/.worklog-gold/ is missing or its
+manifest's base_sha ≠ canonical: restore it ONLY from the persisted
+sealed-preflight-infrastructure artifact per
+experiments/benchmark-023/handoff/preflight-infrastructure/RESTORE.md.
+
+DO NOT RUN THE WORKLOAD GENERATOR. DO NOT RECONSTRUCT .worklog-gold/
+YOURSELF. DO NOT INSPECT THE SEALED ARTIFACT'S CONTENTS. The exact
+frozen base and the exact sealed preflight root are both persisted;
+regenerating either would invalidate your arm. If a restored/verified SHA
 does not match exactly: STOP and report.
+
+If push access is needed for evidence commit/push and credentials are
+not present: ASK THE OPERATOR for the sanctioned GitHub credential.
+Missing credentials alone are NOT a benchmark failure. Credentials
+must never appear in commits, handoff docs, logs, evidence, or reports.
 
 Do not inspect any forbidden path (the handoff's SAFE-CONTEXT-MAP.md
 defines them; default-deny applies to everything unlisted). This
 includes Arm A's mission root, journals, ARM-RESULT and any report of
-Arm A's performance.
+Arm A's performance. The CONTENT of the sealed preflight artifact and
+the restored .worklog-gold/ root is forbidden — you may only verify
+the artifact SHA, extract it, verify the one base_sha field, and run
+the frozen preflight against it.
 Do not inspect previous invalid Arm reasoning.
 Do not modify the frozen static-team organization of Arm B.
 Do not redesign the benchmark.
@@ -172,9 +218,10 @@ If the handoff is incomplete, contradictory, unsafe, or the expected SHA
 does not match, STOP and report the discrepancy instead of guessing.
 
 Execute only after the handoff's pre-launch integrity requirements pass
-(state verification, environment hygiene, common execution base
-verification, quality gates, safe preflight per the documented
-between-arms expectation, and a truthful epistemic declaration).
+(R1 state verification, R2 environment hygiene, R2b common execution
+base, R2c sealed preflight infrastructure, R3 quality gates, R4 safe
+preflight per the documented between-arms expectation, and R5 a truthful
+epistemic declaration).
 
 At completion, freeze Arm B evidence, commit and push it, report the
 resulting SHA/state, and STOP. Your conversation closes permanently
