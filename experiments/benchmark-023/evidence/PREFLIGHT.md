@@ -1,13 +1,13 @@
 # TASK-023 Preflight (Step 4)
 
-Run at: 2026-10-06T03:49:27.381Z
-Pinned base: 176ac5eaf3c4ba54747e8d05091b2763bac21a46
+Run at: 2026-10-06T04:45:28.051Z
+Pinned base: 12a448c4b9284b9063987d8cbaa7fcb2a7c1300a
 
 Operator actions recorded alongside this file: the serving-protocol
 smoke test (one fresh GLM session served one synthetic journal request
 through the frozen protocol) is documented in the benchmark report.
 
-[PASS] base repository is at the pinned SHA — 176ac5eaf3c4
+[PASS] base repository is at the pinned SHA — 12a448c4b928
 [PASS] base working tree is clean
 [PASS] base history is exactly one commit (no pristine ancestor to mine) — commits=1
 [PASS] sealed manifest matches the pinned base
@@ -28,7 +28,7 @@ ARM C (adaptive chain) planned organization — RECORDED, not directed:
 [PASS] negative control fails G3 (gold suite), G4 (own suite), G5 (quality), G6 (docs)
 [PASS] evaluator POSITIVE control: the perfect repair passes all 10 gates — 10/10 gates
 [PASS] no leftover mission or computer processes — 0 found
-[PASS] mission root is empty (no cross-arm artifacts) — 0 entries
+[PASS] mission root does not exist yet (clean)
 [PASS] OpenBot checkout present
 
 PREFLIGHT OVERALL: PASS
