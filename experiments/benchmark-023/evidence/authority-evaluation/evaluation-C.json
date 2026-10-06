@@ -1,0 +1,81 @@
+{
+  "arm": "C",
+  "missionId": "mission-20261006T174940-045120",
+  "runRoot": "/home/z/my-project/missions/authority-reconstruction-arm-C",
+  "evaluatedAt": "2026-10-06T18:44:49.295Z",
+  "gatesPassed": "8/10",
+  "ok": false,
+  "goldDetail": "54 pass / 0 fail",
+  "gates": [
+    {
+      "id": "G1",
+      "label": "every src/*.mjs parses (node --check)",
+      "klass": "BUILD",
+      "ok": true,
+      "detail": "all modules parse"
+    },
+    {
+      "id": "G2",
+      "label": "CLI --help exits 0",
+      "klass": "BUILD",
+      "ok": true,
+      "detail": "cli runs"
+    },
+    {
+      "id": "G3",
+      "label": "gold test suite passes 100% (behavioral conformance to SPEC)",
+      "klass": "TEST/BEHAVIORAL",
+      "ok": true,
+      "detail": "54 pass / 0 fail"
+    },
+    {
+      "id": "G4",
+      "label": "the arm's own test suite passes 100% (>= 5 tests)",
+      "klass": "TEST",
+      "ok": true,
+      "detail": "11 pass / 0 fail"
+    },
+    {
+      "id": "G5",
+      "label": "test quality: >= 90% pass on pristine, >= 2 fail on base",
+      "klass": "TEST/BEHAVIORAL",
+      "ok": true,
+      "detail": "on pristine: 11/11 (100%); on base: 4 failing"
+    },
+    {
+      "id": "G6",
+      "label": "README and docs examples produce exactly their documented output",
+      "klass": "DOCUMENTATION/BEHAVIORAL",
+      "ok": false,
+      "detail": "2 untruthful example failure(s)"
+    },
+    {
+      "id": "G7",
+      "label": "every src/lib.mjs export appears in docs/api.md",
+      "klass": "DOCUMENTATION",
+      "ok": true,
+      "detail": "14 exports, 0 undocumented"
+    },
+    {
+      "id": "G8",
+      "label": "integration worktree is fully committed",
+      "klass": "REPOSITORY HYGIENE",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "id": "G9",
+      "label": "base files intact; additions within src/ docs/ tests/ (+ lockfile)",
+      "klass": "REPOSITORY HYGIENE",
+      "ok": false,
+      "detail": "missing: none; additions: EADME.md, ocs/api.md, tests/store.test.mjs (ILLEGAL: EADME.md, ocs/api.md)"
+    },
+    {
+      "id": "G10",
+      "label": "the pinned base commit is an ancestor of HEAD",
+      "klass": "INTEGRATION",
+      "ok": true,
+      "detail": "built on the pinned base"
+    }
+  ]
+}
