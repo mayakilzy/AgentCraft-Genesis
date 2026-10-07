@@ -1,8 +1,37 @@
 # GENESIS_G6_03_JEV_DECISION_BENCHMARK
 
+> ## ⚠️ CORRIGENDUM (added by G6-03A, 2026-10-07)
+>
+> G6-03 tested `typesafe/jev-router` through Chat Completions
+> (`POST /api/v1/chat/completions`). Post-review determined this is NOT
+> equivalent to testing the Jev Decision Model (`typesafe/jev-1.13`)
+> through the OpenRouter Decisions API (`POST /api/alpha/decisions`)
+> for Genesis DecisionProvider.
+>
+> G6-03A supplies the corrected evidence. The corrected
+> `JevDecisionProvider` (`src/providers/jev-decision-provider.ts`)
+> targets the Decisions API exclusively. The unit tests
+> (`tests/providers/jev-decision-provider.test.ts`) include HARD
+> NEGATIVE assertions that the source contains NO reference to
+> `/api/v1/chat/completions` and NO reference to `typesafe/jev-router`.
+>
+> **Any previous claim that G6-03 alone proved the Jev Decision Model
+> must be superseded.** G6-03 evidence remains valid as historical
+> evidence for the chat-completions Jev-router product; it is NOT
+> evidence for the Jev Decision Model.
+>
+> The G6-03 status (`PASS_WITH_LIMITATION`, `ADOPT_OPTIONAL`) is
+> preserved for the chat-completions Jev-router experiment. G6-03A
+> adds the corrected Jev Decision Model evidence and reports the
+> geo-restriction finding that blocks the live causal proof.
+>
+> See `experiments/g6-03a/evidence/final-analysis.md` for the G6-03A
+> outcome and `docs/group6/GENESIS_G6_03A_REAL_JEV_DECISIONS.md`
+> (added by G6-03A) for the corrected documentation.
+
 **Date:** 2026-10-07
 **Mission:** G6-03 — Jev Decision Benchmark (Evidence-Based Decision Provider Evaluation)
-**Status:** PASS_WITH_LIMITATION
+**Status:** PASS_WITH_LIMITATION (historical — see G6-03A corrigendum above)
 **Branch:** `build/group-06-productionization` (continued from G6-02)
 **Start HEAD:** `f91442b5cf66356e0e7f011d13638cd0d7451fe7`
 **Final HEAD:** (recorded at commit time)
@@ -14,6 +43,11 @@
 > decision classes but provides **no measurable improvement** over the
 > existing Rule baseline. Jev remains available as a deployer-choice
 > provider; production wiring continues to use `RuleDecisionProvider`.
+>
+> **NOTE (added by G6-03A):** This answer applies to the
+> chat-completions `typesafe/jev-router` product tested in G6-03. The
+> Jev Decision Model (`typesafe/jev-1.13` via Decisions API) is a
+> different product; see G6-03A.
 
 ---
 
