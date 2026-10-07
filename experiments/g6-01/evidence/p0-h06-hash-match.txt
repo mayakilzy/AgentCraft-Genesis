@@ -1,0 +1,17 @@
+=== P0 H-06 hash-match verification probe ===
+
+ RUN  v5.0.3 /home/z/my-project/AgentCraft-Genesis
+
+ ✓ tests/mission/verification-hash-match.test.ts > G6-01 verification hash-match — P0 H-06 false-success resistance > passes when the artifact hash matches the expected gold answer 2ms
+ ✓ tests/mission/verification-hash-match.test.ts > G6-01 verification hash-match — P0 H-06 false-success resistance > fails when a real-LLM worker produces plausible-but-wrong content 0ms
+ ✓ tests/mission/verification-hash-match.test.ts > G6-01 verification hash-match — P0 H-06 false-success resistance > fails honestly when the artifact file is missing entirely 0ms
+ ✓ tests/mission/verification-hash-match.test.ts > G6-01 verification hash-match — P0 H-06 false-success resistance > normalizes the expected hash to lowercase before comparison 0ms
+ ✓ tests/mission/verification-hash-match.test.ts > G6-01 verification hash-match — P0 H-06 false-success resistance > catches the case where the file exists and contains expected substring but is materially wrong 0ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  14:23:53
+   Duration  166ms (transform 58%, import 26%, tests 9%, worker 6%)
+
+
+Result: 5/5 tests PASS — the hash-match check correctly catches plausible-but-wrong content.

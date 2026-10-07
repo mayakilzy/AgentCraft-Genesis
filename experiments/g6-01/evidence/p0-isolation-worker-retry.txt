@@ -1,0 +1,17 @@
+=== P0 isolation + worker retry probe ===
+
+ RUN  v5.0.3 /home/z/my-project/AgentCraft-Genesis
+
+ ✓ tests/worker/worker-agent-retry.test.ts > G6-01 worker-agent retry — P1 H-01, H-03 > retries a transient PROVIDER_FAILURE and succeeds on the second attempt 4ms
+ ✓ tests/worker/worker-agent-retry.test.ts > G6-01 worker-agent retry — P1 H-01, H-03 > does NOT retry a non-retryable CANCELLED failure 0ms
+ ✓ tests/worker/worker-agent-retry.test.ts > G6-01 worker-agent retry — P1 H-01, H-03 > does NOT retry a CONFIGURATION_FAILURE (missing secret) 0ms
+ ✓ tests/worker/worker-agent-retry.test.ts > G6-01 worker-agent retry — P1 H-01, H-03 > fails honestly when retry budget is exhausted 0ms
+ ✓ tests/worker/worker-agent-retry.test.ts > G6-01 worker-agent retry — P1 H-01, H-03 > preserves GROUP 2 behavior when maxReasoningRetries=0 0ms
+ ✓ tests/worker/worker-agent-retry.test.ts > G6-01 worker-agent retry — P1 H-01, H-03 > emits a worker-finished event carrying the failureClass 0ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  14:24:04
+   Duration  199ms (transform 72%, import 17%, tests 7%, worker 4%)
+
+

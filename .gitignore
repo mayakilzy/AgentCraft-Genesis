@@ -9,3 +9,4 @@ coverage/
 # experiment runtime state (worker computers, mission clones; flight records are committed as evidence)
 experiments/experiment-001/.computers/
 experiments/*/.runs/
+.vitest/

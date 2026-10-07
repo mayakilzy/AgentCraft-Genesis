@@ -1,0 +1,22 @@
+=== failure-class taxonomy probe ===
+
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > exposes exactly the eleven classes from Section 13 2ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > classifies AbortError as CANCELLED 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > classifies timeout messages as TIMEOUT 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > classifies HTTP 429 / rate limit as PROVIDER_FAILURE 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > classifies network errors as PROVIDER_FAILURE 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > classifies empty completion as PROVIDER_FAILURE (zai-reasoning contract) 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > classifies configuration errors as CONFIGURATION_FAILURE 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > classifies tool-grant errors as TOOL_FAILURE 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > falls back to UNKNOWN_FAILURE for unclassifiable errors 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > marks transient failures as retryable and structural failures as terminal 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > builds a one-line summary from multiple failures 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > returns empty summary for no failures 0ms
+ ✓ tests/mission/failure-class.test.ts > G6-01 failure-class — Section 13 taxonomy > truncates long failure messages to 160 chars 0ms
+
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+   Start at  14:24:05
+   Duration  146ms (transform 61%, import 20%, tests 11%, worker 8%)
+
+

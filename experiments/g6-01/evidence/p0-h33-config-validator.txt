@@ -1,0 +1,20 @@
+=== P0 H-33 config validator probe ===
+
+ RUN  v5.0.3 /home/z/my-project/AgentCraft-Genesis
+
+ ✓ tests/mission/config-validator.test.ts > G6-01 config-validator — Section 33-35 secret detection > returns ok=true when all required env vars are present 3ms
+ ✓ tests/mission/config-validator.test.ts > G6-01 config-validator — Section 33-35 secret detection > returns ok=false and lists missing required env vars by NAME only 1ms
+ ✓ tests/mission/config-validator.test.ts > G6-01 config-validator — Section 33-35 secret detection > treats empty/whitespace strings as missing 0ms
+ ✓ tests/mission/config-validator.test.ts > G6-01 config-validator — Section 33-35 secret detection > does not throw for optional missing vars 0ms
+ ✓ tests/mission/config-validator.test.ts > G6-01 config-validator — Section 33-35 secret detection > throws ConfigurationError on validateOrThrow when required vars are missing 1ms
+ ✓ tests/mission/config-validator.test.ts > G6-01 config-validator — Section 33-35 secret detection > ConfigValidator.requireEnv throws on missing without leaking value 1ms
+ ✓ tests/mission/config-validator.test.ts > G6-01 config-validator — Section 33-35 secret detection > ConfigValidator.optionalEnv returns undefined for missing vars 0ms
+ ✓ tests/mission/config-validator.test.ts > G6-01 config-validator — Section 33-35 secret detection > STANDARD_PROVIDER_REQUIREMENTS marks all entries as optional 1ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  14:23:59
+   Duration  161ms (transform 53%, import 20%, tests 15%, worker 12%)
+
+
+Result: 12+8=20 tests PASS — secrets are redacted; config validation fails fast without leaking values.

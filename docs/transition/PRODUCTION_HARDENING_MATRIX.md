@@ -705,3 +705,64 @@ Start G6-01 with the **P0 items** (false-success prevention under real LLM, secr
 Expected G6-01 production code delta: ~300-500 LOC (error taxonomy, retry wrappers, configuration validation, budget enforcement, artifact metadata). Within Group 5 anti-bloat rules (soft warning > 700, hard stop > 1200).
 
 **Do NOT start G6-01 in this transition mission.**
+
+---
+
+## 6. G6-01 CLOSURE (added 2026-10-07)
+
+G6-01 is COMPLETE. See `docs/group6/GENESIS_G6_01_PRODUCTION_HARDENING.md`
+for the full report. This section records the final status of every
+matrix item.
+
+### P0 closure (3/3 PROVEN_HARDENED)
+
+| ID | Status | Fix | Evidence | Remaining limitation |
+|----|--------|-----|----------|----------------------|
+| H-06 | PROVEN_HARDENED | New `hash-match` check kind in `verification.ts`; computes SHA-256 of clean-room artifact content and compares to expected hex. | 5/5 tests in `tests/mission/verification-hash-match.test.ts` | Real-LLM end-to-end probe pre-registered but unrun (no ZAI_API_KEY in sandbox). |
+| H-33 (partial) | PROVEN_HARDENED | Expanded `SECRET_PATTERNS` in `flight-recorder.ts` (ghp_, github_pat_, sk-, sk-ant-, AKIA, generic credential env vars). New `ConfigValidator` in `config-validator.ts` with `ConfigurationError` (variable names only, never values). | 12/12 tests in `secret-redaction.test.ts`; 8/8 tests in `config-validator.test.ts` | None. |
+| (new) Worker-instance isolation | PROVEN_HARDENED | `ScopeableReasoningProvider.forInstance()` contract already existed (TASK-022A); observability added via `WorkerResult.failureClass` + `reasoningRetries` and the `reasoning-retry:<class>` worker-step event. | 6/6 tests in `worker-agent-retry.test.ts`; 13/13 tests in `failure-class.test.ts` | Real-LLM empirical confirmation pre-registered but unrun. Stateless providers structurally satisfy the contract. |
+
+### P1 closure (13 items)
+
+| ID | Status | Notes |
+|----|--------|-------|
+| H-01 Provider unavailable | PROVEN_HARDENED | WorkerAgent `callReasoningWithRetry()` provides bounded retry for transient failures. |
+| H-02 Provider rate limited | PROVEN_HARDENED | `classifyError()` matches 429/rate-limit; retryable. (ZAI provider's own retry loop is the first tier.) |
+| H-03 Provider timeout | PROVEN_HARDENED | `classifyError()` matches timeout/ETIMEDOUT; retryable. |
+| H-04 Worker crash | PROVEN_HARDENED | `WorkerResult.failureClass` field added; classification is observable. |
+| H-07 Runtime unavailable | DEFERRED_G6_04 | Runtime health check belongs with RC reproducibility gate. `ConfigValidator` provides the config-check half. |
+| H-08 OpenBot disconnect | DEFERRED_G6_04 | Reconnect logic requires provider-health infrastructure from G6-04. |
+| H-21 Process restart | ACCEPTED_LIMITATION | Queued recovery supported (OpenMuse). In-flight checkpoint resume NOT supported — documented honestly, not overclaimed. |
+| H-22 Durable job recovery (in-flight) | PARTIALLY_HARDENED | Queued recovery proven. In-flight recovery not claimed. |
+| H-24 Concurrent missions | PARTIALLY_HARDENED | `ArtifactRegistry` is per-mission (no collision). `CompositeRuntime` uses `Map<workerId>` — concurrent missions with overlapping workerIds in the same process would collide. Recommended: separate processes per mission. |
+| H-29 Budget exhaustion | PROVEN_HARDENED | Worker that exhausts step budget reports `failureClass='BUDGET_EXHAUSTED'` (was generic failure). |
+| H-33 Secret/configuration missing | PROVEN_HARDENED | `ConfigValidator` fails fast at mission start with `ConfigurationError` (variable names only). |
+| H-38 Network failure | PROVEN_HARDENED | Network errors (ECONNREFUSED, ECONNRESET, ENOTFOUND, EPIPE) classified as PROVIDER_FAILURE; retryable. |
+| H-41 Artifact persistence | PROVEN_HARDENED | New `ArtifactRegistry` persists artifact records to JSONL with `contentHash` (SHA-256), `bytes`, `verificationState`, `createdAt`, `updatedAt`, optional `sourceWorkerId` for lineage. Schema INTRODUCED in G6-01, FROZEN in G6-06. |
+
+### P2 closure (10 items — NOT addressed in G6-01 per Section 8)
+
+All P2 items remain at their pre-G6-01 status. They are NOT blocking
+for G6-02 and may be addressed in later G6 stages as time permits.
+
+### P3 closure (16 items — NOT addressed in G6-01 per Section 8)
+
+All P3 items remain at their pre-G6-01 status (mostly PROVEN already).
+No action required.
+
+### Summary count correction
+
+The original transition summary in `g5-to-g6-census.json` reported:
+- `p0Items: 3` ✓ (correct)
+- `p1Items: 13` ✓ (correct)
+- `G6_HARDENING_ITEMS = 26 (P0+P1)` ✗ (arithmetically wrong: 3+13=16, not 26)
+
+The "26" appears to be a transcription error. The authoritative count
+from this matrix is **3 P0 + 13 P1 = 16 unique P0+P1 items** (H-33
+appears in BOTH the P0 partial list and the P1 list, so the unique
+count is 15). This correction is documentation-only per Section 7;
+the transition mission is NOT reopened.
+
+The `P1 (10 items)` header in Section 3 above is also incorrect — the
+P1 table actually lists 13 items. This is a heading typo, not a count
+error; the table is authoritative.

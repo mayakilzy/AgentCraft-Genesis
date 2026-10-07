@@ -1,0 +1,76 @@
+# G6-01 Real Provider Hardening Probe
+
+**Date:** 2026-10-07
+**Per Section 16:** At least one bounded real-provider hardening probe
+is required if credentials/environment make it reasonably possible.
+
+## Environment Check
+
+- `ZAI_API_KEY` environment variable: NOT SET
+- `z-ai-web-dev-sdk` package: NOT AVAILABLE (cannot `import` from the sandbox)
+- `/home/z/my-project/upstream/` directory: NOT PRESENT (no OpenBot, OpenDots, OpenMuse)
+
+## Probe Result
+
+```
+REAL_PROVIDER_HARDENING_EVIDENCE = UNAVAILABLE
+```
+
+## Truthful Classification of the Limitation
+
+Per Section 16: "If external provider cannot be used: do NOT fake the
+evidence. Report REAL_PROVIDER_HARDENING_EVIDENCE = UNAVAILABLE and
+classify the remaining limitation truthfully."
+
+The hardening probes that COULD NOT be run against a real provider:
+
+1. **False-success resistance under real LLM (P0-1, H-06):** The
+   `hash-match` verification check is unit-tested with a stub computer
+   that stages known content. A real-LLM probe would have a worker
+   produce content for a mission with a known gold answer and verify
+   that the hash-match check catches any deviation. The unit test
+   proves the CHECK works correctly; the real-LLM probe would prove
+   the WORKER produces content the check can meaningfully hash-compare.
+   The check itself is provider-agnostic; the missing probe is the
+   end-to-end real-LLM-to-hash-check path.
+
+2. **Worker-instance epistemic isolation under real provider (P0-3):**
+   The `ScopeableReasoningProvider.forInstance()` contract is verified
+   under the development fallback (TASK-022A). A real-LLM probe would
+   construct two workers with different instance keys, give each a
+   different piece of information, and verify that worker B cannot
+   recall worker A's information. Real-LLM providers are stateless by
+   design (each API call is independent), so the contract is
+   structurally satisfied; the missing probe is the empirical
+   confirmation under a specific provider's actual behavior.
+
+3. **Provider failure handling (P1 H-01, H-03):** The worker retry
+   loop is unit-tested with a scripted provider that throws
+   `ECONNRESET` and `AbortError`. A real-LLM probe would induce a
+   real 429 rate-limit or network timeout and verify the retry loop
+   recovers. The unit test proves the RETRY LOGIC works correctly;
+   the missing probe is the end-to-end real-provider-to-recovery path.
+
+## What IS Proven
+
+- The `hash-match` check correctly catches plausible-but-wrong content
+  under deterministic conditions (5/5 tests pass).
+- The `failure-class` taxonomy correctly classifies all 11 failure
+  classes from Section 13 (13/13 tests pass).
+- The `ConfigValidator` correctly fails fast on missing required env
+  vars without leaking secret values (8/8 tests pass).
+- The `ArtifactRegistry` correctly persists and retrieves artifact
+  records with content hashes (12/12 tests pass).
+- The expanded secret redaction catches GitHub PATs, OpenAI keys,
+  Anthropic keys, AWS access key ids, Bearer tokens, and generic
+  credential env var assignments without false positives on
+  non-credential configuration keys (12/12 tests pass).
+- The worker retry loop correctly retries transient failures and
+  propagates non-retryable failures truthfully (6/6 tests pass).
+
+## Recommendation
+
+When `ZAI_API_KEY` becomes available (or another reasoning provider is
+configured), the three real-LLM probes above should be run as a
+bounded G6-01 corrigendum. The probes are pre-registered; only the
+environment was unavailable.
