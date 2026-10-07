@@ -1,0 +1,102 @@
+{
+  "id": "exp-phase-4-8-probe-129c13",
+  "recordedAt": "2026-10-07T01:22:03.405Z",
+  "schemaVersion": 2,
+  "goal": {
+    "outcome": "Verify a small set of expenses by delegating the calculation to a durable finance worker, independently re-checking the total by executing code on a real computer, and persisting the verified brief in a shared collaborative workspace.",
+    "domain": "software-engineering",
+    "capabilityNeeds": [
+      "code-execution"
+    ]
+  },
+  "organization": {
+    "workerCount": 1,
+    "roles": [
+      "Software Engineer"
+    ],
+    "collaborationEdges": 0,
+    "rationale": "Scope \"standard\" in domain \"software-engineering\" with 1 capability needs. Planned 1 specialist role(s): Software Engineer [code-execution]. No coordinator: fewer than 3 specialists."
+  },
+  "contributions": [
+    {
+      "workerId": "software-engineer-1",
+      "role": "Software Engineer",
+      "reasoningCalls": 7,
+      "artifactsCount": 0,
+      "status": "success",
+      "resolvedNeeds": [
+        {
+          "kind": "shell-execution",
+          "provider": "openbot"
+        },
+        {
+          "kind": "workspace-files",
+          "provider": "openbot"
+        },
+        {
+          "kind": "collaborative-workspace",
+          "provider": "opendots"
+        },
+        {
+          "kind": "durable-delegation",
+          "provider": "openmuse"
+        }
+      ]
+    }
+  ],
+  "outcome": {
+    "status": "success",
+    "summary": "Software Engineer: Three-pillar mission complete: durable delegated calculation succeeded, independently verified through computer execution, persisted to shared collaborative workspace.",
+    "reasoningCalls": 7,
+    "wallMs": 0,
+    "retries": 0,
+    "humanInterventions": 0
+  },
+  "evidence": [],
+  "provenance": {
+    "missionId": "phase-4-8-probe-129c13",
+    "source": "real-mission"
+  },
+  "providerInvocations": [
+    {
+      "provider": "openmuse",
+      "need": "durable-delegation",
+      "operation": "create-task",
+      "workerId": "sole-operator-1",
+      "observed": true,
+      "resultRef": "3 transactions · 32.00 spent"
+    },
+    {
+      "provider": "openmuse",
+      "need": "durable-delegation",
+      "operation": "get-task",
+      "workerId": "sole-operator-1",
+      "observed": true,
+      "resultRef": "openmuse:e1043c74-0df6-47a3-bb08-a4239dda1451"
+    },
+    {
+      "provider": "opendots",
+      "need": "collaborative-workspace",
+      "operation": "create-space",
+      "workerId": "sole-operator-1",
+      "observed": true,
+      "resultRef": "opendots:4d1b6df4-95f5-4c26-a48d-8ef2b8d7f48d"
+    },
+    {
+      "provider": "opendots",
+      "need": "collaborative-workspace",
+      "operation": "append-content",
+      "workerId": "sole-operator-1",
+      "observed": true,
+      "resultRef": "opendots:4d1b6df4-95f5-4c26-a48d-8ef2b8d7f48d:82c662d2-2cd8-41b8-a306-ba76fa4896e9:r3"
+    },
+    {
+      "provider": "openbot",
+      "need": "shell-execution",
+      "operation": "exec",
+      "workerId": "software-engineer-1",
+      "observed": true,
+      "resultRef": "openbot:exec:32.00"
+    }
+  ]
+}
