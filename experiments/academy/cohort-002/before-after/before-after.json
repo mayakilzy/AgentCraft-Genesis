@@ -1,0 +1,36 @@
+{
+  "baseline": {
+    "arm": "baseline-c",
+    "patternsApplied": false,
+    "workerCount": 2,
+    "roles": [
+      "Software Engineer",
+      "Documentation Writer"
+    ],
+    "reasoningCalls": 3,
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "status": "success"
+  },
+  "learned": {
+    "arm": "learned",
+    "patternsApplied": false,
+    "workerCount": 2,
+    "roles": [
+      "Software Engineer",
+      "Documentation Writer"
+    ],
+    "reasoningCalls": 3,
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "status": "success"
+  },
+  "deltas": {
+    "workerDelta": 0,
+    "reasoningDelta": 0,
+    "verificationDelta": 0,
+    "correctnessPreserved": true
+  }
+}

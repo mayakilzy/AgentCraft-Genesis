@@ -1,0 +1,48 @@
+{
+  "id": "exp-cohort-002-C002-02",
+  "recordedAt": "2026-10-07T11:45:24.963Z",
+  "schemaVersion": 2,
+  "goal": {
+    "outcome": "Compare cloud provider A vs cloud provider B for a startup hosting decision and recommend with evidence in a report file.",
+    "domain": "research",
+    "capabilityNeeds": [
+      "document-authoring"
+    ]
+  },
+  "organization": {
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "collaborationEdges": 0,
+    "rationale": "Scope \"minimal\" in domain \"research\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified."
+  },
+  "contributions": [
+    {
+      "workerId": "sole-operator-1",
+      "role": "Sole Operator",
+      "reasoningCalls": 3,
+      "artifactsCount": 1,
+      "status": "success",
+      "resolvedNeeds": [
+        {
+          "kind": "workspace-files",
+          "provider": "openbot"
+        }
+      ]
+    }
+  ],
+  "outcome": {
+    "status": "success",
+    "summary": "Compared cloud A vs cloud B using staged evidence; recommended Cloud A based on lower cost.",
+    "reasoningCalls": 3,
+    "wallMs": 1000,
+    "retries": 0,
+    "humanInterventions": 0
+  },
+  "evidence": [],
+  "provenance": {
+    "missionId": "cohort-002-C002-02",
+    "source": "synthetic"
+  }
+}

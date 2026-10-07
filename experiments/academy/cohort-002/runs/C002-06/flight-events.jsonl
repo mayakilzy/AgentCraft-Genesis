@@ -1,0 +1,11 @@
+{"type":"mission-started","at":"2026-10-07T11:45:24.976Z","missionId":"cohort-002-C002-06","goalOutcome":"Cross-validate the statistics in stats_a.json against stats_b.json and report any discrepancies requiring independent recomputation.","budgetUsd":25}
+{"type":"requirements-compiled","missionId":"cohort-002-C002-06","domain":"research","capabilityNeeds":["document-authoring","data-analysis"],"successCriteria":["A written report exists that answers the stated outcome.","Findings are backed by sources or data."],"budgetUsd":25}
+{"type":"plan-created","missionId":"cohort-002-C002-06","workers":[{"id":"sole-operator-1","role":"Sole Operator","needs":["document-authoring","data-analysis"]}],"rationale":"Scope \"minimal\" in domain \"research\" with 2 capability need(s): a single Sole Operator is sufficient; no specialist split is justified."}
+{"type":"genomes-compiled","missionId":"cohort-002-C002-06","workers":[{"id":"sole-operator-1","tier":"default","tools":["openbot:workspace-files","openbot:shell-execution"],"computerRequired":true}],"gaps":[]}
+{"type":"worker-started","workerId":"sole-operator-1","role":"Sole Operator","tier":"default"}
+{"type":"worker-step","workerId":"sole-operator-1","step":1,"action":"read_file","ok":true,"elapsedMs":0}
+{"type":"worker-step","workerId":"sole-operator-1","step":2,"action":"read_file","ok":true,"elapsedMs":0}
+{"type":"worker-step","workerId":"sole-operator-1","step":3,"action":"call_tool","ok":true,"elapsedMs":0}
+{"type":"worker-step","workerId":"sole-operator-1","step":4,"action":"write_file","ok":true,"elapsedMs":0}
+{"type":"worker-finished","workerId":"sole-operator-1","result":{"workerId":"sole-operator-1","status":"success","summary":"Cross-validated stats A vs B; found discrepancy in B (claimed 160, actual 150).","evidence":[{"kind":"artifact","description":"Sole Operator deliverable at discrepancy.md","location":"sole-operator-1:discrepancy.md"}],"artifacts":["discrepancy.md"],"steps":4,"reasoningCalls":5,"refusals":[]}}
+{"type":"mission-finished","at":"2026-10-07T11:45:24.979Z","missionId":"cohort-002-C002-06","status":"success","wallMs":1000,"reasoningCalls":5,"worker_reasoning_calls":5,"reviewer_calls":0,"handoff_calls":0}

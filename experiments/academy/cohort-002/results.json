@@ -1,0 +1,454 @@
+{
+  "cohortId": "002",
+  "executedAt": "2026-10-07T11:45:24.992Z",
+  "scientificQuestion": "When Genesis performs multiple DIFFERENT missions that are legitimately comparable, do repeated organizational signals emerge? And under what conditions does a pattern STOP being appropriate?",
+  "missionsAttempted": 10,
+  "missionsSuccessful": 10,
+  "missionsVerified": 10,
+  "missionsFailed": 0,
+  "missionsContaminated": 0,
+  "falseSuccesses": 0,
+  "totalWorkers": 11,
+  "totalReasoningOperations": 36,
+  "totalToolCalls": 26,
+  "totalRetries": 0,
+  "totalUnusedWorkers": 0,
+  "totalUnusedCapabilities": 10,
+  "experiencesCaptured": 10,
+  "candidatesGenerated": 7,
+  "candidatesPromoted": 3,
+  "candidatesTentative": 4,
+  "candidatesRejected": 0,
+  "scientificallyTrustedPatterns": [
+    "cand-research-document-authoring-prefer-sole-operator",
+    "cand-research-document-authoring-web-research-prefer-sole-operator",
+    "cand-general-data-analysis-document-authoring-prefer-sole-operator"
+  ],
+  "scientificallyUntrustedPatterns": [],
+  "counterevidenceFound": 0,
+  "promotedPatternIds": [
+    "cand-research-document-authoring-prefer-sole-operator",
+    "cand-research-document-authoring-web-research-prefer-sole-operator",
+    "cand-general-data-analysis-document-authoring-prefer-sole-operator"
+  ],
+  "organizationalDiversity": "HIGH",
+  "evidenceSignatureGroups": [
+    "research|document-authoring",
+    "research|document-authoring,web-research",
+    "general|data-analysis,document-authoring",
+    "research|data-analysis,document-authoring",
+    "software-engineering|code-execution,data-analysis",
+    "software-engineering|code-execution"
+  ],
+  "perMission": [
+    {
+      "id": "C002-01",
+      "family": "A-research",
+      "purpose": "REPETITION — same signature as C001-01 (research+document-authoring)",
+      "domain": "research",
+      "capabilityNeeds": [
+        "document-authoring"
+      ],
+      "evidenceSignature": "research|document-authoring",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 3,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    },
+    {
+      "id": "C002-02",
+      "family": "A-research",
+      "purpose": "REPETITION — same signature as C001-01 and C002-01",
+      "domain": "research",
+      "capabilityNeeds": [
+        "document-authoring"
+      ],
+      "evidenceSignature": "research|document-authoring",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 3,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    },
+    {
+      "id": "C002-03",
+      "family": "A-research",
+      "purpose": "COUNTEREVIDENCE — different signature (adds web-research); requires independent verification",
+      "domain": "research",
+      "capabilityNeeds": [
+        "web-research",
+        "document-authoring"
+      ],
+      "evidenceSignature": "research|document-authoring,web-research",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 3,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    },
+    {
+      "id": "C002-04",
+      "family": "B-data",
+      "purpose": "REPETITION — same signature as C001-03 (general+data-analysis+document-authoring)",
+      "domain": "general",
+      "capabilityNeeds": [
+        "document-authoring",
+        "data-analysis"
+      ],
+      "evidenceSignature": "general|data-analysis,document-authoring",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 4,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": true
+    },
+    {
+      "id": "C002-05",
+      "family": "B-data",
+      "purpose": "REPETITION — same signature as C001-03 and C002-04",
+      "domain": "general",
+      "capabilityNeeds": [
+        "document-authoring",
+        "data-analysis"
+      ],
+      "evidenceSignature": "general|data-analysis,document-authoring",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 4,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": true
+    },
+    {
+      "id": "C002-06",
+      "family": "B-data",
+      "purpose": "COUNTEREVIDENCE — same signature but requires cross-validation (independent verification pressure)",
+      "domain": "research",
+      "capabilityNeeds": [
+        "document-authoring",
+        "data-analysis"
+      ],
+      "evidenceSignature": "research|data-analysis,document-authoring",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 5,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": true
+    },
+    {
+      "id": "C002-07",
+      "family": "C-software",
+      "purpose": "REPETITION — same signature as C001-05 (software-engineering+code-execution)",
+      "domain": "software-engineering",
+      "capabilityNeeds": [
+        "code-execution",
+        "data-analysis"
+      ],
+      "evidenceSignature": "software-engineering|code-execution,data-analysis",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 2,
+      "roles": [
+        "Software Engineer",
+        "Generalist Worker"
+      ],
+      "reasoningCalls": 3,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "software-engineer-1",
+          "role": "Software Engineer",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        },
+        {
+          "workerId": "generalist-worker-2",
+          "role": "Generalist Worker",
+          "contribution": "NO_OBSERVED_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    },
+    {
+      "id": "C002-08",
+      "family": "C-software",
+      "purpose": "REPETITION — same signature as C001-05 and C002-07",
+      "domain": "software-engineering",
+      "capabilityNeeds": [
+        "code-execution"
+      ],
+      "evidenceSignature": "software-engineering|code-execution",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 3,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    },
+    {
+      "id": "C002-09",
+      "family": "D-knowledge",
+      "purpose": "REPETITION — same signature as C001-07 (research+web-research+document-authoring)",
+      "domain": "research",
+      "capabilityNeeds": [
+        "document-authoring"
+      ],
+      "evidenceSignature": "research|document-authoring",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 4,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    },
+    {
+      "id": "C002-10",
+      "family": "D-knowledge",
+      "purpose": "REPETITION — same signature as C001-07 and C002-09",
+      "domain": "research",
+      "capabilityNeeds": [
+        "web-research",
+        "document-authoring"
+      ],
+      "evidenceSignature": "research|document-authoring,web-research",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 4,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    }
+  ],
+  "trustReview": [
+    {
+      "candidateId": "cand-research-document-authoring-prefer-sole-operator",
+      "technicalStatus": "promoted",
+      "scientificStatus": "TRUSTED",
+      "supportCount": 3,
+      "contradictionCount": 0,
+      "evidenceSignatures": [
+        "research|document-authoring"
+      ],
+      "comparable": true,
+      "allVerified": true
+    },
+    {
+      "candidateId": "cand-research-document-authoring-web-research-prefer-sole-operator",
+      "technicalStatus": "promoted",
+      "scientificStatus": "TRUSTED",
+      "supportCount": 2,
+      "contradictionCount": 0,
+      "evidenceSignatures": [
+        "research|document-authoring,web-research"
+      ],
+      "comparable": true,
+      "allVerified": true
+    },
+    {
+      "candidateId": "cand-general-data-analysis-document-authoring-prefer-sole-operator",
+      "technicalStatus": "promoted",
+      "scientificStatus": "TRUSTED",
+      "supportCount": 2,
+      "contradictionCount": 0,
+      "evidenceSignatures": [
+        "general|data-analysis,document-authoring"
+      ],
+      "comparable": true,
+      "allVerified": true
+    },
+    {
+      "candidateId": "cand-research-data-analysis-document-authoring-prefer-sole-operator",
+      "technicalStatus": "tentative",
+      "scientificStatus": "TENTATIVE",
+      "supportCount": 1,
+      "contradictionCount": 0,
+      "evidenceSignatures": [
+        "research|data-analysis,document-authoring"
+      ],
+      "comparable": true,
+      "allVerified": true
+    },
+    {
+      "candidateId": "cand-software-engineering-code-execution-data-analysis-avoid-generalist-worker",
+      "technicalStatus": "tentative",
+      "scientificStatus": "TENTATIVE",
+      "supportCount": 1,
+      "contradictionCount": 0,
+      "evidenceSignatures": [
+        "software-engineering|code-execution,data-analysis"
+      ],
+      "comparable": true,
+      "allVerified": true
+    },
+    {
+      "candidateId": "cand-software-engineering-code-execution-data-analysis-prefer-software-engineer",
+      "technicalStatus": "tentative",
+      "scientificStatus": "TENTATIVE",
+      "supportCount": 1,
+      "contradictionCount": 0,
+      "evidenceSignatures": [
+        "software-engineering|code-execution,data-analysis"
+      ],
+      "comparable": true,
+      "allVerified": true
+    },
+    {
+      "candidateId": "cand-software-engineering-code-execution-prefer-sole-operator",
+      "technicalStatus": "tentative",
+      "scientificStatus": "TENTATIVE",
+      "supportCount": 1,
+      "contradictionCount": 0,
+      "evidenceSignatures": [
+        "software-engineering|code-execution"
+      ],
+      "comparable": true,
+      "allVerified": true
+    }
+  ],
+  "counterevidence": []
+}

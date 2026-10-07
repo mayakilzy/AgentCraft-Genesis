@@ -1,0 +1,146 @@
+{
+  "preCohortSnapshot": {
+    "recordedAt": "2026-10-07",
+    "head": "166c759017275325499215b43a74a1fc8ae89766",
+    "branch": "build/group-05-semantic-remediation",
+    "testBaseline": "345 passed | 9 skipped = 354 total",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "existingExperienceCount": 0,
+    "trustedPromotedPatterns": [],
+    "quarantinedPatterns": ["cand-research-prefer-sole-operator"],
+    "quarantineManifest": "experiments/academy/cohort-001/pattern-quarantine.json",
+    "providerMode": "SCRIPTED_REASONING",
+    "realLlmReasoningUsed": false,
+    "evidenceSignatureVersion": "v1 (domain + sorted capabilityNeeds)",
+    "mcpAvailable": true,
+    "openBotAvailable": false,
+    "frozenPatternState": "EMPTY (no trusted pre-cohort patterns — all missions plan against patterns: [])",
+    "runtimeVersions": {
+      "node": "v24.21.0",
+      "typescript": "5.9.3",
+      "@modelcontextprotocol/sdk": "1.32.1",
+      "@ag-ui/core": "1.0.2"
+    }
+  },
+  "cohort002Design": {
+    "scientificQuestion": "When Genesis performs multiple DIFFERENT missions that are legitimately comparable in relevant organizational context, do repeated organizational signals emerge? And under what conditions does a previously successful organizational pattern STOP being appropriate?",
+    "missionCount": 10,
+    "familiesCovered": ["A-research", "B-data", "C-software", "D-knowledge"],
+    "learningMode": "TWO_STAGE",
+    "stageA": "Evidence Collection — all 10 missions against frozen empty pattern state (patterns: [])",
+    "stageB": "Learning Analysis — candidate generation + evaluation + counterevidence + scientific trust review",
+    "repetitionDesign": "2-3 missions per family with the SAME evidence signature (comparable task context)",
+    "counterevidenceDesign": "At least 1 mission per family with DIFFERENT natural requirements that may challenge the emerging pattern",
+    "transferSetSealed": true,
+    "quarantineEnforced": true
+  },
+  "missions": [
+    {
+      "id": "C002-01",
+      "family": "A-research",
+      "goal": "Compare electric cars vs hybrid cars for a fleet purchase and recommend the better option with evidence.",
+      "signature": { "domain": "research", "capabilityNeeds": ["document-authoring"] },
+      "purpose": "REPETITION — same signature as C001-01 (research evidence synthesis, document-authoring only)",
+      "counterevidenceFor": null
+    },
+    {
+      "id": "C002-02",
+      "family": "A-research",
+      "goal": "Compare cloud provider A vs cloud provider B for a startup hosting decision and recommend with evidence.",
+      "signature": { "domain": "research", "capabilityNeeds": ["document-authoring"] },
+      "purpose": "REPETITION — same signature as C001-01 and C002-01",
+      "counterevidenceFor": null
+    },
+    {
+      "id": "C002-03",
+      "family": "A-research",
+      "goal": "Investigate three competing claims about renewable energy subsidies and produce a verified conclusion requiring independent verification of each claim.",
+      "signature": { "domain": "research", "capabilityNeeds": ["document-authoring", "web-research"] },
+      "purpose": "COUNTEREVIDENCE — different signature (adds web-research); requires independent verification, may need specialist not sole operator",
+      "counterevidenceFor": "prefer-sole-operator for research (if it emerges)"
+    },
+    {
+      "id": "C002-04",
+      "family": "B-data",
+      "goal": "Analyze the sales dataset in data.json and write computed statistics to result.txt.",
+      "signature": { "domain": "general", "capabilityNeeds": ["data-analysis", "document-authoring"] },
+      "purpose": "REPETITION — same signature as C001-03 (data analysis via MCP, general domain)",
+      "counterevidenceFor": null
+    },
+    {
+      "id": "C002-05",
+      "family": "B-data",
+      "goal": "Analyze the temperature dataset in data.json and write computed statistics to result.txt.",
+      "signature": { "domain": "general", "capabilityNeeds": ["data-analysis", "document-authoring"] },
+      "purpose": "REPETITION — same signature as C001-03 and C002-04",
+      "counterevidenceFor": null
+    },
+    {
+      "id": "C002-06",
+      "family": "B-data",
+      "goal": "Cross-validate the statistics in stats_a.json against stats_b.json and report any discrepancies requiring independent recomputation.",
+      "signature": { "domain": "general", "capabilityNeeds": ["data-analysis", "document-authoring"] },
+      "purpose": "COUNTEREVIDENCE — same signature but requires cross-validation (independent verification pressure); may need specialist not sole operator",
+      "counterevidenceFor": "prefer-sole-operator for data (if it emerges)"
+    },
+    {
+      "id": "C002-07",
+      "family": "C-software",
+      "goal": "Fix the off-by-one bug in script.mjs and verify the fix.",
+      "signature": { "domain": "software-engineering", "capabilityNeeds": ["code-execution"] },
+      "purpose": "REPETITION — same signature as C001-05 (software engineering, code-execution)",
+      "counterevidenceFor": null
+    },
+    {
+      "id": "C002-08",
+      "family": "C-software",
+      "goal": "Fix the null-pointer bug in script.mjs and verify the fix.",
+      "signature": { "domain": "software-engineering", "capabilityNeeds": ["code-execution"] },
+      "purpose": "REPETITION — same signature as C001-05 and C002-07",
+      "counterevidenceFor": null
+    },
+    {
+      "id": "C002-09",
+      "family": "D-knowledge",
+      "goal": "Compare spec_a.txt and spec_b.txt and produce a structured diff highlighting agreements and contradictions.",
+      "signature": { "domain": "research", "capabilityNeeds": ["document-authoring", "web-research"] },
+      "purpose": "REPETITION — same signature as C001-07 (document comparison, research domain, web-research+document-authoring)",
+      "counterevidenceFor": null
+    },
+    {
+      "id": "C002-10",
+      "family": "D-knowledge",
+      "goal": "Compare contract_a.txt and contract_b.txt and produce a structured diff highlighting agreements and contradictions.",
+      "signature": { "domain": "research", "capabilityNeeds": ["document-authoring", "web-research"] },
+      "purpose": "REPETITION — same signature as C001-07 and C002-09",
+      "counterevidenceFor": null
+    }
+  ],
+  "evidenceSignatureGroups": [
+    {
+      "signature": "research | document-authoring",
+      "missions": ["C001-01 (historical)", "C002-01", "C002-02"],
+      "expectedSignal": "prefer-sole-operator (if Sole Operator consistently produces artifacts)",
+      "counterevidenceMission": "C002-03 (different signature: research+web-research+document-authoring)"
+    },
+    {
+      "signature": "general | data-analysis,document-authoring",
+      "missions": ["C001-03 (historical)", "C002-04", "C002-05"],
+      "expectedSignal": "prefer-sole-operator (if Sole Operator consistently produces artifacts via MCP)",
+      "counterevidenceMission": "C002-06 (same signature but cross-validation pressure)"
+    },
+    {
+      "signature": "software-engineering | code-execution",
+      "missions": ["C001-05 (historical)", "C002-07", "C002-08"],
+      "expectedSignal": "prefer-software-engineer or avoid-generalist-worker (if the pattern repeats)",
+      "counterevidenceMission": null
+    },
+    {
+      "signature": "research | document-authoring,web-research",
+      "missions": ["C001-07 (historical)", "C002-09", "C002-10"],
+      "expectedSignal": "prefer-sole-operator (if Sole Operator consistently produces artifacts)",
+      "counterevidenceMission": null
+    }
+  ]
+}

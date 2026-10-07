@@ -1,0 +1,23 @@
+{
+  "missionId": "C002-07",
+  "ok": true,
+  "passed": 3,
+  "failed": 0,
+  "unusedWorkers": 0,
+  "unusedCapabilities": [
+    "openbot:shell-execution"
+  ],
+  "contributionAudit": [
+    {
+      "workerId": "software-engineer-1",
+      "role": "Software Engineer",
+      "contribution": "MATERIAL_CONTRIBUTION"
+    },
+    {
+      "workerId": "generalist-worker-2",
+      "role": "Generalist Worker",
+      "contribution": "NO_OBSERVED_CONTRIBUTION"
+    }
+  ],
+  "mcpInvoked": false
+}
