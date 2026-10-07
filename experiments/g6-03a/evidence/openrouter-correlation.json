@@ -1,0 +1,20 @@
+{
+  "probe_start_timestamp": "2026-10-07T21:53:33.161Z",
+  "probe_end_timestamp": "2026-10-07T21:53:33.876Z",
+  "probe_duration_ms": 715,
+  "openrouter_decisions_api_calls": 1,
+  "openrouter_chat_completions_calls": 0,
+  "jev_router_calls": 0,
+  "non_jev_openrouter_model_calls": 0,
+  "jev_endpoint": "https://openrouter.ai/api/alpha/decisions",
+  "jev_model": "typesafe/jev-1.13",
+  "openrouter_observed_api_cost": "UNAVAILABLE",
+  "cost_source": "UNAVAILABLE",
+  "cost_unavailable_reason": "HTTP 403 geo-restriction response returns no usage block; cost cannot be observed from the failed call",
+  "user_correlation_note": "The user can independently verify on the OpenRouter dashboard that exactly ONE call was made to https://openrouter.ai/api/alpha/decisions with model typesafe/jev-1.13 between the start and end timestamps. The call returned HTTP 403 with the geo-restriction error. No other OpenRouter calls were made during the probe window.",
+  "hard_constraints": {
+    "chat_completions_used_for_jev": false,
+    "jev_router_used": false,
+    "non_jev_openrouter_model_used": false
+  }
+}

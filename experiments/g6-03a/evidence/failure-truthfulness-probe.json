@@ -1,0 +1,72 @@
+{
+  "probe_at": "2026-10-07T21:58:46.604Z",
+  "total_probes": 7,
+  "passed": 7,
+  "failed": 0,
+  "failure_truthfulness_probe_overall": "PASS",
+  "probes": [
+    {
+      "probe_id": "F1",
+      "description": "Missing credential throws JevCredentialMissingError; NO HTTP call made; NO silent fallback to Rule/GLM",
+      "expected_behavior": "throws JevCredentialMissingError; httpCalls === 0; no returned choice",
+      "actual_error_class": "JevCredentialMissingError",
+      "fallback_invoked": false,
+      "outcome": "pass",
+      "detail": "actual_error_class=JevCredentialMissingError, httpCalls=0, returnedChoice=<none>"
+    },
+    {
+      "probe_id": "F2",
+      "description": "HTTP 401 throws JevCredentialInvalidError; no silent fallback",
+      "expected_behavior": "throws JevCredentialInvalidError; no returned choice",
+      "actual_error_class": "JevCredentialInvalidError",
+      "fallback_invoked": false,
+      "outcome": "pass",
+      "detail": "actual_error_class=JevCredentialInvalidError, returnedChoice=<none>"
+    },
+    {
+      "probe_id": "F3",
+      "description": "HTTP 403 (geo-restricted) throws JevProviderUnavailableError; no silent fallback",
+      "expected_behavior": "throws JevProviderUnavailableError; no returned choice",
+      "actual_error_class": "JevProviderUnavailableError",
+      "fallback_invoked": false,
+      "outcome": "pass",
+      "detail": "actual_error_class=JevProviderUnavailableError, returnedChoice=<none>"
+    },
+    {
+      "probe_id": "F4",
+      "description": "HTTP 500 throws JevProviderUnavailableError; no silent fallback",
+      "expected_behavior": "throws JevProviderUnavailableError; no returned choice",
+      "actual_error_class": "JevProviderUnavailableError",
+      "fallback_invoked": false,
+      "outcome": "pass",
+      "detail": "actual_error_class=JevProviderUnavailableError, returnedChoice=<none>"
+    },
+    {
+      "probe_id": "F5",
+      "description": "Network error throws JevProviderUnavailableError; no silent fallback",
+      "expected_behavior": "throws JevProviderUnavailableError; no returned choice",
+      "actual_error_class": "JevProviderUnavailableError",
+      "fallback_invoked": false,
+      "outcome": "pass",
+      "detail": "actual_error_class=JevProviderUnavailableError, returnedChoice=<none>"
+    },
+    {
+      "probe_id": "F6",
+      "description": "Malformed response throws JevMalformedResponseError; no silent fallback",
+      "expected_behavior": "throws JevMalformedResponseError; no returned choice",
+      "actual_error_class": "JevMalformedResponseError",
+      "fallback_invoked": false,
+      "outcome": "pass",
+      "detail": "actual_error_class=JevMalformedResponseError, returnedChoice=<none>"
+    },
+    {
+      "probe_id": "F7",
+      "description": "Invalid choice throws JevInvalidChoiceError; no silent fallback to a valid choice",
+      "expected_behavior": "throws JevInvalidChoiceError; no returned choice",
+      "actual_error_class": "JevInvalidChoiceError",
+      "fallback_invoked": false,
+      "outcome": "pass",
+      "detail": "actual_error_class=JevInvalidChoiceError, returnedChoice=<none>"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "probe_at": "2026-10-07T21:58:47.259Z",
+  "arms": [
+    {
+      "arm": "rule",
+      "http_calls_observed": 0,
+      "provider_name": "rule-v0.1",
+      "returned_choice": "cheap",
+      "outcome": "returned-choice",
+      "error_class": null,
+      "proves_no_openrouter_call": true,
+      "distinguishes_from_jev": true
+    },
+    {
+      "arm": "jev",
+      "http_calls_observed": 1,
+      "http_url_called": "https://openrouter.ai/api/alpha/decisions",
+      "http_endpoint_is_decisions_api": true,
+      "http_endpoint_is_not_chat_completions": true,
+      "outcome": "threw",
+      "error_class": "JevProviderUnavailableError",
+      "error_message_excerpt": "Jev provider unavailable: HTTP 403. Body excerpt: {\"error\":{\"message\":\"This model is not available in your region.\",\"code\":403,\"metadata\":{\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count",
+      "proves_openrouter_call_attempted": true,
+      "proves_no_silent_fallback": true
+    }
+  ],
+  "metadata_distinction": {
+    "rule_provider_name": "rule-v0.1",
+    "rule_has_provider_metadata": false,
+    "jev_provider_name": "jev",
+    "jev_has_provider_metadata": false,
+    "jev_error_class": "JevProviderUnavailableError",
+    "metadata_distinguishes": true
+  },
+  "provider_control_probe_overall": "PASS"
+}

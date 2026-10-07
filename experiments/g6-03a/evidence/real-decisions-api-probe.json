@@ -1,0 +1,81 @@
+{
+  "probe_at": "2026-10-07T21:40:00Z",
+  "probe_scripts": [
+    "/home/z/my-project/scripts/jev_decisions_probe.ts",
+    "/home/z/my-project/scripts/jev_decisions_probe_round2.ts",
+    "/home/z/my-project/scripts/jev_decisions_probe_round3.ts"
+  ],
+  "total_calls": 11,
+  "chat_completions_used": false,
+  "jev_router_used": false,
+  "non_jev_openrouter_model_used": false,
+  "decisions_api_endpoint": "https://openrouter.ai/api/alpha/decisions",
+  "decisions_api_endpoint_verified": true,
+  "decisions_api_endpoint_evidence": [
+    "POST /api/alpha/decisions with empty body -> HTTP 400 demanding questions as record",
+    "POST /api/alpha/decisions with partial schema -> HTTP 400 demanding questions.q1.instructions and questions.q1.criteria",
+    "POST /api/alpha/decisions with full schema + model=typesafe/jev-1.13 -> HTTP 403 (model recognized, geo-restricted)",
+    "GET /api/alpha/decisions -> HTTP 404 (no list endpoint)",
+    "POST /api/v1/decisions -> HTTP 404 (alternative path does not exist)"
+  ],
+  "jev_decision_model": "typesafe/jev-1.13",
+  "jev_decision_model_verified": true,
+  "jev_decision_model_evidence": [
+    "POST /api/alpha/decisions model=typesafe/jev-1.13 (valid schema) -> HTTP 403 'This model is not available in your region' (model recognized)",
+    "POST /api/alpha/decisions model=typesafe/jev-router -> HTTP 400 'Model typesafe/jev-router does not exist' (model NOT recognized on Decisions API)",
+    "POST /api/alpha/decisions model=typesafe/jev -> HTTP 400 'Model typesafe/jev does not exist'",
+    "POST /api/alpha/decisions model=typesafe/jev-1 -> HTTP 400 'Model typesafe/jev-1 does not exist'",
+    "GET /api/v1/models listing contains only typesafe/jev-router (the chat-completions model); typesafe/jev-1.13 is not listed publicly"
+  ],
+  "jev_request_schema": {
+    "method": "POST",
+    "url": "https://openrouter.ai/api/alpha/decisions",
+    "headers": {
+      "Authorization": "Bearer <OPENROUTER_API_KEY>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "model": "typesafe/jev-1.13",
+      "state": "<string: operational situation>",
+      "questions": {
+        "<question_id>": {
+          "type": "choice | boolean | score | <other>",
+          "question": "<string>",
+          "choices": ["<option_1>", "<option_2>"],
+          "instructions": "<string | record | array>",
+          "criteria": { "<key>": "<value>" }
+        }
+      }
+    }
+  },
+  "jev_response_schema": {
+    "status": "INFERRED_NOT_VERIFIED",
+    "reason": "Live 2xx response could not be obtained due to geo-restriction on typesafe/jev-1.13. Response shape inferred from mission spec; to be re-verified when a non-geo-restricted credential is available.",
+    "expected_fields": ["selected_answer", "probability_per_option", "confidence", "question_type", "model_identity", "usage", "cost"]
+  },
+  "geo_restriction_finding": {
+    "status": "GEO_RESTRICTED",
+    "http_status": 403,
+    "error_message": "This model is not available in your region.",
+    "error_code": 403,
+    "routing_funnel": [{"step": "Initial Endpoints", "endpoint_count": 1}],
+    "failed_routing_step": "Gate Endpoints with Geo Restrictions",
+    "implication": "The model is recognized by the Decisions API but the call is rejected at the geo-gate. This is a server-side restriction that cannot be bypassed client-side."
+  },
+  "hard_constraints_verified": {
+    "chat_completions_used_for_jev": false,
+    "jev_router_used": false,
+    "non_jev_openrouter_model_used": false
+  },
+  "acceptance_implications": {
+    "real_jev_decisions_api": "YES",
+    "jev_model": "typesafe/jev-1.13",
+    "chat_completions_used_for_jev": "NO",
+    "jev_router_used": "NO",
+    "real_genesis_mission": "NO (blocked by geo-restriction)",
+    "positive_causal_probe": "BLOCKED (architecture correctly wired; live call geo-restricted)",
+    "failure_truthfulness_probe": "PASS (geo-restriction surfaces as loud JevProviderUnavailableError; no silent fallback)",
+    "provider_control_probe": "PASS (Rule path does not call OpenRouter; Jev path does)"
+  },
+  "final_status_for_probe_phase": "PARTIAL_PASS_WITH_GEO_BLOCK"
+}
