@@ -1,0 +1,61 @@
+{
+  "id": "exp-cohort-001-C001-05",
+  "recordedAt": "2026-10-07T10:47:04.983Z",
+  "schemaVersion": 2,
+  "goal": {
+    "outcome": "Fix the bug in script.mjs and verify the fix works.",
+    "domain": "software-engineering",
+    "capabilityNeeds": [
+      "code-execution",
+      "data-analysis"
+    ]
+  },
+  "organization": {
+    "workerCount": 2,
+    "roles": [
+      "Software Engineer",
+      "Generalist Worker"
+    ],
+    "collaborationEdges": 1,
+    "rationale": "Scope \"standard\" in domain \"software-engineering\" with 2 capability needs. Planned 2 specialist role(s): Software Engineer [code-execution], Generalist Worker [data-analysis]. No coordinator: fewer than 3 specialists."
+  },
+  "contributions": [
+    {
+      "workerId": "software-engineer-1",
+      "role": "Software Engineer",
+      "reasoningCalls": 3,
+      "artifactsCount": 1,
+      "status": "success",
+      "resolvedNeeds": [
+        {
+          "kind": "shell-execution",
+          "provider": "openbot"
+        },
+        {
+          "kind": "workspace-files",
+          "provider": "openbot"
+        }
+      ]
+    },
+    {
+      "workerId": "generalist-worker-2",
+      "role": "Generalist Worker",
+      "reasoningCalls": 0,
+      "artifactsCount": 0,
+      "status": "failure"
+    }
+  ],
+  "outcome": {
+    "status": "success",
+    "summary": "Fixed off-by-one bug: added missing value 10 to array. Script now outputs sum=55.",
+    "reasoningCalls": 3,
+    "wallMs": 1000,
+    "retries": 0,
+    "humanInterventions": 0
+  },
+  "evidence": [],
+  "provenance": {
+    "missionId": "cohort-001-C001-05",
+    "source": "synthetic"
+  }
+}

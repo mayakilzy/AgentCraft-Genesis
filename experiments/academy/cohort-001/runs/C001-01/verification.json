@@ -1,0 +1,15 @@
+{
+  "missionId": "C001-01",
+  "ok": true,
+  "passed": 4,
+  "failed": 0,
+  "unusedWorkers": 0,
+  "unusedCapabilities": [],
+  "contributionAudit": [
+    {
+      "workerId": "sole-operator-1",
+      "role": "Sole Operator",
+      "contribution": "MATERIAL_CONTRIBUTION"
+    }
+  ]
+}

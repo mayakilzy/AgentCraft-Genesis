@@ -1,0 +1,17 @@
+{
+  "missionId": "C001-03",
+  "ok": true,
+  "passed": 3,
+  "failed": 0,
+  "unusedWorkers": 0,
+  "unusedCapabilities": [
+    "openbot:shell-execution"
+  ],
+  "contributionAudit": [
+    {
+      "workerId": "sole-operator-1",
+      "role": "Sole Operator",
+      "contribution": "MATERIAL_CONTRIBUTION"
+    }
+  ]
+}

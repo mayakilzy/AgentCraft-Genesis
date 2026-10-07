@@ -1,0 +1,53 @@
+{
+  "id": "exp-cohort-001-C001-07",
+  "recordedAt": "2026-10-07T10:47:04.987Z",
+  "schemaVersion": 2,
+  "goal": {
+    "outcome": "Compare doc_a.txt and doc_b.txt and produce a structured diff highlighting agreements and contradictions in a diff.md file.",
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ]
+  },
+  "organization": {
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "collaborationEdges": 0,
+    "rationale": "Scope \"minimal\" in domain \"research\" with 2 capability need(s): a single Sole Operator is sufficient; no specialist split is justified."
+  },
+  "contributions": [
+    {
+      "workerId": "sole-operator-1",
+      "role": "Sole Operator",
+      "reasoningCalls": 4,
+      "artifactsCount": 1,
+      "status": "success",
+      "resolvedNeeds": [
+        {
+          "kind": "browser",
+          "provider": "openbot"
+        },
+        {
+          "kind": "workspace-files",
+          "provider": "openbot"
+        }
+      ]
+    }
+  ],
+  "outcome": {
+    "status": "success",
+    "summary": "Compared both documents; identified 4 agreements and 3 contradictions.",
+    "reasoningCalls": 4,
+    "wallMs": 1000,
+    "retries": 0,
+    "humanInterventions": 0
+  },
+  "evidence": [],
+  "provenance": {
+    "missionId": "cohort-001-C001-07",
+    "source": "synthetic"
+  }
+}

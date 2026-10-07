@@ -1,0 +1,53 @@
+{
+  "id": "exp-cohort-001-C001-03",
+  "recordedAt": "2026-10-07T10:47:04.978Z",
+  "schemaVersion": 2,
+  "goal": {
+    "outcome": "Analyze the dataset in data.json and write the computed statistics to result.txt.",
+    "domain": "general",
+    "capabilityNeeds": [
+      "document-authoring",
+      "data-analysis"
+    ]
+  },
+  "organization": {
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "collaborationEdges": 0,
+    "rationale": "Scope \"minimal\" in domain \"general\" with 2 capability need(s): a single Sole Operator is sufficient; no specialist split is justified."
+  },
+  "contributions": [
+    {
+      "workerId": "sole-operator-1",
+      "role": "Sole Operator",
+      "reasoningCalls": 4,
+      "artifactsCount": 1,
+      "status": "success",
+      "resolvedNeeds": [
+        {
+          "kind": "shell-execution",
+          "provider": "openbot"
+        },
+        {
+          "kind": "workspace-files",
+          "provider": "openbot"
+        }
+      ]
+    }
+  ],
+  "outcome": {
+    "status": "success",
+    "summary": "Analyzed dataset via MCP analyze tool; wrote statistics to result.txt.",
+    "reasoningCalls": 4,
+    "wallMs": 1000,
+    "retries": 0,
+    "humanInterventions": 0
+  },
+  "evidence": [],
+  "provenance": {
+    "missionId": "cohort-001-C001-03",
+    "source": "synthetic"
+  }
+}

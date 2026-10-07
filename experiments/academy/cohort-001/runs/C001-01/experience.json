@@ -1,0 +1,48 @@
+{
+  "id": "exp-cohort-001-C001-01",
+  "recordedAt": "2026-10-07T10:47:04.972Z",
+  "schemaVersion": 2,
+  "goal": {
+    "outcome": "Compare Option A (solar panels) vs Option B (wind turbines) for a rural power project and produce an evidence-backed recommendation in a report file.",
+    "domain": "research",
+    "capabilityNeeds": [
+      "document-authoring"
+    ]
+  },
+  "organization": {
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "collaborationEdges": 0,
+    "rationale": "Scope \"minimal\" in domain \"research\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified."
+  },
+  "contributions": [
+    {
+      "workerId": "sole-operator-1",
+      "role": "Sole Operator",
+      "reasoningCalls": 3,
+      "artifactsCount": 1,
+      "status": "success",
+      "resolvedNeeds": [
+        {
+          "kind": "workspace-files",
+          "provider": "openbot"
+        }
+      ]
+    }
+  ],
+  "outcome": {
+    "status": "success",
+    "summary": "Compared solar vs wind using staged evidence; recommended solar based on wind speed data.",
+    "reasoningCalls": 3,
+    "wallMs": 1000,
+    "retries": 0,
+    "humanInterventions": 0
+  },
+  "evidence": [],
+  "provenance": {
+    "missionId": "cohort-001-C001-01",
+    "source": "synthetic"
+  }
+}

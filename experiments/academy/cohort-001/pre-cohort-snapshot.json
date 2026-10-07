@@ -1,0 +1,43 @@
+{
+  "preCohortSnapshot": {
+    "recordedAt": "2026-10-07",
+    "head": "b3eaa2205423286d2ad2e35dca643a832026bbe1",
+    "branch": "build/group-05-academy-bootstrap",
+    "testBaseline": "337 passed | 9 skipped = 346 total",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "existingExperienceCount": 0,
+    "existingPatternCount": 0,
+    "existingPatternIds": [],
+    "providerMode": "SCRIPTED_REASONING",
+    "providerModel": "none (no external LLM available in sandbox; scripted reasoning provider used for calibration)",
+    "realLlmReasoningUsed": false,
+    "developmentFallbackUsed": false,
+    "scriptedReasoningUsedForMainMissions": true,
+    "mcpAvailable": true,
+    "openBotAvailable": false,
+    "openDotsAvailable": false,
+    "openMuseAvailable": false,
+    "frozenPatternState": "EMPTY (no pre-existing promoted patterns — all 4 missions plan against patterns: [])",
+    "runtimeVersions": {
+      "node": "v24.21.0",
+      "typescript": "5.9.3",
+      "vitest": "5.0.3",
+      "@modelcontextprotocol/sdk": "1.32.1",
+      "@ag-ui/core": "1.0.2"
+    }
+  },
+  "sealedTransferSet": {
+    "C001-02": "NOT_EXECUTED, SEALED_FOR_TRANSFER",
+    "C001-04": "NOT_EXECUTED, SEALED_FOR_TRANSFER",
+    "C001-06": "NOT_EXECUTED, SEALED_FOR_TRANSFER",
+    "C001-08": "NOT_EXECUTED, SEALED_FOR_TRANSFER"
+  },
+  "executionPlan": {
+    "missions": ["C001-01", "C001-03", "C001-05", "C001-07"],
+    "patternState": "FROZEN_EMPTY (patterns: [] for all 4 missions — no cross-mission learning within cohort)",
+    "baseline": "C (Genesis organization WITHOUT learned patterns)",
+    "providerMode": "scripted (provenance.source = 'synthetic')",
+    "isolation": "fresh mission ID, fresh worker instances, fresh FlightRecorder, fresh workspace per mission"
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "cohortId": "001",
+  "executedAt": "2026-10-07T10:47:04.988Z",
+  "missionsAttempted": 4,
+  "missionsSuccessful": 4,
+  "missionsVerified": 4,
+  "missionsFailed": 0,
+  "missionsContaminated": 0,
+  "falseSuccesses": 0,
+  "totalWorkers": 5,
+  "totalReasoningOperations": 14,
+  "totalToolCalls": 10,
+  "totalRetries": 0,
+  "totalHumanInterventions": 0,
+  "totalUnusedWorkers": 0,
+  "totalUnusedCapabilities": 2,
+  "experiencesCaptured": 4,
+  "candidatesGenerated": 4,
+  "candidatesPromoted": 1,
+  "candidatesTentative": 3,
+  "candidatesRejected": 0,
+  "promotedPatternIds": [
+    "cand-research-prefer-sole-operator"
+  ],
+  "organizationalDiversity": "HIGH",
+  "perMission": [
+    {
+      "id": "C001-01",
+      "family": "A-research",
+      "domain": "research",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 3,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    },
+    {
+      "id": "C001-03",
+      "family": "B-data",
+      "domain": "general",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 4,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": true
+    },
+    {
+      "id": "C001-05",
+      "family": "C-software",
+      "domain": "software-engineering",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 2,
+      "roles": [
+        "Software Engineer",
+        "Generalist Worker"
+      ],
+      "reasoningCalls": 3,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [
+        "openbot:shell-execution"
+      ],
+      "contributionAudit": [
+        {
+          "workerId": "software-engineer-1",
+          "role": "Software Engineer",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        },
+        {
+          "workerId": "generalist-worker-2",
+          "role": "Generalist Worker",
+          "contribution": "NO_OBSERVED_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    },
+    {
+      "id": "C001-07",
+      "family": "D-knowledge",
+      "domain": "research",
+      "status": "success",
+      "verificationOk": true,
+      "workers": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "reasoningCalls": 4,
+      "retries": 0,
+      "falseSuccess": false,
+      "unusedWorkers": 0,
+      "unusedCapabilities": [],
+      "contributionAudit": [
+        {
+          "workerId": "sole-operator-1",
+          "role": "Sole Operator",
+          "contribution": "MATERIAL_CONTRIBUTION"
+        }
+      ],
+      "mcpInvoked": false
+    }
+  ]
+}
