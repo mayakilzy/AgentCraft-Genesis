@@ -1,0 +1,88 @@
+{
+  "probe": "G5-02 SUCCESS",
+  "timestamp": "2026-10-07T10:08:12.146Z",
+  "genesisResult": {
+    "workerId": "writer-1",
+    "status": "success",
+    "summary": "Created greeting.txt with the message Hello from Genesis!",
+    "evidence": [
+      {
+        "kind": "artifact",
+        "description": "Writer deliverable at greeting.txt",
+        "location": "writer-1:greeting.txt"
+      }
+    ],
+    "artifacts": [
+      "greeting.txt"
+    ],
+    "steps": 2,
+    "reasoningCalls": 3,
+    "refusals": []
+  },
+  "innerFlightEvents": 6,
+  "aguiEventCount": 13,
+  "aguiEventTypes": [
+    "RUN_STARTED",
+    "SUBAGENT_STARTED",
+    "TOOL_CALL_START",
+    "TOOL_CALL_RESULT",
+    "TOOL_CALL_END",
+    "TOOL_CALL_START",
+    "TOOL_CALL_RESULT",
+    "TOOL_CALL_END",
+    "SUBAGENT_FINISHED",
+    "TEXT_MESSAGE_START",
+    "TEXT_MESSAGE_CONTENT",
+    "TEXT_MESSAGE_END",
+    "RUN_FINISHED"
+  ],
+  "consumerReconstruction": {
+    "runStarted": true,
+    "runFinished": true,
+    "runError": false,
+    "subagentEvents": 2,
+    "toolCallEvents": 6,
+    "textMessageContent": "Created greeting.txt with the message Hello from Genesis!",
+    "eventTypes": [
+      "RUN_STARTED",
+      "SUBAGENT_STARTED",
+      "TOOL_CALL_START",
+      "TOOL_CALL_RESULT",
+      "TOOL_CALL_END",
+      "TOOL_CALL_START",
+      "TOOL_CALL_RESULT",
+      "TOOL_CALL_END",
+      "SUBAGENT_FINISHED",
+      "TEXT_MESSAGE_START",
+      "TEXT_MESSAGE_CONTENT",
+      "TEXT_MESSAGE_END",
+      "RUN_FINISHED"
+    ],
+    "orderingValid": true,
+    "runId": "g5-02-success"
+  },
+  "independentComparison": {
+    "genesisSucceeded": true,
+    "consumerSeesSuccess": true,
+    "resultsMatch": true,
+    "meaningfulActivity": true,
+    "usefulOutput": true,
+    "orderingValid": true,
+    "runIdCoherent": true
+  },
+  "rawAguiEvents": [
+    "{\"type\":\"RUN_STARTED\",\"threadId\":\"genesis-thread-1791367692141\",\"runId\":\"g5-02-success\",\"protocolVersion\":\"1.0\",\"timestamp\":1791367692144}",
+    "{\"type\":\"SUBAGENT_STARTED\",\"subagentRunId\":\"writer-1\",\"name\":\"Writer\",\"timestamp\":1791367692144}",
+    "{\"type\":\"TOOL_CALL_START\",\"toolCallId\":\"tc-writer-1-1\",\"toolCallName\":\"write_file\",\"timestamp\":1791367692145}",
+    "{\"type\":\"TOOL_CALL_RESULT\",\"messageId\":\"msg-tc-writer-1-1\",\"toolCallId\":\"tc-writer-1-1\",\"content\":\"ok\",\"timestamp\":1791367692145}",
+    "{\"type\":\"TOOL_CALL_END\",\"toolCallId\":\"tc-writer-1-1\",\"timestamp\":1791367692145}",
+    "{\"type\":\"TOOL_CALL_START\",\"toolCallId\":\"tc-writer-1-2\",\"toolCallName\":\"read_file\",\"timestamp\":1791367692145}",
+    "{\"type\":\"TOOL_CALL_RESULT\",\"messageId\":\"msg-tc-writer-1-2\",\"toolCallId\":\"tc-writer-1-2\",\"content\":\"ok\",\"timestamp\":1791367692145}",
+    "{\"type\":\"TOOL_CALL_END\",\"toolCallId\":\"tc-writer-1-2\",\"timestamp\":1791367692145}",
+    "{\"type\":\"SUBAGENT_FINISHED\",\"subagentRunId\":\"writer-1\",\"name\":\"writer-1\",\"timestamp\":1791367692145}",
+    "{\"type\":\"TEXT_MESSAGE_START\",\"messageId\":\"msg-writer-1\",\"role\":\"assistant\",\"timestamp\":1791367692145}",
+    "{\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"msg-writer-1\",\"delta\":\"Created greeting.txt with the message Hello from Genesis!\",\"timestamp\":1791367692145}",
+    "{\"type\":\"TEXT_MESSAGE_END\",\"messageId\":\"msg-writer-1\",\"timestamp\":1791367692145}",
+    "{\"type\":\"RUN_FINISHED\",\"threadId\":\"genesis-thread-1791367692141\",\"runId\":\"g5-02-success\",\"outcome\":{\"type\":\"success\"},\"timestamp\":1791367692145}"
+  ]
+}

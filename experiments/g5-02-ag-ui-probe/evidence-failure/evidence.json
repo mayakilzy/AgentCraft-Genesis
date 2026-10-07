@@ -1,0 +1,62 @@
+{
+  "probe": "G5-02 FAILURE",
+  "timestamp": "2026-10-07T10:08:12.765Z",
+  "genesisResult": {
+    "status": "failure",
+    "refusals": [
+      "refused: action \"run_command\" requires grant openbot:shell-execution, which this worker does not hold",
+      "refused: action \"run_command\" requires grant openbot:shell-execution, which this worker does not hold",
+      "refused: action \"run_command\" requires grant openbot:shell-execution, which this worker does not hold",
+      "refused: action \"run_command\" requires grant openbot:shell-execution, which this worker does not hold"
+    ],
+    "summary": "step budget of 4 exhausted before the worker finished"
+  },
+  "aguiEventTypes": [
+    "RUN_STARTED",
+    "SUBAGENT_STARTED",
+    "TOOL_CALL_START",
+    "TOOL_CALL_RESULT",
+    "TOOL_CALL_END",
+    "TOOL_CALL_START",
+    "TOOL_CALL_RESULT",
+    "TOOL_CALL_END",
+    "TOOL_CALL_START",
+    "TOOL_CALL_RESULT",
+    "TOOL_CALL_END",
+    "TOOL_CALL_START",
+    "TOOL_CALL_RESULT",
+    "TOOL_CALL_END",
+    "SUBAGENT_FINISHED",
+    "TEXT_MESSAGE_START",
+    "TEXT_MESSAGE_CONTENT",
+    "TEXT_MESSAGE_END",
+    "RUN_ERROR"
+  ],
+  "consumerReconstruction": {
+    "runStarted": true,
+    "runError": true,
+    "runFinished": false,
+    "falseSuccess": false
+  },
+  "rawAguiEvents": [
+    "{\"type\":\"RUN_STARTED\",\"threadId\":\"genesis-thread-1791367692760\",\"runId\":\"g5-02-failure\",\"protocolVersion\":\"1.0\",\"timestamp\":1791367692760}",
+    "{\"type\":\"SUBAGENT_STARTED\",\"subagentRunId\":\"blocked-worker-1\",\"name\":\"Worker\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_START\",\"toolCallId\":\"tc-blocked-worker-1-1\",\"toolCallName\":\"run_command\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_RESULT\",\"messageId\":\"msg-tc-blocked-worker-1-1\",\"toolCallId\":\"tc-blocked-worker-1-1\",\"content\":\"failed\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_END\",\"toolCallId\":\"tc-blocked-worker-1-1\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_START\",\"toolCallId\":\"tc-blocked-worker-1-2\",\"toolCallName\":\"run_command\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_RESULT\",\"messageId\":\"msg-tc-blocked-worker-1-2\",\"toolCallId\":\"tc-blocked-worker-1-2\",\"content\":\"failed\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_END\",\"toolCallId\":\"tc-blocked-worker-1-2\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_START\",\"toolCallId\":\"tc-blocked-worker-1-3\",\"toolCallName\":\"run_command\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_RESULT\",\"messageId\":\"msg-tc-blocked-worker-1-3\",\"toolCallId\":\"tc-blocked-worker-1-3\",\"content\":\"failed\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_END\",\"toolCallId\":\"tc-blocked-worker-1-3\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_START\",\"toolCallId\":\"tc-blocked-worker-1-4\",\"toolCallName\":\"run_command\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_RESULT\",\"messageId\":\"msg-tc-blocked-worker-1-4\",\"toolCallId\":\"tc-blocked-worker-1-4\",\"content\":\"failed\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TOOL_CALL_END\",\"toolCallId\":\"tc-blocked-worker-1-4\",\"timestamp\":1791367692764}",
+    "{\"type\":\"SUBAGENT_FINISHED\",\"subagentRunId\":\"blocked-worker-1\",\"name\":\"blocked-worker-1\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TEXT_MESSAGE_START\",\"messageId\":\"msg-blocked-worker-1\",\"role\":\"assistant\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"msg-blocked-worker-1\",\"delta\":\"step budget of 4 exhausted before the worker finished\",\"timestamp\":1791367692764}",
+    "{\"type\":\"TEXT_MESSAGE_END\",\"messageId\":\"msg-blocked-worker-1\",\"timestamp\":1791367692764}",
+    "{\"type\":\"RUN_ERROR\",\"message\":\"mission g5-02-failure failed\",\"timestamp\":1791367692765}"
+  ]
+}
