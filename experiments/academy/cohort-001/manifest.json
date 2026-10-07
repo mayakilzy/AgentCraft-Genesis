@@ -1,0 +1,176 @@
+{
+  "$schema": "genesis-academy-cohort-manifest-v1",
+  "cohortId": "001",
+  "cohortName": "Foundation Diversity",
+  "cohortPurpose": "Establish baseline organizational behavior across diverse mission families; exercise evidence capture; discover learning-schema gaps; collect clean initial experiences.",
+  "status": "DESIGNED",
+  "designPhase": "G5-03",
+  "executionApproved": false,
+  "createdAt": "2026-10-07",
+  "missionCount": 8,
+  "familyCount": 4,
+  "families": ["A-research", "B-data", "C-software", "D-knowledge"],
+  "difficultyLevels": ["L2", "L3", "L4"],
+  "baselineStrategy": {
+    "primary": "C",
+    "primaryDescription": "Genesis organization WITHOUT learned patterns (patterns: [])",
+    "optional": "A",
+    "optionalDescription": "Strong single worker (sampled on L1 missions)"
+  },
+  "metrics": {
+    "tier1_correctness": ["mission-status", "verification-ok", "no-false-success", "obligations-satisfied"],
+    "tier2_reliability": ["retries", "failures", "recovery", "variance"],
+    "tier3_efficiency": ["reasoning-calls", "worker-count", "tool-calls", "latency-ms"],
+    "tier4_organizational_quality": ["unnecessary-roles", "coordination-overhead", "unused-grants", "organizational-complexity"]
+  },
+  "betterOrganizationRule": {
+    "gates": ["correctness", "obligations", "verification"],
+    "amongGated": "more efficient OR more reliable OR simpler",
+    "principle": "An organization that is cheaper but wrong is NOT better."
+  },
+  "learningEligibility": {
+    "learningMissions": ["C001-01", "C001-03", "C001-05", "C001-07"],
+    "transferDesignated": ["C001-02", "C001-04", "C001-06", "C001-08"],
+    "rule": "Transfer-designated missions are NOT used for candidate generation until after Cohort 003 evaluation."
+  },
+  "patternPromotion": {
+    "threshold": 2,
+    "rules": [
+      "PROMOTE: support >= threshold AND no contradiction AND verification quality success-or-mixed",
+      "REJECT: contradiction exists OR all support failed verification",
+      "RETAIN: otherwise (tentative)"
+    ],
+    "stopLearningAllowed": true,
+    "stopLearningReason": "Insufficient evidence is scientifically stronger than fake improvement."
+  },
+  "epistemicIsolation": {
+    "workerInstance": "scoped reasoning provider (TASK-022A forInstance)",
+    "mission": "fresh recorder, participants, surfaces",
+    "cohort": "learning missions feed candidates; transfer missions do not feed before evaluation",
+    "evaluator": "deterministic, reads only experience evidence, no gold answers",
+    "goldData": "stored outside worker scope, never in worker prompt"
+  },
+  "missions": [
+    {
+      "id": "C001-01",
+      "family": "A-research",
+      "difficulty": "L2",
+      "goal": "Compare two technology options and produce an evidence-backed recommendation.",
+      "whyOrganizationMatters": "Specialization (researcher vs synthesizer vs verifier) can improve quality and reduce false claims.",
+      "capabilities": ["workspace-files", "shell-execution-optional"],
+      "inputs": ["sources.txt"],
+      "verification": ["content-in-artifacts", "mission-input"],
+      "learningEligible": true,
+      "transferRelationship": "C001-02",
+      "estimatedReasoningBudget": 20
+    },
+    {
+      "id": "C001-02",
+      "family": "A-research",
+      "difficulty": "L3",
+      "goal": "Investigate a factual claim and produce a verified conclusion with evidence.",
+      "whyOrganizationMatters": "Independent verification prevents false success from trusting an unverified claim.",
+      "capabilities": ["workspace-files"],
+      "inputs": ["claim.txt", "evidence.txt"],
+      "verification": ["content-in-artifacts", "mission-input", "flight-action-optional"],
+      "learningEligible": false,
+      "transferRelationship": "C001-01",
+      "estimatedReasoningBudget": 20
+    },
+    {
+      "id": "C001-03",
+      "family": "B-data",
+      "difficulty": "L3",
+      "goal": "Analyze a dataset and compute summary statistics (sum, mean, min, max), write a verified report.",
+      "whyOrganizationMatters": "MCP analyze tool provides correct computation; organization decides whether to grant MCP.",
+      "capabilities": ["workspace-files", "shell-execution", "mcp:analyze"],
+      "inputs": ["data.json"],
+      "verification": ["content-in-artifacts:sum=502", "mission-input", "flight-action:call_tool"],
+      "learningEligible": true,
+      "transferRelationship": "C001-04",
+      "estimatedReasoningBudget": 15
+    },
+    {
+      "id": "C001-04",
+      "family": "B-data",
+      "difficulty": "L4",
+      "goal": "Detect anomalies in a dataset and report them with evidence.",
+      "whyOrganizationMatters": "Anomaly detection is subjective; independent verification or MCP computation prevents false success.",
+      "capabilities": ["workspace-files", "shell-execution", "mcp:analyze"],
+      "inputs": ["dataset.json"],
+      "goldInputs": ["expected_anomalies.json"],
+      "verification": ["content-in-artifacts", "mission-input", "independent-comparison"],
+      "learningEligible": false,
+      "transferRelationship": "C001-03",
+      "estimatedReasoningBudget": 20
+    },
+    {
+      "id": "C001-05",
+      "family": "C-software",
+      "difficulty": "L2",
+      "goal": "Fix a small bug in a provided script and verify the fix works.",
+      "whyOrganizationMatters": "Reproduction, fix, and verify are distinct steps; specialization may improve reliability.",
+      "capabilities": ["workspace-files", "shell-execution"],
+      "inputs": ["script.mjs"],
+      "goldInputs": ["expected_output.txt"],
+      "verification": ["command:node script.mjs", "mission-input"],
+      "learningEligible": true,
+      "transferRelationship": "C001-06",
+      "estimatedReasoningBudget": 20
+    },
+    {
+      "id": "C001-06",
+      "family": "C-software",
+      "difficulty": "L3",
+      "goal": "Implement a small function according to a spec and verify it passes tests.",
+      "whyOrganizationMatters": "Implementation and verification are distinct; independent verifier catches confirmation bias.",
+      "capabilities": ["workspace-files", "shell-execution"],
+      "inputs": ["spec.md", "test.mjs"],
+      "goldInputs": ["expected_result.txt"],
+      "verification": ["command:node test.mjs", "content-in-artifacts", "mission-input"],
+      "learningEligible": false,
+      "transferRelationship": "C001-05",
+      "estimatedReasoningBudget": 20
+    },
+    {
+      "id": "C001-07",
+      "family": "D-knowledge",
+      "difficulty": "L3",
+      "goal": "Compare two documents and produce a structured diff highlighting agreements and contradictions.",
+      "whyOrganizationMatters": "Reading, comparing, and flagging contradictions are different tasks; specialization may improve coverage.",
+      "capabilities": ["workspace-files"],
+      "inputs": ["doc_a.txt", "doc_b.txt"],
+      "verification": ["content-in-artifacts", "mission-input"],
+      "learningEligible": true,
+      "transferRelationship": "C001-08",
+      "estimatedReasoningBudget": 20
+    },
+    {
+      "id": "C001-08",
+      "family": "D-knowledge",
+      "difficulty": "L4",
+      "goal": "Extract structured knowledge from a document and verify it against a reference.",
+      "whyOrganizationMatters": "Extraction may miss fields or hallucinate; independent verification prevents false success.",
+      "capabilities": ["workspace-files"],
+      "inputs": ["source.txt"],
+      "goldInputs": ["expected_extraction.json"],
+      "verification": ["content-in-artifacts", "mission-input", "independent-comparison"],
+      "learningEligible": false,
+      "transferRelationship": "C001-07",
+      "estimatedReasoningBudget": 20
+    }
+  ],
+  "successLevels": {
+    "targetForCohort001": "LEVEL_1_EXPERIENCE",
+    "targetDescription": "Diverse clean experiences captured across multiple mission families.",
+    "notClaimed": ["LEVEL_2_REPEATED_PATTERN", "LEVEL_3_WITHIN_FAMILY_TRANSFER", "LEVEL_4_CROSS_FAMILY_TRANSFER", "LEVEL_5_LEARNED_NEED_OBLIGATION", "LEVEL_6_ROBUST_IMPROVEMENT"]
+  },
+  "allowedClaimAfterCohort001": "Genesis executed diverse Academy missions and captured comparable organizational experience.",
+  "documents": {
+    "charter": "docs/academy/GENESIS_ACADEMY_CHARTER_v1.md",
+    "curriculum": "docs/academy/GENESIS_ACADEMY_CURRICULUM_v1.md",
+    "experimentContract": "docs/academy/GENESIS_ACADEMY_EXPERIMENT_CONTRACT_v1.md",
+    "cohort001": "docs/academy/GENESIS_ACADEMY_COHORT_001_v1.md",
+    "gapAudit": "docs/academy/GENESIS_ACADEMY_LEARNING_GAP_AUDIT_v1.md"
+  }
+}
