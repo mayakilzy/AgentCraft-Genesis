@@ -70,6 +70,22 @@ const JEV_DECISION_MODEL = 'typesafe/jev-1.13';
 const JEV_TIMEOUT_MS = 30_000;
 const JEV_REASONING_EXCERPT_MAX = 500;
 
+/**
+ * G6-03B: the Jev Decision Model (`typesafe/jev-1.13`) is geo-restricted on
+ * the global host (`https://openrouter.ai/api/alpha/decisions`) for some
+ * cloud execution environments (HTTP 403 "not available in your region").
+ * OpenRouter's official region hosts `https://eu.openrouter.ai` and
+ * `https://us.openrouter.ai` support the same Decisions API. This
+ * allow-list preserves the credential boundary: the endpoint must still be
+ * an OpenRouter Decisions API URL (never chat completions). The model is
+ * NOT configurable.
+ */
+const JEV_DECISIONS_ENDPOINT_ALLOWLIST: ReadonlySet<string> = new Set([
+  'https://openrouter.ai/api/alpha/decisions',
+  'https://eu.openrouter.ai/api/alpha/decisions',
+  'https://us.openrouter.ai/api/alpha/decisions',
+]);
+
 const JEV_SYSTEM_INSTRUCTIONS =
   'You are the bounded decision provider inside the AgentCraft Genesis ' +
   'runtime. You will receive a state description and one or more typed ' +
@@ -144,7 +160,7 @@ export class JevInvalidChoiceError extends Error {
 
 export interface JevProviderMetadata {
   /** Pinned — there is no setter, no constructor parameter, no escape hatch. */
-  readonly endpoint: typeof JEV_DECISIONS_ENDPOINT;
+  readonly endpoint: string;
   /** Pinned — same. */
   readonly model: typeof JEV_DECISION_MODEL;
   readonly latencyMs: number;
@@ -171,9 +187,11 @@ export interface JevDecisionOutcome<T extends string = string>
 }
 
 /**
- * Construction options. The model and endpoint are NOT configurable —
- * they are pinned to Jev-decision-specific values. Passing an override
- * is a programming error.
+ * Construction options. The model is NOT configurable — it is pinned to
+ * `typesafe/jev-1.13`. The endpoint IS configurable but restricted to a
+ * small allow-list of OpenRouter Decisions API URLs (global / eu / us);
+ * arbitrary endpoints (including chat completions) are rejected at
+ * construction time.
  */
 export interface JevDecisionProviderOptions {
   /**
@@ -193,6 +211,14 @@ export interface JevDecisionProviderOptions {
    * Production callers MUST NOT pass this; the adapter reads from env.
    */
   readonly testCredential?: string;
+  /**
+   * G6-03B: optional endpoint override, restricted to the OpenRouter
+   * Decisions API allow-list (global / eu / us). Used to switch to a
+   * region host when the global host is geo-restricted. The model is
+   * NOT configurable; this option only selects among known Decisions
+   * API URLs.
+   */
+  readonly endpoint?: string;
 }
 
 interface JevDecisionQuestion {
@@ -237,15 +263,24 @@ function renderState<T extends string>(request: Decision<T>): string {
 }
 
 function buildQuestion<T extends string>(request: Decision<T>): JevDecisionQuestion {
+  // G6-03B compatibility fix: the Jev Decision API uses `criteria` (a record)
+  // as the option set the model chooses between. The `choices` array is
+  // metadata only and does NOT drive the model's selection. Empirical
+  // evidence: a request with choices=[cheap,default,frontier] and criteria=
+  // {cost, capability} returned choice="capability" with probabilities over
+  // {capability, cost}. To make the Jev decision align with the Genesis
+  // Decision<T>.options, we pass each option as a criteria key with a brief
+  // description (or empty string when no description is available).
+  const criteria: Record<string, string> = {};
+  for (const option of request.options) {
+    criteria[option] = '';
+  }
   return {
     type: 'choice',
     question: request.question,
     choices: [...request.options],
     instructions: JEV_SYSTEM_INSTRUCTIONS,
-    criteria: {
-      decision_kind: request.kind,
-      constraint: 'must select exactly one of the listed choices',
-    },
+    criteria,
   };
 }
 
@@ -253,8 +288,14 @@ export class JevDecisionProvider implements DecisionProvider {
   readonly name = 'jev';
   /** Pinned — there is no setter, no constructor parameter, no escape hatch. */
   readonly model = JEV_DECISION_MODEL;
-  /** Pinned — same. */
-  readonly endpoint = JEV_DECISIONS_ENDPOINT;
+  /**
+   * The OpenRouter Decisions API endpoint this adapter calls. Default is the
+   * global host; can be overridden to `eu.openrouter.ai` or `us.openrouter.ai`
+   * for environments where the global host is geo-restricted (G6-03B). The
+   * value is validated against an allow-list at construction time — the
+   * adapter is structurally INCAPABLE of being pointed at chat completions.
+   */
+  readonly endpoint: string;
   private readonly apiKey: string | undefined;
   private readonly envVarName: string;
   private readonly fetchImpl: typeof fetch;
@@ -262,6 +303,17 @@ export class JevDecisionProvider implements DecisionProvider {
   constructor(options: JevDecisionProviderOptions = {}) {
     this.envVarName = options.envVarName ?? 'OPENROUTER_API_KEY';
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch;
+    // G6-03B: optional endpoint override, restricted to the Decisions API
+    // allow-list (no chat completions, no arbitrary URLs).
+    const endpoint = options.endpoint ?? JEV_DECISIONS_ENDPOINT;
+    if (!JEV_DECISIONS_ENDPOINT_ALLOWLIST.has(endpoint)) {
+      throw new Error(
+        `JevDecisionProvider endpoint "${endpoint}" is not in the allow-list ` +
+          'of OpenRouter Decisions API URLs. The adapter is structurally ' +
+          'incapable of being pointed at chat completions or arbitrary URLs.',
+      );
+    }
+    this.endpoint = endpoint;
     if (options.testCredential !== undefined) {
       this.apiKey = options.testCredential;
     } else {
@@ -296,7 +348,7 @@ export class JevDecisionProvider implements DecisionProvider {
     const t0 = Date.now();
     let resp: Response;
     try {
-      resp = await this.fetchWithTimeout(JEV_DECISIONS_ENDPOINT, {
+      resp = await this.fetchWithTimeout(this.endpoint, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
@@ -388,7 +440,7 @@ export class JevDecisionProvider implements DecisionProvider {
       : undefined;
 
     const meta: JevProviderMetadata = {
-      endpoint: JEV_DECISIONS_ENDPOINT,
+      endpoint: this.endpoint,
       model: JEV_DECISION_MODEL,
       latencyMs,
       promptTokens,

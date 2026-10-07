@@ -55,7 +55,7 @@ function captureRequestBody(init: RequestInit | undefined): Record<string, unkno
 }
 
 describe('JevDecisionProvider — endpoint and model pinning (no chat-completions, no jev-router)', () => {
-  it('pins the endpoint to /api/alpha/decisions', () => {
+  it('pins the endpoint to /api/alpha/decisions by default', () => {
     const p = new JevDecisionProvider({ testCredential: TEST_KEY });
     expect(p.endpoint).toBe('https://openrouter.ai/api/alpha/decisions');
     // The endpoint must NOT be the chat-completions endpoint.
@@ -70,12 +70,43 @@ describe('JevDecisionProvider — endpoint and model pinning (no chat-completion
     expect(p.model).not.toContain('router');
   });
 
-  it('the constructor options do not allow overriding the model or endpoint', () => {
-    // JevDecisionProviderOptions does not include `model` or `endpoint` fields.
+  it('the constructor options do not allow overriding the model', () => {
+    // JevDecisionProviderOptions does not include a `model` field.
     type Opts = ConstructorParameters<typeof JevDecisionProvider>[0];
     type Keys = keyof NonNullable<Opts>;
-    const keys: Keys[] = ['envVarName', 'fetchImpl', 'testCredential'];
-    expect(keys.sort()).toEqual(['envVarName', 'fetchImpl', 'testCredential'].sort());
+    const keys: Keys[] = ['envVarName', 'fetchImpl', 'testCredential', 'endpoint'];
+    expect(keys.sort()).toEqual(['endpoint', 'envVarName', 'fetchImpl', 'testCredential'].sort());
+  });
+
+  it('rejects an endpoint that is not in the Decisions API allow-list', () => {
+    expect(() => new JevDecisionProvider({
+      testCredential: TEST_KEY,
+      endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    })).toThrow(/not in the allow-list/);
+  });
+
+  it('rejects an arbitrary endpoint URL', () => {
+    expect(() => new JevDecisionProvider({
+      testCredential: TEST_KEY,
+      endpoint: 'https://evil.example.com/api/alpha/decisions',
+    })).toThrow(/not in the allow-list/);
+  });
+
+  it('accepts the EU region endpoint override (G6-03B geo-restriction finding)', () => {
+    const p = new JevDecisionProvider({
+      testCredential: TEST_KEY,
+      endpoint: 'https://eu.openrouter.ai/api/alpha/decisions',
+    });
+    expect(p.endpoint).toBe('https://eu.openrouter.ai/api/alpha/decisions');
+    expect(p.endpoint).not.toContain('/chat/completions');
+  });
+
+  it('accepts the US region endpoint override', () => {
+    const p = new JevDecisionProvider({
+      testCredential: TEST_KEY,
+      endpoint: 'https://us.openrouter.ai/api/alpha/decisions',
+    });
+    expect(p.endpoint).toBe('https://us.openrouter.ai/api/alpha/decisions');
   });
 
   it('the request body uses the Decisions API schema (state + questions as record)', async () => {
