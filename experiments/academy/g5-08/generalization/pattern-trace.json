@@ -1,0 +1,61 @@
+{
+  "missionId": "G5-08-GEN-A",
+  "missionFreshness": {
+    "isNew": true,
+    "isRenamed": false,
+    "isTrivialParaphrase": false
+  },
+  "goalDomain": "software-engineering",
+  "capabilityNeeds": [
+    "web-research",
+    "code-execution",
+    "document-authoring"
+  ],
+  "evidenceSignature": "software-engineering|code-execution,document-authoring,web-research",
+  "patternsAvailable": [
+    "cand-research-document-authoring-prefer-sole-operator",
+    "cand-research-document-authoring-web-research-prefer-sole-operator",
+    "cand-general-data-analysis-document-authoring-prefer-sole-operator"
+  ],
+  "patternsRetrieved": [],
+  "patternApplicable": false,
+  "applicabilityReason": "No trusted pattern matches domain=\"software-engineering\" with capabilityNeeds=[web-research, code-execution, document-authoring].",
+  "patternInterpreted": false,
+  "patternApplied": false,
+  "patternOverridden": false,
+  "overrideReason": "",
+  "baselineOrganization": {
+    "workerCount": 4,
+    "roles": [
+      "Mission Coordinator",
+      "Generalist Worker",
+      "Software Engineer",
+      "Documentation Writer"
+    ]
+  },
+  "learnedOrganization": {
+    "workerCount": 4,
+    "roles": [
+      "Mission Coordinator",
+      "Generalist Worker",
+      "Software Engineer",
+      "Documentation Writer"
+    ]
+  },
+  "organizationChanged": false,
+  "causalAttribution": false,
+  "baselineVerification": {
+    "ok": true,
+    "passed": 4,
+    "failed": 0
+  },
+  "learnedVerification": {
+    "ok": true,
+    "passed": 4,
+    "failed": 0
+  },
+  "baselineCorrectness": "success",
+  "learnedCorrectness": "success",
+  "generalizationClassification": "GENERALIZATION_NON_APPLICABLE",
+  "interpretation": "No trusted pattern legitimately applies to this unseen mission. Genesis correctly retrieved no pattern. This is positive evidence of bounded learning."
+}

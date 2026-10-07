@@ -1,0 +1,147 @@
+{
+  "phase": "A",
+  "subphase": "Mission B",
+  "timestamp": "2026-10-07T13:25:29.276Z",
+  "missionId": "G5-08-GEN-B",
+  "missionDefinition": {
+    "goal": {
+      "outcome": "Investigate and compare two note-taking applications for academic researchers and recommend the better option with comprehensive evidence in a report file.",
+      "context": "Two note-taking applications. Source evidence is in sources.txt.",
+      "constraints": [
+        "recommendation must be supported by evidence in sources.txt"
+      ]
+    },
+    "inputs": [
+      {
+        "path": "sources.txt",
+        "contents": "SOURCE 1: Application A (Notion) offers database views, rich-text editing, and API access. Free tier limited to 1000 blocks; paid tier $8/user/month.\nSOURCE 2: Application B (Obsidian) stores notes as local Markdown files, supports bidirectional linking, and works offline. Free for personal use; commercial license $50/user/year.\nSOURCE 3: Academic researchers cite ~40 papers/year on average; cross-referencing between notes and bibliographies is the most-cited pain point (Smith et al. 2023 survey, n=412).\nSOURCE 4: Notion's API allows automated bibliography imports from Zotero; Obsidian requires a community plugin (Better BibTeX) and manual sync.\nSOURCE 5: Obsidian's local-first storage means data ownership and longevity are guaranteed; Notion's cloud storage means vendor lock-in and potential data loss on company failure.\nSOURCE 6: The research team has 3 members across 2 institutions; shared editing is essential. Notion supports real-time multi-user editing; Obsidian requires third-party sync (Obsidian Sync $4/user/month or git-based)."
+      }
+    ],
+    "verificationChecks": [
+      {
+        "kind": "file",
+        "label": "report-exists",
+        "path": "recommendation.md"
+      },
+      {
+        "kind": "content-in-artifacts",
+        "label": "mentions-notion",
+        "expectedContent": "Notion"
+      },
+      {
+        "kind": "content-in-artifacts",
+        "label": "mentions-obsidian",
+        "expectedContent": "Obsidian"
+      },
+      {
+        "kind": "mission-input",
+        "label": "mission-input:sources.txt",
+        "path": "sources.txt",
+        "expectIncludes": "SOURCE 1"
+      }
+    ],
+    "designIntent": "NEW generalization mission: note-taking-app evaluation for academic researchers. Content differs meaningfully from every prior Academy mission while preserving the research+web-research+document-authoring signature that allows a trusted prefer-role pattern to apply."
+  },
+  "baseline": {
+    "arm": "baseline",
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ],
+    "evidenceSignature": "research|document-authoring,web-research",
+    "workerCount": 2,
+    "roles": [
+      "Web Researcher",
+      "Report Writer"
+    ],
+    "reasoningCalls": 3,
+    "status": "success",
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "verificationDetails": [
+      {
+        "label": "report-exists",
+        "ok": true
+      },
+      {
+        "label": "mentions-notion",
+        "ok": true
+      },
+      {
+        "label": "mentions-obsidian",
+        "ok": true
+      },
+      {
+        "label": "mission-input:sources.txt",
+        "ok": true
+      }
+    ],
+    "patternsConsidered": [],
+    "patternsApplied": [],
+    "patternsAppliedFlag": false,
+    "planRationale": "Scope \"standard\" in domain \"research\" with 2 capability needs. Planned 2 specialist role(s): Web Researcher [web-research], Report Writer [document-authoring]. No coordinator: fewer than 3 specialists.",
+    "falseSuccess": false
+  },
+  "learned": {
+    "arm": "learned",
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ],
+    "evidenceSignature": "research|document-authoring,web-research",
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "reasoningCalls": 3,
+    "status": "success",
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "verificationDetails": [
+      {
+        "label": "report-exists",
+        "ok": true
+      },
+      {
+        "label": "mentions-notion",
+        "ok": true
+      },
+      {
+        "label": "mentions-obsidian",
+        "ok": true
+      },
+      {
+        "label": "mission-input:sources.txt",
+        "ok": true
+      }
+    ],
+    "patternsConsidered": [
+      "cand-research-document-authoring-prefer-sole-operator",
+      "cand-research-document-authoring-web-research-prefer-sole-operator"
+    ],
+    "patternsApplied": [
+      {
+        "patternId": "cand-research-document-authoring-prefer-sole-operator",
+        "effect": "collapsed 2 specialists to a single Sole Operator per prefer-role pattern; 2 capability need(s) consolidated"
+      }
+    ],
+    "patternsAppliedFlag": true,
+    "planRationale": "Scope \"standard\" in domain \"research\" with 2 capability needs. Planned 1 specialist role(s): Sole Operator [web-research, document-authoring]. No coordinator: fewer than 3 specialists. Applied 1 promoted pattern(s): cand-research-document-authoring-prefer-sole-operator (collapsed 2 specialists to a single Sole Operator per prefer-role pattern; 2 capability need(s) consolidated).",
+    "falseSuccess": false
+  },
+  "classification": "GENERALIZATION_ACTIVE",
+  "interpretation": "Learned knowledge is legitimately applicable and causally changes organization while preserving mission quality. The pattern learned from prior missions (solar/wind, databases, renewable energy) transferred to a NOVEL content domain (note-taking-app evaluation for academic researchers) and causally collapsed a 2-specialist baseline into a 1-Sole-Operator learned organization. This is the strongest generalization evidence.",
+  "organizationChanged": true,
+  "causalAttribution": true,
+  "evidenceSignatureObservation": {
+    "version": "v1",
+    "actual": "research|document-authoring,web-research",
+    "predicted": "research|document-authoring,web-research",
+    "match": true,
+    "collisionDetected": false
+  }
+}

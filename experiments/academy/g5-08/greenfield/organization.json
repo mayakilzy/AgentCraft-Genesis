@@ -1,0 +1,119 @@
+{
+  "requirements": {
+    "domain": "software-engineering",
+    "capabilityNeeds": [
+      "code-execution",
+      "document-authoring"
+    ]
+  },
+  "plan": {
+    "rationale": "Scope \"standard\" in domain \"software-engineering\" with 2 capability needs. Planned 2 specialist role(s): Software Engineer [code-execution], Documentation Writer [document-authoring]. No coordinator: fewer than 3 specialists.",
+    "workers": [
+      {
+        "id": "software-engineer-1",
+        "role": "Software Engineer",
+        "capabilityNeeds": [
+          "code-execution"
+        ]
+      },
+      {
+        "id": "documentation-writer-2",
+        "role": "Documentation Writer",
+        "capabilityNeeds": [
+          "document-authoring"
+        ]
+      }
+    ],
+    "collaboration": [
+      {
+        "from": "software-engineer-1",
+        "to": "documentation-writer-2",
+        "kind": "handoff"
+      }
+    ],
+    "learned": {
+      "considered": [],
+      "applied": []
+    }
+  },
+  "genomes": [
+    {
+      "workerId": "software-engineer-1",
+      "role": "Software Engineer",
+      "genome": {
+        "identity": {
+          "id": "software-engineer-1",
+          "displayName": "Software Engineer"
+        },
+        "role": "Software Engineer",
+        "objective": "Implements, runs and fixes the code changes — mission: \"Build a small Node.js command-line tool that reads a text file, counts word frequencies, and writes the top-N results to an output file. Include a test that verifies the tool produces correct output on a known input.\"",
+        "model": "cheap",
+        "skills": [
+          "code-execution",
+          "collaboration"
+        ],
+        "tools": [
+          "openbot:shell-execution",
+          "openbot:workspace-files"
+        ],
+        "computer": {
+          "required": true,
+          "browser": false,
+          "shell": true,
+          "workspace": true
+        },
+        "memory": "shared-thread",
+        "budget": {
+          "maxUsd": 12.5,
+          "maxTier": "default"
+        },
+        "autonomy": "autonomous",
+        "operationalNeeds": [
+          {
+            "kind": "shell-execution"
+          },
+          {
+            "kind": "workspace-files"
+          }
+        ]
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "role": "Documentation Writer",
+      "genome": {
+        "identity": {
+          "id": "documentation-writer-2",
+          "displayName": "Documentation Writer"
+        },
+        "role": "Documentation Writer",
+        "objective": "Documents the change and its usage — mission: \"Build a small Node.js command-line tool that reads a text file, counts word frequencies, and writes the top-N results to an output file. Include a test that verifies the tool produces correct output on a known input.\"",
+        "model": "default",
+        "skills": [
+          "document-authoring",
+          "collaboration"
+        ],
+        "tools": [
+          "openbot:workspace-files"
+        ],
+        "computer": {
+          "required": true,
+          "browser": false,
+          "shell": false,
+          "workspace": true
+        },
+        "memory": "shared-thread",
+        "budget": {
+          "maxUsd": 12.5,
+          "maxTier": "default"
+        },
+        "autonomy": "autonomous",
+        "operationalNeeds": [
+          {
+            "kind": "workspace-files"
+          }
+        ]
+      }
+    }
+  ]
+}

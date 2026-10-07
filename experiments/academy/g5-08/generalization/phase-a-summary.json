@@ -1,0 +1,90 @@
+{
+  "$schema": "genesis-academy-g5-08-phase-a-summary-v1",
+  "phase": "G5-08",
+  "subphase": "A — Final Generalization Test (Summary)",
+  "recordedAt": "2026-10-07",
+  "purpose": "Aggregate the two generalization missions into a single PHASE_A_GATE decision per Section 14.",
+  "missionCount": 2,
+  "rationaleForTwoMissions": "Section 7 permits 'at most 2 evaluation missions if a second mission is genuinely needed to interpret the boundary.' Mission A (Rust vs Go) produced GENERALIZATION_NON_APPLICABLE because the v0.1 GoalCompiler classified the goal as software-engineering (signals 'service' and 'code' from the goal text). Mission B (note-taking-app evaluation) was added to interpret the boundary: does the same learned pattern generalize to content that DOES match a trusted pattern's signature? Mission B produced GENERALIZATION_ACTIVE — the strongest generalization evidence.",
+  "missions": [
+    {
+      "missionId": "G5-08-GEN-A",
+      "content": "Investigate and compare Rust vs Go for a high-throughput backend service and recommend with comprehensive evidence in a report file.",
+      "freshness": "NEW — no prior Academy mission compared programming-language runtime benchmarks",
+      "actualEvidenceSignature": "software-engineering|code-execution,document-authoring,web-research",
+      "predictedSignature": "research|document-authoring,web-research",
+      "signatureMismatchReason": "GoalCompiler v0.1 word-boundary signals: 'service' and 'code' triggered software-engineering domain + code-execution capabilityNeed. Honest observation; mission wording preserved.",
+      "patternsRetrieved": 0,
+      "patternApplied": false,
+      "baselineWorkers": 4,
+      "learnedWorkers": 4,
+      "organizationChanged": false,
+      "baselineVerification": "PASS (4/4)",
+      "learnedVerification": "PASS (4/4)",
+      "generalizationClassification": "GENERALIZATION_NON_APPLICABLE",
+      "interpretation": "No trusted pattern matched the actual signature (software-engineering domain; all 3 trusted patterns have applicableContext.domain in {research, general}). Genesis correctly retrieved no pattern. This is positive evidence of bounded learning — Genesis does NOT apply learned knowledge where its applicability context does not match."
+    },
+    {
+      "missionId": "G5-08-GEN-B",
+      "content": "Investigate and compare two note-taking applications for academic researchers and recommend the better option with comprehensive evidence in a report file.",
+      "freshness": "NEW — no prior Academy mission compared note-taking applications or academic-researcher tooling",
+      "actualEvidenceSignature": "research|document-authoring,web-research",
+      "predictedSignature": "research|document-authoring,web-research",
+      "signatureMismatchReason": null,
+      "patternsRetrieved": 2,
+      "patternsRetrievedIds": [
+        "cand-research-document-authoring-prefer-sole-operator",
+        "cand-research-document-authoring-web-research-prefer-sole-operator"
+      ],
+      "patternApplied": true,
+      "patternAppliedEffect": "collapsed 2 specialists to a single Sole Operator per prefer-role pattern; 2 capability need(s) consolidated",
+      "baselineWorkers": 2,
+      "baselineRoles": ["Web Researcher", "Report Writer"],
+      "learnedWorkers": 1,
+      "learnedRoles": ["Sole Operator"],
+      "organizationChanged": true,
+      "causalAttribution": true,
+      "baselineVerification": "PASS (4/4)",
+      "learnedVerification": "PASS (4/4)",
+      "baselineReasoningCalls": 3,
+      "learnedReasoningCalls": 3,
+      "generalizationClassification": "GENERALIZATION_ACTIVE",
+      "interpretation": "Learned knowledge is legitimately applicable and causally changes organization while preserving mission quality. The pattern learned from prior missions (solar/wind power, databases, renewable energy) transferred to a NOVEL content domain (note-taking-app evaluation for academic researchers) and causally collapsed a 2-specialist baseline into a 1-Sole-Operator learned organization. This is the strongest generalization evidence: content differs meaningfully, organizational applicability is legitimate, application causally reshapes the organization, and mission correctness is preserved."
+    }
+  ],
+  "aggregate": {
+    "missionsExecuted": 2,
+    "generalizationActiveCount": 1,
+    "generalizationConfirmatoryCount": 0,
+    "generalizationBoundedCount": 0,
+    "generalizationNonApplicableCount": 1,
+    "generalizationHarmfulCount": 0,
+    "generalizationFalseCount": 0,
+    "generalizationInconclusiveCount": 0,
+    "organizationsChanged": 1,
+    "falseSuccesses": 0,
+    "evidenceSignatureCollisions": 0,
+    "strongestOutcome": "GENERALIZATION_ACTIVE on Mission B",
+    "boundaryObservation": "Mission A demonstrated correct non-application (Genesis does not force patterns onto missions whose signatures do not match). Mission B demonstrated active causal generalization (the learned pattern from prior content domains transferred to a novel content domain and causally reshaped the organization). Together they show Genesis can distinguish content similarity from organizational applicability."
+  },
+  "phaseAGate": {
+    "missionGenuinelyNew": true,
+    "missionFrozenBeforeExecution": true,
+    "noEvaluatorLeakage": true,
+    "learnedStateFrozen": true,
+    "patternApplicabilityDecisionSemanticallyDefensible": true,
+    "verificationIndependent": true,
+    "noFalseTransferOrGeneralization": true,
+    "noHarmfulUnresolvedLearningBehavior": true,
+    "noMaterialEvidenceSignatureCollision": true,
+    "gateResult": "PASS",
+    "note": "PASS does NOT require the pattern to change organization. Mission A produced NON_APPLICABLE (valid intelligent outcome); Mission B produced ACTIVE (strongest generalization evidence). The gate is satisfied because both applicability decisions are correct and independently defensible, no false/harmful generalization occurred, and no material Evidence Signature collision was observed."
+  },
+  "proceedToPhaseB": true,
+  "productionChangeBudget": {
+    "productionFilesChanged": 0,
+    "productionLocDelta": 0,
+    "newRuntimeDependencies": 0,
+    "rationale": "Phase A required zero production code changes. The experiment harness reuses GoalCompiler, OrganizationPlanner, WorkerAgent, and the existing prefer-role implementation from G5-06."
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "arm": "learned",
+  "domain": "research",
+  "capabilityNeeds": [
+    "web-research",
+    "document-authoring"
+  ],
+  "evidenceSignature": "research|document-authoring,web-research",
+  "workerCount": 1,
+  "roles": [
+    "Sole Operator"
+  ],
+  "reasoningCalls": 3,
+  "status": "success",
+  "verificationOk": true,
+  "verificationPassed": 4,
+  "verificationFailed": 0,
+  "verificationDetails": [
+    {
+      "label": "report-exists",
+      "ok": true
+    },
+    {
+      "label": "mentions-notion",
+      "ok": true
+    },
+    {
+      "label": "mentions-obsidian",
+      "ok": true
+    },
+    {
+      "label": "mission-input:sources.txt",
+      "ok": true
+    }
+  ],
+  "patternsConsidered": [
+    "cand-research-document-authoring-prefer-sole-operator",
+    "cand-research-document-authoring-web-research-prefer-sole-operator"
+  ],
+  "patternsApplied": [
+    {
+      "patternId": "cand-research-document-authoring-prefer-sole-operator",
+      "effect": "collapsed 2 specialists to a single Sole Operator per prefer-role pattern; 2 capability need(s) consolidated"
+    }
+  ],
+  "patternsAppliedFlag": true,
+  "planRationale": "Scope \"standard\" in domain \"research\" with 2 capability needs. Planned 1 specialist role(s): Sole Operator [web-research, document-authoring]. No coordinator: fewer than 3 specialists. Applied 1 promoted pattern(s): cand-research-document-authoring-prefer-sole-operator (collapsed 2 specialists to a single Sole Operator per prefer-role pattern; 2 capability need(s) consolidated).",
+  "falseSuccess": false
+}

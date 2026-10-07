@@ -1,0 +1,113 @@
+{
+  "$schema": "genesis-academy-g5-08-generalization-preregistration-v1",
+  "phase": "G5-08",
+  "subphase": "A — Final Generalization Test",
+  "recordedAt": "2026-10-07",
+  "purpose": "Answer QUESTION 1 — GENERALIZATION: Can organizational knowledge learned from prior missions remain useful outside the narrow example from which it was learned? This is NOT a demand for universal cross-family generalization — only a bounded test showing whether Genesis can distinguish content similarity from organizational applicability.",
+  "expectedPreviousStatus": "G5_07_STATUS = BLIND_TRANSFER_PASS_WITH_LIMITATION",
+  "expectedPreviousCommit": "105a355653fba1bcebfd68c7358e53a2e23f33bb",
+  "branch": "build/group-05-causality-investigation",
+  "mission": {
+    "id": "G5-08-GEN-A",
+    "designation": "GENERALIZATION MISSION (NEW)",
+    "freshness": {
+      "isRenamedCohort001Mission": false,
+      "isRenamedCohort002Mission": false,
+      "isRenamedG5_06Mission": false,
+      "isG5_07SealedMission": false,
+      "isTrivialParaphrase": false,
+      "contentDiffersMeaningfully": true,
+      "rationale": "Mission content (programming-language benchmark comparison) differs from every prior Academy mission: C001-01 was solar-vs-wind power, C001-07 was product-spec comparison, G5-06 phase A was database A vs B, G5-06 phase B was renewable-energy comparison, C002-01 was electric-vs-hybrid cars, C002-02 was cloud-provider A vs B. None of these compared programming-language runtime benchmarks. The new mission has genuinely novel surface content while preserving the same organizational structure that allows a research+web-research+document-authoring pattern to apply."
+    },
+    "goal": {
+      "outcome": "Investigate and compare Rust vs Go for a high-throughput backend service and recommend with comprehensive evidence in a report file.",
+      "context": "Two programming-language options for a backend service. Source evidence is in sources.txt.",
+      "constraints": ["recommendation must be supported by evidence in sources.txt"]
+    },
+    "inputs": [
+      {
+        "path": "sources.txt",
+        "contents": [
+          "SOURCE 1: Rust compiles to native code; benchmarks show 1.2x faster than Go on the TechEmpower JSON serialization benchmark (2024 Q3).",
+          "SOURCE 2: Go has built-in goroutines and channels; Rust uses async/await with tokio. Go's concurrency model is simpler to reason about.",
+          "SOURCE 3: Rust's memory safety guarantees eliminate entire classes of bugs (use-after-free, null dereferences) at compile time. Go relies on runtime checks and garbage collection.",
+          "SOURCE 4: The team has 6 Go developers and 0 Rust developers. Hiring for Rust took 4 months for the last opening; Go hires took 3 weeks.",
+          "SOURCE 5: The service handles 50k req/sec sustained; benchmark shows both languages handle this with headroom (Rust 180k, Go 120k on equivalent hardware).",
+          "SOURCE 6: Build times: Go ~3s for the service; Rust ~90s cold, ~12s incremental. CI cost rises ~3x with Rust."
+        ].join('\n')
+      }
+    ],
+    "availableCapabilities": ["openbot:workspace-files", "openbot:shell-execution"],
+    "providerMode": "SCRIPTED_REASONING",
+    "runtimeMode": "STUB_COMPUTER",
+    "expectedAcceptanceCriteria": [
+      { "kind": "file", "label": "report-exists", "path": "recommendation.md" },
+      { "kind": "content-in-artifacts", "label": "mentions-rust", "expectedContent": "Rust" },
+      { "kind": "content-in-artifacts", "label": "mentions-go", "expectedContent": "Go" },
+      { "kind": "mission-input", "label": "mission-input:sources.txt", "path": "sources.txt", "expectIncludes": "SOURCE 1" }
+    ]
+  },
+  "trustedPatternsAvailable": [
+    "cand-research-document-authoring-prefer-sole-operator (support=3, evidence signature: research|document-authoring)",
+    "cand-research-document-authoring-web-research-prefer-sole-operator (support=2, evidence signature: research|document-authoring,web-research)",
+    "cand-general-data-analysis-document-authoring-prefer-sole-operator (support=2, evidence signature: general|data-analysis,document-authoring)"
+  ],
+  "quarantinedPatterns": [
+    "cand-research-prefer-sole-operator (must NOT participate; remediation phase: G5-04A)"
+  ],
+  "predictedEvidenceSignature": "research|document-authoring,web-research",
+  "actualEvidenceSignatureObserved": "software-engineering|code-execution,document-authoring,web-research",
+  "signaturePredictionNote": "The deterministic v0.1 GoalCompiler classified this mission's domain as software-engineering (because goal text contains the signals 'service' and 'code' from the NEED_RULES for code-execution). The actual signature therefore differs from the pre-execution prediction. This is an honest observation of the v0.1 compiler; the mission wording is preserved. The pattern that WOULD have applied under the predicted signature (cand-research-document-authoring-web-research-prefer-sole-operator) is NOT retrieved under the actual signature because the pattern's applicableContext.domain='research' does not match the actual domain='software-engineering'. This makes the result GENERALIZATION_NON_APPLICABLE — a valid positive outcome (correct non-application).",
+  "predictedApplicability": {
+    "patternsExpectedToBeRetrieved": [],
+    "rationale": "Under the ACTUAL signature (software-engineering|code-execution,document-authoring,web-research), NO trusted pattern's applicableContext matches: all 3 trusted patterns have applicableContext.domain in {research, general} and the actual domain is software-engineering. Genesis correctly retrieves no pattern. This is GENERALIZATION_NON_APPLICABLE."
+  },
+  "twoArmDesign": {
+    "armA_baseline": "OrganizationPlanner({ patterns: [] })",
+    "armB_learned": "OrganizationPlanner({ patterns: TRUSTED_PATTERNS })",
+    "holdConstant": ["goal", "inputs", "provider", "runtime", "capabilities", "budgets", "verification", "acceptance criteria"],
+    "onlyDifference": "learned organizational knowledge"
+  },
+  "generalizationClassificationRules": {
+    "GENERALIZATION_ACTIVE": "Learned knowledge is legitimately applicable and causally changes organization while preserving mission quality.",
+    "GENERALIZATION_CONFIRMATORY": "Learned knowledge is legitimately applicable but baseline already matches the learned preference.",
+    "GENERALIZATION_BOUNDED": "Learned knowledge is considered but correctly overridden/bounded by current mission requirements.",
+    "GENERALIZATION_NON_APPLICABLE": "Prior learned knowledge correctly does not apply.",
+    "GENERALIZATION_HARMFUL": "Learned knowledge causally reduces mission quality.",
+    "GENERALIZATION_FALSE": "Pattern is applied despite being semantically inappropriate.",
+    "GENERALIZATION_INCONCLUSIVE": "Evidence cannot support a reliable interpretation."
+  },
+  "epistemicIsolation": {
+    "workerInstanceIsolation": "Each WorkerAgent construction = separate logical instance with scoped scripted reasoning provider queue. No cross-instance hidden memory.",
+    "missionIsolation": "Fresh mission ID, fresh FlightRecorder, fresh workspace per arm.",
+    "noReasoningContinuityBetweenArms": "Each arm uses its own fresh scripted reasoning provider queue.",
+    "noEvaluatorLeakage": "Verification reads only flight events + artifacts. The expected answer is NOT in the worker prompt."
+  },
+  "evidenceSignatureFrozen": {
+    "version": "v1 (domain + sorted capabilityNeeds)",
+    "modifiedDuringG5_08": false,
+    "rule": "Evidence Signature v1 is observed, not modified. No collision expected."
+  },
+  "phaseAGateCriteria": {
+    "missionGenuinelyNew": true,
+    "missionFrozenBeforeExecution": true,
+    "noEvaluatorLeakage": true,
+    "learnedStateFrozen": true,
+    "patternApplicabilityDecisionSemanticallyDefensible": true,
+    "verificationIndependent": true,
+    "noFalseTransferOrGeneralization": true,
+    "noHarmfulUnresolvedLearningBehavior": true,
+    "noMaterialEvidenceSignatureCollision": true,
+    "note": "PASS does NOT require the pattern to change organization."
+  },
+  "stopConditions": {
+    "ifPhaseAExposesMaterialLearningDefect": "STOP. DO NOT RUN PHASE B.",
+    "ifEvidenceSignatureCollisionMateriallyInvalidates": "STOP. DESIGN_REVIEW_REQUIRED.",
+    "otherwise": "Proceed to Phase B (Greenfield)."
+  },
+  "productionChangeBudget": {
+    "preferredProductionFilesChanged": 0,
+    "smallCorrectnessFixesAllowed": true,
+    "ifSubstantialProductionImplementationNecessary": "Question whether Group 5 is actually ready to close."
+  }
+}

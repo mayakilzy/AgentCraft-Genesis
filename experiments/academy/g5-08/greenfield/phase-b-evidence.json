@@ -1,0 +1,388 @@
+{
+  "phase": "B",
+  "timestamp": "2026-10-07T13:18:48.103Z",
+  "missionId": "g5-08-greenfield-A",
+  "missionDefinition": {
+    "goal": {
+      "outcome": "Build a small Node.js command-line tool that reads a text file, counts word frequencies, and writes the top-N results to an output file. Include a test that verifies the tool produces correct output on a known input.",
+      "context": "The tool should accept a file path argument, read the text, tokenize by whitespace, normalize to lowercase, count occurrences, sort by frequency descending then alphabetically, and write the top N (default 10) results to a file. A test script should verify correctness on a small input."
+    },
+    "verificationChecks": [
+      {
+        "kind": "file",
+        "label": "impl-exists",
+        "path": "wordfreq.mjs"
+      },
+      {
+        "kind": "file",
+        "label": "test-exists",
+        "path": "test.mjs"
+      },
+      {
+        "kind": "content-in-artifacts",
+        "label": "impl-has-tokenize",
+        "expectedContent": "split"
+      },
+      {
+        "kind": "content-in-artifacts",
+        "label": "impl-has-lowercase",
+        "expectedContent": "toLowerCase"
+      },
+      {
+        "kind": "content-in-artifacts",
+        "label": "test-has-assert",
+        "expectedContent": "assert"
+      },
+      {
+        "kind": "mission-input",
+        "label": "mission-input-acknowledged",
+        "path": "wordfreq.mjs",
+        "expectIncludes": "wordfreq"
+      }
+    ],
+    "designIntent": "NEW Greenfield mission: build a small Node.js word-frequency CLI tool with tests. Practical, multi-step, independently verifiable. Organization emerged from Genesis (no hand-designed worker count/roles)."
+  },
+  "requirements": {
+    "domain": "software-engineering",
+    "capabilityNeeds": [
+      "code-execution",
+      "document-authoring"
+    ],
+    "successCriteria": [
+      "The code change is implemented as described.",
+      "Relevant tests pass.",
+      "The build passes."
+    ]
+  },
+  "organization": {
+    "rationale": "Scope \"standard\" in domain \"software-engineering\" with 2 capability needs. Planned 2 specialist role(s): Software Engineer [code-execution], Documentation Writer [document-authoring]. No coordinator: fewer than 3 specialists.",
+    "workers": [
+      {
+        "id": "software-engineer-1",
+        "role": "Software Engineer",
+        "capabilityNeeds": [
+          "code-execution"
+        ]
+      },
+      {
+        "id": "documentation-writer-2",
+        "role": "Documentation Writer",
+        "capabilityNeeds": [
+          "document-authoring"
+        ]
+      }
+    ],
+    "collaboration": [
+      {
+        "from": "software-engineer-1",
+        "to": "documentation-writer-2",
+        "kind": "handoff"
+      }
+    ],
+    "learned": {
+      "considered": [],
+      "applied": []
+    }
+  },
+  "genomes": [
+    {
+      "workerId": "software-engineer-1",
+      "role": "Software Engineer",
+      "genome": {
+        "identity": {
+          "id": "software-engineer-1",
+          "displayName": "Software Engineer"
+        },
+        "role": "Software Engineer",
+        "objective": "Implements, runs and fixes the code changes — mission: \"Build a small Node.js command-line tool that reads a text file, counts word frequencies, and writes the top-N results to an output file. Include a test that verifies the tool produces correct output on a known input.\"",
+        "model": "cheap",
+        "skills": [
+          "code-execution",
+          "collaboration"
+        ],
+        "tools": [
+          "openbot:shell-execution",
+          "openbot:workspace-files"
+        ],
+        "computer": {
+          "required": true,
+          "browser": false,
+          "shell": true,
+          "workspace": true
+        },
+        "memory": "shared-thread",
+        "budget": {
+          "maxUsd": 12.5,
+          "maxTier": "default"
+        },
+        "autonomy": "autonomous",
+        "operationalNeeds": [
+          {
+            "kind": "shell-execution"
+          },
+          {
+            "kind": "workspace-files"
+          }
+        ]
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "role": "Documentation Writer",
+      "genome": {
+        "identity": {
+          "id": "documentation-writer-2",
+          "displayName": "Documentation Writer"
+        },
+        "role": "Documentation Writer",
+        "objective": "Documents the change and its usage — mission: \"Build a small Node.js command-line tool that reads a text file, counts word frequencies, and writes the top-N results to an output file. Include a test that verifies the tool produces correct output on a known input.\"",
+        "model": "default",
+        "skills": [
+          "document-authoring",
+          "collaboration"
+        ],
+        "tools": [
+          "openbot:workspace-files"
+        ],
+        "computer": {
+          "required": true,
+          "browser": false,
+          "shell": false,
+          "workspace": true
+        },
+        "memory": "shared-thread",
+        "budget": {
+          "maxUsd": 12.5,
+          "maxTier": "default"
+        },
+        "autonomy": "autonomous",
+        "operationalNeeds": [
+          {
+            "kind": "workspace-files"
+          }
+        ]
+      }
+    }
+  ],
+  "workerResult": {
+    "status": "success",
+    "summary": "Built wordfreq.mjs CLI tool (tokenize, countWords, topN, run) and test.mjs covering unit + end-to-end behavior.",
+    "reasoningCalls": 3,
+    "artifacts": [
+      "wordfreq.mjs",
+      "test.mjs"
+    ]
+  },
+  "verification": {
+    "ok": true,
+    "passed": 6,
+    "failed": 0,
+    "details": [
+      {
+        "label": "impl-exists",
+        "ok": true
+      },
+      {
+        "label": "test-exists",
+        "ok": true
+      },
+      {
+        "label": "impl-has-tokenize",
+        "ok": true
+      },
+      {
+        "label": "impl-has-lowercase",
+        "ok": true
+      },
+      {
+        "label": "test-has-assert",
+        "ok": true
+      },
+      {
+        "label": "mission-input-acknowledged",
+        "ok": true
+      }
+    ]
+  },
+  "falseSuccess": false,
+  "patternTrace": {
+    "patternsAvailable": [
+      "cand-research-document-authoring-prefer-sole-operator",
+      "cand-research-document-authoring-web-research-prefer-sole-operator",
+      "cand-general-data-analysis-document-authoring-prefer-sole-operator"
+    ],
+    "patternsRetrieved": [],
+    "patternsApplicable": false,
+    "patternsApplied": [],
+    "patternsOverridden": [],
+    "interpretation": "No learned pattern applied — the Greenfield mission (software-engineering domain) does not match any trusted pattern (all trusted patterns have applicableContext.domain in {research, general}). This is acceptable per Section 18: if no learned pattern applies, that is perfectly acceptable."
+  },
+  "gate": {
+    "freshGoal": true,
+    "missionFrozenBeforeExecution": true,
+    "genesisCompiledRequirements": true,
+    "genesisProducedOrganization": true,
+    "workerGenomesProduced": true,
+    "executionOccurredThroughLegitimateRuntimePaths": true,
+    "finalRequestedOutcomeProduced": true,
+    "independentVerificationPass": true,
+    "noFalseSuccess": true,
+    "noEvaluatorOrGoldLeakage": true,
+    "learnedPatternsDidNotOverrideStrongerCurrentRequirements": true,
+    "noManualRepairOfMissionOutput": true,
+    "gateResult": "PASS"
+  },
+  "metrics": {
+    "missionSuccess": "success",
+    "verificationOk": true,
+    "workerCount": 2,
+    "roles": [
+      "Software Engineer",
+      "Documentation Writer"
+    ],
+    "reasoningOperations": 3,
+    "toolCalls": 2,
+    "runtimeCalls": 3,
+    "retries": 0,
+    "humanInterventions": 0,
+    "falseSuccess": false
+  },
+  "flightEvents": [
+    {
+      "type": "mission-started",
+      "at": "2026-10-07T13:18:48.083Z",
+      "missionId": "g5-08-greenfield-A",
+      "goalOutcome": "Build a small Node.js command-line tool that reads a text file, counts word frequencies, and writes the top-N results to an output file. Include a test that verifies the tool produces correct output on a known input.",
+      "budgetUsd": 25
+    },
+    {
+      "type": "requirements-compiled",
+      "missionId": "g5-08-greenfield-A",
+      "domain": "software-engineering",
+      "capabilityNeeds": [
+        "code-execution",
+        "document-authoring"
+      ],
+      "successCriteria": [
+        "The code change is implemented as described.",
+        "Relevant tests pass.",
+        "The build passes."
+      ],
+      "budgetUsd": 25
+    },
+    {
+      "type": "plan-created",
+      "missionId": "g5-08-greenfield-A",
+      "workers": [
+        {
+          "id": "software-engineer-1",
+          "role": "Software Engineer",
+          "needs": [
+            "code-execution"
+          ]
+        },
+        {
+          "id": "documentation-writer-2",
+          "role": "Documentation Writer",
+          "needs": [
+            "document-authoring"
+          ]
+        }
+      ],
+      "rationale": "Scope \"standard\" in domain \"software-engineering\" with 2 capability needs. Planned 2 specialist role(s): Software Engineer [code-execution], Documentation Writer [document-authoring]. No coordinator: fewer than 3 specialists."
+    },
+    {
+      "type": "genomes-compiled",
+      "missionId": "g5-08-greenfield-A",
+      "workers": [
+        {
+          "id": "software-engineer-1",
+          "tier": "cheap",
+          "tools": [
+            "openbot:shell-execution",
+            "openbot:workspace-files"
+          ],
+          "computerRequired": true
+        },
+        {
+          "id": "documentation-writer-2",
+          "tier": "default",
+          "tools": [
+            "openbot:workspace-files"
+          ],
+          "computerRequired": true
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "type": "worker-started",
+      "workerId": "software-engineer-1",
+      "role": "Software Engineer",
+      "tier": "cheap"
+    },
+    {
+      "type": "worker-step",
+      "workerId": "software-engineer-1",
+      "step": 1,
+      "action": "write_file",
+      "ok": true,
+      "elapsedMs": 0
+    },
+    {
+      "type": "worker-step",
+      "workerId": "software-engineer-1",
+      "step": 2,
+      "action": "write_file",
+      "ok": true,
+      "elapsedMs": 0
+    },
+    {
+      "type": "worker-finished",
+      "workerId": "software-engineer-1",
+      "result": {
+        "workerId": "software-engineer-1",
+        "status": "success",
+        "summary": "Built wordfreq.mjs CLI tool (tokenize, countWords, topN, run) and test.mjs covering unit + end-to-end behavior.",
+        "evidence": [
+          {
+            "kind": "artifact",
+            "description": "Software Engineer deliverable at wordfreq.mjs",
+            "location": "software-engineer-1:wordfreq.mjs"
+          },
+          {
+            "kind": "artifact",
+            "description": "Software Engineer deliverable at test.mjs",
+            "location": "software-engineer-1:test.mjs"
+          }
+        ],
+        "artifacts": [
+          "wordfreq.mjs",
+          "test.mjs"
+        ],
+        "steps": 2,
+        "reasoningCalls": 3,
+        "refusals": []
+      }
+    },
+    {
+      "type": "verification",
+      "missionId": "g5-08-greenfield-A",
+      "ok": true,
+      "passed": 6,
+      "failed": 0,
+      "failures": []
+    },
+    {
+      "type": "mission-finished",
+      "at": "2026-10-07T13:18:48.103Z",
+      "missionId": "g5-08-greenfield-A",
+      "status": "success",
+      "wallMs": 1000,
+      "reasoningCalls": 3,
+      "worker_reasoning_calls": 3,
+      "reviewer_calls": 0,
+      "handoff_calls": 0
+    }
+  ]
+}

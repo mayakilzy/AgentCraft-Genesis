@@ -1,0 +1,215 @@
+{
+  "phase": "A",
+  "timestamp": "2026-10-07T13:25:24.902Z",
+  "missionId": "G5-08-GEN-A",
+  "missionDefinition": {
+    "goal": {
+      "outcome": "Investigate and compare Rust vs Go for a high-throughput backend service and recommend with comprehensive evidence in a report file.",
+      "context": "Two programming-language options for a backend service. Source evidence is in sources.txt.",
+      "constraints": [
+        "recommendation must be supported by evidence in sources.txt"
+      ]
+    },
+    "inputs": [
+      {
+        "path": "sources.txt",
+        "contents": "SOURCE 1: Rust compiles to native code; benchmarks show 1.2x faster than Go on the TechEmpower JSON serialization benchmark (2024 Q3).\nSOURCE 2: Go has built-in goroutines and channels; Rust uses async/await with tokio. Go's concurrency model is simpler to reason about.\nSOURCE 3: Rust's memory safety guarantees eliminate entire classes of bugs (use-after-free, null dereferences) at compile time. Go relies on runtime checks and garbage collection.\nSOURCE 4: The team has 6 Go developers and 0 Rust developers. Hiring for Rust took 4 months for the last opening; Go hires took 3 weeks.\nSOURCE 5: The service handles 50k req/sec sustained; benchmark shows both languages handle this with headroom (Rust 180k, Go 120k on equivalent hardware).\nSOURCE 6: Build times: Go ~3s for the service; Rust ~90s cold, ~12s incremental. CI cost rises ~3x with Rust."
+      }
+    ],
+    "verificationChecks": [
+      {
+        "kind": "file",
+        "label": "report-exists",
+        "path": "recommendation.md"
+      },
+      {
+        "kind": "content-in-artifacts",
+        "label": "mentions-rust",
+        "expectedContent": "Rust"
+      },
+      {
+        "kind": "content-in-artifacts",
+        "label": "mentions-go",
+        "expectedContent": "Go"
+      },
+      {
+        "kind": "mission-input",
+        "label": "mission-input:sources.txt",
+        "path": "sources.txt",
+        "expectIncludes": "SOURCE 1"
+      }
+    ],
+    "designIntent": "NEW generalization mission: programming-language runtime benchmark comparison. Content differs meaningfully from every prior Academy mission while preserving the same organizational context (research + web-research + document-authoring) that allows a trusted prefer-role pattern to apply."
+  },
+  "baseline": {
+    "arm": "baseline",
+    "domain": "software-engineering",
+    "capabilityNeeds": [
+      "web-research",
+      "code-execution",
+      "document-authoring"
+    ],
+    "evidenceSignature": "software-engineering|code-execution,document-authoring,web-research",
+    "workerCount": 4,
+    "roles": [
+      "Mission Coordinator",
+      "Generalist Worker",
+      "Software Engineer",
+      "Documentation Writer"
+    ],
+    "reasoningCalls": 3,
+    "status": "success",
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "verificationDetails": [
+      {
+        "label": "report-exists",
+        "ok": true
+      },
+      {
+        "label": "mentions-rust",
+        "ok": true
+      },
+      {
+        "label": "mentions-go",
+        "ok": true
+      },
+      {
+        "label": "mission-input:sources.txt",
+        "ok": true
+      }
+    ],
+    "patternsConsidered": [],
+    "patternsApplied": [],
+    "patternsAppliedFlag": false,
+    "planRationale": "Scope \"complex\" in domain \"software-engineering\" with 3 capability needs. Planned 3 specialist role(s): Generalist Worker [web-research], Software Engineer [code-execution], Documentation Writer [document-authoring]. Mission Coordinator added because 3+ specialists require integration.",
+    "falseSuccess": false
+  },
+  "learned": {
+    "arm": "learned",
+    "domain": "software-engineering",
+    "capabilityNeeds": [
+      "web-research",
+      "code-execution",
+      "document-authoring"
+    ],
+    "evidenceSignature": "software-engineering|code-execution,document-authoring,web-research",
+    "workerCount": 4,
+    "roles": [
+      "Mission Coordinator",
+      "Generalist Worker",
+      "Software Engineer",
+      "Documentation Writer"
+    ],
+    "reasoningCalls": 3,
+    "status": "success",
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "verificationDetails": [
+      {
+        "label": "report-exists",
+        "ok": true
+      },
+      {
+        "label": "mentions-rust",
+        "ok": true
+      },
+      {
+        "label": "mentions-go",
+        "ok": true
+      },
+      {
+        "label": "mission-input:sources.txt",
+        "ok": true
+      }
+    ],
+    "patternsConsidered": [],
+    "patternsApplied": [],
+    "patternsAppliedFlag": false,
+    "planRationale": "Scope \"complex\" in domain \"software-engineering\" with 3 capability needs. Planned 3 specialist role(s): Generalist Worker [web-research], Software Engineer [code-execution], Documentation Writer [document-authoring]. Mission Coordinator added because 3+ specialists require integration.",
+    "falseSuccess": false
+  },
+  "patternTrace": {
+    "missionId": "G5-08-GEN-A",
+    "missionFreshness": {
+      "isNew": true,
+      "isRenamed": false,
+      "isTrivialParaphrase": false
+    },
+    "goalDomain": "software-engineering",
+    "capabilityNeeds": [
+      "web-research",
+      "code-execution",
+      "document-authoring"
+    ],
+    "evidenceSignature": "software-engineering|code-execution,document-authoring,web-research",
+    "patternsAvailable": [
+      "cand-research-document-authoring-prefer-sole-operator",
+      "cand-research-document-authoring-web-research-prefer-sole-operator",
+      "cand-general-data-analysis-document-authoring-prefer-sole-operator"
+    ],
+    "patternsRetrieved": [],
+    "patternApplicable": false,
+    "applicabilityReason": "No trusted pattern matches domain=\"software-engineering\" with capabilityNeeds=[web-research, code-execution, document-authoring].",
+    "patternInterpreted": false,
+    "patternApplied": false,
+    "patternOverridden": false,
+    "overrideReason": "",
+    "baselineOrganization": {
+      "workerCount": 4,
+      "roles": [
+        "Mission Coordinator",
+        "Generalist Worker",
+        "Software Engineer",
+        "Documentation Writer"
+      ]
+    },
+    "learnedOrganization": {
+      "workerCount": 4,
+      "roles": [
+        "Mission Coordinator",
+        "Generalist Worker",
+        "Software Engineer",
+        "Documentation Writer"
+      ]
+    },
+    "organizationChanged": false,
+    "causalAttribution": false,
+    "baselineVerification": {
+      "ok": true,
+      "passed": 4,
+      "failed": 0
+    },
+    "learnedVerification": {
+      "ok": true,
+      "passed": 4,
+      "failed": 0
+    },
+    "baselineCorrectness": "success",
+    "learnedCorrectness": "success",
+    "generalizationClassification": "GENERALIZATION_NON_APPLICABLE",
+    "interpretation": "No trusted pattern legitimately applies to this unseen mission. Genesis correctly retrieved no pattern. This is positive evidence of bounded learning."
+  },
+  "gate": {
+    "missionGenuinelyNew": true,
+    "missionFrozenBeforeExecution": true,
+    "noEvaluatorLeakage": true,
+    "learnedStateFrozen": true,
+    "patternApplicabilityDecisionSemanticallyDefensible": true,
+    "verificationIndependent": true,
+    "noFalseTransferOrGeneralization": true,
+    "noHarmfulUnresolvedLearningBehavior": true,
+    "noMaterialEvidenceSignatureCollision": true,
+    "gateResult": "PASS",
+    "note": "PASS does NOT require the pattern to change organization. ACTIVE/CONFIRMATORY/BOUNDED/NON_APPLICABLE are all valid intelligent outcomes if the applicability decision is correct and independently defensible."
+  },
+  "evidenceSignatureObservation": {
+    "version": "v1",
+    "actual": "software-engineering|code-execution,document-authoring,web-research",
+    "predicted": "research|document-authoring,web-research",
+    "collisionDetected": false,
+    "interpretation": "Evidence signature matches the trusted pattern cand-research-document-authoring-web-research-prefer-sole-operator. No incompatible collision."
+  }
+}

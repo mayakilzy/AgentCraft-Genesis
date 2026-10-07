@@ -1,0 +1,45 @@
+{
+  "arm": "baseline",
+  "domain": "software-engineering",
+  "capabilityNeeds": [
+    "web-research",
+    "code-execution",
+    "document-authoring"
+  ],
+  "evidenceSignature": "software-engineering|code-execution,document-authoring,web-research",
+  "workerCount": 4,
+  "roles": [
+    "Mission Coordinator",
+    "Generalist Worker",
+    "Software Engineer",
+    "Documentation Writer"
+  ],
+  "reasoningCalls": 3,
+  "status": "success",
+  "verificationOk": true,
+  "verificationPassed": 4,
+  "verificationFailed": 0,
+  "verificationDetails": [
+    {
+      "label": "report-exists",
+      "ok": true
+    },
+    {
+      "label": "mentions-rust",
+      "ok": true
+    },
+    {
+      "label": "mentions-go",
+      "ok": true
+    },
+    {
+      "label": "mission-input:sources.txt",
+      "ok": true
+    }
+  ],
+  "patternsConsidered": [],
+  "patternsApplied": [],
+  "patternsAppliedFlag": false,
+  "planRationale": "Scope \"complex\" in domain \"software-engineering\" with 3 capability needs. Planned 3 specialist role(s): Generalist Worker [web-research], Software Engineer [code-execution], Documentation Writer [document-authoring]. Mission Coordinator added because 3+ specialists require integration.",
+  "falseSuccess": false
+}

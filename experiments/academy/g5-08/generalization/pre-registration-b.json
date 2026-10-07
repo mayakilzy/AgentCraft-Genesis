@@ -1,0 +1,79 @@
+{
+  "$schema": "genesis-academy-g5-08-generalization-preregistration-v2",
+  "phase": "G5-08",
+  "subphase": "A — Final Generalization Test (Mission 2 of 2, allowed by Section 7)",
+  "recordedAt": "2026-10-07",
+  "purpose": "After Mission G5-08-GEN-A produced GENERALIZATION_NON_APPLICABLE (the v0.1 GoalCompiler classified 'Rust vs Go' as software-engineering, so no trusted pattern matched), Section 7 permits a SECOND mission if 'genuinely needed to interpret the boundary'. This second mission probes whether learned knowledge generalizes to a content domain that DOES match a trusted pattern's signature. Mission content is again NEW (no prior Academy mission compared these tools).",
+  "mission": {
+    "id": "G5-08-GEN-B",
+    "designation": "GENERALIZATION MISSION 2 (NEW, used to interpret the boundary after Mission A produced NON_APPLICABLE)",
+    "freshness": {
+      "isRenamedCohort001Mission": false,
+      "isRenamedCohort002Mission": false,
+      "isRenamedG5_06Mission": false,
+      "isG5_07SealedMission": false,
+      "isTrivialParaphrase": false,
+      "rationale": "Mission content (note-taking-app evaluation for academic researchers) differs from every prior Academy mission: C001-01 was solar-vs-wind, C001-07 was product-spec comparison, G5-06 phase A was database A vs B, G5-06 phase B was renewable-energy comparison, G5-07 evaluated sealed Cohort 001 missions (factual-claim investigation, anomaly detection, function implementation, knowledge extraction), G5-08-GEN-A was Rust vs Go. None of these compared note-taking applications for academic use. Content is genuinely novel."
+    },
+    "goal": {
+      "outcome": "Investigate and compare two note-taking applications for academic researchers and recommend the better option with comprehensive evidence in a report file.",
+      "context": "Two note-taking applications. Source evidence is in sources.txt.",
+      "constraints": ["recommendation must be supported by evidence in sources.txt"]
+    },
+    "inputs": [
+      {
+        "path": "sources.txt",
+        "contents": [
+          "SOURCE 1: Application A (Notion) offers database views, rich-text editing, and API access. Free tier limited to 1000 blocks; paid tier $8/user/month.",
+          "SOURCE 2: Application B (Obsidian) stores notes as local Markdown files, supports bidirectional linking, and works offline. Free for personal use; commercial license $50/user/year.",
+          "SOURCE 3: Academic researchers cite ~40 papers/year on average; cross-referencing between notes and bibliographies is the most-cited pain point (Smith et al. 2023 survey, n=412).",
+          "SOURCE 4: Notion's API allows automated bibliography imports from Zotero; Obsidian requires a community plugin (Better BibTeX) and manual sync.",
+          "SOURCE 5: Obsidian's local-first storage means data ownership and longevity are guaranteed; Notion's cloud storage means vendor lock-in and potential data loss on company failure.",
+          "SOURCE 6: The research team has 3 members across 2 institutions; shared editing is essential. Notion supports real-time multi-user editing; Obsidian requires third-party sync (Obsidian Sync $4/user/month or git-based)."
+        ].join('\n')
+      }
+    ],
+    "availableCapabilities": ["openbot:workspace-files"],
+    "providerMode": "SCRIPTED_REASONING",
+    "runtimeMode": "STUB_COMPUTER",
+    "expectedAcceptanceCriteria": [
+      { "kind": "file", "label": "report-exists", "path": "recommendation.md" },
+      { "kind": "content-in-artifacts", "label": "mentions-notion", "expectedContent": "Notion" },
+      { "kind": "content-in-artifacts", "label": "mentions-obsidian", "expectedContent": "Obsidian" },
+      { "kind": "mission-input", "label": "mission-input:sources.txt", "path": "sources.txt", "expectIncludes": "SOURCE 1" }
+    ]
+  },
+  "trustedPatternsAvailable": [
+    "cand-research-document-authoring-prefer-sole-operator (support=3, evidence signature: research|document-authoring)",
+    "cand-research-document-authoring-web-research-prefer-sole-operator (support=2, evidence signature: research|document-authoring,web-research)",
+    "cand-general-data-analysis-document-authoring-prefer-sole-operator (support=2, evidence signature: general|data-analysis,document-authoring)"
+  ],
+  "quarantinedPatterns": [
+    "cand-research-prefer-sole-operator (must NOT participate; remediation phase: G5-04A)"
+  ],
+  "predictedEvidenceSignature": "research|document-authoring,web-research",
+  "predictedApplicability": {
+    "patternsExpectedToBeRetrieved": [
+      "cand-research-document-authoring-prefer-sole-operator (intersection: document-authoring; domain research matches)",
+      "cand-research-document-authoring-web-research-prefer-sole-operator (full signature match)"
+    ],
+    "rationale": "Goal outcome triggers domain=research (via 'investigate' + 'compare'); 'investigate' triggers web-research capabilityNeed; research domain has inherent document-authoring need. Expected signature research|document-authoring,web-research. Both research patterns' applicableContext will be retrieved. With 'comprehensive' complexity signal, baseline should produce 2 specialists (Web Researcher + Report Writer), allowing the pattern to collapse to 1 Sole Operator in the learned arm."
+  },
+  "twoArmDesign": {
+    "armA_baseline": "OrganizationPlanner({ patterns: [] })",
+    "armB_learned": "OrganizationPlanner({ patterns: TRUSTED_PATTERNS })",
+    "holdConstant": ["goal", "inputs", "provider", "runtime", "capabilities", "budgets", "verification", "acceptance criteria"],
+    "onlyDifference": "learned organizational knowledge"
+  },
+  "generalizationClassificationRules": "Same as Mission A (Section 11 of G5-08 spec).",
+  "epistemicIsolation": "Same as Mission A — fresh mission ID, fresh FlightRecorder, fresh workspace per arm; no reasoning continuity between arms; no evaluator leakage.",
+  "evidenceSignatureFrozen": {
+    "version": "v1 (domain + sorted capabilityNeeds)",
+    "modifiedDuringG5_08": false,
+    "rule": "Evidence Signature v1 is observed, not modified."
+  },
+  "productionChangeBudget": {
+    "preferredProductionFilesChanged": 0,
+    "smallCorrectnessFixesAllowed": true
+  }
+}

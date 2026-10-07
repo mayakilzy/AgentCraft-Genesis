@@ -1,0 +1,42 @@
+{
+  "arm": "baseline",
+  "domain": "research",
+  "capabilityNeeds": [
+    "web-research",
+    "document-authoring"
+  ],
+  "evidenceSignature": "research|document-authoring,web-research",
+  "workerCount": 2,
+  "roles": [
+    "Web Researcher",
+    "Report Writer"
+  ],
+  "reasoningCalls": 3,
+  "status": "success",
+  "verificationOk": true,
+  "verificationPassed": 4,
+  "verificationFailed": 0,
+  "verificationDetails": [
+    {
+      "label": "report-exists",
+      "ok": true
+    },
+    {
+      "label": "mentions-notion",
+      "ok": true
+    },
+    {
+      "label": "mentions-obsidian",
+      "ok": true
+    },
+    {
+      "label": "mission-input:sources.txt",
+      "ok": true
+    }
+  ],
+  "patternsConsidered": [],
+  "patternsApplied": [],
+  "patternsAppliedFlag": false,
+  "planRationale": "Scope \"standard\" in domain \"research\" with 2 capability needs. Planned 2 specialist role(s): Web Researcher [web-research], Report Writer [document-authoring]. No coordinator: fewer than 3 specialists.",
+  "falseSuccess": false
+}

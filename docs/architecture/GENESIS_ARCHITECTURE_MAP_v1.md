@@ -1,7 +1,16 @@
 # GENESIS_ARCHITECTURE_MAP_v1
 
-**Version:** v1 (frozen for Group 5)
+**Version:** v1 (frozen for Group 5; Group 5 closure update 2026-10-07)
 **Date:** 2026-10-07
+
+> **Group 5 closure update (2026-10-07):** Group 5 (Organizational Capability
+> Academy) has closed with GROUP_5_STATUS = CLOSED_PASS_WITH_LIMITATIONS. The
+> architecture below is unchanged from the Group 5 entry; the only production
+> code delta across Group 5 was +62 LOC in `src/organization/organization-planner.ts`
+> (the `prefer-role: Sole Operator` implementation from G5-06, lines 527-573).
+> See `docs/academy/GENESIS_GROUP5_FINAL_CLOSURE.md` for the closure record.
+> Group 6 (Production Hardening / A2A Federation / Jev Benchmark / Release
+> Candidate / v1.0 Closure) is the next focus; SAFE_TO_BEGIN_GROUP_6 = YES.
 
 ---
 

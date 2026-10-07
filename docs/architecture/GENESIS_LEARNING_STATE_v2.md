@@ -1,7 +1,17 @@
 # GENESIS_LEARNING_STATE_v2
 
-**Version:** v2 (Phase 4.10/4.11 output)
+**Version:** v2 (Phase 4.10/4.11 output; Group 5 closure update 2026-10-07)
 **Date:** 2026-10-07
+
+> **Group 5 closure update (2026-10-07):** The Academy has closed with
+> GROUP_5_STATUS = CLOSED_PASS_WITH_LIMITATIONS. The learning loop remains
+> CLOSED; the G5-06 `prefer-role: Sole Operator` implementation is in production
+> (`src/organization/organization-planner.ts` lines 527-573). Evidence Signature
+> v1 (domain + sorted capabilityNeeds) is frozen. The quarantined pattern
+> `cand-research-prefer-sole-operator` remains excluded from active retrieval.
+> See `docs/academy/GENESIS_GROUP5_FINAL_CLOSURE.md` for the authoritative
+> closure record, supported claims, known limitations, and future learning
+> backlog.
 
 ---
 

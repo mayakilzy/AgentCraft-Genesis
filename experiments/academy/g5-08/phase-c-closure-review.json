@@ -1,0 +1,117 @@
+{
+  "$schema": "genesis-academy-g5-08-phase-c-closure-review-v1",
+  "phase": "G5-08",
+  "subphase": "C — Group 5 Closure Review",
+  "recordedAt": "2026-10-07",
+  "purpose": "After Phases A and B, decide whether Group 5 closes. The closure question is intentionally practical: is the current learning subsystem sufficiently demonstrated to remain as a BOUNDED SUPPORTING CAPABILITY of Genesis? NOT: is autonomous organizational learning solved? NOT: is the Academy complete as a research program?",
+  "phaseAResult": {
+    "phaseAGate": "PASS",
+    "missionCount": 2,
+    "missionA_classification": "GENERALIZATION_NON_APPLICABLE",
+    "missionB_classification": "GENERALIZATION_ACTIVE",
+    "strongestOutcome": "Mission B demonstrated active causal generalization: a pattern learned from solar/wind/database/renewable-energy comparison missions transferred to a NOVEL content domain (note-taking-app evaluation for academic researchers) and causally collapsed a 2-specialist baseline into a 1-Sole-Operator learned organization while preserving mission correctness. This is the strongest generalization evidence possible under scripted reasoning conditions.",
+    "boundaryObservation": "Mission A (Rust vs Go) correctly produced NON_APPLICABLE because the v0.1 GoalCompiler classified the goal as software-engineering (signals 'service', 'code') — no trusted pattern matched. Genesis correctly did NOT apply learned knowledge where its applicability context does not match. Together, Missions A and B demonstrate Genesis can distinguish content similarity from organizational applicability."
+  },
+  "phaseBResult": {
+    "greenfieldGate": "PASS",
+    "mission": "Build a small Node.js word-frequency CLI tool with tests",
+    "organizationEmergedFromGenesis": true,
+    "organizationShape": "2 workers (Software Engineer + Documentation Writer), software-engineering domain, scope='standard' (multi-step + 'test' signal)",
+    "learnedPatternApplied": false,
+    "learnedPatternApplicabilityReason": "No trusted pattern's applicableContext matches domain=software-engineering. Genesis correctly retrieved no pattern. This is acceptable per Section 18 — if no learned pattern applies, that is perfectly acceptable.",
+    "verification": "Independent PASS (6/6 harness checks; runtime verification confirms artifacts actually function)",
+    "falseSuccess": false,
+    "independentRuntimeVerification": "PASS — artifacts (wordfreq.mjs + test.mjs) reconstructed and executed with Node.js; tokenize, countWords, topN, run, and CLI invocation all produce correct output on known inputs."
+  },
+  "capabilityEvaluation": {
+    "section": "33 — MINIMUM GROUP 5 CAPABILITY WE EXPECT",
+    "criteria": [
+      {
+        "id": 1,
+        "capability": "Capture organizational experience",
+        "evidence": "G5-04 Cohort 001: 4 missions × 1 worker; 4 experiences captured with full provenance (missionId, flight record, repositorySha, source=synthetic). G5-05 Cohort 002: 10 experiences captured across 4 families. Total: 14 experiences captured across diverse mission families.",
+        "supported": true
+      },
+      {
+        "id": 2,
+        "capability": "Distinguish at least some comparable from non-comparable evidence",
+        "evidence": "G5-04A Semantic Integrity: discovered and remediated the false-aggregation case where C001-01 (solar-vs-wind research) and C001-07 (document comparison) were grouped by coarse domain='research' alone. Introduced Evidence Signature v1 (domain + sorted capabilityNeeds). Tests in tests/learning/semantic-integrity.test.ts enforce: (a) the quarantined candidate ID is NOT produced under new semantics; (b) same-signature experiences aggregate; (c) different-signature experiences do NOT aggregate as contradictions.",
+        "supported": true
+      },
+      {
+        "id": 3,
+        "capability": "Derive candidate organizational patterns",
+        "evidence": "StatisticalCandidateGenerator produced 4 candidates in Cohort 001 (under old semantics, 1 was contaminated), 7 candidates in Cohort 002 (under new semantics). Candidate kinds include prefer-role and avoid-role, both first-class.",
+        "supported": true
+      },
+      {
+        "id": 4,
+        "capability": "Evaluate/promote bounded trusted patterns",
+        "evidence": "RuleCandidateEvaluator promotes candidates with support ≥ 2 + no contradictions + verification quality success-or-mixed. G5-05 promoted 3 trusted patterns; 4 remained tentative (support=1); 0 rejected. Quarantine mechanism (G5-04A) preserves historical evidence while preventing contaminated patterns from influencing future planning.",
+        "supported": true
+      },
+      {
+        "id": 5,
+        "capability": "Retrieve learned knowledge during future planning",
+        "evidence": "RulePatternRetriever matches domain (exact) + capabilityNeeds (intersection). G5-06 phase A confirmed retrieval: pattern was retrieved and passed to planner. G5-07 confirmed retrieval on 3 of 4 unseen missions. G5-08 phase A mission B confirmed retrieval on a NOVEL content domain.",
+        "supported": true
+      },
+      {
+        "id": 6,
+        "capability": "Let learned knowledge causally influence organization",
+        "evidence": "G5-06 phase A: prefer-role for Sole Operator collapsed 2 specialists → 1 Sole Operator (workerCount 2→1, roles [Web Researcher, Report Writer] → [Sole Operator]). G5-06 phase B: same causal effect on a different mission (renewable-energy comparison). G5-08 phase A mission B: same causal effect on a NOVEL content domain (note-taking-app evaluation). The causal mechanism is now part of production behavior in src/organization/organization-planner.ts (lines 527-573).",
+        "supported": true
+      },
+      {
+        "id": 7,
+        "capability": "Preserve applicability boundaries",
+        "evidence": "G5-07: 1 of 4 sealed missions correctly produced NON_APPLICABLE (C001-06 software-engineering; no trusted pattern matched). G5-08 phase A mission A: same NON_APPLICABLE on a software-engineering mission (Rust vs Go). G5-08 phase B Greenfield: NON_APPLICABLE on a software-engineering mission (CLI tool). Genesis correctly does NOT apply learned knowledge where its applicability context does not match — three independent observations across G5-07 and G5-08.",
+        "supported": true
+      },
+      {
+        "id": 8,
+        "capability": "Carry learned knowledge across an unseen mission boundary",
+        "evidence": "G5-07: 3 of 4 sealed Cohort 001 transfer missions produced CONFIRMATORY_TRANSFER (pattern retrieved, baseline already satisfied preference). G5-08 phase A mission B: GENERALIZATION_ACTIVE — pattern transferred to a NOVEL content domain and causally changed organization. The unseen-mission boundary is crossed correctly: pattern reaches missions that did NOT participate in learning.",
+        "supported": true
+      },
+      {
+        "id": 9,
+        "capability": "Execute a fresh end-to-end Genesis mission without learning corrupting current mission truth",
+        "evidence": "G5-08 phase B Greenfield: Genesis executed Goal → Requirements → Organization (emerged, not hand-designed) → Genomes → Worker → Execution → Independent Verification, all PASS. No false success. No evaluator/gold leakage. Learned patterns did not override stronger current requirements (none applied). Independent runtime verification confirms artifacts actually function. Mission truth preserved.",
+        "supported": true
+      }
+    ],
+    "allCriteriaSupported": true
+  },
+  "closureClassification": {
+    "candidate": "CLOSED_PASS_WITH_LIMITATIONS",
+    "rationale": "All 9 capability criteria are supported by evidence. The strongest generalization evidence (G5-08 phase A mission B) demonstrates active causal transfer to a novel content domain under scripted reasoning. However, important evidence limitations remain: (a) all missions used scripted reasoning (provenance.source = synthetic), so behavioral generalization to real LLM workers is not tested; (b) only prefer-role: Sole Operator is implemented (specialist prefer-role is unimplemented); (c) the architecture cannot represent organizational requirements (only capability needs); (d) the v0.1 GoalCompiler uses word-boundary heuristics that occasionally misclassify domains (e.g., Rust-vs-Go as software-engineering rather than research); (e) N remains small (4 sealed + 2 generalization + 1 greenfield = 7 transfer/generalization missions total). These limitations do not prevent Group 5 from closing — they are recorded as future work and do not represent material defects that would make learning unsafe as a bounded supporting capability.",
+    "alternativeConsidered": {
+      "CLOSED_PASS": "Rejected because the scripted-reasoning limitation is material — claims about real-LLM behavioral generalization cannot be made.",
+      "NOT_READY": "Rejected because no material defect prevents treating learning as a safe supporting capability. The 9 criteria are all supported.",
+      "DESIGN_REVIEW_REQUIRED": "Rejected because no fundamental architectural issue was exposed. The architecture's limitations (organizational requirements, specialist prefer-role) are documented future work, not blocking defects."
+    }
+  },
+  "thingsIntentionallyNotRequired": {
+    "section": "34 — THINGS WE INTENTIONALLY DO NOT REQUIRE FOR GROUP 5 CLOSURE",
+    "items": [
+      "universal pattern generalization",
+      "advanced negative-learning theory",
+      "automatic pattern retirement",
+      "statistical confidence framework",
+      "OperationalNeeds learning",
+      "MissionObligation learning",
+      "cross-family universal ontology",
+      "real-world longitudinal learning",
+      "large-scale Academy dataset",
+      "real-LLM replication of every experiment",
+      "autonomous curriculum generation"
+    ],
+    "disposition": "Recorded as future learning backlog (see docs/academy/GENESIS_GROUP5_FINAL_CLOSURE.md). Not implemented in G5-08."
+  },
+  "group5ClosureDecision": {
+    "GROUP_5_STATUS": "CLOSED_PASS_WITH_LIMITATIONS",
+    "SAFE_TO_BEGIN_GROUP_6": "YES",
+    "nextRecommendedAction": "G5-08 STOPPED per Section 49. Group 5 closes. Return evidence for human review. DO NOT begin Group 6 (Production Hardening / A2A Federation / Jev Benchmark / Release Candidate / Final Benchmark / v1.0 Closure) without human approval."
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "genesis-academy-g5-08-greenfield-preregistration-v1",
+  "phase": "G5-08",
+  "subphase": "B — Greenfield End-to-End Validation",
+  "recordedAt": "2026-10-07",
+  "purpose": "Answer QUESTION 2 — GREENFIELD: Can Genesis execute a fresh end-to-end mission (Goal → Requirements → Organization → Workers → Execution → Verification) while using prior learned organizational knowledge when appropriate and ignoring/bounding it when not appropriate? This is NOT primarily a learning experiment — it is a Genesis experiment. The learning system is only one input into the organization process.",
+  "phaseAPrecondition": {
+    "phaseAGateResult": "PASS",
+    "proceedToPhaseB": true,
+    "rationale": "Phase A produced GENERALIZATION_ACTIVE on Mission B + GENERALIZATION_NON_APPLICABLE on Mission A. Both applicability decisions are correct and independently defensible. No false/harmful generalization occurred."
+  },
+  "mission": {
+    "id": "G5-08-GF-A",
+    "designation": "GREENFIELD MISSION (NEW, FRESH)",
+    "freshness": {
+      "isCohort001Mission": false,
+      "isCohort002Mission": false,
+      "isG5_06Mission": false,
+      "isG5_07SealedMission": false,
+      "isG5_08GenMission": false,
+      "isTrivialParaphrase": false,
+      "rationale": "Mission content (implement a small Node.js word-frequency CLI tool with tests) is a fresh practical engineering task. No prior Academy mission asked Genesis to implement a small CLI utility with its own test suite. C001-05 was 'fix a bug in a provided script'; C001-06 was 'implement a small function according to a spec'. This Greenfield mission asks Genesis to design the tool itself (parsing, counting, sorting, output formatting) — a meaningfully larger scope than the Cohort 001 software missions."
+    },
+    "goal": {
+      "outcome": "Build a small Node.js command-line tool that reads a text file, counts word frequencies, and writes the top-N results to an output file. Include a test that verifies the tool produces correct output on a known input.",
+      "context": "The tool should accept a file path argument, read the text, tokenize by whitespace, normalize to lowercase, count occurrences, sort by frequency descending then alphabetically, and write the top N (default 10) results to a file. A test script should verify correctness on a small input."
+    },
+    "freshness_constraints": {
+      "noHandDesignedOrganization": true,
+      "organizationMustEmergeFromGenesis": true,
+      "noManualWorkerCount": true,
+      "noManualRoles": true,
+      "noManualSpecialistStructure": true,
+      "noManualCoordinationTopology": true
+    },
+    "availableCapabilities": ["openbot:workspace-files", "openbot:shell-execution"],
+    "providerMode": "SCRIPTED_REASONING",
+    "runtimeMode": "STUB_COMPUTER (scripted worker writes files directly; no real OpenBot process needed)",
+    "expectedAcceptanceCriteria": [
+      { "kind": "file", "label": "impl-exists", "path": "wordfreq.mjs" },
+      { "kind": "file", "label": "test-exists", "path": "test.mjs" },
+      { "kind": "content-in-artifacts", "label": "impl-has-tokenize", "expectedContent": "split" },
+      { "kind": "content-in-artifacts", "label": "impl-has-lowercase", "expectedContent": "toLowerCase" },
+      { "kind": "content-in-artifacts", "label": "test-has-assert", "expectedContent": "assert" },
+      { "kind": "mission-input", "label": "mission-input-acknowledged", "path": "wordfreq.mjs", "expectIncludes": "wordfreq" }
+    ]
+  },
+  "learnedPatternsAvailable": [
+    "cand-research-document-authoring-prefer-sole-operator",
+    "cand-research-document-authoring-web-research-prefer-sole-operator",
+    "cand-general-data-analysis-document-authoring-prefer-sole-operator"
+  ],
+  "quarantinedPatterns": ["cand-research-prefer-sole-operator"],
+  "greenfieldRunPolicy": {
+    "singleExecutionOnly": true,
+    "rationale": "Section 28: 'Do NOT automatically run a second baseline Greenfield mission. G5-06 already established causal before/after behavior. G5-08 Greenfield is an end-to-end validation. One clean execution is enough.'",
+    "learningDoesNotNeedToBeApplied": "Section 26: Learning does NOT need to be applied for Greenfield PASS. If no learned pattern applies, that is perfectly acceptable."
+  },
+  "greenfieldGateCriteria": {
+    "freshGoal": true,
+    "missionFrozenBeforeExecution": true,
+    "genesisCompiledRequirements": true,
+    "genesisProducedOrganization": true,
+    "workerGenomesProduced": true,
+    "executionOccurredThroughLegitimateRuntimePaths": true,
+    "finalRequestedOutcomeProduced": true,
+    "independentVerificationPass": true,
+    "noFalseSuccess": true,
+    "noEvaluatorOrGoldLeakage": true,
+    "learnedPatternsDidNotOverrideStrongerCurrentRequirements": true,
+    "noManualRepairOfMissionOutput": true,
+    "note": "Learning does NOT need to be applied for Greenfield PASS."
+  },
+  "epistemicIsolation": {
+    "noHiddenContinuityBetweenWorkers": true,
+    "noHiddenContinuityFromPhaseAIntoPhaseB": true,
+    "explicitPersistedGenesisKnowledgeAllowed": true,
+    "hiddenActorMemoryNotAllowed": true
+  },
+  "providerMode": "SCRIPTED_REASONING",
+  "realLlmReasoningUsed": false,
+  "scriptedReasoningUsed": true,
+  "developmentFallbackUsed": false,
+  "productionChangeBudget": {
+    "preferredProductionFilesChanged": 0,
+    "smallCorrectnessFixesAllowed": true,
+    "ifSubstantialProductionImplementationNecessary": "Question whether Group 5 is actually ready to close."
+  }
+}

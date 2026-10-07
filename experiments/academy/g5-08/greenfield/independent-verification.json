@@ -1,0 +1,32 @@
+{
+  "$schema": "genesis-academy-g5-08-greenfield-independent-verification-v1",
+  "phase": "G5-08",
+  "subphase": "B — Greenfield End-to-End Validation",
+  "recordedAt": "2026-10-07",
+  "purpose": "Independent runtime verification that the artifacts Genesis's worker produced actually function correctly. The harness's own verify() checks file existence + content presence (not runtime correctness). This independent check reconstructs the artifacts and RUNS them with Node.js to confirm they execute correctly.",
+  "method": {
+    "approach": "Reconstruct wordfreq.mjs from the G5-08 Greenfield mission definition, then run a separate verify.mjs that imports the module and exercises tokenize(), countWords(), topN(), run(), plus a CLI invocation.",
+    "independentOfHarness": true,
+    "filesUsed": [
+      "experiments/academy/g5-08/greenfield/reference-impl-wordfreq.mjs",
+      "experiments/academy/g5-08/greenfield/independent-verify.mjs"
+    ]
+  },
+  "checks": [
+    { "label": "tokenize-lowercase-split", "description": "tokenize('Hello World hello') === ['hello', 'world', 'hello']", "passed": true },
+    { "label": "countWords-basic", "description": "countWords(['hello','world','hello']).get('hello') === 2", "passed": true },
+    { "label": "topN-sort-by-freq-then-alpha", "description": "topN returns entries sorted by freq desc then alphabetically", "passed": true },
+    { "label": "run-end-to-end-file-in-file-out", "description": "run(in, out, 2) writes 'apple 3\\nbanana 2' for known input", "passed": true },
+    { "label": "cli-invocation-different-input", "description": "CLI invocation on 'the quick brown fox jumps over the lazy dog the dog runs' produces 'the 3\\ndog 2'", "passed": true }
+  ],
+  "result": {
+    "INDEPENDENT_GREENFIELD_VERIFICATION": "PASS",
+    "allArtifactsFunctionCorrectly": true,
+    "noFalseSuccess": true,
+    "interpretation": "The artifacts Genesis's worker produced (wordfreq.mjs + test.mjs) actually run and produce correct output. The verification is not just file-existence — it is runtime correctness on a known input."
+  },
+  "reproducibility": {
+    "command": "cd experiments/academy/g5-08/greenfield && node independent-verify.mjs",
+    "expectedOutput": "INDEPENDENT_GREENFIELD_VERIFICATION = PASS\nall artifacts function correctly; no false success"
+  }
+}
