@@ -3,7 +3,7 @@
 **Phase:** 4.6a
 **Date:** 2026-10-07
 **Start SHA:** `9f6380f4e1de33d375a30700f610fac73a188758`
-**Final SHA:** _(recorded after commit)_
+**Final SHA:** fa09b1b98917cecab2c9b6cbb6ed047518af0d00
 **Branch:** `build/group-03-repository-work`
 
 ---
@@ -140,4 +140,4 @@ Phase 4.6's PASS_WITH_FOLLOWUP is now resolved. The followup (provider-neutral c
 
 ## 11. Exact Final SHA
 
-_(recorded after commit)_
+fa09b1b98917cecab2c9b6cbb6ed047518af0d00
