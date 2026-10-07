@@ -376,6 +376,7 @@ export class MissionOrchestrator {
           needs: [...w.capabilityNeeds],
         })),
         rationale: plan.rationale,
+        ...(plan.learned === undefined ? {} : { learned: plan.learned }),
       });
 
       const compilation = await this.options.genomeCompiler.compilePlan(
