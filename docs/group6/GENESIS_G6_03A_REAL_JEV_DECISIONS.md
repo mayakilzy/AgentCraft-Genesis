@@ -1,8 +1,30 @@
 # GENESIS_G6_03A_REAL_JEV_DECISIONS
 
+> ## ℹ️ G6-03B UPDATE (2026-10-07)
+>
+> The geo-restriction reported in this G6-03A document has been RESOLVED
+> by G6-03B. The blocker was specific to the GLOBAL host
+> (`https://openrouter.ai/api/alpha/decisions`) — not to the user's
+> physical region. OpenRouter's official EU region host
+> (`https://eu.openrouter.ai/api/alpha/decisions`) supports the same
+> Decisions API and returns genuine `typesafe/jev-1.13` decisions.
+>
+> G6-03B added an `endpoint` constructor option (restricted to an
+> allow-list of OpenRouter Decisions API URLs) and re-ran the positive
+> causal probe with the EU endpoint. The probe now PASSES end-to-end:
+> Jev returned a real decision (with probabilities and confidence),
+> Genesis consumed it, workers actually executed, and the mission
+> completed successfully.
+>
+> See `docs/group6/GENESIS_G6_03B_JEV_POSITIVE_CAUSAL_PROOF.md` for the
+> G6-03B outcome. JEV_FINAL_STATUS = OPTIONAL_REAL_INTEGRATION_PROVEN.
+>
+> This G6-03A document is preserved as historical evidence of the
+> geo-restriction finding that motivated the G6-03B endpoint option.
+
 **Date:** 2026-10-07
 **Mission:** G6-03A — Real Jev Decision API + End-to-End Causal Proof
-**Status:** BLOCKED (geo-restriction outside our control)
+**Status:** BLOCKED (geo-restriction outside our control — RESOLVED by G6-03B)
 **Branch:** `build/group-06-productionization`
 **Start HEAD:** `00c8d92ad37fcef3ab2ed841fdaba656bcf17469`
 **Final HEAD:** (recorded at commit time)
