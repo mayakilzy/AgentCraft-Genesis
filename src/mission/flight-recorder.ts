@@ -178,6 +178,64 @@ export interface MissionEventFailureClassified {
   readonly attempt?: number;
 }
 
+/**
+ * G6-02 — Federation event: a bounded task was delegated to an external
+ * A2A agent. Emitted by FederationService when sendMessage succeeds and
+ * the remote task id is known. Per Section 28: additive event type;
+ * schema is NOT frozen in G6-02.
+ */
+export interface MissionEventFederationDelegated {
+  readonly type: 'federation-delegated';
+  readonly missionId?: string;
+  readonly externalAgentId: string;
+  readonly externalAgentName: string;
+  readonly remoteTaskId: string;
+  readonly taskChars: number;
+}
+
+/** G6-02 — Federation event: remote task state changed (polled). */
+export interface MissionEventFederationStateChange {
+  readonly type: 'federation-state-change';
+  readonly missionId?: string;
+  readonly remoteTaskId: string;
+  readonly remoteState: string;
+}
+
+/** G6-02 — Federation event: terminal result received from the remote agent. */
+export interface MissionEventFederationResultReceived {
+  readonly type: 'federation-result-received';
+  readonly missionId?: string;
+  readonly remoteTaskId: string;
+  readonly status: string;
+  readonly resultChars: number;
+  readonly evidenceCount: number;
+}
+
+/** G6-02 — Federation event: delegation failed (failure class from G6-01 taxonomy). */
+export interface MissionEventFederationFailed {
+  readonly type: 'federation-failed';
+  readonly missionId?: string;
+  readonly remoteTaskId: string;
+  readonly failureClass: string;
+  readonly message: string;
+}
+
+/** G6-02 — Federation event: delegation was cancelled (locally or remotely). */
+export interface MissionEventFederationCancelled {
+  readonly type: 'federation-cancelled';
+  readonly missionId?: string;
+  readonly remoteTaskId: string;
+  readonly reason: string;
+}
+
+/** G6-02 — Federation event union. */
+export type MissionEventFederation =
+  | MissionEventFederationDelegated
+  | MissionEventFederationStateChange
+  | MissionEventFederationResultReceived
+  | MissionEventFederationFailed
+  | MissionEventFederationCancelled;
+
 /** The structured flight record vocabulary. */
 export type FlightEvent =
   | MissionEventMissionStarted
@@ -191,6 +249,7 @@ export type FlightEvent =
   | MissionEventRepository
   | MissionEventReasoningFallback
   | MissionEventFailureClassified
+  | MissionEventFederation
   | WorkerLoopEvent
   | HandoffEvent;
 

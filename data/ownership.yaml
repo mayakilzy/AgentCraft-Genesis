@@ -103,9 +103,9 @@ ownership:
   - domain: external-agent-interop
     description: Independent agent to independent agent interoperability
     canonical_owner: a2a
-    decision: DEFER
+    decision: REUSE
     satisfies: []
-    notes: A2A 1.0.0; defer internal use — simpler Bot-to-Bot first.
+    notes: A2A 1.0.0; activated G6-02 as edge-only FederationService. Official @a2a-js/sdk@1.3.0; outbound federation proven; inbound deferred.
 
   # --- Genesis first-party (the only domains we build) ---
   - domain: goal-compiler

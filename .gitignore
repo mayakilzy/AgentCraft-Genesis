@@ -10,3 +10,4 @@ coverage/
 experiments/experiment-001/.computers/
 experiments/*/.runs/
 .vitest/
+scripts/
