@@ -549,26 +549,34 @@ export class MissionOrchestrator {
 
       const finalArtifacts = this.collectArtifacts(participants, results);
       const finalEvidence = [...results.values()].flatMap((r) => r.evidence);
+      // PHASE 4.6a: collect provider-OBSERVED deliverables from non-computer
+      // surfaces (workspace, future job). These are trusted because the runtime
+      // is the trust authority — a WorkspaceHandle only exists if the adapter
+      // actually created/observed the Space+Page.
+      const observedDeliverables = this.collectObservedDeliverables(ensured);
+      const hasDeliverable = finalArtifacts.length > 0 || observedDeliverables.length > 0;
+      // Include observed deliverables in final evidence for the Experience record.
+      finalEvidence.push(...observedDeliverables);
 
       let status: MissionResult['status'];
       let summary: string;
       if (aborted) {
-        status = finalArtifacts.length > 0 ? 'partial' : 'failure';
+        status = hasDeliverable ? 'partial' : 'failure';
         summary = 'mission aborted (timeout or cancellation) before completion';
       } else if (verification === undefined || verification.ok) {
-        if (finalArtifacts.length === 0 && workerFailures.length > 0) {
+        if (!hasDeliverable && workerFailures.length > 0) {
           status = 'failure';
           summary = `all worker runs failed: ${workerFailures
             .map((f) => f.summary)
             .join('; ')}`;
-        } else if (finalArtifacts.length === 0) {
+        } else if (!hasDeliverable) {
           status = 'failure';
           summary = 'no worker produced a deliverable';
         } else {
           status = 'success';
           summary = coordinatorSummary || assembleSummary(specialists, results);
         }
-      } else if (finalArtifacts.length > 0) {
+      } else if (hasDeliverable) {
         status = 'partial';
         summary = `verification failed after retry: ${verification.summary}`;
       } else {
@@ -647,6 +655,44 @@ export class MissionOrchestrator {
       });
     }
     return sources;
+  }
+
+  /**
+   * PHASE 4.6a. Collects provider-OBSERVED deliverable evidence from non-
+   * computer surfaces (workspace, future job). This is the provider-neutral
+   * completion criterion: a deliverable exists if EITHER computer-file
+   * artifacts (confirmed by readFile) OR provider-observed surface results
+   * exist.
+   *
+   * TRUST MODEL: the runtime is the trust authority, not the worker. A
+   * WorkspaceHandle only exists if the adapter actually created/observed the
+   * Space+Page (it throws on failure). Worker self-assertion cannot produce
+   * a handle — only the provider can. This preserves the distinction between
+   * "worker claimed" and "provider observed."
+   *
+   * Provider-neutral: reads `surfaces(handle)`, not OpenDots-specific code.
+   * The orchestrator knows about `workspace` (a Phase 4.6 contract), not
+   * about OpenDots.
+   */
+  private collectObservedDeliverables(
+    ensured: readonly { handle: RuntimeHandle; genome: WorkerGenome }[],
+  ): Evidence[] {
+    const deliverables: Evidence[] = [];
+    for (const { handle } of ensured) {
+      const surfaces = this.options.runtime.surfaces(handle);
+      // Workspace surface: if the adapter observed a real Space+Page, the
+      // handle exists. This is provider-observed evidence.
+      if (surfaces.workspace?.handle !== undefined) {
+        const wsHandle = surfaces.workspace.handle;
+        deliverables.push({
+          kind: 'artifact',
+          description: `${handle.workerId} collaborative workspace deliverable`,
+          location: `${wsHandle.provider}:${wsHandle.spaceId}:${wsHandle.pageId}`,
+        });
+      }
+      // Phase 4.7 will add: if (surfaces.job?.handle !== undefined) { ... }
+    }
+    return deliverables;
   }
 
   private recordVerification(
