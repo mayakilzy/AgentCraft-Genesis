@@ -1,0 +1,28 @@
+{
+  "probe": "G5-01 NEGATIVE_AUTHORIZATION",
+  "timestamp": "2026-10-07T04:08:04.121Z",
+  "genomeTools": [],
+  "mcpCapabilityExists": true,
+  "workerResult": {
+    "workerId": "unauthorized-1",
+    "status": "success",
+    "summary": "blocked: could not invoke analyze tool",
+    "evidence": [],
+    "artifacts": [],
+    "steps": 1,
+    "reasoningCalls": 2,
+    "refusals": [
+      "refused: action \"call_tool\" requires grant grant mcp:analyze (this worker is not authorized to invoke MCP tool \"analyze\"), which this worker does not hold"
+    ]
+  },
+  "invokeToolCallCount": 0,
+  "invokeBlocked": true,
+  "hasGrantRefusal": true,
+  "noSuccessfulCallToolEvent": true,
+  "noFalseSuccess": true,
+  "flightEvents": [
+    "{\"type\":\"worker-started\",\"workerId\":\"unauthorized-1\",\"role\":\"Analyst\",\"tier\":\"cheap\"}",
+    "{\"type\":\"worker-step\",\"workerId\":\"unauthorized-1\",\"step\":1,\"action\":\"call_tool\",\"ok\":false,\"elapsedMs\":0}",
+    "{\"type\":\"worker-finished\",\"workerId\":\"unauthorized-1\",\"result\":{\"workerId\":\"unauthorized-1\",\"status\":\"success\",\"summary\":\"blocked: could not invoke analyze tool\",\"evidence\":[],\"artifacts\":[],\"steps\":1,\"reasoningCalls\":2,\"refusals\":[\"refused: action \\\"call_tool\\\" requires grant grant mcp:analyze (this worker is not authorized to invoke MCP tool \\\"analyze\\\"), which this worker does not hold\"]}}"
+  ]
+}

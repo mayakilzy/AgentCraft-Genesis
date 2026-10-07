@@ -9,6 +9,8 @@ import type {
   WorkerComputer,
   WorkspaceSurface,
 } from '../runtime/computer.js';
+import type { McpCapabilityProvider } from '../runtime/mcp/capability-provider.js';
+import { MCP_GRANT_PREFIX } from '../runtime/mcp/capability-provider.js';
 import type { HandoffSink } from './handoff.js';
 
 /**
@@ -82,6 +84,15 @@ export type WorkerAction =
   // worker only observes the result of work that already exists.
   | { readonly action: 'check_durable_status' }
   | { readonly action: 'get_durable_result' }
+  // G5-01: MCP capability invocation. The worker calls an external tool
+  // exposed through the Model Context Protocol. The tool name must match a
+  // grant in genome.tools (format: `mcp:<tool>`). The official MCP SDK
+  // performs all protocol work; the WorkerAgent only dispatches.
+  | {
+      readonly action: 'call_tool';
+      readonly tool: string;
+      readonly args?: Readonly<Record<string, unknown>>;
+    }
   | {
       readonly action: 'finish';
       readonly summary: string;
@@ -142,6 +153,13 @@ export interface WorkerAgentOptions {
    * durable task belongs to ensureWorker (the adapter's ensureJob).
    */
   readonly job?: JobSurface | null;
+  /**
+   * G5-01: the MCP capability provider, when the worker's genome grants
+   * `mcp:<tool>` entries. Null/undefined when the worker has no MCP grants.
+   * The provider is the mechanism; the genome grants are the policy — a
+   * provider connected to a server does NOT mean every tool is callable.
+   */
+  readonly mcp?: McpCapabilityProvider | null;
   /** The assignment: objective, mission context, upstream results. */
   readonly taskBrief: string;
   /** The mission's worker-to-worker channel (TASK-011), when one exists. */
@@ -189,6 +207,7 @@ export class WorkerAgent {
   private readonly computer: WorkerComputer | null;
   private readonly workspace: WorkspaceSurface | null;
   private readonly job: JobSurface | null;
+  private readonly mcp: McpCapabilityProvider | null;
   private readonly taskBrief: string;
   private readonly handoffs: HandoffSink | undefined;
   private readonly roster: ReadonlyMap<string, string> | undefined;
@@ -206,6 +225,7 @@ export class WorkerAgent {
     this.computer = options.computer;
     this.workspace = options.workspace ?? null;
     this.job = options.job ?? null;
+    this.mcp = options.mcp ?? null;
     this.taskBrief = options.taskBrief;
     this.handoffs = options.handoffs;
     this.roster = options.roster;
@@ -273,6 +293,19 @@ export class WorkerAgent {
       examples.push(
         '{"action":"check_durable_status"} — check the status of the durable delegated task (returns one of: queued, running, succeeded, failed, cancelled, paused)',
         '{"action":"get_durable_result"} — retrieve the durable task result if it has succeeded (returns the result string or null if not yet succeeded)',
+      );
+    }
+    // G5-01: MCP capability invocation. The worker can call external tools
+    // exposed through MCP. Only tools whose `mcp:<tool>` grant is in the
+    // genome's tools array are callable — the provider is the mechanism,
+    // the grant is the policy.
+    const mcpTools = this.genome.tools
+      .filter((t) => t.startsWith(MCP_GRANT_PREFIX))
+      .map((t) => t.slice(MCP_GRANT_PREFIX.length));
+    if (mcpTools.length > 0 && this.mcp !== null) {
+      granted.push('call_tool');
+      examples.push(
+        `{"action":"call_tool","tool":"<name>","args":{"key":"value"}} — invoke an external capability tool. Available tools: ${mcpTools.join(', ')}`,
       );
     }
     granted.push('finish');
@@ -346,6 +379,19 @@ export class WorkerAgent {
         return this.job !== null
           ? null
           : 'a durable-delegation surface (genome did not declare durable-delegation, or runtime provided no surface)';
+      // G5-01: MCP tool invocation requires BOTH the provider (mechanism)
+      // AND the specific `mcp:<tool>` grant (policy). A worker with the
+      // provider but no grant for this tool is refused — capability exists
+      // ≠ worker may use capability.
+      case 'call_tool': {
+        if (this.mcp === null) {
+          return 'an MCP capability provider (runtime provided none)';
+        }
+        const grant = `${MCP_GRANT_PREFIX}${action.tool}`;
+        return this.genome.tools.includes(grant)
+          ? null
+          : `grant ${grant} (this worker is not authorized to invoke MCP tool "${action.tool}")`;
+      }
       case 'finish':
         return null;
       default:
@@ -466,6 +512,37 @@ export class WorkerAgent {
         return {
           ok: false,
           observation: `durable result retrieval failed: ${(error as Error).message.slice(0, 300)}`,
+        };
+      }
+    }
+    // G5-01: MCP capability invocation. The official MCP SDK performs the
+    // protocol work (transport, session, tool call). The WorkerAgent only
+    // dispatches — it never reimplements MCP. The grant check already
+    // happened in grantsFor(); reaching here means the worker is authorized.
+    if (action.action === 'call_tool') {
+      if (this.mcp === null) {
+        return {
+          ok: false,
+          observation: 'refused: this worker has no MCP capability provider',
+        };
+      }
+      try {
+        const result = await this.mcp.invokeTool(action.tool, action.args);
+        const observation = result.text.length > OBSERVATION_STDOUT_LIMIT
+          ? `${result.text.slice(0, OBSERVATION_STDOUT_LIMIT)}…[truncated]`
+          : result.text;
+        return {
+          ok: result.ok,
+          observation: JSON.stringify({
+            tool: action.tool,
+            ok: result.ok,
+            result: observation,
+          }),
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          observation: `mcp tool "${action.tool}" failed: ${(error as Error).message.slice(0, 300)}`,
         };
       }
     }

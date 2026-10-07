@@ -15,6 +15,7 @@ import type { GoalCompiler } from '../goal/goal-compiler.js';
 import type { GenomeCompiler } from '../genome/genome-compiler.js';
 import { OrganizationPlanner, type AdvisoryPattern } from '../organization/organization-planner.js';
 import type { WorkerComputer, WorkerRuntime, WorkspaceSurface, JobSurface } from '../runtime/computer.js';
+import type { McpCapabilityProvider } from '../runtime/mcp/capability-provider.js';
 import type { WorkerResult } from '../worker/worker-agent.js';
 import { WorkerAgent } from '../worker/worker-agent.js';
 import {
@@ -143,6 +144,13 @@ export interface MissionOrchestratorOptions {
    * `learned` field so the learning loop can observe real influence.
    */
   readonly patterns?: readonly AdvisoryPattern[];
+  /**
+   * G5-01: the MCP capability provider. When provided, every worker whose
+   * genome grants `mcp:<tool>` entries can invoke external capabilities
+   * through the official MCP protocol. The provider is the mechanism; genome
+   * grants are the policy. Null/undefined when the mission has no MCP tools.
+   */
+  readonly mcp?: McpCapabilityProvider;
 }
 
 /**
@@ -836,6 +844,9 @@ export class MissionOrchestrator {
         workspace: surfaces.workspace,
         job: surfaces.job,
       }),
+      // G5-01: pass the MCP capability provider through. The worker's own
+      // genome grants decide which tools it may actually call.
+      ...(this.options.mcp === undefined ? {} : { mcp: this.options.mcp }),
       taskBrief: brief,
       handoffs,
       roster,

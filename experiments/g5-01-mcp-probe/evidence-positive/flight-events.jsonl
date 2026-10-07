@@ -1,0 +1,5 @@
+{"type":"worker-started","workerId":"analyst-1","role":"Data Analyst","tier":"cheap"}
+{"type":"worker-step","workerId":"analyst-1","step":1,"action":"read_file","ok":true,"elapsedMs":0}
+{"type":"worker-step","workerId":"analyst-1","step":2,"action":"call_tool","ok":true,"elapsedMs":4}
+{"type":"worker-step","workerId":"analyst-1","step":3,"action":"write_file","ok":true,"elapsedMs":0}
+{"type":"worker-finished","workerId":"analyst-1","result":{"workerId":"analyst-1","status":"success","summary":"Computed statistics via MCP analyze tool","evidence":[{"kind":"artifact","description":"Data Analyst deliverable at result.txt","location":"analyst-1:result.txt"}],"artifacts":["result.txt"],"steps":3,"reasoningCalls":4,"refusals":[]}}
