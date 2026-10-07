@@ -1,0 +1,54 @@
+{
+  "probe_at": "2026-10-07T22:08:14.731Z",
+  "phase_1_global_endpoint": {
+    "host": "openrouter.ai",
+    "url": "https://openrouter.ai/api/alpha/decisions",
+    "http_status": 403,
+    "latency_ms": 674,
+    "error_code": 403,
+    "error_message": "This model is not available in your region.",
+    "failed_routing_step": "Gate Endpoints with Geo Restrictions",
+    "response_id": null,
+    "is_2xx_jev_decision": false,
+    "selected_answer": null,
+    "probabilities_present": false,
+    "confidence_present": false,
+    "usage_present": false
+  },
+  "phase_2_eu_endpoint": {
+    "host": "eu.openrouter.ai",
+    "url": "https://eu.openrouter.ai/api/alpha/decisions",
+    "http_status": 200,
+    "latency_ms": 2245,
+    "error_code": null,
+    "error_message": null,
+    "failed_routing_step": null,
+    "response_id": "gen-dec-1791410896-X4EW5ZySWsszcEhXXcgC",
+    "is_2xx_jev_decision": true,
+    "selected_answer": "capability",
+    "model_returned": "typesafe/jev-1.13-20260917",
+    "provider_returned": "TypeSafe",
+    "answer_type": "choice",
+    "probabilities": {"capability": 0.96, "cost": 0.04},
+    "confidence": 0.92,
+    "usage": {
+      "input_tokens": 352,
+      "output_tokens": 36,
+      "cost": 0.000014784
+    }
+  },
+  "phase_2_us_endpoint": {
+    "status": "NOT_TESTED",
+    "reason": "EU endpoint succeeded on first try; per Section 4: 'Do not continue probing after successful access is established.'"
+  },
+  "successful_jev_endpoint": "https://eu.openrouter.ai/api/alpha/decisions",
+  "successful_jev_model": "typesafe/jev-1.13",
+  "successful_jev_response_id": "gen-dec-1791410896-X4EW5ZySWsszcEhXXcgC",
+  "hard_constraints": {
+    "chat_completions_used": false,
+    "jev_router_used": false,
+    "non_jev_openrouter_model_used": false
+  },
+  "total_calls": 2,
+  "finding_summary": "The Jev Decision Model (typesafe/jev-1.13) is geo-restricted on the global host (openrouter.ai) for this cloud execution environment, but is fully accessible on the official EU region host (eu.openrouter.ai). The Decisions API returns genuine Jev decisions with selected_choice, probabilities, confidence, usage/cost, response id, model identity, and provider identity (TypeSafe)."
+}
