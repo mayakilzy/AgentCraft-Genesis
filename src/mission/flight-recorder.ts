@@ -149,6 +149,35 @@ export interface MissionEventReasoningFallback {
   readonly completionChars?: number;
 }
 
+/**
+ * G6-01 — Failure classification event. Emitted when a worker, runtime, or
+ * verification component classifies a failure using the Section 13 taxonomy.
+ * The event records the class (PROVIDER_FAILURE, RUNTIME_FAILURE, etc.), the
+ * component that classified it, and a one-line message that has already been
+ * scrubbed of secrets. The event is APPEND-ONLY: a mission that fails and
+ * recovers emits one failure-classified event per failure, plus a final
+ * mission-finished event with the terminal status.
+ *
+ * This event is the observability hook for future Mission Control: it lets
+ * the UI answer "what failed and where?" without chain-of-thought.
+ */
+export interface MissionEventFailureClassified {
+  readonly type: 'failure-classified';
+  readonly missionId: string;
+  /** The component that classified the failure (worker, runtime, verification). */
+  readonly component: 'worker' | 'runtime' | 'verification' | 'orchestrator';
+  /** Worker id (when component=worker); undefined for mission-scope failures. */
+  readonly workerId?: string;
+  /** The Section 13 failure class. */
+  readonly failureClass: string;
+  /** One-line message (already scrubbed of secrets, capped at 200 chars). */
+  readonly message: string;
+  /** Whether the component will retry the failed operation. */
+  readonly retryable: boolean;
+  /** Attempt number within the retry budget (1=first attempt, 2=first retry, etc.). */
+  readonly attempt?: number;
+}
+
 /** The structured flight record vocabulary. */
 export type FlightEvent =
   | MissionEventMissionStarted
@@ -161,6 +190,7 @@ export type FlightEvent =
   | MissionEventHumanIntervention
   | MissionEventRepository
   | MissionEventReasoningFallback
+  | MissionEventFailureClassified
   | WorkerLoopEvent
   | HandoffEvent;
 
@@ -187,14 +217,32 @@ export class MemoryFlightRecorder implements FlightRecorder {
  * not a vault: components simply never record credentials in the first
  * place; this catches accidental leaks (a token echoed by a command, a
  * bearer header captured in a diagnostic string).
+ *
+ * G6-01 (P0 H-33): expanded coverage for known provider token formats
+ * (GitHub PAT, OpenAI/Azure keys, AWS access keys, generic API keys).
+ * Each pattern is anchored to its provider-specific shape to minimize
+ * false positives — a generic `key=...` is NOT redacted because it
+ * could be a configuration key, not a credential.
  */
 const SECRET_PATTERNS: readonly { pattern: RegExp; replacement: string }[] = [
   { pattern: /Bearer\s+[A-Za-z0-9._~+/=-]+/gi, replacement: 'Bearer [redacted]' },
-  { pattern: /(token|secret|password|api[_-]?key)["'=:\s]+[A-Za-z0-9._~+/=-]{8,}/gi, replacement: '$1=[redacted]' },
+  // GitHub PAT: ghp_<36 chars>, github_pat_<22+ chars>, gho_, ghs_, ghu_
+  { pattern: /gh[pousr]_[A-Za-z0-9]{36,}/gi, replacement: 'ghp_[redacted]' },
+  { pattern: /github_pat_[A-Za-z0-9_]{22,}/gi, replacement: 'github_pat_[redacted]' },
+  // Anthropic: sk-ant-<...> — MUST come before generic sk- to avoid sk-[redacted] masking
+  { pattern: /sk-ant-[A-Za-z0-9_-]{20,}/gi, replacement: 'sk-ant-[redacted]' },
+  // OpenAI: sk-<48 chars>, sk-proj-<...>
+  { pattern: /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/gi, replacement: 'sk-[redacted]' },
+  // AWS: AKIA<16 chars> (access key id shape)
+  { pattern: /AKIA[0-9A-Z]{16}/g, replacement: 'AKIA[redacted]' },
+  // Azure: <key> accounts with generic endings — match only when paired with key-like prefix
+  { pattern: /(token|secret|password|api[_-]?key|access[_-]?key|auth[_-]?token)["'=:\s]+[A-Za-z0-9._~+/=-]{8,}/gi, replacement: '$1=[redacted]' },
   { pattern: /(authorization["'=:\s]+)[^\s"',}]+/gi, replacement: '$1[redacted]' },
+  // Generic env var assignments: KEY=value where KEY looks like a credential
+  { pattern: /\b([A-Z][A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|API_KEY|APIKEY|ACCESS_KEY|PRIVATE_KEY))\s*=\s*[^\s"'`,}]+/gi, replacement: '$1=[redacted]' },
 ];
 
-const SECRET_KEY = /(token|secret|password|authorization|api[-_]?key)/i;
+const SECRET_KEY = /(token|secret|password|authorization|api[-_]?key|access[-_]?key|auth[-_]?token|private[-_]?key|credential)/i;
 
 /** Default cap for any single string field in a record. */
 export const DEFAULT_MAX_FIELD_LENGTH = 2_000;
