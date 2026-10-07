@@ -1,0 +1,143 @@
+{
+  "census_at": "2026-10-07T22:44:00Z",
+  "census_method": "Manual inspection of package.json + src/ + tests/ + experiments/ + data/dependency-baseline.json",
+  "package_manager": "npm",
+  "lockfile": "package-lock.json",
+  "lockfile_committed": true,
+  "node_engine": ">=24",
+  "runtime_dependencies": [
+    {
+      "name": "@a2a-js/sdk",
+      "version": "1.3.0",
+      "purpose": "A2A Protocol SDK — agent-to-agent federation (used by src/runtime/federation/service.ts)",
+      "classification": "OPTIONAL_EXTERNAL",
+      "required_for_core": false,
+      "credential_required": false,
+      "network_required": true,
+      "local_reference_substitute": "experiments/g6-02/reference-agent/server.mjs (independent local A2A reference agent)",
+      "failure_behavior": "FederationService constructor throws on missing AgentCard; mission-level optional, not core-blocking",
+      "reproducibility_impact": "none — core Genesis mission does not invoke A2A; A2A is opt-in mission-level federation"
+    },
+    {
+      "name": "@ag-ui/core",
+      "version": "1.0.2",
+      "purpose": "AG-UI Protocol SDK — agent/application event interoperability (used by src/agui/event-bridge.ts)",
+      "classification": "OPTIONAL_EXTERNAL",
+      "required_for_core": false,
+      "credential_required": false,
+      "network_required": false,
+      "local_reference_substitute": "in-process EventEmitter stub in tests",
+      "failure_behavior": "AG-UI event bridge is opt-in; core Genesis mission does not require AG-UI emission",
+      "reproducibility_impact": "none — core Genesis mission does not invoke AG-UI"
+    },
+    {
+      "name": "@modelcontextprotocol/sdk",
+      "version": "1.32.1",
+      "purpose": "MCP SDK — Model Context Protocol tool/capability interoperability (used by src/runtime/mcp/capability-provider.ts)",
+      "classification": "OPTIONAL_EXTERNAL",
+      "required_for_core": false,
+      "credential_required": false,
+      "network_required": true,
+      "local_reference_substitute": "in-process InMemoryTransport in tests/protocol-probe.test.ts",
+      "failure_behavior": "MCP capability provider is opt-in via WorkerGenome.tools grants; without an MCP server, the worker simply has no MCP tools",
+      "reproducibility_impact": "none — core Genesis mission does not invoke MCP tools"
+    },
+    {
+      "name": "yaml",
+      "version": "2.9.1",
+      "purpose": "YAML parser for data/ownership.yaml + data/upstream-capabilities.yaml",
+      "classification": "REQUIRED_LOCAL",
+      "required_for_core": true,
+      "credential_required": false,
+      "network_required": false,
+      "local_reference_substitute": "n/a — pure-JS package, reproducibly available from npm registry",
+      "failure_behavior": "loadOwnership throws if data/ownership.yaml cannot be parsed; GenomeCompiler cannot construct without it",
+      "reproducibility_impact": "blocking — core GenomeCompiler requires this"
+    }
+  ],
+  "dev_dependencies": [
+    {"name": "@types/node", "version": "24.19.1", "purpose": "Node.js type definitions", "classification": "DEVELOPMENT_ONLY"},
+    {"name": "eslint", "version": "10.12.0", "purpose": "Linter", "classification": "DEVELOPMENT_ONLY"},
+    {"name": "typescript", "version": "5.9.3", "purpose": "TypeScript compiler (typecheck)", "classification": "DEVELOPMENT_ONLY"},
+    {"name": "typescript-eslint", "version": "8.71.0", "purpose": "ESLint TypeScript plugin", "classification": "DEVELOPMENT_ONLY"},
+    {"name": "vitest", "version": "5.0.3", "purpose": "Test runner", "classification": "DEVELOPMENT_ONLY"},
+    {"name": "zod", "version": "4.6.5", "purpose": "Schema validation (devDependency despite being schema library; runtime dependencies do not include it)", "classification": "TEST_REFERENCE"}
+  ],
+  "external_services": [
+    {
+      "name": "OpenBot",
+      "purpose": "Execution/computer runtime (worker shell + browser + workspace files)",
+      "classification": "OPTIONAL_EXTERNAL",
+      "required_for_core": false,
+      "credential_required": "COMPUTER_TOKEN (per-worker, optional)",
+      "network_required": true,
+      "local_reference_substitute": "tests/helpers/memory-runtime.ts (MemoryComputer — in-memory filesystem stub)",
+      "failure_behavior": "OpenBotRuntimeAdapter throws on missing OpenBot checkout / unreachable endpoint; mission fails loudly",
+      "reproducibility_impact": "none — clean-room smoke mission uses MemoryComputer, not OpenBot"
+    },
+    {
+      "name": "OpenDots",
+      "purpose": "Collaborative knowledge/workspace (shared pages)",
+      "classification": "OPTIONAL_EXTERNAL",
+      "required_for_core": false,
+      "credential_required": false,
+      "network_required": true,
+      "local_reference_substitute": "tests/helpers/memory-runtime.ts (OpenDotsWorkspaceAdapter stub)",
+      "failure_behavior": "workspace.ensureWorkspace throws; worker fails",
+      "reproducibility_impact": "none — clean-room smoke mission does not use OpenDots"
+    },
+    {
+      "name": "OpenMuse",
+      "purpose": "Durable delegated work (job queues)",
+      "classification": "OPTIONAL_EXTERNAL",
+      "required_for_core": false,
+      "credential_required": false,
+      "network_required": true,
+      "local_reference_substitute": "tests/helpers/memory-runtime.ts (OpenMuseAdapter stub)",
+      "failure_behavior": "job.ensureJob throws; worker fails",
+      "reproducibility_impact": "none — clean-room smoke mission does not use OpenMuse"
+    },
+    {
+      "name": "GitHub",
+      "purpose": "Source code hosting + GitWorkspace operations (repo missions)",
+      "classification": "OPTIONAL_EXTERNAL",
+      "required_for_core": false,
+      "credential_required": "GitHub PAT (for push; clone is public)",
+      "network_required": true,
+      "local_reference_substitute": "tests/work/git-workspace.test.ts uses a local bare git repo",
+      "failure_behavior": "git operations throw; mission fails loudly",
+      "reproducibility_impact": "none — clean-room smoke mission does not invoke GitWorkspace"
+    },
+    {
+      "name": "OpenRouter (Decisions API)",
+      "purpose": "Jev Decision Model (typesafe/jev-1.13) — optional bounded probabilistic DecisionProvider",
+      "classification": "OPTIONAL_EXTERNAL",
+      "required_for_core": false,
+      "credential_required": "OPENROUTER_API_KEY (JEV-ONLY scope)",
+      "network_required": true,
+      "local_reference_substitute": "RuleDecisionProvider (the production default)",
+      "failure_behavior": "JevDecisionProvider throws JevCredentialMissingError / JevProviderUnavailableError; no silent fallback",
+      "reproducibility_impact": "none — clean-room smoke mission uses RuleDecisionProvider (production default); Jev is OPTIONAL"
+    },
+    {
+      "name": "ZAI SDK",
+      "purpose": "External LLM reasoning provider (experiment-001 only)",
+      "classification": "OPTIONAL_EXTERNAL",
+      "required_for_core": false,
+      "credential_required": "ZAI_API_KEY (or ZAI_SDK_PATH)",
+      "network_required": true,
+      "local_reference_substitute": "DEVELOPMENT_REASONING_FALLBACK (scripted reasoning provider)",
+      "failure_behavior": "ZAIReasoningProvider throws on missing SDK path; experiment-001 fails loudly",
+      "reproducibility_impact": "none — clean-room smoke mission uses DEVELOPMENT_REASONING_FALLBACK"
+    }
+  ],
+  "summary": {
+    "REQUIRED_LOCAL_count": 1,
+    "REQUIRED_EXTERNAL_count": 0,
+    "OPTIONAL_EXTERNAL_count": 7,
+    "DEVELOPMENT_ONLY_count": 6,
+    "TEST_REFERENCE_count": 1,
+    "core_reproducibility_requires_external_services": false,
+    "core_reproducibility_requires_credentials": false
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "audit_at": "2026-10-07T22:45:00Z",
+  "audit_method": "Manual grep + read of src/ for process.env usage, then categorization",
+  "production_env_vars": [
+    {
+      "key": "ZAI_SDK_PATH",
+      "required_or_optional": "OPTIONAL",
+      "purpose": "Path to the ZAI SDK module for ZAIReasoningProvider (experiment-001 only)",
+      "default": "none — ZAIReasoningProvider is constructed only in experiment-001",
+      "secret": false,
+      "failure_if_absent": "ZAIReasoningProvider constructor throws; experiment-001 fails. Core Genesis does not use ZAIReasoningProvider.",
+      "used_by": "src/providers/zai-reasoning.ts",
+      "production_development_test": "DEVELOPMENT (experiment runner only)"
+    }
+  ],
+  "test_env_vars": [
+    {"key": "OPENROUTER_API_KEY", "purpose": "JevDecisionProvider credential (tests inject via testCredential option)"},
+    {"key": "ZAI_API_KEY", "purpose": "ZAI provider test credential (skipped when absent)"},
+    {"key": "GENESIS_OPENBOT_DIR", "purpose": "OpenBot checkout path for runtime integration tests"},
+    {"key": "OPENBOT_ENDPOINT", "purpose": "OpenBot HTTP endpoint for live runtime tests"},
+    {"key": "OPENDOTS_ENDPOINT", "purpose": "OpenDots HTTP endpoint for live workspace tests"},
+    {"key": "OPENMUSE_ENDPOINT", "purpose": "OpenMuse HTTP endpoint for live job tests"},
+    {"key": "SKIP_SLOW", "purpose": "Skip slow tests flag"},
+    {"key": "TOTALLY_PRESENT_OPTIONAL", "purpose": "Config-validator test fixture"},
+    {"key": "TOTALLY_PRESENT_VAR", "purpose": "Config-validator test fixture"},
+    {"key": "CUSTOM_JEV_KEY", "purpose": "JevDecisionProvider envVarName override test"}
+  ],
+  "experiment_env_vars": [
+    {"key": "DEV_FALLBACK", "purpose": "Force development reasoning fallback in experiments"},
+    {"key": "GENESIS_OPENBOT_DIR", "purpose": "OpenBot checkout path for experiment-001"},
+    {"key": "JEV_DECISIONS_ENDPOINT", "purpose": "Override JevDecisionProvider endpoint (G6-03B EU host)"},
+    {"key": "MODE", "purpose": "Experiment mode flag"},
+    {"key": "OPENBOT_CHECKOUT", "purpose": "OpenBot checkout path (alias)"},
+    {"key": "OPENBOT_ROOT", "purpose": "OpenBot computers root directory"},
+    {"key": "OPENBOT_URL", "purpose": "OpenBot HTTP URL"},
+    {"key": "OPENDOTS_URL", "purpose": "OpenDots HTTP URL"},
+    {"key": "OPENMUSE_URL", "purpose": "OpenMuse HTTP URL"},
+    {"key": "OPENROUTER_API_KEY", "purpose": "JevDecisionProvider credential (G6-03A/B probes)"},
+    {"key": "PHASE_", "purpose": "Experiment phase prefix"},
+    {"key": "PORT", "purpose": "Reference A2A agent port"},
+    {"key": "ZAI_SDK_PATH", "purpose": "ZAI SDK path (alias of production env var)"}
+  ],
+  "minimal_core_config_proven": true,
+  "minimal_core_config_evidence": "The clean-room smoke mission (experiments/g6-04/smoke-mission.ts) runs the full Genesis core chain (Goal → Requirements → Organization → Genome → Decision → Worker → Verification → Outcome) with ZERO environment variables set. The smoke mission's runtime is MemoryComputer (deterministic in-memory stub), its reasoning is DEVELOPMENT_REASONING_FALLBACK (scripted), and its decision provider is RuleDecisionProvider (deterministic). No external service, no credential, no network access is required.",
+  "optional_capabilities_do_not_block_core": true,
+  "optional_capabilities_evidence": "OpenBot, OpenDots, OpenMuse, GitHub, OpenRouter, ZAI are all OPTIONAL_EXTERNAL. The core Genesis runtime (GoalCompiler, OrganizationPlanner, GenomeCompiler, CognitiveRouter, MissionOrchestrator, WorkerAgent, VerificationLoop) operates without any of them when given a MemoryComputer + scripted reasoning. The clean-room smoke mission proves this empirically.",
+  "config_validator_exists": true,
+  "config_validator_location": "src/mission/config-validator.ts",
+  "config_validator_behavior": "ConfigurationError throws with missingVars (names only — never values); provider-scoped; safe to log/serialize",
+  "secret_hygiene_in_config_validation": "ConfigurationError.missingVars contains variable NAMES only, never values. The error is safe to log, serialize into a flight event, or surface to a future UI. A missing secret produces the same shape as a missing non-secret: no information leak from the validation boundary."
+}

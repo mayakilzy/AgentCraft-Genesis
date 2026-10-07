@@ -1,0 +1,85 @@
+{
+  "audit_at": "2026-10-07T22:46:00Z",
+  "audit_method": "Read docs/group6/GENESIS_G6_01_PRODUCTION_HARDENING.md and docs/transition/PRODUCTION_HARDENING_MATRIX.md; classify each deferred item",
+  "deferred_p1_items": [
+    {
+      "id": "H-07",
+      "name": "Runtime unavailable health check",
+      "priority": "P1",
+      "g6_01_status": "DEFERRED_G6_04",
+      "g6_01_evidence": "docs/group6/GENESIS_G6_01_PRODUCTION_HARDENING.md: 'Runtime health check at mission start belongs with the RC reproducibility gate. The ConfigValidator provides the configuration-check half; the runtime-health half is G6-04.'",
+      "current_classification": "ACCEPTED_RELEASE_LIMITATION",
+      "current_evidence": "The clean-room smoke mission uses MemoryComputer (deterministic in-memory stub), not real OpenBot. The 'runtime unavailable' scenario applies to REAL OpenBot/OpenDots/OpenMuse — not to the deterministic core. The ConfigValidator (src/mission/config-validator.ts) provides configuration-level health check; the runtime-health half is not implemented but is not a blocker for deterministic core reproducibility.",
+      "rc_blocker": false,
+      "resolution_recommendation": "Defer to a future hardening phase when real OpenBot is in scope. The deterministic core does not require runtime health checks because MemoryComputer never fails."
+    },
+    {
+      "id": "H-08",
+      "name": "OpenBot disconnect reconnect logic",
+      "priority": "P1",
+      "g6_01_status": "DEFERRED_G6_04",
+      "g6_01_evidence": "docs/group6/GENESIS_G6_01_PRODUCTION_HARDENING.md: 'Reconnect logic requires provider-health infrastructure from G6-04.'",
+      "current_classification": "ACCEPTED_RELEASE_LIMITATION",
+      "current_evidence": "Same as H-07: real OpenBot only. MemoryComputer never disconnects. The deterministic core has no disconnect scenario.",
+      "rc_blocker": false,
+      "resolution_recommendation": "Defer to a future hardening phase when real OpenBot is in scope."
+    },
+    {
+      "id": "H-22",
+      "name": "Durable job recovery (in-flight)",
+      "priority": "P1",
+      "g6_01_status": "PARTIALLY_HARDENED — in-flight checkpoint deferred",
+      "g6_01_evidence": "docs/group6/GENESIS_G6_01_PRODUCTION_HARDENING.md: 'Queued recovery proven (Phase 4.7). In-flight recovery not claimed.'",
+      "current_classification": "ACCEPTED_RELEASE_LIMITATION",
+      "current_evidence": "Queued recovery is proven; in-flight checkpoint resume is NOT claimed. The deterministic core does not use durable jobs at all (MemoryComputer has no durable jobs). The clean-room smoke mission does not invoke OpenMuse.",
+      "rc_blocker": false,
+      "resolution_recommendation": "Defer to a future hardening phase when real OpenMuse in-flight scenarios are in scope."
+    }
+  ],
+  "real_provider_evidence_debt": {
+    "g6_01_evidence_requirement": "G6-01 had incomplete real-provider hardening evidence because a real provider credential was unavailable.",
+    "current_status": "RESOLVED_BY_G6_03B",
+    "current_evidence": "G6-03B supplied real Jev Decision Model (typesafe/jev-1.13) evidence via the OpenRouter Decisions API on the EU region host. The real causal proof PASSES end-to-end. JEV_FINAL_STATUS = OPTIONAL_REAL_INTEGRATION_PROVEN. The G6-01 real-provider evidence debt is therefore resolved (for Jev).",
+    "rc_impact": "none — Jev is OPTIONAL; the real-provider evidence debt was about Jev specifically, and G6-03B resolved it",
+    "other_real_providers": "OpenBot, OpenDots, OpenMuse real-provider evidence remains in their respective phase-4 evidence packages (phase-4-5-probe through phase-4-8e-blind). These are not RC blockers because the deterministic core does not require them."
+  },
+  "accepted_limitations": [
+    {
+      "name": "OpenMuse in-flight resume",
+      "status": "DOCUMENTED_ACCEPTED_LIMITATION",
+      "evidence": "G6-01 H-22: queued recovery proven; in-flight NOT proven. Not a blocker for deterministic core."
+    },
+    {
+      "name": "Same-process concurrency",
+      "status": "DOCUMENTED_ACCEPTED_LIMITATION",
+      "evidence": "Genesis v0.1 runs specialists sequentially. Parallel execution is future work. Not a blocker."
+    },
+    {
+      "name": "A2A inbound federation",
+      "status": "DOCUMENTED_ACCEPTED_LIMITATION",
+      "evidence": "G6-02: A2A outbound federation proven; inbound is deferred. Not a blocker for deterministic core."
+    },
+    {
+      "name": "A2A production authentication",
+      "status": "DOCUMENTED_ACCEPTED_LIMITATION",
+      "evidence": "G6-02: A2A interop evidence uses an independent local reference agent. Production auth not proven. Not a blocker."
+    },
+    {
+      "name": "Jev remains optional",
+      "status": "DOCUMENTED_ACCEPTED_LIMITATION",
+      "evidence": "G6-03/G6-03A/G6-03B: production default remains RuleDecisionProvider. Jev is OPTIONAL_REAL_INTEGRATION_PROVEN. Not a blocker."
+    },
+    {
+      "name": "H-07 Runtime unavailable health check",
+      "status": "DOCUMENTED_ACCEPTED_LIMITATION",
+      "evidence": "Deferred from G6-01. Applies to real OpenBot only; deterministic core uses MemoryComputer."
+    },
+    {
+      "name": "H-08 OpenBot disconnect reconnect",
+      "status": "DOCUMENTED_ACCEPTED_LIMITATION",
+      "evidence": "Deferred from G6-01. Applies to real OpenBot only; deterministic core uses MemoryComputer."
+    }
+  ],
+  "rc_blockers": [],
+  "summary": "All G6-01 deferred P1 items are ACCEPTED_RELEASE_LIMITATION, not RC blockers. The deterministic core does not require real OpenBot/OpenDots/OpenMuse; it uses MemoryComputer. The real-provider evidence debt (Jev) was resolved by G6-03B."
+}

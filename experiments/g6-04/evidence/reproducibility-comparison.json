@@ -1,0 +1,51 @@
+{
+  "comparison_at": "2026-10-07T22:43:00Z",
+  "run_1_path": "/tmp/clean-room-1.json",
+  "run_2_path": "/tmp/clean-room-2.json",
+  "same_commit": true,
+  "commit": "cf923185453875262d933b31d00a9644451501b5",
+  "same_lockfile_sha256": true,
+  "lockfile_sha256": "1f0c22908d844a42c9e37e0b6563347f92a81b7c7ab55f5755cffc96fa40557a",
+  "same_node_version": true,
+  "same_npm_version": true,
+  "typecheck_match": true,
+  "lint_match": true,
+  "tests_match": true,
+  "tests_passed_match": true,
+  "tests_skipped_match": true,
+  "tests_total_match": true,
+  "smoke_match": true,
+  "smoke_evidence_comparison": {
+    "requirements_compiled_match": true,
+    "organization_created_match": true,
+    "genomes_compiled_match": true,
+    "workers_executed_match": true,
+    "worker_started_match": true,
+    "worker_finished_match": true,
+    "verification_ok_match": true,
+    "verification_passed_match": true,
+    "verification_failed_match": true,
+    "mission_status_match": true,
+    "mission_finished_event_match": true,
+    "artifact_verified_match": true,
+    "artifact_path_match": true,
+    "artifact_content_excerpt_match": true,
+    "flight_event_types_in_order_match": true,
+    "flight_event_count_match": true,
+    "pass_match": true,
+    "probe_at_differs": true,
+    "elapsed_ms_differs": true
+  },
+  "overall_match": true,
+  "explained_nondeterminism": [
+    "probe_at (timestamps differ \u2014 wall-clock time, not semantic)",
+    "elapsed_ms (millisecond-level timing differs \u2014 wall-clock, not semantic)"
+  ],
+  "reproducibility": "PASS_WITH_EXPLAINED_NONDETERMINISM",
+  "semantic_output_match": true,
+  "deterministic_hash_matches": {
+    "lockfile_sha256": true,
+    "commit_sha": true
+  },
+  "explained_nondeterminism_present": true
+}

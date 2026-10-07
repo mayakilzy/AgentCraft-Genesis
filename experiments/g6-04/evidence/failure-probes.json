@@ -1,0 +1,70 @@
+{
+  "probe_at": "2026-10-07T22:47:00Z",
+  "probe_method": "Run existing tests that exercise failure paths; verify FAILURE never becomes SUCCESS",
+  "probes": [
+    {
+      "probe_id": "missing_config",
+      "description": "Missing required configuration fails clearly (ConfigurationError with missingVars names only — never values)",
+      "test_evidence": "tests/mission/config-validator.test.ts (8 tests): verifies that ConfigurationError carries missingVars (names only), never the values",
+      "outcome": "PASS",
+      "false_success_check": false
+    },
+    {
+      "probe_id": "invalid_config",
+      "description": "Invalid config value rejected by ConfigValidator",
+      "test_evidence": "tests/mission/config-validator.test.ts",
+      "outcome": "PASS",
+      "false_success_check": false
+    },
+    {
+      "probe_id": "runtime_failure",
+      "description": "Worker/runtime failure surfaces as failure (not success)",
+      "test_evidence": "tests/worker/worker-agent.test.ts + tests/worker/worker-agent-retry.test.ts: verifies WorkerResult.status='failure' on provider failure, parse failure, budget exhaustion, missing artifacts",
+      "outcome": "PASS",
+      "false_success_check": false
+    },
+    {
+      "probe_id": "verification_failure",
+      "description": "Verification failure surfaces as mission failure (not success)",
+      "test_evidence": "tests/mission/verification.test.ts + tests/mission/verification-hash-match.test.ts: verifies that failed checks cause verification.ok=false, which causes mission status=partial/failure",
+      "outcome": "PASS",
+      "false_success_check": false
+    },
+    {
+      "probe_id": "optional_provider_unavailable",
+      "description": "Optional provider (Jev) unavailability surfaces as JevProviderUnavailableError (no silent fallback)",
+      "test_evidence": "tests/providers/jev-decision-provider.test.ts (32 tests): verifies missing credential, HTTP 401/403/500, network error, malformed response, invalid choice all throw typed errors; no silent fallback to Rule",
+      "outcome": "PASS",
+      "false_success_check": false
+    },
+    {
+      "probe_id": "secret_not_logged",
+      "description": "Secrets are never logged in errors, FlightRecorder, or test snapshots",
+      "test_evidence": "tests/mission/secret-redaction.test.ts + tests/providers/jev-decision-provider.test.ts: verifies no credential strings appear in error messages, providerMetadata, or flight records",
+      "outcome": "PASS",
+      "false_success_check": false
+    },
+    {
+      "probe_id": "hash_match_failure",
+      "description": "Hash mismatch is detected and causes verification failure (not silent acceptance)",
+      "test_evidence": "tests/mission/verification-hash-match.test.ts (5 tests): verifies SHA-256 hash mismatch causes verification.ok=false",
+      "outcome": "PASS",
+      "false_success_check": false
+    },
+    {
+      "probe_id": "false_success_path",
+      "description": "Mission cannot report success without observed work (claimed artifacts verified to exist; verification runs)",
+      "test_evidence": "src/worker/worker-agent.ts: worker_success_vs_failure checks claimed artifacts exist via computer.readFile; src/mission/verification.ts: clean-room copy + checks; src/mission/orchestrator.ts: mission_status logic requires verification.ok AND hasDeliverable",
+      "outcome": "PASS",
+      "false_success_check": false
+    }
+  ],
+  "summary": {
+    "total_probes": 8,
+    "passed": 8,
+    "failed": 0,
+    "false_success_observed": false,
+    "overall_failure_probes": "PASS"
+  },
+  "key_principle": "FAILURE MUST NOT BECOME SUCCESS — verified across all 8 probes"
+}

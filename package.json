@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint .",
-    "experiment:001": "bun experiments/experiment-001/run.ts"
+    "experiment:001": "bun experiments/experiment-001/run.ts",
+    "rc:verify": "tsc --noEmit && eslint . && vitest run && npx --yes tsx experiments/g6-04/smoke-mission.ts"
   },
   "dependencies": {
     "@a2a-js/sdk": "1.3.0",
