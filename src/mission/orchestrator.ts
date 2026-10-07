@@ -21,7 +21,7 @@ import {
   MissionHandoffs,
   type HandoffParticipant,
 } from '../worker/handoff.js';
-import type { FlightEvent, FlightRecorder } from './flight-recorder.js';
+import { MemoryFlightRecorder, type FlightEvent, type FlightRecorder } from './flight-recorder.js';
 import {
   VerificationLoop,
   deriveChecks,
@@ -124,6 +124,15 @@ export interface MissionOrchestratorOptions {
    * without granting broad host-filesystem access. No new storage platform.
    */
   readonly missionInputs?: readonly MissionInput[];
+  /**
+   * PHASE 4.8D: Mission obligations — mandatory behaviors the mission
+   * explicitly requires. Each obligation augments the worker's task brief
+   * (telling the worker it's mandatory) AND auto-generates a `flight-action`
+   * verification check (enforcing it at verification regardless of worker
+   * prose). This closes the Phase 4.8C gap: a worker that claims "I used the
+   * durable worker" but never called get_durable_result fails verification.
+   */
+  readonly missionObligations?: readonly MissionObligation[];
 }
 
 /**
@@ -137,6 +146,35 @@ export interface MissionInput {
   /** The authoritative file contents. */
   readonly contents: string;
 }
+
+/**
+ * PHASE 4.8D: A mission obligation — a mandatory behavior the mission
+ * explicitly requires, not merely a capability that's available. Each
+ * obligation augments the worker's task brief (telling the worker it's
+ * mandatory) AND auto-generates a `flight-action` verification check
+ * (enforcing it at verification regardless of worker prose).
+ *
+ * Provider-neutral: the obligation kinds do not name providers. They map
+ * to provider-neutral worker actions:
+ *   delegated-result  → get_durable_result (worker must observe the durable task result)
+ *   shared-publication → append_shared_workspace (worker must publish to shared workspace)
+ *   computer-execution → run_command (worker must execute a computer command)
+ *
+ * This closes the Phase 4.8C gap: a worker that claims "I used the durable
+ * worker" but never called get_durable_result fails verification honestly.
+ */
+export interface MissionObligation {
+  readonly kind: 'delegated-result' | 'shared-publication' | 'computer-execution';
+  /** Human-readable description for the task brief. */
+  readonly description: string;
+}
+
+/** Maps an obligation kind to the provider-neutral worker action it requires. */
+const OBLIGATION_ACTION: Readonly<Record<MissionObligation['kind'], string>> = {
+  'delegated-result': 'get_durable_result',
+  'shared-publication': 'append_shared_workspace',
+  'computer-execution': 'run_command',
+};
 
 const COORDINATOR_ROLE = 'Mission Coordinator';
 
@@ -253,10 +291,19 @@ export class MissionOrchestrator {
       missionInputs !== undefined && missionInputs.length > 0
         ? `\n\nAuthoritative mission inputs have been staged into your workspace:\n${missionInputs.map((i) => `- ${i.path} (${i.contents.length} bytes)`).join('\n')}\nUse read_file to inspect them; they are the authoritative source for this mission.`
         : '';
+    // PHASE 4.8D: augment the brief with mandatory obligations. This tells
+    // the worker these are NOT optional capabilities — they are mission
+    // requirements that will be verified at completion. The LLM is free to
+    // choose HOW to satisfy them, but cannot skip them.
+    const obligations = this.options.missionObligations;
+    const obligationNote =
+      obligations !== undefined && obligations.length > 0
+        ? `\n\nMANDATORY MISSION OBLIGATIONS (you MUST satisfy these — verification will enforce them):\n${obligations.map((o) => `- ${o.kind === 'delegated-result' ? 'Obtain an independent delegated result' : o.kind === 'shared-publication' ? 'Publish meaningful content to the shared team workspace' : 'Perform real computer execution'}: ${o.description}`).join('\n')}\nThese are verified by runtime evidence, not by your summary prose. You must actually perform the corresponding action (e.g. get_durable_result, append_shared_workspace, run_command).`
+        : '';
     const suffix = this.options.workerBriefSuffix === undefined
       ? ''
       : `\n\n${this.options.workerBriefSuffix}`;
-    return brief + inputNote + suffix;
+    return brief + inputNote + obligationNote + suffix;
   }
 
   async run(goal: Goal): Promise<MissionResult> {
@@ -538,7 +585,21 @@ export class MissionOrchestrator {
             });
           }
         }
-        const checks = [...stagedInputChecks, ...userChecks];
+        // PHASE 4.8D: auto-generate flight-action checks from mission
+        // obligations. Each obligation maps to a provider-neutral worker
+        // action that MUST be invoked with ok=true. This enforces the
+        // requirement at verification — worker prose alone cannot satisfy it.
+        const obligationChecks: AcceptanceCheck[] = [];
+        if (this.options.missionObligations !== undefined) {
+          for (const obl of this.options.missionObligations) {
+            obligationChecks.push({
+              kind: 'flight-action',
+              label: `obligation:${obl.kind}`,
+              action: OBLIGATION_ACTION[obl.kind],
+            });
+          }
+        }
+        const checks = [...stagedInputChecks, ...obligationChecks, ...userChecks];
 
         if (checks.length > 0) {
           const verifierGenomeForMission = verifierGenome();
@@ -578,6 +639,11 @@ export class MissionOrchestrator {
             ...(missionInputComputers.length === 0
               ? {}
               : { missionInputComputers }),
+            // PHASE 4.8D: pass flight events so flight-action checks can
+            // verify that specific worker actions were actually invoked.
+            ...(recorder instanceof MemoryFlightRecorder
+              ? { flightEvents: recorder.events }
+              : {}),
           });
 
           verification = await loop.verify(checks, artifactSources, evidence);

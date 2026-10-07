@@ -1,5 +1,6 @@
 import type { Evidence, ReasoningProvider } from '../contracts/core.js';
 import type { WorkerComputer } from '../runtime/computer.js';
+import type { FlightEvent } from './flight-recorder.js';
 
 /**
  * Verification Loop v0.1 (TASK-013): a mission is not successful just
@@ -53,12 +54,36 @@ export type AcceptanceCheck =
       readonly label: string;
       /** The workspace-relative path the orchestrator staged the input to. */
       readonly path: string;
-      /**
-       * A substring expected in the staged input's content. When provided,
-       * the check confirms the authoritative bytes (not a fabricated
-       * substitute) reached the clean room. Absent → existence-only check.
-       */
       readonly expectIncludes?: string;
+    }
+  /**
+   * PHASE 4.8D: flight-action check. Verifies that a specific provider-neutral
+   * worker action was invoked with ok=true in the flight record. This is the
+   * enforcement mechanism for mission obligations: if the user requires
+   * delegation, the check confirms `get_durable_result` was actually called;
+   * if the user requires shared publication, the check confirms
+   * `append_shared_workspace` was actually called. Worker prose alone cannot
+   * satisfy this — runtime evidence is required.
+   */
+  | {
+      readonly kind: 'flight-action';
+      readonly label: string;
+      /** The provider-neutral action name (e.g. 'get_durable_result'). */
+      readonly action: string;
+    }
+  /**
+   * PHASE 4.8D: content-in-artifacts check. Scans ALL artifacts (not one
+   * named file) for expected content. Fixes the artifact-name overfitting
+   * exposed by Phase 4.8C (where verification expected 'inventory_summary.txt'
+   * but the worker produced 'summary_report.md'). The check reads every file
+   * in every artifact source and confirms the expected substring appears in
+   * at least one. This validates the content contract, not an arbitrary name.
+   */
+  | {
+      readonly kind: 'content-in-artifacts';
+      readonly label: string;
+      /** Substring expected in at least one artifact file. */
+      readonly expectIncludes: string;
     };
 
 export interface CheckOutcome {
@@ -97,14 +122,20 @@ export interface VerificationLoopOptions {
   /**
    * PHASE 4.8B: computers that hold staged mission inputs, used by
    * `mission-input` checks to read the authoritative bytes directly from
-   * the producing worker's workspace (not the clean-room copy). Each entry
-   * is the worker's own computer; the check reads `check.path` from it to
-   * confirm the authoritative bytes were preserved (not fabricated).
+   * the producing worker's workspace (not the clean-room copy).
    */
   readonly missionInputComputers?: ReadonlyArray<{
     readonly workerId: string;
     readonly computer: WorkerComputer;
   }>;
+  /**
+   * PHASE 4.8D: flight events for `flight-action` checks. The orchestrator
+   * passes the recorder's events so verification can confirm that specific
+   * provider-neutral worker actions (e.g. get_durable_result,
+   * append_shared_workspace) were actually invoked with ok=true. This is
+   * the enforcement mechanism for mission obligations.
+   */
+  readonly flightEvents?: readonly FlightEvent[];
 }
 
 /** Where a copied artifact lands inside the verifier's workspace. */
@@ -190,6 +221,12 @@ export class VerificationLoop {
           break;
         case 'mission-input':
           outcomes.push(await this.checkMissionInput(check));
+          break;
+        case 'flight-action':
+          outcomes.push(this.checkFlightAction(check));
+          break;
+        case 'content-in-artifacts':
+          outcomes.push(await this.checkContentInArtifacts(check, artifacts));
           break;
       }
     }
@@ -294,6 +331,68 @@ export class VerificationLoop {
       kind: 'mission-input',
       ok: false,
       detail: `authoritative input "${check.path}" was NOT found in any worker's workspace — the worker may have fabricated a substitute. Fail-closed: the mission's factual claim cannot be traced to the authoritative input.`,
+    };
+  }
+
+  /**
+   * PHASE 4.8D: Check that a specific provider-neutral worker action was
+   * actually invoked with ok=true in the flight record. This is the
+   * enforcement mechanism for mission obligations: worker prose claiming
+   * "I used the durable worker" cannot satisfy this check — only a real
+   * `get_durable_result` action with ok=true can.
+   */
+  private checkFlightAction(
+    check: Extract<AcceptanceCheck, { kind: 'flight-action' }>,
+  ): CheckOutcome {
+    const events = this.options.flightEvents ?? [];
+    const found = events.some(
+      (e) => {
+        const ev = e as { type: string; action?: string; ok?: boolean };
+        return ev.type === 'worker-step' && ev.action === check.action && ev.ok === true;
+      },
+    );
+    return {
+      label: check.label,
+      kind: 'flight-action',
+      ok: found,
+      detail: found
+        ? `worker action "${check.action}" was invoked with ok=true (flight record evidence)`
+        : `worker action "${check.action}" was NOT invoked with ok=true — the mission obligation is not satisfied by runtime evidence. Worker prose alone cannot satisfy this check.`,
+    };
+  }
+
+  /**
+   * PHASE 4.8D: Check that expected content appears in at least one artifact
+   * file across all artifact sources. Fixes the artifact-name overfitting
+   * exposed by Phase 4.8C: the check validates the content contract, not an
+   * arbitrary file name.
+   */
+  private async checkContentInArtifacts(
+    check: Extract<AcceptanceCheck, { kind: 'content-in-artifacts' }>,
+    artifacts: readonly ArtifactSource[],
+  ): Promise<CheckOutcome> {
+    for (const source of artifacts) {
+      for (const path of source.paths) {
+        try {
+          const read = await source.computer.readFile(path);
+          if (read.text.includes(check.expectIncludes)) {
+            return {
+              label: check.label,
+              kind: 'content-in-artifacts',
+              ok: true,
+              detail: `expected content found in ${source.workerId}:${path} (${read.bytes} bytes)`,
+            };
+          }
+        } catch {
+          // try next file
+        }
+      }
+    }
+    return {
+      label: check.label,
+      kind: 'content-in-artifacts',
+      ok: false,
+      detail: `expected content "${check.expectIncludes.slice(0, 80)}" was NOT found in any artifact across all workers`,
     };
   }
 
