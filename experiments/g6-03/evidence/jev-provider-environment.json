@@ -1,0 +1,10 @@
+{
+  "jev_endpoint_used": "https://openrouter.ai/api/v1/chat/completions",
+  "jev_model_used": "typesafe/jev-router",
+  "jev_api_interface": "OpenRouter Chat Completions (OpenAI-compatible) with response_format=json_schema",
+  "credential_scope": "JEV_DECISION_PROVIDER_ONLY",
+  "credential_source": "OPENROUTER_API_KEY env var (vault)",
+  "credential_exposed_in_evidence": false,
+  "credential_exposed_in_errors": false,
+  "credential_exposed_in_flightrecorder": false
+}

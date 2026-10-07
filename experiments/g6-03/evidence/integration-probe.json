@@ -1,0 +1,7 @@
+{
+  "real_genesis_jev_integration": "NOT_RUN",
+  "reason": "See final-analysis.md — decision made after benchmark evidence.",
+  "jev_causally_changed_genesis_decision": "NOT_TESTED",
+  "downstream_verification": "NOT_RUN",
+  "false_success_path": "NONE_OBSERVED"
+}

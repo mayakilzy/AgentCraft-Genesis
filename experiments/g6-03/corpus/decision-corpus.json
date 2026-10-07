@@ -1,0 +1,793 @@
+{
+  "schema_version": "g6-03-v1",
+  "frozen_at": "2026-10-07T16:48:00Z",
+  "corpus_version": "1.0.1",
+  "total_cases": 29,
+  "families": [
+    {
+      "id": "A",
+      "name": "worker-role-selection",
+      "decision_kind": "coordinator-decision",
+      "case_count": 4,
+      "source_decision": "D09 from decision census (organization-planner.ts:386-400)"
+    },
+    {
+      "id": "B",
+      "name": "capability-provider-selection",
+      "decision_kind": "reasoning-tier",
+      "case_count": 5,
+      "source_decision": "D01 (cognitive-router.ts:23-37 + decision-provider.ts:60-115)"
+    },
+    {
+      "id": "C",
+      "name": "retry-fail-escalate",
+      "decision_kind": "worker-retry-vs-fail",
+      "case_count": 5,
+      "source_decision": "D13 (orchestrator.ts:684-757) and D25 (verification.ts:540-565)"
+    },
+    {
+      "id": "D",
+      "name": "candidate-pattern-selection",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "case_count": 5,
+      "source_decision": "D10 (organization-planner.ts:497-582) and D30 (evaluation.ts:103-202)"
+    },
+    {
+      "id": "E",
+      "name": "accept-review-reject",
+      "decision_kind": "verification-diagnosis",
+      "case_count": 4,
+      "source_decision": "D24/D25 (verification.ts:275-294 + 540-565)"
+    },
+    {
+      "id": "F",
+      "name": "organization-strategy-selection",
+      "decision_kind": "domain-classification",
+      "case_count": 6,
+      "source_decision": "D04 (goal-compiler.ts:206-219) and D06 (organization-planner.ts:157-179)"
+    }
+  ],
+  "ground_truth_methods": [
+    "deterministic_known_answer",
+    "genesis_rule_baseline",
+    "semantic_consensus"
+  ],
+  "leakage_prevention": "expected_choice is NEVER included in the provider-visible input. The Decision<T> object passed to providers contains only: kind, question, options, facts.",
+  "cases": [
+    {
+      "case_id": "A1",
+      "family": "A",
+      "decision_kind": "coordinator-decision",
+      "input": {
+        "kind": "coordinator-decision",
+        "question": "Should this mission add a Mission Coordinator role to integrate the specialists?",
+        "options": [
+          "yes",
+          "no"
+        ],
+        "facts": {
+          "specialist_count": 2,
+          "specialist_roles": "[\"web-researcher\", \"documentation-writer\"]",
+          "mission_domain": "research",
+          "handoff_pattern": "sequential"
+        }
+      },
+      "expected_choice": "no",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: coordinator iff specialists >= 3 (organization-planner.ts:386-400). 2 specialists is below threshold; sequential handoff is fine.",
+      "consequence_of_wrong_decision": "extra worker + reasoning calls (over-coordination) OR missing integration (under-coordination)",
+      "notes": "Deterministic by Genesis rule."
+    },
+    {
+      "case_id": "A2",
+      "family": "A",
+      "decision_kind": "coordinator-decision",
+      "input": {
+        "kind": "coordinator-decision",
+        "question": "Should this mission add a Mission Coordinator role to integrate the specialists?",
+        "options": [
+          "yes",
+          "no"
+        ],
+        "facts": {
+          "specialist_count": 3,
+          "specialist_roles": "[\"web-researcher\", \"data-analyst\", \"documentation-writer\"]",
+          "mission_domain": "research",
+          "handoff_pattern": "all-to-documentation"
+        }
+      },
+      "expected_choice": "yes",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: coordinator iff specialists >= 3. 3 specialists matches threshold; integration needed.",
+      "consequence_of_wrong_decision": "over- or under-coordination",
+      "notes": "Deterministic by Genesis rule."
+    },
+    {
+      "case_id": "A3",
+      "family": "A",
+      "decision_kind": "coordinator-decision",
+      "input": {
+        "kind": "coordinator-decision",
+        "question": "Should this mission add a Mission Coordinator role to integrate the specialists?",
+        "options": [
+          "yes",
+          "no"
+        ],
+        "facts": {
+          "specialist_count": 4,
+          "specialist_roles": "[\"frontend-engineer\", \"backend-engineer\", \"database-engineer\", \"qa-engineer\"]",
+          "mission_domain": "software-engineering",
+          "handoff_pattern": "linear-pipeline"
+        }
+      },
+      "expected_choice": "no",
+      "ground_truth_method": "semantic_consensus",
+      "ground_truth_rationale": "Genesis rule says yes (4 >= 3). But linear pipeline with 4 distinct engineering roles has clear sequential handoffs (frontend -> backend -> database -> QA) where each role's output IS the next role's input. A coordinator would add a synthesis step that adds latency without value. The rule is over-inclusive here; a probabilistic decider might score correctly.",
+      "consequence_of_wrong_decision": "over-coordination (wasted worker + reasoning calls)",
+      "notes": "BOUNDED_PROBABILISTIC: rule is deterministic but possibly wrong; this case probes whether Jev can override the rule correctly."
+    },
+    {
+      "case_id": "A4",
+      "family": "A",
+      "decision_kind": "coordinator-decision",
+      "input": {
+        "kind": "coordinator-decision",
+        "question": "Should this mission add a Mission Coordinator role to integrate the specialists?",
+        "options": [
+          "yes",
+          "no"
+        ],
+        "facts": {
+          "specialist_count": 3,
+          "specialist_roles": "[\"web-researcher\", \"data-analyst\", \"report-writer\"]",
+          "mission_domain": "research",
+          "handoff_pattern": "fan-in-to-writer"
+        }
+      },
+      "expected_choice": "yes",
+      "ground_truth_method": "semantic_consensus",
+      "ground_truth_rationale": "Genesis rule says yes (3 >= 3). Here 3 specialists fan-in to one writer; the writer needs integrated inputs from research + analysis. A coordinator synthesizes upstream inputs before the writer \u2014 exactly the rule's intended case.",
+      "consequence_of_wrong_decision": "missing integration (writer must self-synthesize)",
+      "notes": "Rule correct here."
+    },
+    {
+      "case_id": "B1",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "input": {
+        "kind": "reasoning-tier",
+        "question": "Select the reasoning tier for role \"web-researcher\" (wres-1) in a research mission.",
+        "options": [
+          "cheap",
+          "default",
+          "frontier"
+        ],
+        "facts": {
+          "criticality": "routine",
+          "missionDomain": "research",
+          "budgetCeiling": "none"
+        }
+      },
+      "expected_choice": "cheap",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: routine -> cheap (decision-provider.ts:74-87). No budget ceiling. Cheapest tier correct.",
+      "consequence_of_wrong_decision": "over-spend (frontier when cheap enough) or under-power (cheap when frontier needed)",
+      "notes": "Pure deterministic."
+    },
+    {
+      "case_id": "B2",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "input": {
+        "kind": "reasoning-tier",
+        "question": "Select the reasoning tier for role \"backend-engineer\" (be-1) in a software-engineering mission.",
+        "options": [
+          "cheap",
+          "default",
+          "frontier"
+        ],
+        "facts": {
+          "criticality": "important",
+          "missionDomain": "software-engineering",
+          "budgetCeiling": "none"
+        }
+      },
+      "expected_choice": "default",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: important -> default. No ceiling.",
+      "consequence_of_wrong_decision": "over- or under-power",
+      "notes": "Pure deterministic."
+    },
+    {
+      "case_id": "B3",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "input": {
+        "kind": "reasoning-tier",
+        "question": "Select the reasoning tier for role \"sole-operator\" (so-1) in a software-engineering mission.",
+        "options": [
+          "cheap",
+          "default",
+          "frontier"
+        ],
+        "facts": {
+          "criticality": "mission-critical",
+          "missionDomain": "software-engineering",
+          "budgetCeiling": "none"
+        }
+      },
+      "expected_choice": "frontier",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: mission-critical -> frontier. No ceiling.",
+      "consequence_of_wrong_decision": "under-power (default when frontier needed)",
+      "notes": "Pure deterministic."
+    },
+    {
+      "case_id": "B4",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "input": {
+        "kind": "reasoning-tier",
+        "question": "Select the reasoning tier for role \"sole-operator\" (so-1) in a software-engineering mission. The mission budget ceiling is default.",
+        "options": [
+          "cheap",
+          "default",
+          "frontier"
+        ],
+        "facts": {
+          "criticality": "mission-critical",
+          "missionDomain": "software-engineering",
+          "budgetCeiling": "default"
+        }
+      },
+      "expected_choice": "default",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: mission-critical -> frontier, then clamped by budget ceiling=default (decision-provider.ts:91-101). Final: default.",
+      "consequence_of_wrong_decision": "exceeds budget (frontier) or under-power (cheap)",
+      "notes": "Tests budget clamping."
+    },
+    {
+      "case_id": "B5",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "input": {
+        "kind": "reasoning-tier",
+        "question": "Select the reasoning tier for role \"database-writer\" (dw-1) in a diagnostic mission. The mission budget ceiling is cheap.",
+        "options": [
+          "cheap",
+          "default",
+          "frontier"
+        ],
+        "facts": {
+          "criticality": "important",
+          "missionDomain": "diagnostic",
+          "budgetCeiling": "cheap"
+        }
+      },
+      "expected_choice": "cheap",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: important -> default, clamped by ceiling=cheap -> cheap.",
+      "consequence_of_wrong_decision": "exceeds budget (default/frontier)",
+      "notes": "Tests budget clamping to floor."
+    },
+    {
+      "case_id": "C1",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "input": {
+        "kind": "worker-retry-vs-fail",
+        "question": "A specialist worker failed verification. Decide: retry the worker or accept the failure?",
+        "options": [
+          "retry",
+          "fail"
+        ],
+        "facts": {
+          "verification_ok": false,
+          "mission_aborted": false,
+          "diagnosis_retryable": true,
+          "diagnosis_root_cause": "the artifact 'report.md' was not produced; expected at /workspace/report.md",
+          "prior_round_status": "success",
+          "attempt": 1,
+          "max_attempts": 2
+        }
+      },
+      "expected_choice": "retry",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule (orchestrator.ts:684-757): retry when !ok && !aborted && diagnosis.retryable !== false. Retryable=true, prior success preserved by D14. Missing file is fixable.",
+      "consequence_of_wrong_decision": "wasted budget (retry non-fixable) or false failure (give up on fixable)",
+      "notes": "Deterministic given the diagnosis."
+    },
+    {
+      "case_id": "C2",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "input": {
+        "kind": "worker-retry-vs-fail",
+        "question": "A specialist worker failed verification. Decide: retry the worker or accept the failure?",
+        "options": [
+          "retry",
+          "fail"
+        ],
+        "facts": {
+          "verification_ok": false,
+          "mission_aborted": false,
+          "diagnosis_retryable": false,
+          "diagnosis_root_cause": "the produced artifact's content does not match the semantic intent of the goal; the worker misunderstood the deliverable",
+          "prior_round_status": "none",
+          "attempt": 1,
+          "max_attempts": 2
+        }
+      },
+      "expected_choice": "fail",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: !ok && !aborted && diagnosis.retryable !== false -> retry. Here retryable=false, so retry is NOT taken. Semantic mismatch is not fixable by re-running the same worker.",
+      "consequence_of_wrong_decision": "wasted budget retrying an unfixable failure",
+      "notes": "Deterministic given the diagnosis."
+    },
+    {
+      "case_id": "C3",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "input": {
+        "kind": "worker-retry-vs-fail",
+        "question": "A specialist worker failed verification. Decide: retry the worker or accept the failure?",
+        "options": [
+          "retry",
+          "fail"
+        ],
+        "facts": {
+          "verification_ok": false,
+          "mission_aborted": false,
+          "diagnosis_retryable": null,
+          "diagnosis_root_cause": null,
+          "prior_round_status": "none",
+          "attempt": 1,
+          "max_attempts": 2
+        }
+      },
+      "expected_choice": "retry",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: when reviewer is not configured OR diagnosis is null, retryable !== false is true (defaulting to retry). Bounded at 1 retry.",
+      "consequence_of_wrong_decision": "false failure (give up on possibly-fixable failure)",
+      "notes": "Tests the default-retry path."
+    },
+    {
+      "case_id": "C4",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "input": {
+        "kind": "worker-retry-vs-fail",
+        "question": "A reasoning call inside a worker timed out on attempt 2 of 2. Decide: retry the call or fail the worker?",
+        "options": [
+          "retry",
+          "fail"
+        ],
+        "facts": {
+          "verification_ok": false,
+          "mission_aborted": false,
+          "failure_class": "TIMEOUT",
+          "attempt": 2,
+          "max_attempts": 2
+        }
+      },
+      "expected_choice": "fail",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "WorkerAgent.callReasoningWithRetry (worker-agent.ts:925-965): if attempt === maxAttempts -> throw, regardless of retryability. Final attempt exhausted.",
+      "consequence_of_wrong_decision": "infinite retry / wasted budget",
+      "notes": "Tests attempt budget."
+    },
+    {
+      "case_id": "C5",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "input": {
+        "kind": "worker-retry-vs-fail",
+        "question": "A specialist worker failed verification, but the mission was aborted externally. Decide: retry or fail?",
+        "options": [
+          "retry",
+          "fail"
+        ],
+        "facts": {
+          "verification_ok": false,
+          "mission_aborted": true,
+          "diagnosis_retryable": true,
+          "diagnosis_root_cause": "transient: missing file",
+          "attempt": 1,
+          "max_attempts": 2
+        }
+      },
+      "expected_choice": "fail",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: retry requires !aborted. Even if retryable, abort signal overrides. Mission was canceled; no retry.",
+      "consequence_of_wrong_decision": "retry-after-abort (violates cancellation contract)",
+      "notes": "Tests abort override."
+    },
+    {
+      "case_id": "D1",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "input": {
+        "kind": "pattern-apply-vs-ignore",
+        "question": "An avoid-role pattern targets the 'redundant-specialist' role. The current plan has 4 specialists including this role. Should the pattern be applied (removing the role and redistributing its capability needs)?",
+        "options": [
+          "apply",
+          "ignore"
+        ],
+        "facts": {
+          "pattern_kind": "avoid-role",
+          "pattern_target_role": "redundant-specialist",
+          "current_specialist_roles": "[\"frontend-engineer\", \"backend-engineer\", \"redundant-specialist\", \"qa-engineer\"]",
+          "current_specialist_count": 4,
+          "redistribution_preserves_coverage": true,
+          "supporting_experience_count": 2,
+          "contradiction_count": 0
+        }
+      },
+      "expected_choice": "apply",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule (organization-planner.ts:497-582): apply iff target role present AND redistribution preserves coverage. Both conditions met.",
+      "consequence_of_wrong_decision": "extra specialist retained (waste) OR coverage broken (mission fails downstream)",
+      "notes": "Deterministic."
+    },
+    {
+      "case_id": "D2",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "input": {
+        "kind": "pattern-apply-vs-ignore",
+        "question": "A prefer-role pattern proposes collapsing to a single 'Sole Operator'. The current plan has 2 specialists. Apply the pattern?",
+        "options": [
+          "apply",
+          "ignore"
+        ],
+        "facts": {
+          "pattern_kind": "prefer-role",
+          "pattern_target_role": "Sole Operator",
+          "current_specialist_count": 2,
+          "current_specialist_roles": "[\"researcher\", \"writer\"]",
+          "redistribution_preserves_coverage": true,
+          "supporting_experience_count": 3,
+          "contradiction_count": 0
+        }
+      },
+      "expected_choice": "apply",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule (organization-planner.ts:545): prefer-role Sole Operator collapses iff specialists.length > 1. 2 > 1 -> collapse to single Sole Operator carrying all needs.",
+      "consequence_of_wrong_decision": "false collapse (overloads Sole Operator) OR redundant specialists (waste)",
+      "notes": "Edge case. Genesis collapses when > 1."
+    },
+    {
+      "case_id": "D3",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "input": {
+        "kind": "pattern-apply-vs-ignore",
+        "question": "An avoid-role pattern targets the 'database-engineer' role. The current plan does NOT include this role. Apply the pattern?",
+        "options": [
+          "apply",
+          "ignore"
+        ],
+        "facts": {
+          "pattern_kind": "avoid-role",
+          "pattern_target_role": "database-engineer",
+          "current_specialist_count": 2,
+          "current_specialist_roles": "[\"frontend-engineer\", \"backend-engineer\"]",
+          "redistribution_preserves_coverage": false,
+          "supporting_experience_count": 1,
+          "contradiction_count": 0
+        }
+      },
+      "expected_choice": "ignore",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: apply iff target role present. Not present -> ignore. No-op.",
+      "consequence_of_wrong_decision": "applying a no-op pattern (no effect, but telemetry noise)",
+      "notes": "Deterministic."
+    },
+    {
+      "case_id": "D4",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "input": {
+        "kind": "pattern-apply-vs-ignore",
+        "question": "An avoid-role pattern targets the 'qa-engineer' role. The current plan has this role, but redistributing its needs to the remaining specialists would break capability coverage. Apply the pattern?",
+        "options": [
+          "apply",
+          "ignore"
+        ],
+        "facts": {
+          "pattern_kind": "avoid-role",
+          "pattern_target_role": "qa-engineer",
+          "current_specialist_count": 3,
+          "current_specialist_roles": "[\"frontend-engineer\", \"backend-engineer\", \"qa-engineer\"]",
+          "redistribution_preserves_coverage": false,
+          "supporting_experience_count": 2,
+          "contradiction_count": 0
+        }
+      },
+      "expected_choice": "ignore",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: apply iff coverage preserved. Here coverage would break. Pattern ignored to preserve mission correctness.",
+      "consequence_of_wrong_decision": "broken coverage (mission aborts at Genome Compiler's capability-gap check)",
+      "notes": "Deterministic coverage preservation."
+    },
+    {
+      "case_id": "D5",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "input": {
+        "kind": "pattern-apply-vs-ignore",
+        "question": "A prefer-shape pattern (not yet implemented) proposes a hub-and-spoke shape. Apply the pattern?",
+        "options": [
+          "apply",
+          "ignore"
+        ],
+        "facts": {
+          "pattern_kind": "prefer-shape",
+          "pattern_target_role": null,
+          "current_specialist_count": 4,
+          "current_specialist_roles": "[\"a\", \"b\", \"c\", \"d\"]",
+          "redistribution_preserves_coverage": true,
+          "supporting_experience_count": 5,
+          "contradiction_count": 0
+        }
+      },
+      "expected_choice": "ignore",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule (organization-planner.ts:565-582): only 'avoid-role' and 'prefer-role: Sole Operator' are implemented; other kinds are explicitly not-implemented and ignored.",
+      "consequence_of_wrong_decision": "applying an unimplemented shape (would require new machinery -> architectural bloat)",
+      "notes": "Tests unimplemented pattern kind."
+    },
+    {
+      "case_id": "E1",
+      "family": "E",
+      "decision_kind": "verification-diagnosis",
+      "input": {
+        "kind": "verification-diagnosis",
+        "question": "Mission verification completed. Decide: accept (no failed checks) or review (failed checks, get diagnosis)?",
+        "options": [
+          "accept",
+          "review"
+        ],
+        "facts": {
+          "failed_check_count": 0,
+          "total_check_count": 5,
+          "reviewer_available": true,
+          "failed_check_kinds": "[]",
+          "failed_check_labels": "[]"
+        }
+      },
+      "expected_choice": "accept",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule (verification.ts:275-294): result.ok iff failed.length === 0. 0 failed -> ok=true -> no review needed.",
+      "consequence_of_wrong_decision": "wasted LLM call reviewing a successful mission (minor) OR accepting a failed mission (major)",
+      "notes": "Deterministic."
+    },
+    {
+      "case_id": "E2",
+      "family": "E",
+      "decision_kind": "verification-diagnosis",
+      "input": {
+        "kind": "verification-diagnosis",
+        "question": "Mission verification completed with 1 failed check (file existence: report.md missing). Decide: accept or review (call reviewer for diagnosis)?",
+        "options": [
+          "accept",
+          "review"
+        ],
+        "facts": {
+          "failed_check_count": 1,
+          "total_check_count": 5,
+          "reviewer_available": true,
+          "failed_check_kinds": "[\"file\"]",
+          "failed_check_labels": "[\"report.md must exist in /workspace\"]"
+        }
+      },
+      "expected_choice": "review",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: !ok && reviewer available -> review. Reviewer returns retryable=true/false. File missing is potentially fixable -> retryable=true (typically).",
+      "consequence_of_wrong_decision": "accept false failure (mission ends wrong) OR skip review (no diagnosis, defaults to retry per D13)",
+      "notes": "Deterministic at the rule level; the inner retryable decision is the probabilistic one (D25)."
+    },
+    {
+      "case_id": "E3",
+      "family": "E",
+      "decision_kind": "verification-diagnosis",
+      "input": {
+        "kind": "verification-diagnosis",
+        "question": "Mission verification failed a hash-match check (the produced artifact's SHA-256 does not match the expected hash). Decide: accept or review?",
+        "options": [
+          "accept",
+          "review"
+        ],
+        "facts": {
+          "failed_check_count": 1,
+          "total_check_count": 3,
+          "reviewer_available": true,
+          "failed_check_kinds": "[\"hash-match\"]",
+          "failed_check_labels": "[\"report.sha256 must equal expected hash\"]"
+        }
+      },
+      "expected_choice": "review",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: !ok && reviewer -> review. Hash mismatch indicates content drift (potentially fixable or potentially semantic). Reviewer will diagnose.",
+      "consequence_of_wrong_decision": "accept corruption (mission truth broken) OR skip review (no diagnosis, defaults to retry)",
+      "notes": "Deterministic at rule level."
+    },
+    {
+      "case_id": "E4",
+      "family": "E",
+      "decision_kind": "verification-diagnosis",
+      "input": {
+        "kind": "verification-diagnosis",
+        "question": "Mission verification failed 2 checks (no reviewer configured). Decide: accept or review?",
+        "options": [
+          "accept",
+          "review"
+        ],
+        "facts": {
+          "failed_check_count": 2,
+          "total_check_count": 4,
+          "reviewer_available": false,
+          "failed_check_kinds": "[\"file\", \"content-in-artifacts\"]",
+          "failed_check_labels": "[\"report.md must exist\", \"report must contain 'conclusion'\"]"
+        }
+      },
+      "expected_choice": "accept",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: review only if reviewer available. No reviewer -> no review -> accept the verification result (which is !ok). The mission will then be partial/failure per D12.",
+      "consequence_of_wrong_decision": "phantom review call (no reviewer to call) OR mission status miscomputed",
+      "notes": "Tests missing-reviewer path."
+    },
+    {
+      "case_id": "F1",
+      "family": "F",
+      "decision_kind": "domain-classification",
+      "input": {
+        "kind": "domain-classification",
+        "question": "Classify the mission domain for this goal.",
+        "options": [
+          "research",
+          "software-engineering",
+          "diagnostic",
+          "general"
+        ],
+        "facts": {
+          "goal_outcome": "Build a Rust web service that exposes a REST API for managing a todo list with persistence",
+          "goal_context": "",
+          "goal_constraints": "[\"must run offline\", \"must be reproducible\"]"
+        }
+      },
+      "expected_choice": "software-engineering",
+      "ground_truth_method": "semantic_consensus",
+      "ground_truth_rationale": "Signals: 'service', 'API', 'persistence' -> software-engineering. Semantic intent: building a software artifact. Genesis word-signal classifier also agrees.",
+      "consequence_of_wrong_decision": "wrong role templates, wrong capability needs (cascades into D05)",
+      "notes": "BOUNDED_PROBABILISTIC: word-signal heuristic is right here, but a probabilistic decider might generalize better on edge cases."
+    },
+    {
+      "case_id": "F2",
+      "family": "F",
+      "decision_kind": "domain-classification",
+      "input": {
+        "kind": "domain-classification",
+        "question": "Classify the mission domain for this goal.",
+        "options": [
+          "research",
+          "software-engineering",
+          "diagnostic",
+          "general"
+        ],
+        "facts": {
+          "goal_outcome": "Survey the academic literature on transformer architectures and produce an annotated bibliography",
+          "goal_context": "Focus on post-2022 papers; cite at least 30 sources",
+          "goal_constraints": "[]"
+        }
+      },
+      "expected_choice": "research",
+      "ground_truth_method": "semantic_consensus",
+      "ground_truth_rationale": "Signals: 'survey', 'literature', 'bibliography' -> research. Intent: academic literature review.",
+      "consequence_of_wrong_decision": "wrong role templates (no researcher role added)",
+      "notes": "BOUNDED_PROBABILISTIC."
+    },
+    {
+      "case_id": "F3",
+      "family": "F",
+      "decision_kind": "domain-classification",
+      "input": {
+        "kind": "domain-classification",
+        "question": "Classify the mission domain for this goal.",
+        "options": [
+          "research",
+          "software-engineering",
+          "diagnostic",
+          "general"
+        ],
+        "facts": {
+          "goal_outcome": "Diagnose why the production PostgreSQL database is slow during peak hours and propose remediation",
+          "goal_context": "Slowdown started 3 days ago after a schema migration",
+          "goal_constraints": "[\"do not modify production data\"]"
+        }
+      },
+      "expected_choice": "diagnostic",
+      "ground_truth_method": "semantic_consensus",
+      "ground_truth_rationale": "Signals: 'diagnose', 'slow', 'remediation' -> diagnostic. Intent: troubleshooting.",
+      "consequence_of_wrong_decision": "wrong role templates (no diagnostic-specific guidance)",
+      "notes": "BOUNDED_PROBABILISTIC."
+    },
+    {
+      "case_id": "F4",
+      "family": "F",
+      "decision_kind": "domain-classification",
+      "input": {
+        "kind": "domain-classification",
+        "question": "Classify the mission domain for this goal.",
+        "options": [
+          "research",
+          "software-engineering",
+          "diagnostic",
+          "general"
+        ],
+        "facts": {
+          "goal_outcome": "Plan a fundraising gala for next month including invitations, catering, and a silent auction",
+          "goal_context": "Expected attendance: 200",
+          "goal_constraints": "[\"budget under $50k\"]"
+        }
+      },
+      "expected_choice": "general",
+      "ground_truth_method": "semantic_consensus",
+      "ground_truth_rationale": "No domain-specific signals. Intent: event planning, which is general (not research, not software-engineering, not diagnostic).",
+      "consequence_of_wrong_decision": "wrong role templates (specialists spawned unnecessarily)",
+      "notes": "BOUNDED_PROBABILISTIC."
+    },
+    {
+      "case_id": "F5",
+      "family": "F",
+      "decision_kind": "scope-classification",
+      "input": {
+        "kind": "scope-classification",
+        "question": "Classify the mission scope (organization shape will follow).",
+        "options": [
+          "minimal",
+          "standard",
+          "complex"
+        ],
+        "facts": {
+          "capability_need_count": 1,
+          "success_criterion_count": 1,
+          "outcome_word_count": 12,
+          "complexity_signals_hit": 0
+        }
+      },
+      "expected_choice": "minimal",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule (organization-planner.ts:157-179): score = max(0, 1-1) + (1>2?0) + (12>25?0) + min(2,0) = 0. 0<=1 -> minimal.",
+      "consequence_of_wrong_decision": "standard spawn when minimal would do (waste)",
+      "notes": "Deterministic."
+    },
+    {
+      "case_id": "F6",
+      "family": "F",
+      "decision_kind": "scope-classification",
+      "input": {
+        "kind": "scope-classification",
+        "question": "Classify the mission scope (organization shape will follow).",
+        "options": [
+          "minimal",
+          "standard",
+          "complex"
+        ],
+        "facts": {
+          "capability_need_count": 4,
+          "success_criterion_count": 5,
+          "outcome_word_count": 52,
+          "complexity_signals_hit": 2
+        }
+      },
+      "expected_choice": "complex",
+      "ground_truth_method": "genesis_rule_baseline",
+      "ground_truth_rationale": "Genesis rule: score = max(0,4-1)=3 + (5>2?1:0)=1 + (52>25?1:0)=1 + min(2,2)=2 = 7. 7>3 -> complex.",
+      "consequence_of_wrong_decision": "under-staffed (standard when complex needed)",
+      "notes": "Deterministic."
+    }
+  ],
+  "corrigendum_v1_0_1": "Fixed 21 contract violations in facts values: arrays were stored as JSON arrays, but Decision<T>.facts requires string|number|boolean. Arrays are now JSON-stringified. This is a contract-compatibility fix; no semantic change to any case (Rule arm and Jev arm receive identical fact values, just serialized correctly).",
+  "corrigendum_v1_0_1_count": 21
+}

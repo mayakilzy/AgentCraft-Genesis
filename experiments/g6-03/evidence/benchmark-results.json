@@ -1,0 +1,1676 @@
+{
+  "summary": {
+    "benchmark_at": "2026-10-07T17:03:06.853Z",
+    "corpus_version": "1.0.1",
+    "total_cases": 29,
+    "total_jev_calls": 34,
+    "successful_jev_calls": 27,
+    "failed_jev_calls": 2,
+    "total_jev_cost_usd": 0.00738187,
+    "cost_source": "OBSERVED",
+    "avg_jev_latency_ms": 3448.103448275862,
+    "per_family": {
+      "A": {
+        "rule": {
+          "total": 4,
+          "correct": 3,
+          "incorrect": 1,
+          "failure": 0,
+          "avg_latency_ms": 0
+        },
+        "jev": {
+          "total": 4,
+          "correct": 3,
+          "incorrect": 1,
+          "failure": 0,
+          "invalid": 0,
+          "avg_latency_ms": 3560.5,
+          "avg_cost_usd": 0.00026092499999999996
+        }
+      },
+      "B": {
+        "rule": {
+          "total": 5,
+          "correct": 5,
+          "incorrect": 0,
+          "failure": 0,
+          "avg_latency_ms": 0
+        },
+        "jev": {
+          "total": 5,
+          "correct": 4,
+          "incorrect": 1,
+          "failure": 0,
+          "invalid": 0,
+          "avg_latency_ms": 2525.2,
+          "avg_cost_usd": 0.00020807999999999997
+        }
+      },
+      "C": {
+        "rule": {
+          "total": 5,
+          "correct": 5,
+          "incorrect": 0,
+          "failure": 0,
+          "avg_latency_ms": 0
+        },
+        "jev": {
+          "total": 5,
+          "correct": 5,
+          "incorrect": 0,
+          "failure": 0,
+          "invalid": 0,
+          "avg_latency_ms": 2957.8,
+          "avg_cost_usd": 0.00026154
+        }
+      },
+      "D": {
+        "rule": {
+          "total": 5,
+          "correct": 5,
+          "incorrect": 0,
+          "failure": 0,
+          "avg_latency_ms": 0
+        },
+        "jev": {
+          "total": 5,
+          "correct": 3,
+          "incorrect": 1,
+          "failure": 1,
+          "invalid": 0,
+          "avg_latency_ms": 3868,
+          "avg_cost_usd": 0.00019494720000000002
+        }
+      },
+      "E": {
+        "rule": {
+          "total": 4,
+          "correct": 4,
+          "incorrect": 0,
+          "failure": 0,
+          "avg_latency_ms": 0.25
+        },
+        "jev": {
+          "total": 4,
+          "correct": 3,
+          "incorrect": 0,
+          "failure": 1,
+          "invalid": 0,
+          "avg_latency_ms": 4510.25,
+          "avg_cost_usd": 0.0001359
+        }
+      },
+      "F": {
+        "rule": {
+          "total": 6,
+          "correct": 6,
+          "incorrect": 0,
+          "failure": 0,
+          "avg_latency_ms": 0.16666666666666666
+        },
+        "jev": {
+          "total": 6,
+          "correct": 5,
+          "incorrect": 1,
+          "failure": 0,
+          "invalid": 0,
+          "avg_latency_ms": 3492.8333333333335,
+          "avg_cost_usd": 0.00022585
+        }
+      }
+    },
+    "failure_probes": [
+      {
+        "probe_id": "F1",
+        "probe_description": "missing credential throws JevCredentialMissingError",
+        "expected_error_class": "JevCredentialMissingError",
+        "actual_error_class": "JevCredentialMissingError",
+        "outcome": "pass",
+        "detail": "JevDecisionProvider requires OPENROUTER_API_KEY in process.env. No credential was found. Set the env var or do not construct this provider."
+      },
+      {
+        "probe_id": "F2",
+        "probe_description": "invalid credential (HTTP 401) throws JevCredentialInvalidError",
+        "expected_error_class": "JevCredentialInvalidError",
+        "actual_error_class": "JevCredentialInvalidError",
+        "outcome": "pass",
+        "detail": "Jev credential was rejected by OpenRouter (HTTP 401). Verify OPENROUTER_API_KEY validity and authorization scope. No secret is echoed in this error."
+      },
+      {
+        "probe_id": "F3",
+        "probe_description": "provider unavailable (HTTP 500) throws JevProviderUnavailableError",
+        "expected_error_class": "JevProviderUnavailableError",
+        "actual_error_class": "JevProviderUnavailableError",
+        "outcome": "pass",
+        "detail": "Jev provider unavailable: HTTP 500. Body excerpt: {\"error\":\"server\"}"
+      },
+      {
+        "probe_id": "F4",
+        "probe_description": "timeout throws JevProviderUnavailableError (network error path)",
+        "expected_error_class": "JevProviderUnavailableError",
+        "actual_error_class": "JevProviderUnavailableError",
+        "outcome": "pass",
+        "detail": "Jev provider unavailable: HTTP 0. Body excerpt: The operation was aborted"
+      },
+      {
+        "probe_id": "F5",
+        "probe_description": "malformed response throws JevMalformedResponseError",
+        "expected_error_class": "JevMalformedResponseError",
+        "actual_error_class": "JevMalformedResponseError",
+        "outcome": "pass",
+        "detail": "Jev returned malformed response content: JSON.parse failed: Unexpected token 'o', \"not-json\" is not valid JSON. Content excerpt: not-json"
+      },
+      {
+        "probe_id": "F6",
+        "probe_description": "invalid choice throws JevInvalidChoiceError",
+        "expected_error_class": "JevInvalidChoiceError",
+        "actual_error_class": "JevInvalidChoiceError",
+        "outcome": "pass",
+        "detail": "Jev returned a choice \"quantum\" not in the requested option set [cheap, default, frontier]. This is a contract violation; the Jev response was rejected. The provider did not silently fall back."
+      },
+      {
+        "probe_id": "F7",
+        "probe_description": "no silent fallback: provider failure surfaces as thrown error, not successful outcome",
+        "expected_error_class": "(any Jev*Error)",
+        "actual_error_class": "JevProviderUnavailableError",
+        "outcome": "pass",
+        "detail": "error was thrown; no fallback choice produced"
+      }
+    ],
+    "consistency_observations": [
+      {
+        "case_id": "B1-repeat",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "jev",
+        "expected_choice": "cheap",
+        "returned_choice": "default",
+        "outcome": "incorrect",
+        "latency_ms": 2649,
+        "cost_usd": 0.0002178,
+        "reasoning_tokens": 108,
+        "prompt_tokens": 166,
+        "completion_tokens": 140,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts routine, research, no budget ceiling. Options cheap default frontier. For web-researcher routine likely default? Need infer. Reasoning tier for role. Criticality routine, budget none. Usually default. Output JSON matching schema? They didn't specify schema beyond output JSON. Need exactly one option. Could be {\"reasoningTier\":\"default\"} or {\"choice\":\"default\"}. Decision kind reasoning-tier. I'll output {\"reasoningTier\":\"default\"}. Ens",
+        "reason": "Routine criticality with no budget ceiling; default tier balances cost and capability for a web-researcher role."
+      },
+      {
+        "case_id": "B2-repeat",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "jev",
+        "expected_choice": "default",
+        "returned_choice": "default",
+        "outcome": "correct",
+        "latency_ms": 3548,
+        "cost_usd": 0.0002487,
+        "reasoning_tokens": 137,
+        "prompt_tokens": 169,
+        "completion_tokens": 165,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts criticality important, budget none. Options cheap default frontier. For backend engineer important, no budget ceiling. Likely default or frontier. Need decide. Reasoning tier for role. Important criticality, software engineering. Budget none means can afford. But \"default\" is balanced. Frontier for high criticality? Criticality important not critical. I'd choose default. Need output JSON matching schema? They didn't specify schema bey",
+        "reason": "Important but not critical backend role with no budget ceiling; default tier balances capability and cost."
+      },
+      {
+        "case_id": "C1-repeat",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "jev",
+        "expected_choice": "retry",
+        "returned_choice": "retry",
+        "outcome": "correct",
+        "latency_ms": 4550,
+        "cost_usd": 0.0002355,
+        "reasoning_tokens": 109,
+        "prompt_tokens": 213,
+        "completion_tokens": 143,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts: verification false, mission not aborted, diagnosis retryable true, root cause artifact not produced, prior success, attempt 1 max 2. So retry. Output JSON likely {\"decision\":\"retry\"} or option. Need match schema? User says output strict JSON matching schema, but no schema provided. We can output {\"choice\":\"retry\"}? Decision kind. Usually these tasks expect {\"decision\":\"retry\"}. Let's provide exactly one option.",
+        "reason": "The failure is retryable, the mission is not aborted, and attempts remain (1 of 2)."
+      },
+      {
+        "case_id": "D1-repeat",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "jev",
+        "expected_choice": "apply",
+        "returned_choice": "apply",
+        "outcome": "correct",
+        "latency_ms": 5014,
+        "cost_usd": 0.000210636,
+        "reasoning_tokens": 129,
+        "prompt_tokens": 265,
+        "completion_tokens": 172,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose apply or ignore. Facts: avoid-role pattern targets redundant-specialist. Current plan has 4 specialists including this role. Redistribution preserves coverage true. supporting experience 2, contradictions 0. Should apply removing role and redistributing. Likely apply. Need output JSON exactly one option. Maybe {\"option\":\"apply\"} or {\"choice\":\"apply\"}. Schema not specified. \"Output strict JSON matching schema.\" We need infer. Decision request options. Usual",
+        "reason": "The avoid-role pattern targets the redundant-specialist role, redistribution preserves coverage, and there are no contradictions, so applying it removes redundancy without losing capability coverage."
+      },
+      {
+        "case_id": "F1-repeat",
+        "family": "F",
+        "decision_kind": "domain-classification",
+        "arm": "jev",
+        "expected_choice": "software-engineering",
+        "returned_choice": "software-engineering",
+        "outcome": "correct",
+        "latency_ms": 1564,
+        "cost_usd": 0.000204,
+        "reasoning_tokens": 86,
+        "prompt_tokens": 184,
+        "completion_tokens": 124,
+        "reasoning_excerpt": "We need answer strict JSON. Need classify domain. Goal build Rust web service REST API todo persistence. That's software-engineering. Output JSON likely {\"choice\":\"software-engineering\"} or maybe {\"domain\":\"software-engineering\"}. Schema? User says output strict JSON matching schema, but no schema provided. Decision kind domain-classification. Options. We should choose exactly one. I'll output {\"choice\":\"software-engineering\"}.",
+        "reason": "The goal is to build a software system (a Rust web service with a REST API and persistence), which falls under software engineering."
+      }
+    ],
+    "rule_results": [
+      {
+        "case_id": "A1",
+        "family": "A",
+        "decision_kind": "coordinator-decision",
+        "arm": "rule",
+        "expected_choice": "no",
+        "returned_choice": "no",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:386): coordinator iff specialists >= 3; here 2 < 3"
+      },
+      {
+        "case_id": "A2",
+        "family": "A",
+        "decision_kind": "coordinator-decision",
+        "arm": "rule",
+        "expected_choice": "yes",
+        "returned_choice": "yes",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:386): coordinator iff specialists >= 3; here 3 >= 3"
+      },
+      {
+        "case_id": "A3",
+        "family": "A",
+        "decision_kind": "coordinator-decision",
+        "arm": "rule",
+        "expected_choice": "no",
+        "returned_choice": "yes",
+        "outcome": "incorrect",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:386): coordinator iff specialists >= 3; here 4 >= 3"
+      },
+      {
+        "case_id": "A4",
+        "family": "A",
+        "decision_kind": "coordinator-decision",
+        "arm": "rule",
+        "expected_choice": "yes",
+        "returned_choice": "yes",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:386): coordinator iff specialists >= 3; here 3 >= 3"
+      },
+      {
+        "case_id": "B1",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "rule",
+        "expected_choice": "cheap",
+        "returned_choice": "cheap",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality routine maps to cheap"
+      },
+      {
+        "case_id": "B2",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "rule",
+        "expected_choice": "default",
+        "returned_choice": "default",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality important maps to default"
+      },
+      {
+        "case_id": "B3",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "rule",
+        "expected_choice": "frontier",
+        "returned_choice": "frontier",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality mission-critical maps to frontier"
+      },
+      {
+        "case_id": "B4",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "rule",
+        "expected_choice": "default",
+        "returned_choice": "default",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality mission-critical maps to frontier, clamped to default by the mission budget ceiling"
+      },
+      {
+        "case_id": "B5",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "rule",
+        "expected_choice": "cheap",
+        "returned_choice": "cheap",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality important maps to default, clamped to cheap by the mission budget ceiling"
+      },
+      {
+        "case_id": "C1",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "rule",
+        "expected_choice": "retry",
+        "returned_choice": "retry",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (orchestrator.ts:684): !ok && !aborted && retryable!==false (got true) -> retry"
+      },
+      {
+        "case_id": "C2",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "rule",
+        "expected_choice": "fail",
+        "returned_choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (orchestrator.ts:684): diagnosis.retryable=false -> fail"
+      },
+      {
+        "case_id": "C3",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "rule",
+        "expected_choice": "retry",
+        "returned_choice": "retry",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (orchestrator.ts:684): !ok && !aborted && retryable!==false (got null) -> retry"
+      },
+      {
+        "case_id": "C4",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "rule",
+        "expected_choice": "fail",
+        "returned_choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (worker-agent.ts:925): attempt 2 >= maxAttempts 2 -> fail"
+      },
+      {
+        "case_id": "C5",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "rule",
+        "expected_choice": "fail",
+        "returned_choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: mission aborted -> fail (orchestrator.ts:684)"
+      },
+      {
+        "case_id": "D1",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "rule",
+        "expected_choice": "apply",
+        "returned_choice": "apply",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: avoid-role, target \"redundant-specialist\" present, coverage preserved -> apply"
+      },
+      {
+        "case_id": "D2",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "rule",
+        "expected_choice": "apply",
+        "returned_choice": "apply",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: prefer-role Sole Operator, 2 > 1 -> collapse"
+      },
+      {
+        "case_id": "D3",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "rule",
+        "expected_choice": "ignore",
+        "returned_choice": "ignore",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: avoid-role but target \"database-engineer\" not present -> ignore"
+      },
+      {
+        "case_id": "D4",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "rule",
+        "expected_choice": "ignore",
+        "returned_choice": "ignore",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: avoid-role but redistribution breaks coverage -> ignore"
+      },
+      {
+        "case_id": "D5",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "rule",
+        "expected_choice": "ignore",
+        "returned_choice": "ignore",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: pattern kind \"prefer-shape\" not implemented -> ignore"
+      },
+      {
+        "case_id": "E1",
+        "family": "E",
+        "decision_kind": "verification-diagnosis",
+        "arm": "rule",
+        "expected_choice": "accept",
+        "returned_choice": "accept",
+        "outcome": "correct",
+        "latency_ms": 1,
+        "reason": "Genesis rule: 0 failed checks -> ok=true -> accept"
+      },
+      {
+        "case_id": "E2",
+        "family": "E",
+        "decision_kind": "verification-diagnosis",
+        "arm": "rule",
+        "expected_choice": "review",
+        "returned_choice": "review",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: 1 failed checks && reviewer available -> review"
+      },
+      {
+        "case_id": "E3",
+        "family": "E",
+        "decision_kind": "verification-diagnosis",
+        "arm": "rule",
+        "expected_choice": "review",
+        "returned_choice": "review",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: 1 failed checks && reviewer available -> review"
+      },
+      {
+        "case_id": "E4",
+        "family": "E",
+        "decision_kind": "verification-diagnosis",
+        "arm": "rule",
+        "expected_choice": "accept",
+        "returned_choice": "accept",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: !ok but no reviewer -> accept the verification result (!ok)"
+      },
+      {
+        "case_id": "F1",
+        "family": "F",
+        "decision_kind": "domain-classification",
+        "arm": "rule",
+        "expected_choice": "software-engineering",
+        "returned_choice": "software-engineering",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (goal-compiler.ts:206): word-signal scores {\"software-engineering\":6,\"research\":0,\"diagnostic\":0} -> software-engineering"
+      },
+      {
+        "case_id": "F2",
+        "family": "F",
+        "decision_kind": "domain-classification",
+        "arm": "rule",
+        "expected_choice": "research",
+        "returned_choice": "research",
+        "outcome": "correct",
+        "latency_ms": 1,
+        "reason": "Genesis rule (goal-compiler.ts:206): word-signal scores {\"software-engineering\":0,\"research\":6,\"diagnostic\":0} -> research"
+      },
+      {
+        "case_id": "F3",
+        "family": "F",
+        "decision_kind": "domain-classification",
+        "arm": "rule",
+        "expected_choice": "diagnostic",
+        "returned_choice": "diagnostic",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (goal-compiler.ts:206): word-signal scores {\"software-engineering\":0,\"research\":0,\"diagnostic\":3} -> diagnostic"
+      },
+      {
+        "case_id": "F4",
+        "family": "F",
+        "decision_kind": "domain-classification",
+        "arm": "rule",
+        "expected_choice": "general",
+        "returned_choice": "general",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (goal-compiler.ts:206): word-signal scores {\"software-engineering\":0,\"research\":0,\"diagnostic\":0} -> general"
+      },
+      {
+        "case_id": "F5",
+        "family": "F",
+        "decision_kind": "scope-classification",
+        "arm": "rule",
+        "expected_choice": "minimal",
+        "returned_choice": "minimal",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:157): score=0 -> minimal"
+      },
+      {
+        "case_id": "F6",
+        "family": "F",
+        "decision_kind": "scope-classification",
+        "arm": "rule",
+        "expected_choice": "complex",
+        "returned_choice": "complex",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:157): score=7 -> complex"
+      }
+    ],
+    "jev_results": [
+      {
+        "case_id": "A1",
+        "family": "A",
+        "decision_kind": "coordinator-decision",
+        "arm": "jev",
+        "expected_choice": "no",
+        "returned_choice": "no",
+        "outcome": "correct",
+        "latency_ms": 4274,
+        "cost_usd": 0.0002424,
+        "reasoning_tokens": 125,
+        "prompt_tokens": 176,
+        "completion_tokens": 158,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose yes/no. Facts: 2 specialists, sequential handoff, research domain. Coordinator role? For 2 specialists sequential, maybe no need. But question asks should add Mission Coordinator to integrate specialists. Need decide. Typically coordinator useful for multiple specialists, but with only 2 and sequential, overhead not needed. Choose no. Output JSON exactly. Ensure schema? They said output strict JSON matching schema, but no schema provided. Likely {\"decision",
+        "reason": "With only two specialists and a sequential handoff, direct integration is sufficient; adding a coordinator would introduce unnecessary overhead."
+      },
+      {
+        "case_id": "A2",
+        "family": "A",
+        "decision_kind": "coordinator-decision",
+        "arm": "jev",
+        "expected_choice": "yes",
+        "returned_choice": "yes",
+        "outcome": "correct",
+        "latency_ms": 2402,
+        "cost_usd": 0.0002295,
+        "reasoning_tokens": 114,
+        "prompt_tokens": 185,
+        "completion_tokens": 145,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose yes/no. Need infer. Mission has 3 specialists, research domain, handoff all-to-documentation. Coordinator role to integrate specialists? Likely yes if multiple specialists and handoff pattern. Need output exactly one option. JSON schema? Not provided but likely {\"decision\":\"yes\"} or {\"choice\":\"yes\"}. We need strict JSON matching schema. Since no schema, use key maybe \"decision\". The question asks choose exactly one option. Output JSON. I'll output {\"decisi",
+        "reason": "Three specialists with an all-to-documentation handoff pattern require coordination to integrate outputs and manage dependencies."
+      },
+      {
+        "case_id": "A3",
+        "family": "A",
+        "decision_kind": "coordinator-decision",
+        "arm": "jev",
+        "expected_choice": "no",
+        "returned_choice": "yes",
+        "outcome": "incorrect",
+        "latency_ms": 2225,
+        "cost_usd": 0.0003006,
+        "reasoning_tokens": 170,
+        "prompt_tokens": 190,
+        "completion_tokens": 203,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose yes/no. Facts: 4 specialists, linear pipeline, software engineering. Coordinator role to integrate specialists? Likely yes if multiple specialists and handoffs. But linear pipeline may not need coordinator? Need decide. The question: Should mission add Mission Coordinator role to integrate specialists? With 4 specialists, likely yes. Output JSON matching schema? No schema provided except choose exactly one option. We can output {\"decision\":\"yes\"} or {\"choi",
+        "reason": "With four specialists in a linear pipeline, a Mission Coordinator can manage handoffs, dependencies, and integration across roles."
+      },
+      {
+        "case_id": "A4",
+        "family": "A",
+        "decision_kind": "coordinator-decision",
+        "arm": "jev",
+        "expected_choice": "yes",
+        "returned_choice": "yes",
+        "outcome": "correct",
+        "latency_ms": 5341,
+        "cost_usd": 0.0002712,
+        "reasoning_tokens": 146,
+        "prompt_tokens": 184,
+        "completion_tokens": 180,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose yes/no. Facts: 3 specialists, roles web-researcher data-analyst report-writer, mission domain research, handoff pattern fan-in-to-writer. Need decide if add Mission Coordinator role to integrate specialists. Likely yes because multiple specialists and fan-in to writer, coordination useful. Output JSON exactly one option. Need schema? Not specified but likely {\"decision\":\"yes\"} or {\"choice\":\"yes\"}. We need infer. The instruction: \"Output strict JSON matchin",
+        "reason": "Three specialists with a fan-in-to-writer handoff benefit from coordination to sequence research, analysis, and report writing."
+      },
+      {
+        "case_id": "B1",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "jev",
+        "expected_choice": "cheap",
+        "returned_choice": "default",
+        "outcome": "incorrect",
+        "latency_ms": 1396,
+        "cost_usd": 0.0002238,
+        "reasoning_tokens": 113,
+        "prompt_tokens": 166,
+        "completion_tokens": 145,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts routine, research, no budget ceiling. Options cheap default frontier. For web-researcher routine likely default? Need infer. Reasoning tier for role. Criticality routine, budget none. Usually default is balanced. Choose default. Output JSON matching schema? They didn't specify schema except output JSON. Need exactly one option. Could be {\"reasoningTier\":\"default\"} or {\"choice\":\"default\"}. Decision kind reasoning-tier. Likely output {\"",
+        "reason": "Routine criticality with no budget constraint; default tier balances cost and capability for a web-researcher role."
+      },
+      {
+        "case_id": "B2",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "jev",
+        "expected_choice": "default",
+        "returned_choice": "default",
+        "outcome": "correct",
+        "latency_ms": 3496,
+        "cost_usd": 0.0002283,
+        "reasoning_tokens": 122,
+        "prompt_tokens": 169,
+        "completion_tokens": 148,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts criticality important, budget none. Options cheap default frontier. For backend engineer important, no budget ceiling. Likely default? Need infer. Reasoning tier selection. Criticality important, budget none. Could choose frontier if high criticality? \"important\" not critical. Budget none means no constraint. But default is balanced. Need exactly one. I'll choose default. Output JSON matching schema? They didn't specify schema fields.",
+        "reason": "Important backend engineering work with no budget ceiling; default tier balances capability and cost."
+      },
+      {
+        "case_id": "B3",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "jev",
+        "expected_choice": "frontier",
+        "returned_choice": "frontier",
+        "outcome": "correct",
+        "latency_ms": 1327,
+        "cost_usd": 0.0001722,
+        "reasoning_tokens": 74,
+        "prompt_tokens": 170,
+        "completion_tokens": 101,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts criticality mission-critical, domain software-engineering, budget none. Options cheap default frontier. Likely frontier for mission-critical. Need output JSON matching schema? User says output strict JSON. No schema provided except choose exactly one. We can output {\"choice\":\"frontier\"} maybe. Need ensure exactly one option.",
+        "reason": "Mission-critical software-engineering work with no budget ceiling warrants the highest reasoning tier."
+      },
+      {
+        "case_id": "B4",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "jev",
+        "expected_choice": "default",
+        "returned_choice": "default",
+        "outcome": "correct",
+        "latency_ms": 3317,
+        "cost_usd": 0.0002199,
+        "reasoning_tokens": 108,
+        "prompt_tokens": 177,
+        "completion_tokens": 139,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts criticality mission-critical, domain software-engineering, budget default. Options cheap default frontier. Need infer. Mission-critical software engineering, budget default. Likely default? Need exactly one. We need output JSON matching schema? Not specified schema but likely {\"choice\":\"default\"} or {\"option\":\"default\"}. We need decide. Reasoning tier for sole-operator. Criticality mission-critical suggests higher than cheap. Budget c",
+        "reason": "Mission-critical software engineering with a default budget ceiling warrants the balanced default reasoning tier rather than cheap or frontier."
+      },
+      {
+        "case_id": "B5",
+        "family": "B",
+        "decision_kind": "reasoning-tier",
+        "arm": "jev",
+        "expected_choice": "cheap",
+        "returned_choice": "cheap",
+        "outcome": "correct",
+        "latency_ms": 3090,
+        "cost_usd": 0.0001962,
+        "reasoning_tokens": 97,
+        "prompt_tokens": 174,
+        "completion_tokens": 120,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts: criticality important, missionDomain diagnostic, budgetCeiling cheap. Options cheap default frontier. Budget ceiling cheap likely choose cheap. Need output JSON matching schema? No schema provided except output JSON. Probably {\"choice\":\"cheap\"} or maybe {\"reasoningTier\":\"cheap\"}. Decision kind reasoning-tier. We need exactly one option. Use key maybe \"choice\". Let's output {\"choice\":\"cheap\"}.",
+        "reason": "Budget ceiling is cheap, so select the cheap reasoning tier."
+      },
+      {
+        "case_id": "C1",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "jev",
+        "expected_choice": "retry",
+        "returned_choice": "retry",
+        "outcome": "correct",
+        "latency_ms": 3534,
+        "cost_usd": 0.0003147,
+        "reasoning_tokens": 175,
+        "prompt_tokens": 213,
+        "completion_tokens": 209,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts: verification false, mission not aborted, diagnosis retryable true, root cause artifact not produced, prior success, attempt 1 max 2. So retry. Output JSON matching schema? They didn't specify schema beyond \"Output JSON.\" Likely {\"decision\":\"retry\"} or {\"option\":\"retry\"}. Need infer. Decision kind worker-retry-vs-fail. Options retry, fail. We should output exactly one option. Use JSON. Maybe {\"choice\":\"retry\"}. To be safe, include deci",
+        "reason": "The failure is retryable, the mission is not aborted, and attempts remain (1 of 2)."
+      },
+      {
+        "case_id": "C2",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "jev",
+        "expected_choice": "fail",
+        "returned_choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 1631,
+        "cost_usd": 0.0002868,
+        "reasoning_tokens": 146,
+        "prompt_tokens": 216,
+        "completion_tokens": 185,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts: verification false, mission not aborted, diagnosis_retryable false, root cause semantic misunderstanding, prior none, attempt 1 max 2. Since diagnosis_retryable false, retry likely not useful. But attempt 1 of 2? The decision kind worker-retry-vs-fail. If not retryable, fail. Need output JSON exactly one option. Maybe {\"decision\":\"fail\"}? Schema not specified. We need strict JSON matching schema. Likely {\"choice\":\"fail\"} or {\"option\":",
+        "reason": "diagnosis_retryable is false; the failure is a semantic misunderstanding of the deliverable, so retrying is unlikely to resolve it."
+      },
+      {
+        "case_id": "C3",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "jev",
+        "expected_choice": "retry",
+        "returned_choice": "retry",
+        "outcome": "correct",
+        "latency_ms": 4167,
+        "cost_usd": 0.0002904,
+        "reasoning_tokens": 150,
+        "prompt_tokens": 196,
+        "completion_tokens": 193,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts: verification_ok false, mission_aborted false, diagnosis_retryable null, root cause null, prior_round_status none, attempt 1, max_attempts 2. Need decide. Since attempt 1 of 2, not aborted, no diagnosis says nonretryable. Likely retry. Output JSON with option. Need schema? \"Output strict JSON matching schema.\" No schema provided. Probably {\"decision\":\"retry\"} or {\"option\":\"retry\"}. We need infer. Decision kind worker-retry-vs-fail. Opt",
+        "reason": "Verification failed on attempt 1 of 2, mission is not aborted, and no non-retryable diagnosis is present; retry is warranted."
+      },
+      {
+        "case_id": "C4",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "jev",
+        "expected_choice": "fail",
+        "returned_choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 2252,
+        "cost_usd": 0.0002199,
+        "reasoning_tokens": 113,
+        "prompt_tokens": 189,
+        "completion_tokens": 136,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts attempt 2 max 2, timeout, verification not ok, mission not aborted. Since max attempts reached, fail worker. Output JSON likely {\"decision\":\"fail\"} or option. Need match schema? User says output strict JSON matching schema, but no schema provided. Decision kind. Choose exactly one option. We can output {\"choice\":\"fail\"}? Need infer. They ask \"Output JSON.\" We should provide JSON with decision. Maybe {\"decision\":\"fail\"}. Ensure exactly ",
+        "reason": "Attempt 2 of 2 timed out; max attempts reached."
+      },
+      {
+        "case_id": "C5",
+        "family": "C",
+        "decision_kind": "worker-retry-vs-fail",
+        "arm": "jev",
+        "expected_choice": "fail",
+        "returned_choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 3205,
+        "cost_usd": 0.0001959,
+        "reasoning_tokens": 100,
+        "prompt_tokens": 197,
+        "completion_tokens": 114,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts mission_aborted true externally. Even if retryable, mission aborted means should fail? Need decide. Worker-retry-vs-fail. If mission aborted externally, retrying likely pointless. Choose fail. Output JSON exactly one option. Need schema? likely {\"choice\":\"fail\"} or {\"decision\":\"fail\"}. User says Output JSON. We can output {\"choice\":\"fail\"}. Ensure exactly one option.",
+        "reason": "mission_aborted"
+      },
+      {
+        "case_id": "D1",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "jev",
+        "expected_choice": "apply",
+        "returned_choice": "apply",
+        "outcome": "correct",
+        "latency_ms": 6689,
+        "cost_usd": 0.000174636,
+        "reasoning_tokens": 106,
+        "prompt_tokens": 265,
+        "completion_tokens": 142,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose apply or ignore. Facts: avoid-role pattern targets redundant-specialist. Current plan has 4 specialists including this role. Redistribution preserves coverage true. supporting experience 2, contradictions 0. Should apply removing role and redistributing. Likely apply. Need output JSON exactly one option. Maybe {\"option\":\"apply\"} or {\"choice\":\"apply\"}. Schema not specified. We need strict JSON matching schema? They said output strict JSON. Use {\"option\":\"ap",
+        "reason": "The avoid-role pattern targets the redundant-specialist role, redistribution preserves coverage, and there are supporting experiences with no contradictions."
+      },
+      {
+        "case_id": "D2",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "jev",
+        "expected_choice": "apply",
+        "returned_choice": "apply",
+        "outcome": "correct",
+        "latency_ms": 1554,
+        "cost_usd": 0.0002544,
+        "reasoning_tokens": 121,
+        "prompt_tokens": 224,
+        "completion_tokens": 156,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose apply or ignore. Facts: prefer-role pattern proposes collapsing to single Sole Operator. Current 2 specialists researcher writer. redistribution_preserves_coverage true. supporting_experience_count 3, contradiction_count 0. Likely apply. Need output JSON exactly one option. Maybe {\"option\":\"apply\"} or {\"choice\":\"apply\"}. Schema not specified. We need strict JSON matching schema? They said output strict JSON. Use {\"decision\":\"apply\"}? The options are apply,",
+        "reason": "Pattern is a prefer-role with no contradictions, and redistribution preserves coverage, so collapsing to the proposed Sole Operator is supported."
+      },
+      {
+        "case_id": "D3",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "jev",
+        "expected_choice": "ignore",
+        "returned_choice": null,
+        "outcome": "failure",
+        "error_class": "JevMalformedResponseError",
+        "error_message": "Jev returned malformed response content: JSON.parse failed: Unexpected token 'W', \"We need an\"... is not valid JSON. Content excerpt: We need answer strict JSON. Need choose apply or ignore. Need reason. Pattern avoid-role targets database-engineer. Current plan does NOT include this role. Apply pattern? Avoid-role pattern likely me",
+        "latency_ms": 3810
+      },
+      {
+        "case_id": "D4",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "jev",
+        "expected_choice": "ignore",
+        "returned_choice": "ignore",
+        "outcome": "correct",
+        "latency_ms": 4552,
+        "cost_usd": 0.0002691,
+        "reasoning_tokens": 137,
+        "prompt_tokens": 245,
+        "completion_tokens": 163,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose apply or ignore. Facts: avoid-role pattern targets qa-engineer. Current plan has role. Redistributing needs to remaining specialists would break capability coverage. Apply pattern? If apply avoid-role, likely remove role and redistribute, but redistribution_preserves_coverage false. So ignore to preserve coverage. Supporting experience 2, contradictions 0. But coverage break is critical. Choose ignore. Output JSON exactly one option. Need schema? likely {\"",
+        "reason": "Applying the avoid-role pattern would require redistribution that does not preserve capability coverage."
+      },
+      {
+        "case_id": "D5",
+        "family": "D",
+        "decision_kind": "pattern-apply-vs-ignore",
+        "arm": "jev",
+        "expected_choice": "ignore",
+        "returned_choice": "apply",
+        "outcome": "incorrect",
+        "latency_ms": 2735,
+        "cost_usd": 0.0002766,
+        "reasoning_tokens": 133,
+        "prompt_tokens": 222,
+        "completion_tokens": 175,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose apply or ignore. Facts: prefer-shape pattern not yet implemented proposes hub-and-spoke. current specialists 4 roles a,b,c,d. redistribution preserves coverage true. supporting experience 5, contradictions 0. Likely apply. Need output JSON exactly one option. Maybe {\"option\":\"apply\"} or {\"choice\":\"apply\"}. Schema unspecified. \"Output strict JSON matching schema.\" We need infer. Decision request kind pattern-apply-vs-ignore. Options apply, ignore. Usually o",
+        "reason": "The pattern is a prefer-shape with 5 supporting experiences, no contradictions, and redistribution preserves coverage, so applying the hub-and-spoke shape is justified."
+      },
+      {
+        "case_id": "E1",
+        "family": "E",
+        "decision_kind": "verification-diagnosis",
+        "arm": "jev",
+        "expected_choice": "accept",
+        "returned_choice": "accept",
+        "outcome": "correct",
+        "latency_ms": 1415,
+        "cost_usd": 0.0000996,
+        "reasoning_tokens": 11,
+        "prompt_tokens": 180,
+        "completion_tokens": 38,
+        "reasoning_excerpt": "The failed check count is 0, so accept.",
+        "reason": "All 5 verification checks passed with 0 failures, so no diagnosis is needed."
+      },
+      {
+        "case_id": "E2",
+        "family": "E",
+        "decision_kind": "verification-diagnosis",
+        "arm": "jev",
+        "expected_choice": "review",
+        "returned_choice": "review",
+        "outcome": "correct",
+        "latency_ms": 6793,
+        "cost_usd": 0.0002403,
+        "reasoning_tokens": 117,
+        "prompt_tokens": 201,
+        "completion_tokens": 150,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose accept or review. Facts: 1 failed check file existence report.md missing. Reviewer available. Mission verification completed with 1 failed check. Decide accept or review (call reviewer for diagnosis). Likely review because failed check. Need output JSON exactly one option. Schema? Probably {\"decision\":\"review\"} or {\"choice\":\"review\"}. User says Output JSON. Decision kind. We need infer expected field. They said \"Choose exactly one option from the list abov",
+        "reason": "A required file existence check failed (report.md missing), so the mission should be reviewed for diagnosis rather than accepted."
+      },
+      {
+        "case_id": "E3",
+        "family": "E",
+        "decision_kind": "verification-diagnosis",
+        "arm": "jev",
+        "expected_choice": "review",
+        "returned_choice": "review",
+        "outcome": "correct",
+        "latency_ms": 5524,
+        "cost_usd": 0.0002037,
+        "reasoning_tokens": 82,
+        "prompt_tokens": 203,
+        "completion_tokens": 119,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose accept or review. Facts: verification failed hash-match, 1 of 3 checks failed, reviewer available. Hash mismatch is serious integrity issue. Should review. Output JSON likely {\"decision\":\"review\"} or option. Need match schema? User says output strict JSON matching schema, but no schema provided. Choose exactly one option. I'll output {\"decision\":\"review\"}.",
+        "reason": "A SHA-256 hash mismatch indicates the produced artifact does not match the expected integrity value, so it should be reviewed rather than accepted."
+      },
+      {
+        "case_id": "E4",
+        "family": "E",
+        "decision_kind": "verification-diagnosis",
+        "arm": "jev",
+        "expected_choice": "accept",
+        "returned_choice": null,
+        "outcome": "failure",
+        "error_class": "JevMalformedResponseError",
+        "error_message": "Jev returned malformed response content: JSON.parse failed: Unexpected token 'W', \"We need an\"... is not valid JSON. Content excerpt: We need answer strict JSON. Need choose accept or review. Facts: verification failed 2 checks, no reviewer available. Need decide accept or review. Since failed checks and no reviewer configured. Opti",
+        "latency_ms": 4309
+      },
+      {
+        "case_id": "F1",
+        "family": "F",
+        "decision_kind": "domain-classification",
+        "arm": "jev",
+        "expected_choice": "software-engineering",
+        "returned_choice": "software-engineering",
+        "outcome": "correct",
+        "latency_ms": 3207,
+        "cost_usd": 0.0002244,
+        "reasoning_tokens": 104,
+        "prompt_tokens": 184,
+        "completion_tokens": 141,
+        "reasoning_excerpt": "We need answer strict JSON. Need classify mission domain. Goal build Rust web service REST API todo persistence. Options research, software-engineering, diagnostic, general. Clearly software-engineering. Output JSON likely {\"domain\":\"software-engineering\"} or option? Need schema? User says output strict JSON matching schema, but no schema given. Decision kind domain-classification. We can output {\"choice\":\"software-engineering\"} maybe. Need exactly one option. I'll output {\"domain\":\"software-eng",
+        "reason": "The goal is to build a software system (Rust web service with REST API and persistence), which falls under software engineering."
+      },
+      {
+        "case_id": "F2",
+        "family": "F",
+        "decision_kind": "domain-classification",
+        "arm": "jev",
+        "expected_choice": "research",
+        "returned_choice": "research",
+        "outcome": "correct",
+        "latency_ms": 3934,
+        "cost_usd": 0.0002142,
+        "reasoning_tokens": 104,
+        "prompt_tokens": 182,
+        "completion_tokens": 133,
+        "reasoning_excerpt": "We need answer strict JSON. Need classify. Goal survey academic literature annotated bibliography. Domain research. Output JSON likely {\"domain\":\"research\"} or option? Need schema? They said output strict JSON matching schema, but no schema given. Decision kind domain-classification. Options. Choose exactly one. I'll output {\"choice\":\"research\"} maybe. Need infer expected. Usually these tasks expect {\"domain\":\"research\"}? The question: Classify mission domain. Options. Output JSON. I'll use {\"do",
+        "reason": "The goal is to survey academic literature and produce an annotated bibliography, which is a research activity."
+      },
+      {
+        "case_id": "F3",
+        "family": "F",
+        "decision_kind": "domain-classification",
+        "arm": "jev",
+        "expected_choice": "diagnostic",
+        "returned_choice": "diagnostic",
+        "outcome": "correct",
+        "latency_ms": 4788,
+        "cost_usd": 0.0001986,
+        "reasoning_tokens": 88,
+        "prompt_tokens": 190,
+        "completion_tokens": 118,
+        "reasoning_excerpt": "We need answer strict JSON. Need classify. Goal diagnose why production PostgreSQL slow and propose remediation. Domain likely diagnostic. Options research, software-engineering, diagnostic, general. It's diagnosing issue. Choose diagnostic. Output JSON matching schema? They said output JSON. Need maybe {\"option\":\"diagnostic\"} or {\"choice\":\"diagnostic\"}. Decision request likely expects option. Use exactly one. I'll output {\"option\":\"diagnostic\"}.",
+        "reason": "The goal is to diagnose a production performance issue and propose remediation, which is a diagnostic task."
+      },
+      {
+        "case_id": "F4",
+        "family": "F",
+        "decision_kind": "domain-classification",
+        "arm": "jev",
+        "expected_choice": "general",
+        "returned_choice": "general",
+        "outcome": "correct",
+        "latency_ms": 3205,
+        "cost_usd": 0.0002121,
+        "reasoning_tokens": 94,
+        "prompt_tokens": 187,
+        "completion_tokens": 130,
+        "reasoning_excerpt": "We need answer strict JSON. Need classify mission domain. Goal fundraising gala planning invitations catering silent auction. Options research, software-engineering, diagnostic, general. Not research, not software, not diagnostic. General. Need output JSON likely {\"choice\":\"general\"} or maybe {\"domain\":\"general\"}. Schema? \"Output strict JSON matching schema\" but no schema given. Decision kind domain-classification. We can output {\"choice\":\"general\"}. Ensure exactly one option.",
+        "reason": "Event planning for a fundraising gala does not fit research, software-engineering, or diagnostic domains, so it falls under general."
+      },
+      {
+        "case_id": "F5",
+        "family": "F",
+        "decision_kind": "scope-classification",
+        "arm": "jev",
+        "expected_choice": "minimal",
+        "returned_choice": "minimal",
+        "outcome": "correct",
+        "latency_ms": 2305,
+        "cost_usd": 0.0002211,
+        "reasoning_tokens": 111,
+        "prompt_tokens": 169,
+        "completion_tokens": 142,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose one option. Facts: capability_need_count 1, success_criterion_count 1, outcome_word_count 12, complexity_signals_hit 0. Likely minimal. Need output JSON matching schema? No schema given except choose exactly one option. We can output {\"scope\":\"minimal\"} or {\"option\":\"minimal\"}. Need infer. Decision kind scope-classification. Options minimal, standard, complex. Output strict JSON. I'll output {\"scope\":\"minimal\"}. Ensure exactly one.",
+        "reason": "Single capability need, single success criterion, short outcome, and no complexity signals indicate a minimal scope."
+      },
+      {
+        "case_id": "F6",
+        "family": "F",
+        "decision_kind": "scope-classification",
+        "arm": "jev",
+        "expected_choice": "complex",
+        "returned_choice": "standard",
+        "outcome": "incorrect",
+        "latency_ms": 3518,
+        "cost_usd": 0.0002847,
+        "reasoning_tokens": 168,
+        "prompt_tokens": 169,
+        "completion_tokens": 195,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose one option. Need infer scope classification. Facts: capability_need_count 4, success_criterion_count 5, outcome_word_count 52, complexity_signals_hit 2. Options minimal, standard, complex. Need classify. Likely standard? Let's reason. Capability needs 4, success criteria 5, outcome 52 words, complexity signals 2. Minimal would low counts. Complex high. Standard moderate. 4 capabilities, 5 criteria, 52 words, 2 signals. Could be standard. Need output JSON o",
+        "reason": "Moderate capability and success-criterion counts with two complexity signals indicate a standard scope."
+      }
+    ]
+  },
+  "cases": [
+    {
+      "case_id": "A1",
+      "family": "A",
+      "decision_kind": "coordinator-decision",
+      "expected_choice": "no",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "no",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:386): coordinator iff specialists >= 3; here 2 < 3"
+      },
+      "jev": {
+        "choice": "no",
+        "outcome": "correct",
+        "latency_ms": 4274,
+        "cost_usd": 0.0002424,
+        "reasoning_tokens": 125,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose yes/no. Facts: 2 specialists, sequential handoff, research domain. Coordinator role? For 2 specialists sequential, maybe no need. But question asks should add Mission Coordinator to integrate specialists. Need decide. Typically coordinator useful for multiple specialists, but with only 2 and sequential, overhead not needed. Choose no. Output JSON exactly. Ensure schema? They said output strict JSON matching schema, but no schema provided. Likely {\"decision",
+        "reason": "With only two specialists and a sequential handoff, direct integration is sufficient; adding a coordinator would introduce unnecessary overhead."
+      }
+    },
+    {
+      "case_id": "A2",
+      "family": "A",
+      "decision_kind": "coordinator-decision",
+      "expected_choice": "yes",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "yes",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:386): coordinator iff specialists >= 3; here 3 >= 3"
+      },
+      "jev": {
+        "choice": "yes",
+        "outcome": "correct",
+        "latency_ms": 2402,
+        "cost_usd": 0.0002295,
+        "reasoning_tokens": 114,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose yes/no. Need infer. Mission has 3 specialists, research domain, handoff all-to-documentation. Coordinator role to integrate specialists? Likely yes if multiple specialists and handoff pattern. Need output exactly one option. JSON schema? Not provided but likely {\"decision\":\"yes\"} or {\"choice\":\"yes\"}. We need strict JSON matching schema. Since no schema, use key maybe \"decision\". The question asks choose exactly one option. Output JSON. I'll output {\"decisi",
+        "reason": "Three specialists with an all-to-documentation handoff pattern require coordination to integrate outputs and manage dependencies."
+      }
+    },
+    {
+      "case_id": "A3",
+      "family": "A",
+      "decision_kind": "coordinator-decision",
+      "expected_choice": "no",
+      "ground_truth_method": "semantic_consensus",
+      "rule": {
+        "choice": "yes",
+        "outcome": "incorrect",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:386): coordinator iff specialists >= 3; here 4 >= 3"
+      },
+      "jev": {
+        "choice": "yes",
+        "outcome": "incorrect",
+        "latency_ms": 2225,
+        "cost_usd": 0.0003006,
+        "reasoning_tokens": 170,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose yes/no. Facts: 4 specialists, linear pipeline, software engineering. Coordinator role to integrate specialists? Likely yes if multiple specialists and handoffs. But linear pipeline may not need coordinator? Need decide. The question: Should mission add Mission Coordinator role to integrate specialists? With 4 specialists, likely yes. Output JSON matching schema? No schema provided except choose exactly one option. We can output {\"decision\":\"yes\"} or {\"choi",
+        "reason": "With four specialists in a linear pipeline, a Mission Coordinator can manage handoffs, dependencies, and integration across roles."
+      }
+    },
+    {
+      "case_id": "A4",
+      "family": "A",
+      "decision_kind": "coordinator-decision",
+      "expected_choice": "yes",
+      "ground_truth_method": "semantic_consensus",
+      "rule": {
+        "choice": "yes",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:386): coordinator iff specialists >= 3; here 3 >= 3"
+      },
+      "jev": {
+        "choice": "yes",
+        "outcome": "correct",
+        "latency_ms": 5341,
+        "cost_usd": 0.0002712,
+        "reasoning_tokens": 146,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose yes/no. Facts: 3 specialists, roles web-researcher data-analyst report-writer, mission domain research, handoff pattern fan-in-to-writer. Need decide if add Mission Coordinator role to integrate specialists. Likely yes because multiple specialists and fan-in to writer, coordination useful. Output JSON exactly one option. Need schema? Not specified but likely {\"decision\":\"yes\"} or {\"choice\":\"yes\"}. We need infer. The instruction: \"Output strict JSON matchin",
+        "reason": "Three specialists with a fan-in-to-writer handoff benefit from coordination to sequence research, analysis, and report writing."
+      }
+    },
+    {
+      "case_id": "B1",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "expected_choice": "cheap",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "cheap",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality routine maps to cheap"
+      },
+      "jev": {
+        "choice": "default",
+        "outcome": "incorrect",
+        "latency_ms": 1396,
+        "cost_usd": 0.0002238,
+        "reasoning_tokens": 113,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts routine, research, no budget ceiling. Options cheap default frontier. For web-researcher routine likely default? Need infer. Reasoning tier for role. Criticality routine, budget none. Usually default is balanced. Choose default. Output JSON matching schema? They didn't specify schema except output JSON. Need exactly one option. Could be {\"reasoningTier\":\"default\"} or {\"choice\":\"default\"}. Decision kind reasoning-tier. Likely output {\"",
+        "reason": "Routine criticality with no budget constraint; default tier balances cost and capability for a web-researcher role."
+      }
+    },
+    {
+      "case_id": "B2",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "expected_choice": "default",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "default",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality important maps to default"
+      },
+      "jev": {
+        "choice": "default",
+        "outcome": "correct",
+        "latency_ms": 3496,
+        "cost_usd": 0.0002283,
+        "reasoning_tokens": 122,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts criticality important, budget none. Options cheap default frontier. For backend engineer important, no budget ceiling. Likely default? Need infer. Reasoning tier selection. Criticality important, budget none. Could choose frontier if high criticality? \"important\" not critical. Budget none means no constraint. But default is balanced. Need exactly one. I'll choose default. Output JSON matching schema? They didn't specify schema fields.",
+        "reason": "Important backend engineering work with no budget ceiling; default tier balances capability and cost."
+      }
+    },
+    {
+      "case_id": "B3",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "expected_choice": "frontier",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "frontier",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality mission-critical maps to frontier"
+      },
+      "jev": {
+        "choice": "frontier",
+        "outcome": "correct",
+        "latency_ms": 1327,
+        "cost_usd": 0.0001722,
+        "reasoning_tokens": 74,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts criticality mission-critical, domain software-engineering, budget none. Options cheap default frontier. Likely frontier for mission-critical. Need output JSON matching schema? User says output strict JSON. No schema provided except choose exactly one. We can output {\"choice\":\"frontier\"} maybe. Need ensure exactly one option.",
+        "reason": "Mission-critical software-engineering work with no budget ceiling warrants the highest reasoning tier."
+      }
+    },
+    {
+      "case_id": "B4",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "expected_choice": "default",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "default",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality mission-critical maps to frontier, clamped to default by the mission budget ceiling"
+      },
+      "jev": {
+        "choice": "default",
+        "outcome": "correct",
+        "latency_ms": 3317,
+        "cost_usd": 0.0002199,
+        "reasoning_tokens": 108,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts criticality mission-critical, domain software-engineering, budget default. Options cheap default frontier. Need infer. Mission-critical software engineering, budget default. Likely default? Need exactly one. We need output JSON matching schema? Not specified schema but likely {\"choice\":\"default\"} or {\"option\":\"default\"}. We need decide. Reasoning tier for sole-operator. Criticality mission-critical suggests higher than cheap. Budget c",
+        "reason": "Mission-critical software engineering with a default budget ceiling warrants the balanced default reasoning tier rather than cheap or frontier."
+      }
+    },
+    {
+      "case_id": "B5",
+      "family": "B",
+      "decision_kind": "reasoning-tier",
+      "expected_choice": "cheap",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "cheap",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "criticality important maps to default, clamped to cheap by the mission budget ceiling"
+      },
+      "jev": {
+        "choice": "cheap",
+        "outcome": "correct",
+        "latency_ms": 3090,
+        "cost_usd": 0.0001962,
+        "reasoning_tokens": 97,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose reasoning tier. Facts: criticality important, missionDomain diagnostic, budgetCeiling cheap. Options cheap default frontier. Budget ceiling cheap likely choose cheap. Need output JSON matching schema? No schema provided except output JSON. Probably {\"choice\":\"cheap\"} or maybe {\"reasoningTier\":\"cheap\"}. Decision kind reasoning-tier. We need exactly one option. Use key maybe \"choice\". Let's output {\"choice\":\"cheap\"}.",
+        "reason": "Budget ceiling is cheap, so select the cheap reasoning tier."
+      }
+    },
+    {
+      "case_id": "C1",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "expected_choice": "retry",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "retry",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (orchestrator.ts:684): !ok && !aborted && retryable!==false (got true) -> retry"
+      },
+      "jev": {
+        "choice": "retry",
+        "outcome": "correct",
+        "latency_ms": 3534,
+        "cost_usd": 0.0003147,
+        "reasoning_tokens": 175,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts: verification false, mission not aborted, diagnosis retryable true, root cause artifact not produced, prior success, attempt 1 max 2. So retry. Output JSON matching schema? They didn't specify schema beyond \"Output JSON.\" Likely {\"decision\":\"retry\"} or {\"option\":\"retry\"}. Need infer. Decision kind worker-retry-vs-fail. Options retry, fail. We should output exactly one option. Use JSON. Maybe {\"choice\":\"retry\"}. To be safe, include deci",
+        "reason": "The failure is retryable, the mission is not aborted, and attempts remain (1 of 2)."
+      }
+    },
+    {
+      "case_id": "C2",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "expected_choice": "fail",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (orchestrator.ts:684): diagnosis.retryable=false -> fail"
+      },
+      "jev": {
+        "choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 1631,
+        "cost_usd": 0.0002868,
+        "reasoning_tokens": 146,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts: verification false, mission not aborted, diagnosis_retryable false, root cause semantic misunderstanding, prior none, attempt 1 max 2. Since diagnosis_retryable false, retry likely not useful. But attempt 1 of 2? The decision kind worker-retry-vs-fail. If not retryable, fail. Need output JSON exactly one option. Maybe {\"decision\":\"fail\"}? Schema not specified. We need strict JSON matching schema. Likely {\"choice\":\"fail\"} or {\"option\":",
+        "reason": "diagnosis_retryable is false; the failure is a semantic misunderstanding of the deliverable, so retrying is unlikely to resolve it."
+      }
+    },
+    {
+      "case_id": "C3",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "expected_choice": "retry",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "retry",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (orchestrator.ts:684): !ok && !aborted && retryable!==false (got null) -> retry"
+      },
+      "jev": {
+        "choice": "retry",
+        "outcome": "correct",
+        "latency_ms": 4167,
+        "cost_usd": 0.0002904,
+        "reasoning_tokens": 150,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts: verification_ok false, mission_aborted false, diagnosis_retryable null, root cause null, prior_round_status none, attempt 1, max_attempts 2. Need decide. Since attempt 1 of 2, not aborted, no diagnosis says nonretryable. Likely retry. Output JSON with option. Need schema? \"Output strict JSON matching schema.\" No schema provided. Probably {\"decision\":\"retry\"} or {\"option\":\"retry\"}. We need infer. Decision kind worker-retry-vs-fail. Opt",
+        "reason": "Verification failed on attempt 1 of 2, mission is not aborted, and no non-retryable diagnosis is present; retry is warranted."
+      }
+    },
+    {
+      "case_id": "C4",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "expected_choice": "fail",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (worker-agent.ts:925): attempt 2 >= maxAttempts 2 -> fail"
+      },
+      "jev": {
+        "choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 2252,
+        "cost_usd": 0.0002199,
+        "reasoning_tokens": 113,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts attempt 2 max 2, timeout, verification not ok, mission not aborted. Since max attempts reached, fail worker. Output JSON likely {\"decision\":\"fail\"} or option. Need match schema? User says output strict JSON matching schema, but no schema provided. Decision kind. Choose exactly one option. We can output {\"choice\":\"fail\"}? Need infer. They ask \"Output JSON.\" We should provide JSON with decision. Maybe {\"decision\":\"fail\"}. Ensure exactly ",
+        "reason": "Attempt 2 of 2 timed out; max attempts reached."
+      }
+    },
+    {
+      "case_id": "C5",
+      "family": "C",
+      "decision_kind": "worker-retry-vs-fail",
+      "expected_choice": "fail",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: mission aborted -> fail (orchestrator.ts:684)"
+      },
+      "jev": {
+        "choice": "fail",
+        "outcome": "correct",
+        "latency_ms": 3205,
+        "cost_usd": 0.0001959,
+        "reasoning_tokens": 100,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose retry or fail. Facts mission_aborted true externally. Even if retryable, mission aborted means should fail? Need decide. Worker-retry-vs-fail. If mission aborted externally, retrying likely pointless. Choose fail. Output JSON exactly one option. Need schema? likely {\"choice\":\"fail\"} or {\"decision\":\"fail\"}. User says Output JSON. We can output {\"choice\":\"fail\"}. Ensure exactly one option.",
+        "reason": "mission_aborted"
+      }
+    },
+    {
+      "case_id": "D1",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "expected_choice": "apply",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "apply",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: avoid-role, target \"redundant-specialist\" present, coverage preserved -> apply"
+      },
+      "jev": {
+        "choice": "apply",
+        "outcome": "correct",
+        "latency_ms": 6689,
+        "cost_usd": 0.000174636,
+        "reasoning_tokens": 106,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose apply or ignore. Facts: avoid-role pattern targets redundant-specialist. Current plan has 4 specialists including this role. Redistribution preserves coverage true. supporting experience 2, contradictions 0. Should apply removing role and redistributing. Likely apply. Need output JSON exactly one option. Maybe {\"option\":\"apply\"} or {\"choice\":\"apply\"}. Schema not specified. We need strict JSON matching schema? They said output strict JSON. Use {\"option\":\"ap",
+        "reason": "The avoid-role pattern targets the redundant-specialist role, redistribution preserves coverage, and there are supporting experiences with no contradictions."
+      }
+    },
+    {
+      "case_id": "D2",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "expected_choice": "apply",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "apply",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: prefer-role Sole Operator, 2 > 1 -> collapse"
+      },
+      "jev": {
+        "choice": "apply",
+        "outcome": "correct",
+        "latency_ms": 1554,
+        "cost_usd": 0.0002544,
+        "reasoning_tokens": 121,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose apply or ignore. Facts: prefer-role pattern proposes collapsing to single Sole Operator. Current 2 specialists researcher writer. redistribution_preserves_coverage true. supporting_experience_count 3, contradiction_count 0. Likely apply. Need output JSON exactly one option. Maybe {\"option\":\"apply\"} or {\"choice\":\"apply\"}. Schema not specified. We need strict JSON matching schema? They said output strict JSON. Use {\"decision\":\"apply\"}? The options are apply,",
+        "reason": "Pattern is a prefer-role with no contradictions, and redistribution preserves coverage, so collapsing to the proposed Sole Operator is supported."
+      }
+    },
+    {
+      "case_id": "D3",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "expected_choice": "ignore",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "ignore",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: avoid-role but target \"database-engineer\" not present -> ignore"
+      },
+      "jev": {
+        "choice": null,
+        "outcome": "failure",
+        "latency_ms": 3810,
+        "error_class": "JevMalformedResponseError"
+      }
+    },
+    {
+      "case_id": "D4",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "expected_choice": "ignore",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "ignore",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: avoid-role but redistribution breaks coverage -> ignore"
+      },
+      "jev": {
+        "choice": "ignore",
+        "outcome": "correct",
+        "latency_ms": 4552,
+        "cost_usd": 0.0002691,
+        "reasoning_tokens": 137,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose apply or ignore. Facts: avoid-role pattern targets qa-engineer. Current plan has role. Redistributing needs to remaining specialists would break capability coverage. Apply pattern? If apply avoid-role, likely remove role and redistribute, but redistribution_preserves_coverage false. So ignore to preserve coverage. Supporting experience 2, contradictions 0. But coverage break is critical. Choose ignore. Output JSON exactly one option. Need schema? likely {\"",
+        "reason": "Applying the avoid-role pattern would require redistribution that does not preserve capability coverage."
+      }
+    },
+    {
+      "case_id": "D5",
+      "family": "D",
+      "decision_kind": "pattern-apply-vs-ignore",
+      "expected_choice": "ignore",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "ignore",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: pattern kind \"prefer-shape\" not implemented -> ignore"
+      },
+      "jev": {
+        "choice": "apply",
+        "outcome": "incorrect",
+        "latency_ms": 2735,
+        "cost_usd": 0.0002766,
+        "reasoning_tokens": 133,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose apply or ignore. Facts: prefer-shape pattern not yet implemented proposes hub-and-spoke. current specialists 4 roles a,b,c,d. redistribution preserves coverage true. supporting experience 5, contradictions 0. Likely apply. Need output JSON exactly one option. Maybe {\"option\":\"apply\"} or {\"choice\":\"apply\"}. Schema unspecified. \"Output strict JSON matching schema.\" We need infer. Decision request kind pattern-apply-vs-ignore. Options apply, ignore. Usually o",
+        "reason": "The pattern is a prefer-shape with 5 supporting experiences, no contradictions, and redistribution preserves coverage, so applying the hub-and-spoke shape is justified."
+      }
+    },
+    {
+      "case_id": "E1",
+      "family": "E",
+      "decision_kind": "verification-diagnosis",
+      "expected_choice": "accept",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "accept",
+        "outcome": "correct",
+        "latency_ms": 1,
+        "reason": "Genesis rule: 0 failed checks -> ok=true -> accept"
+      },
+      "jev": {
+        "choice": "accept",
+        "outcome": "correct",
+        "latency_ms": 1415,
+        "cost_usd": 0.0000996,
+        "reasoning_tokens": 11,
+        "reasoning_excerpt": "The failed check count is 0, so accept.",
+        "reason": "All 5 verification checks passed with 0 failures, so no diagnosis is needed."
+      }
+    },
+    {
+      "case_id": "E2",
+      "family": "E",
+      "decision_kind": "verification-diagnosis",
+      "expected_choice": "review",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "review",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: 1 failed checks && reviewer available -> review"
+      },
+      "jev": {
+        "choice": "review",
+        "outcome": "correct",
+        "latency_ms": 6793,
+        "cost_usd": 0.0002403,
+        "reasoning_tokens": 117,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose accept or review. Facts: 1 failed check file existence report.md missing. Reviewer available. Mission verification completed with 1 failed check. Decide accept or review (call reviewer for diagnosis). Likely review because failed check. Need output JSON exactly one option. Schema? Probably {\"decision\":\"review\"} or {\"choice\":\"review\"}. User says Output JSON. Decision kind. We need infer expected field. They said \"Choose exactly one option from the list abov",
+        "reason": "A required file existence check failed (report.md missing), so the mission should be reviewed for diagnosis rather than accepted."
+      }
+    },
+    {
+      "case_id": "E3",
+      "family": "E",
+      "decision_kind": "verification-diagnosis",
+      "expected_choice": "review",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "review",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: 1 failed checks && reviewer available -> review"
+      },
+      "jev": {
+        "choice": "review",
+        "outcome": "correct",
+        "latency_ms": 5524,
+        "cost_usd": 0.0002037,
+        "reasoning_tokens": 82,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose accept or review. Facts: verification failed hash-match, 1 of 3 checks failed, reviewer available. Hash mismatch is serious integrity issue. Should review. Output JSON likely {\"decision\":\"review\"} or option. Need match schema? User says output strict JSON matching schema, but no schema provided. Choose exactly one option. I'll output {\"decision\":\"review\"}.",
+        "reason": "A SHA-256 hash mismatch indicates the produced artifact does not match the expected integrity value, so it should be reviewed rather than accepted."
+      }
+    },
+    {
+      "case_id": "E4",
+      "family": "E",
+      "decision_kind": "verification-diagnosis",
+      "expected_choice": "accept",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "accept",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule: !ok but no reviewer -> accept the verification result (!ok)"
+      },
+      "jev": {
+        "choice": null,
+        "outcome": "failure",
+        "latency_ms": 4309,
+        "error_class": "JevMalformedResponseError"
+      }
+    },
+    {
+      "case_id": "F1",
+      "family": "F",
+      "decision_kind": "domain-classification",
+      "expected_choice": "software-engineering",
+      "ground_truth_method": "semantic_consensus",
+      "rule": {
+        "choice": "software-engineering",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (goal-compiler.ts:206): word-signal scores {\"software-engineering\":6,\"research\":0,\"diagnostic\":0} -> software-engineering"
+      },
+      "jev": {
+        "choice": "software-engineering",
+        "outcome": "correct",
+        "latency_ms": 3207,
+        "cost_usd": 0.0002244,
+        "reasoning_tokens": 104,
+        "reasoning_excerpt": "We need answer strict JSON. Need classify mission domain. Goal build Rust web service REST API todo persistence. Options research, software-engineering, diagnostic, general. Clearly software-engineering. Output JSON likely {\"domain\":\"software-engineering\"} or option? Need schema? User says output strict JSON matching schema, but no schema given. Decision kind domain-classification. We can output {\"choice\":\"software-engineering\"} maybe. Need exactly one option. I'll output {\"domain\":\"software-eng",
+        "reason": "The goal is to build a software system (Rust web service with REST API and persistence), which falls under software engineering."
+      }
+    },
+    {
+      "case_id": "F2",
+      "family": "F",
+      "decision_kind": "domain-classification",
+      "expected_choice": "research",
+      "ground_truth_method": "semantic_consensus",
+      "rule": {
+        "choice": "research",
+        "outcome": "correct",
+        "latency_ms": 1,
+        "reason": "Genesis rule (goal-compiler.ts:206): word-signal scores {\"software-engineering\":0,\"research\":6,\"diagnostic\":0} -> research"
+      },
+      "jev": {
+        "choice": "research",
+        "outcome": "correct",
+        "latency_ms": 3934,
+        "cost_usd": 0.0002142,
+        "reasoning_tokens": 104,
+        "reasoning_excerpt": "We need answer strict JSON. Need classify. Goal survey academic literature annotated bibliography. Domain research. Output JSON likely {\"domain\":\"research\"} or option? Need schema? They said output strict JSON matching schema, but no schema given. Decision kind domain-classification. Options. Choose exactly one. I'll output {\"choice\":\"research\"} maybe. Need infer expected. Usually these tasks expect {\"domain\":\"research\"}? The question: Classify mission domain. Options. Output JSON. I'll use {\"do",
+        "reason": "The goal is to survey academic literature and produce an annotated bibliography, which is a research activity."
+      }
+    },
+    {
+      "case_id": "F3",
+      "family": "F",
+      "decision_kind": "domain-classification",
+      "expected_choice": "diagnostic",
+      "ground_truth_method": "semantic_consensus",
+      "rule": {
+        "choice": "diagnostic",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (goal-compiler.ts:206): word-signal scores {\"software-engineering\":0,\"research\":0,\"diagnostic\":3} -> diagnostic"
+      },
+      "jev": {
+        "choice": "diagnostic",
+        "outcome": "correct",
+        "latency_ms": 4788,
+        "cost_usd": 0.0001986,
+        "reasoning_tokens": 88,
+        "reasoning_excerpt": "We need answer strict JSON. Need classify. Goal diagnose why production PostgreSQL slow and propose remediation. Domain likely diagnostic. Options research, software-engineering, diagnostic, general. It's diagnosing issue. Choose diagnostic. Output JSON matching schema? They said output JSON. Need maybe {\"option\":\"diagnostic\"} or {\"choice\":\"diagnostic\"}. Decision request likely expects option. Use exactly one. I'll output {\"option\":\"diagnostic\"}.",
+        "reason": "The goal is to diagnose a production performance issue and propose remediation, which is a diagnostic task."
+      }
+    },
+    {
+      "case_id": "F4",
+      "family": "F",
+      "decision_kind": "domain-classification",
+      "expected_choice": "general",
+      "ground_truth_method": "semantic_consensus",
+      "rule": {
+        "choice": "general",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (goal-compiler.ts:206): word-signal scores {\"software-engineering\":0,\"research\":0,\"diagnostic\":0} -> general"
+      },
+      "jev": {
+        "choice": "general",
+        "outcome": "correct",
+        "latency_ms": 3205,
+        "cost_usd": 0.0002121,
+        "reasoning_tokens": 94,
+        "reasoning_excerpt": "We need answer strict JSON. Need classify mission domain. Goal fundraising gala planning invitations catering silent auction. Options research, software-engineering, diagnostic, general. Not research, not software, not diagnostic. General. Need output JSON likely {\"choice\":\"general\"} or maybe {\"domain\":\"general\"}. Schema? \"Output strict JSON matching schema\" but no schema given. Decision kind domain-classification. We can output {\"choice\":\"general\"}. Ensure exactly one option.",
+        "reason": "Event planning for a fundraising gala does not fit research, software-engineering, or diagnostic domains, so it falls under general."
+      }
+    },
+    {
+      "case_id": "F5",
+      "family": "F",
+      "decision_kind": "scope-classification",
+      "expected_choice": "minimal",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "minimal",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:157): score=0 -> minimal"
+      },
+      "jev": {
+        "choice": "minimal",
+        "outcome": "correct",
+        "latency_ms": 2305,
+        "cost_usd": 0.0002211,
+        "reasoning_tokens": 111,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose one option. Facts: capability_need_count 1, success_criterion_count 1, outcome_word_count 12, complexity_signals_hit 0. Likely minimal. Need output JSON matching schema? No schema given except choose exactly one option. We can output {\"scope\":\"minimal\"} or {\"option\":\"minimal\"}. Need infer. Decision kind scope-classification. Options minimal, standard, complex. Output strict JSON. I'll output {\"scope\":\"minimal\"}. Ensure exactly one.",
+        "reason": "Single capability need, single success criterion, short outcome, and no complexity signals indicate a minimal scope."
+      }
+    },
+    {
+      "case_id": "F6",
+      "family": "F",
+      "decision_kind": "scope-classification",
+      "expected_choice": "complex",
+      "ground_truth_method": "genesis_rule_baseline",
+      "rule": {
+        "choice": "complex",
+        "outcome": "correct",
+        "latency_ms": 0,
+        "reason": "Genesis rule (organization-planner.ts:157): score=7 -> complex"
+      },
+      "jev": {
+        "choice": "standard",
+        "outcome": "incorrect",
+        "latency_ms": 3518,
+        "cost_usd": 0.0002847,
+        "reasoning_tokens": 168,
+        "reasoning_excerpt": "We need answer strict JSON. Need choose one option. Need infer scope classification. Facts: capability_need_count 4, success_criterion_count 5, outcome_word_count 52, complexity_signals_hit 2. Options minimal, standard, complex. Need classify. Likely standard? Let's reason. Capability needs 4, success criteria 5, outcome 52 words, complexity signals 2. Minimal would low counts. Complex high. Standard moderate. 4 capabilities, 5 criteria, 52 words, 2 signals. Could be standard. Need output JSON o",
+        "reason": "Moderate capability and success-criterion counts with two complexity signals indicate a standard scope."
+      }
+    }
+  ]
+}

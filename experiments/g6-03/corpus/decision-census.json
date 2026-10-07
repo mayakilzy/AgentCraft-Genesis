@@ -1,0 +1,59 @@
+{
+  "schema_version": "g6-03-census-v1",
+  "frozen_at": "2026-10-07T16:48:00Z",
+  "total_decision_points": 33,
+  "classification": {
+    "DETERMINISTIC": 17,
+    "BOUNDED_PROBABILISTIC": 13,
+    "OPEN_SEMANTIC": 2,
+    "UNSUITABLE_FOR_BENCHMARK": 0
+  },
+  "statistical_arm_finding": "NOT_MATERIAL",
+  "statistical_arm_evidence": [
+    "DecisionProvider contract accommodates a statistical arm (src/contracts/core.ts:403-404), but no implementation exists.",
+    "Repo-wide search for StatisticalDecisionProvider|HeuristicDecisionProvider|ProbabilisticDecisionProvider returns ZERO matches.",
+    "Repo-wide search for implements DecisionProvider|: DecisionProvider returns exactly TWO providers: RuleDecisionProvider and LLMDecisionProvider.",
+    "StatisticalCandidateGenerator (src/learning/candidate-generator.ts:116) does NOT implement DecisionProvider and is a deterministic set-intersection computation (per its own docstring: 'identical experiences always produce identical candidates').",
+    "Jev is referenced in 4 places (decision-provider.ts:17-20, core.ts:403, cognitive-router.ts:12, learning/candidate.ts:8) but DELIBERATELY has no implementation and no interface file."
+  ],
+  "decisions": [
+    {"id": "D01", "name": "tier_selection", "location": "src/routing/cognitive-router.ts:23-37 + src/routing/decision-provider.ts:60-115", "mechanism": "rule/llm", "classification": "DETERMINISTIC", "probabilistic_value": "LOW"},
+    {"id": "D02", "name": "criticality_classification", "location": "src/genome/genome-compiler.ts:183-196", "mechanism": "rule", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "MEDIUM"},
+    {"id": "D03", "name": "capability_gap_vs_grant", "location": "src/genome/genome-compiler.ts:228-249", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D04", "name": "domain_classification", "location": "src/goal/goal-compiler.ts:206-219", "mechanism": "statistical", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "HIGH"},
+    {"id": "D05", "name": "capability_need_extraction", "location": "src/goal/goal-compiler.ts:221-229", "mechanism": "rule/llm", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "HIGH"},
+    {"id": "D06", "name": "scope_classification", "location": "src/organization/organization-planner.ts:157-179", "mechanism": "rule", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "MEDIUM"},
+    {"id": "D07", "name": "role_template_selection", "location": "src/organization/organization-planner.ts:181-205", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "LOW"},
+    {"id": "D08", "name": "worker_count_clamp_merge", "location": "src/organization/organization-planner.ts:212-255", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D09", "name": "coordinator_decision", "location": "src/organization/organization-planner.ts:386-400", "mechanism": "rule", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "MEDIUM"},
+    {"id": "D10", "name": "pattern_apply_vs_ignore", "location": "src/organization/organization-planner.ts:373-379 + 497-582", "mechanism": "rule", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "MEDIUM"},
+    {"id": "D11", "name": "pattern_retrieval_filter", "location": "src/organization/organization-planner.ts:452-470 + src/learning/pattern.ts:124-150", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D12", "name": "mission_status", "location": "src/mission/orchestrator.ts:772-796", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D13", "name": "worker_retry_vs_fail", "location": "src/mission/orchestrator.ts:684-757", "mechanism": "hybrid", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "HIGH"},
+    {"id": "D14", "name": "retry_failure_vs_prior_success", "location": "src/mission/orchestrator.ts:733-742", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D15", "name": "action_parse", "location": "src/worker/worker-agent.ts:369-384 + 757-774", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D16", "name": "grant_vs_refusal", "location": "src/worker/worker-agent.ts:386-433", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D17", "name": "anti_degenerate_loop", "location": "src/worker/worker-agent.ts:808-833", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D18", "name": "step_budget_exhaustion", "location": "src/worker/worker-agent.ts:710-851", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D19", "name": "worker_success_vs_failure", "location": "src/worker/worker-agent.ts:863-902", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D20", "name": "reasoning_retry_vs_fail", "location": "src/worker/worker-agent.ts:925-965", "mechanism": "rule", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "MEDIUM"},
+    {"id": "D21", "name": "failure_classification", "location": "src/mission/failure-class.ts:70-138", "mechanism": "rule", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "HIGH"},
+    {"id": "D22", "name": "is_retryable", "location": "src/mission/failure-class.ts:161-177", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "LOW"},
+    {"id": "D23", "name": "check_pass_vs_fail", "location": "src/mission/verification.ts:240-294 + 296-537", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D24", "name": "verification_overall_outcome", "location": "src/mission/verification.ts:275-294", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D25", "name": "verification_diagnosis", "location": "src/mission/verification.ts:287-293 + 540-565", "mechanism": "llm", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "HIGH"},
+    {"id": "D26", "name": "invoke_reviewer_or_not", "location": "src/mission/verification.ts:287", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D27", "name": "merge_vs_conflict", "location": "src/work/integration-manager.ts:91-130", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D28", "name": "integration_stop_vs_continue", "location": "src/work/integration-manager.ts:97-113", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "LOW"},
+    {"id": "D29", "name": "candidate_generation_signal", "location": "src/learning/candidate-generator.ts:124-149 + 160-209 + 217-268", "mechanism": "statistical", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "MEDIUM"},
+    {"id": "D30", "name": "candidate_evaluation", "location": "src/learning/evaluation.ts:103-202", "mechanism": "rule", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "MEDIUM"},
+    {"id": "D31", "name": "candidate_contradiction", "location": "src/learning/evaluation.ts:213-251", "mechanism": "rule", "classification": "DETERMINISTIC", "probabilistic_value": "NEGLIGIBLE"},
+    {"id": "D32", "name": "variant_promotion", "location": "src/learning/evolution.ts:175-210", "mechanism": "rule", "classification": "BOUNDED_PROBABILISTIC", "probabilistic_value": "MEDIUM"},
+    {"id": "D33", "name": "decision_provider_selection", "location": "src/work/repo-mission.ts:117", "mechanism": "deployer_choice", "classification": "DETERMINISTIC", "probabilistic_value": "LOW"}
+  ],
+  "open_semantic_surfaces_excluded_from_corpus": [
+    "Worker action selection (src/worker/worker-agent.ts:715-755) — each step is open-ended LLM action picking, not a bounded decision among a fixed option set.",
+    "Coordinator integration summary (src/mission/orchestrator.ts:540-569) — open-semantic prose generation, not a bounded decision."
+  ],
+  "highest_value_targets_for_benchmark": ["D04", "D05", "D21", "D25"]
+}

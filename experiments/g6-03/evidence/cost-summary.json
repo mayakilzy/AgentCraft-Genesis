@@ -1,0 +1,9 @@
+{
+  "total_jev_calls": 34,
+  "successful_jev_calls": 27,
+  "failed_jev_calls": 2,
+  "total_jev_cost_usd": 0.00738187,
+  "cost_source": "OBSERVED",
+  "avg_cost_per_call_usd": 0.00021711,
+  "cost_limit_exceeded": "NO"
+}

@@ -1,0 +1,8 @@
+{
+  "jev_avg_ms": 3448.103448275862,
+  "jev_min_ms": 1327,
+  "jev_max_ms": 6793,
+  "rule_avg_ms": 0.06896551724137931,
+  "rule_min_ms": 0,
+  "rule_max_ms": 1
+}
