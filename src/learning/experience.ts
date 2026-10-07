@@ -378,12 +378,8 @@ const NEED_KIND_TO_DOMAIN: Readonly<Record<string, string>> = {
   'shell-execution': 'shell-execution',
   browser: 'browser-chromium',
   'workspace-files': 'workspace-files',
-  // PHASE 4.6: collaborative-workspace is resolved by the OpenDots adapter.
-  // The tool grant is `opendots:collaborative-workspace` (added by the
-  // GenomeCompiler when extraOperationalNeeds declares it). The provider
-  // is extracted from the grant prefix.
   'collaborative-workspace': 'collaborative-workspace',
-  // Phase 4.7 will add: 'durable-delegation': 'durable-delegation'
+  'durable-delegation': 'durable-delegation',
 };
 
 function resolveNeeds(genome: WorkerGenome): ResolvedNeed[] {

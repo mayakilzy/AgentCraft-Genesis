@@ -553,7 +553,7 @@ export class MissionOrchestrator {
       // surfaces (workspace, future job). These are trusted because the runtime
       // is the trust authority — a WorkspaceHandle only exists if the adapter
       // actually created/observed the Space+Page.
-      const observedDeliverables = this.collectObservedDeliverables(ensured);
+      const observedDeliverables = await this.collectObservedDeliverables(ensured);
       const hasDeliverable = finalArtifacts.length > 0 || observedDeliverables.length > 0;
       // Include observed deliverables in final evidence for the Experience record.
       finalEvidence.push(...observedDeliverables);
@@ -658,25 +658,24 @@ export class MissionOrchestrator {
   }
 
   /**
-   * PHASE 4.6a. Collects provider-OBSERVED deliverable evidence from non-
-   * computer surfaces (workspace, future job). This is the provider-neutral
+   * PHASE 4.6a / 4.7. Collects provider-OBSERVED deliverable evidence from
+   * non-computer surfaces (workspace, job). This is the provider-neutral
    * completion criterion: a deliverable exists if EITHER computer-file
    * artifacts (confirmed by readFile) OR provider-observed surface results
    * exist.
    *
    * TRUST MODEL: the runtime is the trust authority, not the worker. A
    * WorkspaceHandle only exists if the adapter actually created/observed the
-   * Space+Page (it throws on failure). Worker self-assertion cannot produce
-   * a handle — only the provider can. This preserves the distinction between
-   * "worker claimed" and "provider observed."
+   * Space+Page (it throws on failure). A JobHandle only exists if the adapter
+   * created a durable task — BUT handle existence does NOT mean the task
+   * succeeded. The method polls the job's status and only produces deliverable
+   * evidence when `status === 'succeeded'` AND `result !== undefined`.
    *
-   * Provider-neutral: reads `surfaces(handle)`, not OpenDots-specific code.
-   * The orchestrator knows about `workspace` (a Phase 4.6 contract), not
-   * about OpenDots.
+   * PHASE 4.7 §12: JOB EXISTS ≠ JOB SUCCEEDED ≠ DELIVERABLE EXISTS.
    */
-  private collectObservedDeliverables(
+  private async collectObservedDeliverables(
     ensured: readonly { handle: RuntimeHandle; genome: WorkerGenome }[],
-  ): Evidence[] {
+  ): Promise<Evidence[]> {
     const deliverables: Evidence[] = [];
     for (const { handle } of ensured) {
       const surfaces = this.options.runtime.surfaces(handle);
@@ -690,7 +689,26 @@ export class MissionOrchestrator {
           location: `${wsHandle.provider}:${wsHandle.spaceId}:${wsHandle.pageId}`,
         });
       }
-      // Phase 4.7 will add: if (surfaces.job?.handle !== undefined) { ... }
+      // PHASE 4.7: job surface — handle existence is NOT sufficient.
+      // Must poll status and only count as deliverable when succeeded + result.
+      if (surfaces.job !== undefined) {
+        try {
+          const status = await surfaces.job.getStatus();
+          if (status === 'succeeded') {
+            const result = await surfaces.job.getResult();
+            if (result !== undefined) {
+              deliverables.push({
+                kind: 'artifact',
+                description: `${handle.workerId} durable delegated result`,
+                location: `${surfaces.job.handle.provider}:${surfaces.job.handle.taskId}`,
+              });
+            }
+          }
+        } catch {
+          // If the job status poll fails (provider unreachable), do NOT
+          // produce deliverable evidence. Honest failure.
+        }
+      }
     }
     return deliverables;
   }

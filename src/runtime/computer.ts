@@ -148,7 +148,73 @@ export interface WorkerSurfaces {
   readonly computer?: WorkerComputer;
   /** PHASE 4.6: collaborative workspace surface (OpenDots adapter). */
   readonly workspace?: WorkspaceSurface;
-  // Phase 4.7 will add: readonly job?: JobSurface;
+  /** PHASE 4.7: durable delegated work surface (OpenMuse adapter). */
+  readonly job?: JobSurface;
+}
+
+// ---------------------------------------------------------------------------
+// PHASE 4.7 — Durable work surface (OpenMuse)
+// ---------------------------------------------------------------------------
+
+/**
+ * PHASE 4.7. Provider-neutral durable task status. Mirrors the terminal and
+ * near-terminal states a durable task can be in, without exposing upstream-
+ * specific state names. The adapter maps upstream states to these.
+ */
+export type JobStatus =
+  | 'queued'
+  | 'running'
+  | 'succeeded'
+  | 'failed'
+  | 'cancelled'
+  | 'paused';
+
+/** The terminal states — no further state transitions are expected. */
+export const TERMINAL_JOB_STATES: ReadonlySet<JobStatus> = new Set([
+  'succeeded',
+  'failed',
+  'cancelled',
+]);
+
+/**
+ * PHASE 4.7. A handle to a durable delegated task. Obtained from
+ * {@link JobSurface} when a worker's genome declares the `durable-delegation`
+ * operational need. The handle carries the task identity; the surface carries
+ * the current status and result.
+ *
+ * Provider-neutral: `provider` names who realized the task; `taskId` is the
+ * provider-specific identifier. Neither leaks into WorkerGenome.
+ */
+export interface JobHandle {
+  /** Provider that realized this durable task ('openmuse', future providers). */
+  readonly provider: string;
+  /** Provider-specific task identifier. */
+  readonly taskId: string;
+}
+
+/**
+ * PHASE 4.7. The durable work surface. Allows a worker (or the orchestrator)
+ * to inspect the status and result of a durable delegated task. The task is
+ * created by the adapter during `ensureJob`; the surface exposes its lifecycle.
+ *
+ * CRITICAL SEMANTIC (Phase 4.7 §12): JobHandle existence does NOT mean the
+ * job succeeded. Completion may only recognize a durable deliverable when
+ * `getStatus()` returns `'succeeded'` AND `getResult()` returns a non-empty
+ * string. A queued/running/failed/cancelled task does NOT satisfy completion.
+ *
+ * Minimal: getStatus, getResult, cancel. No checkpoint inspection, no lease
+ * management, no plan exposure — those are OpenMuse internals. Genesis
+ * observes the task's terminal state and result.
+ */
+export interface JobSurface {
+  /** The handle identifying this durable task. */
+  readonly handle: JobHandle;
+  /** Current task status (polled from the provider on each call). */
+  getStatus(): Promise<JobStatus>;
+  /** The task result string, when status is 'succeeded'. Undefined otherwise. */
+  getResult(): Promise<string | undefined>;
+  /** Request cancellation of the task. Best-effort. */
+  cancel(): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------

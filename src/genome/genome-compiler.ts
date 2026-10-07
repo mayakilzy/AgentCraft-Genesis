@@ -281,6 +281,10 @@ export class GenomeCompiler {
         if (need.kind === 'collaborative-workspace') {
           grants.add('opendots:collaborative-workspace');
         }
+        // PHASE 4.7: add the provider grant for durable-delegation.
+        if (need.kind === 'durable-delegation') {
+          grants.add('openmuse:durable-delegation');
+        }
       }
     }
 

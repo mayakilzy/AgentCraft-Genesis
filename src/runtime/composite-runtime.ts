@@ -20,12 +20,14 @@ import type {
   WorkerGenome,
 } from '../contracts/core.js';
 import type {
+  JobSurface,
   WorkerComputer,
   WorkerRuntime,
   WorkerSurfaces,
   WorkspaceSurface,
 } from './computer.js';
 import type { OpenDotsWorkspaceAdapter } from './opendots/adapter.js';
+import type { OpenMuseAdapter } from './openmuse/adapter.js';
 
 export interface CompositeRuntimeOptions {
   /**
@@ -41,6 +43,12 @@ export interface CompositeRuntimeOptions {
    * behavior).
    */
   readonly workspace?: OpenDotsWorkspaceAdapter;
+  /**
+   * PHASE 4.7. The durable work adapter (OpenMuse). Provides the `job`
+   * surface for workers whose genome declares `durable-delegation`.
+   * Optional — when absent, no worker gets a job surface.
+   */
+  readonly job?: OpenMuseAdapter;
 }
 
 /**
@@ -52,6 +60,7 @@ interface CompositeEntry {
   readonly workerId: string;
   readonly computerHandle: RuntimeHandle | null;
   readonly workspaceSurface: WorkspaceSurface | null;
+  readonly jobSurface: JobSurface | null;
 }
 
 /**
@@ -68,11 +77,13 @@ export class CompositeRuntime implements WorkerRuntime {
   readonly name = 'composite-runtime-v0.1';
   private readonly computerRuntime: WorkerRuntime;
   private readonly workspaceAdapter: OpenDotsWorkspaceAdapter | undefined;
+  private readonly jobAdapter: OpenMuseAdapter | undefined;
   private readonly entries = new Map<string, CompositeEntry>();
 
   constructor(options: CompositeRuntimeOptions) {
     this.computerRuntime = options.computer;
     this.workspaceAdapter = options.workspace;
+    this.jobAdapter = options.job;
   }
 
   async ensureWorker(genome: WorkerGenome): Promise<RuntimeHandle> {
@@ -84,6 +95,8 @@ export class CompositeRuntime implements WorkerRuntime {
     const needsComputer = genome.computer.required;
     const needsWorkspace =
       needKinds.has('collaborative-workspace') && this.workspaceAdapter !== undefined;
+    const needsJob =
+      needKinds.has('durable-delegation') && this.jobAdapter !== undefined;
 
     // Ensure the computer handle (when needed).
     let computerHandle: RuntimeHandle | null = null;
@@ -97,15 +110,23 @@ export class CompositeRuntime implements WorkerRuntime {
       workspaceSurface = await this.workspaceAdapter!.ensureWorkspace(workerId);
     }
 
+    // Ensure the job surface (when needed).
+    let jobSurface: JobSurface | null = null;
+    if (needsJob) {
+      jobSurface = await this.jobAdapter!.ensureJob(workerId);
+    }
+
     // The composite handle's `ref` encodes which surfaces are present.
     const computerRef = computerHandle?.ref ?? 'none';
     const workspaceRef = workspaceSurface !== null ? 'workspace' : 'none';
-    const ref = `composite:${workerId}:${computerRef}:${workspaceRef}`;
+    const jobRef = jobSurface !== null ? 'job' : 'none';
+    const ref = `composite:${workerId}:${computerRef}:${workspaceRef}:${jobRef}`;
 
     this.entries.set(workerId, {
       workerId,
       computerHandle,
       workspaceSurface,
+      jobSurface,
     });
 
     return { workerId, ref };
@@ -134,6 +155,9 @@ export class CompositeRuntime implements WorkerRuntime {
       ...(entry.workspaceSurface !== null
         ? { workspace: entry.workspaceSurface }
         : {}),
+      ...(entry.jobSurface !== null
+        ? { job: entry.jobSurface }
+        : {}),
     };
   }
 
@@ -154,6 +178,13 @@ export class CompositeRuntime implements WorkerRuntime {
         await this.workspaceAdapter.releaseWorkspace(handle.workerId);
       } catch {
         // best-effort
+      }
+    }
+    if (entry.jobSurface !== null && this.jobAdapter !== undefined) {
+      try {
+        await this.jobAdapter.releaseJob(handle.workerId);
+      } catch {
+        // best-effort — the task persists on OpenMuse regardless
       }
     }
     this.entries.delete(handle.workerId);
