@@ -1,0 +1,56 @@
+{
+  "phase": "B",
+  "timestamp": "2026-10-07T12:09:58.040Z",
+  "baseline": {
+    "arm": "baseline",
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ],
+    "workerCount": 2,
+    "roles": [
+      "Web Researcher",
+      "Report Writer"
+    ],
+    "reasoningCalls": 3,
+    "toolCalls": 2,
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "status": "success",
+    "patternsApplied": []
+  },
+  "learned": {
+    "arm": "learned",
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ],
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "reasoningCalls": 3,
+    "toolCalls": 2,
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "status": "success",
+    "patternsApplied": [
+      {
+        "patternId": "cand-research-document-authoring-prefer-sole-operator",
+        "effect": "collapsed 2 specialists to a single Sole Operator per prefer-role pattern; 2 capability need(s) consolidated"
+      }
+    ]
+  },
+  "deltas": {
+    "workerDelta": -1,
+    "reasoningDelta": 0,
+    "toolCallDelta": 0,
+    "correctnessPreserved": true
+  },
+  "measuredImpact": "BENEFICIAL",
+  "why": "Learned organization preserved correctness while reducing workers/reasoning."
+}

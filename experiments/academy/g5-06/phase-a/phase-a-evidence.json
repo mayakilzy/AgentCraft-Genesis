@@ -1,0 +1,88 @@
+{
+  "phase": "A",
+  "timestamp": "2026-10-07T12:08:50.053Z",
+  "selectedPattern": {
+    "id": "cand-research-document-authoring-prefer-sole-operator",
+    "applicableContext": {
+      "domain": "research",
+      "capabilityNeeds": [
+        "document-authoring"
+      ]
+    },
+    "proposedEffect": {
+      "kind": "prefer-role",
+      "description": "Prefer Sole Operator for research+document-authoring",
+      "targetRole": "Sole Operator"
+    }
+  },
+  "baseline": {
+    "arm": "baseline",
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ],
+    "workerCount": 2,
+    "roles": [
+      "Web Researcher",
+      "Report Writer"
+    ],
+    "reasoningCalls": 3,
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "status": "success",
+    "patternsConsidered": [],
+    "patternsApplied": [],
+    "patternsAppliedFlag": false,
+    "planRationale": "Scope \"standard\" in domain \"research\" with 2 capability needs. Planned 2 specialist role(s): Web Researcher [web-research], Report Writer [document-authoring]. No coordinator: fewer than 3 specialists."
+  },
+  "learned": {
+    "arm": "learned",
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ],
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "reasoningCalls": 3,
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "status": "success",
+    "patternsConsidered": [
+      "cand-research-document-authoring-prefer-sole-operator"
+    ],
+    "patternsApplied": [
+      {
+        "patternId": "cand-research-document-authoring-prefer-sole-operator",
+        "effect": "collapsed 2 specialists to a single Sole Operator per prefer-role pattern; 2 capability need(s) consolidated"
+      }
+    ],
+    "patternsAppliedFlag": true,
+    "planRationale": "Scope \"standard\" in domain \"research\" with 2 capability needs. Planned 1 specialist role(s): Sole Operator [web-research, document-authoring]. No coordinator: fewer than 3 specialists. Applied 1 promoted pattern(s): cand-research-document-authoring-prefer-sole-operator (collapsed 2 specialists to a single Sole Operator per prefer-role pattern; 2 capability need(s) consolidated)."
+  },
+  "causalityGate": true,
+  "checks": {
+    "patternRetrieved": true,
+    "patternApplied": true,
+    "orgChanged": true,
+    "causalAttribution": true,
+    "correctnessPreserved": true,
+    "noContamination": true
+  },
+  "organizationalDifference": {
+    "workerDelta": -1,
+    "roleDifference": true,
+    "baselineRoles": [
+      "Web Researcher",
+      "Report Writer"
+    ],
+    "learnedRoles": [
+      "Sole Operator"
+    ]
+  }
+}

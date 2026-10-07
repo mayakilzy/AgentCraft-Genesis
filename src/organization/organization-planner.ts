@@ -482,9 +482,17 @@ export class OrganizationPlanner {
  *     target role is present; it is NOT applied when the role is absent
  *     (the pattern is trivially satisfied).
  *
- * Other effects ('prefer-role', 'prefer-shape', 'avoid-shape') are recognized
- * but do not modify the build in v0.1 — they are recorded as considered but
- * not applied. The seam is open for future planners.
+ *   - 'prefer-role' (G5-06): when the target role is 'Sole Operator' and the
+ *     specialist build has 2+ workers, collapse to a single Sole Operator
+ *     carrying all capability needs. This makes learned preference CAUSALLY
+ *     visible: the pattern changes a multi-worker plan to a single-worker plan.
+ *     Safety: the Sole Operator by definition carries ALL needs, so capability
+ *     coverage is always preserved. The pattern does NOT apply when the
+ *     specialist build already has 1 worker (trivially satisfied) or when the
+ *     target role is not 'Sole Operator' (unimplemented for specialist roles).
+ *     Hard mission requirements (obligations, constraints) are checked AFTER
+ *     pattern application by the verification loop — learning influences
+ *     ambiguity, it does not override truth.
  */
 function applyAdvisoryPattern(
   pattern: AdvisoryPattern,
@@ -515,7 +523,57 @@ function applyAdvisoryPattern(
       specialists: redistributed,
     };
   }
-  // Other effects are recognized but not yet implemented in v0.1.
+
+  // G5-06: prefer-role for 'Sole Operator' — collapse multi-worker builds to
+  // a single Sole Operator when the pattern applies. This is the minimal
+  // implementation that makes learned preference causally observable without
+  // overriding capability coverage or hard mission requirements.
+  if (pattern.proposedEffect.kind === 'prefer-role') {
+    const targetRole = pattern.proposedEffect.targetRole;
+    if (targetRole === undefined) {
+      return { applied: false, effect: 'no target role', specialists };
+    }
+    // Only 'Sole Operator' is supported in v0.1. Other prefer-role targets
+    // (specialist roles) are recognized but not yet implemented — the seam
+    // is open for future planners.
+    if (targetRole !== SOLE_OPERATOR_ROLE[0]) {
+      return {
+        applied: false,
+        effect: `prefer-role for "${targetRole}" not implemented in v0.1`,
+        specialists,
+      };
+    }
+    // The Sole Operator pattern is trivially satisfied when the build already
+    // has exactly 1 worker — no change needed.
+    if (specialists.length <= 1) {
+      return { applied: false, effect: 'already a single-worker build', specialists };
+    }
+    // Collapse to a single Sole Operator carrying all capability needs.
+    // Safety: the Sole Operator by definition covers all needs. Hard mission
+    // requirements (obligations, constraints) are enforced by the verification
+    // loop AFTER planning — learning influences the organization shape, it does
+    // not override verification truth.
+    const allNeeds = [
+      ...new Set(specialists.flatMap((worker) => worker.capabilityNeeds)),
+    ];
+    return {
+      applied: true,
+      effect:
+        `collapsed ${specialists.length} specialists to a single Sole Operator ` +
+        `per prefer-role pattern; ${allNeeds.length} capability need(s) consolidated`,
+      specialists: [
+        {
+          id: 'sole-operator-1',
+          role: SOLE_OPERATOR_ROLE[0],
+          responsibility: SOLE_OPERATOR_ROLE[1],
+          capabilityNeeds: allNeeds,
+        },
+      ],
+    };
+  }
+
+  // Other effects (prefer-shape, avoid-shape) are recognized but not yet
+  // implemented in v0.1.
   return {
     applied: false,
     effect: `${pattern.proposedEffect.kind} effect not implemented in v0.1`,
