@@ -12,6 +12,7 @@ import type {
 import type { McpCapabilityProvider } from '../runtime/mcp/capability-provider.js';
 import { MCP_GRANT_PREFIX } from '../runtime/mcp/capability-provider.js';
 import type { HandoffSink } from './handoff.js';
+import { classifyError, isRetryable, type FailureClass } from '../mission/failure-class.js';
 
 /**
  * The Genesis Worker (TASK-010): one genome, one brain, one pair of hands.
@@ -109,6 +110,17 @@ export interface WorkerResult {
   readonly steps: number;
   readonly reasoningCalls: number;
   readonly refusals: readonly string[];
+  /**
+   * G6-01: the Section 13 failure class when status='failure'. Undefined
+   * on success. Used by the orchestrator and flight recorder to triage
+   * failures without inspecting the summary string.
+   */
+  readonly failureClass?: FailureClass;
+  /**
+   * G6-01: how many reasoning-call retries the worker performed before
+   * succeeding or failing. Zero on success-without-retry.
+   */
+  readonly reasoningRetries?: number;
 }
 
 /** Flight-recorder hook: one event per worker step (never transcripts). */
@@ -175,6 +187,23 @@ export interface WorkerAgentOptions {
    * Default: `<workerId>#<ordinal>`, unique per constructed instance.
    */
   readonly instanceKey?: string;
+  /**
+   * G6-01 (P1 H-01): maximum number of bounded retries on a transient
+   * reasoning-provider failure (PROVIDER_FAILURE, TIMEOUT, RUNTIME_FAILURE,
+   * UNKNOWN_FAILURE). Default 1 — one retry, then honest failure. Set to 0
+   * to disable retry (preserve GROUP 2 behavior exactly). The retry only
+   * fires when the classified failure is `isRetryable()`; non-retryable
+   * failures (CANCELLED, BUDGET_EXHAUSTED, CONFIGURATION_FAILURE) fail
+   * immediately.
+   */
+  readonly maxReasoningRetries?: number;
+  /**
+   * G6-01 (P1 H-03): backoff schedule in milliseconds between reasoning
+   * retries. Default: [1000, 5000] — one second then five seconds. The
+   * schedule is consumed in order; once exhausted, the next failure is
+   * terminal. Set to [] for no backoff (immediate retry).
+   */
+  readonly reasoningRetryBackoffMs?: readonly number[];
 }
 
 const GRANT_SHELL = 'openbot:shell-execution';
@@ -214,6 +243,8 @@ export class WorkerAgent {
   private readonly maxSteps: number;
   private readonly signal: AbortSignal | undefined;
   private readonly onEvent: WorkerEventSink | undefined;
+  private readonly maxReasoningRetries: number;
+  private readonly reasoningRetryBackoffMs: readonly number[];
 
   constructor(options: WorkerAgentOptions) {
     this.genome = options.genome;
@@ -232,6 +263,8 @@ export class WorkerAgent {
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_WORKER_STEPS;
     this.signal = options.signal;
     this.onEvent = options.onEvent;
+    this.maxReasoningRetries = options.maxReasoningRetries ?? 1;
+    this.reasoningRetryBackoffMs = options.reasoningRetryBackoffMs ?? [1_000, 5_000];
   }
 
   private systemPrompt(): string {
@@ -660,12 +693,13 @@ export class WorkerAgent {
     const artifacts: string[] = [];
     let steps = 0;
     let reasoningCalls = 0;
+    let reasoningRetries = 0;
     let parseFailures = 0;
     let finishSummary = '';
     let lastActionJson = '';
     let repeatCount = 0;
 
-    const base = (): Omit<WorkerResult, 'status' | 'summary' | 'evidence'> => ({
+    const base = (): Omit<WorkerResult, 'status' | 'summary' | 'evidence' | 'failureClass' | 'reasoningRetries'> => ({
       workerId,
       artifacts,
       steps,
@@ -675,7 +709,7 @@ export class WorkerAgent {
 
     while (steps < this.maxSteps) {
       if (this.signal?.aborted) {
-        return this.finish('failure', 'mission aborted before completion', base());
+        return this.finish('failure', 'mission aborted before completion', base(), 'CANCELLED', reasoningRetries);
       }
 
       const prompt = [
@@ -688,20 +722,35 @@ export class WorkerAgent {
         'Your next step as ONE JSON object:',
       ].join('\n');
 
+      // G6-01 (P1 H-01, H-03): bounded retry on transient provider
+      // failures. The retry only fires for retryable classes
+      // (PROVIDER_FAILURE, TIMEOUT, RUNTIME_FAILURE, UNKNOWN_FAILURE);
+      // non-retryable failures (CANCELLED, BUDGET_EXHAUSTED,
+      // CONFIGURATION_FAILURE) fail immediately and truthfully. The
+      // worker records each retry as a worker-step flight event so
+      // Mission Control can observe the recovery.
+      //
+      // The retry counter is tracked via a mutable holder declared OUTSIDE
+      // the try block so the catch path can read the final count even
+      // when the call ultimately fails after exhausting retries.
+      const retryCounter = { value: 0 };
       let text: string;
       try {
-        const output = await this.reasoning.reason({
-          system: this.systemPrompt(),
-          prompt,
-          tier: this.genome.model,
-        });
+        text = await this.callReasoningWithRetry(prompt, retryCounter);
+        reasoningRetries += retryCounter.value;
         reasoningCalls += 1;
-        text = output.text;
       } catch (error) {
+        // The retry counter is updated even on terminal failure — the
+        // worker DID retry before giving up, and the flight record must
+        // reflect that.
+        reasoningRetries += retryCounter.value;
+        const cls = classifyError(error);
         return this.finish(
           'failure',
           `reasoning provider failed: ${(error as Error).message.slice(0, 200)}`,
           base(),
+          cls,
+          reasoningRetries,
         );
       }
 
@@ -717,6 +766,8 @@ export class WorkerAgent {
             'failure',
             'the worker could not produce a valid action after repeated attempts',
             base(),
+            'PROVIDER_FAILURE',
+            reasoningRetries,
           );
         }
         continue;
@@ -804,6 +855,8 @@ export class WorkerAgent {
         'failure',
         `step budget of ${this.maxSteps} exhausted before the worker finished`,
         base(),
+        'BUDGET_EXHAUSTED',
+        reasoningRetries,
       );
     }
 
@@ -842,15 +895,81 @@ export class WorkerAgent {
       steps,
       reasoningCalls,
       refusals,
+      ...(missing > 0 ? { failureClass: 'WORKER_FAILURE' as FailureClass } : {}),
+      reasoningRetries,
     };
     this.onEvent?.({ type: 'worker-finished', workerId, result });
     return result;
   }
 
+  /**
+   * G6-01 (P1 H-01, H-03): Call the reasoning provider with bounded retry
+   * on transient failures. Each failed attempt is classified using the
+   * Section 13 taxonomy; retryable classes (PROVIDER_FAILURE, TIMEOUT,
+   * RUNTIME_FAILURE, UNKNOWN_FAILURE) get one more attempt after a backoff;
+   * non-retryable classes fail immediately and truthfully.
+   *
+   * The retry budget is bounded by `maxReasoningRetries` (default 1). The
+   * backoff schedule is `reasoningRetryBackoffMs` (default [1000, 5000]).
+   * Each retry emits a `worker-step` flight event with action=`reasoning-retry:<class>`
+   * so Mission Control can observe the recovery without inspecting worker-private state.
+   *
+   * Anti-bloat: no generic retry framework. No exponential backoff with
+   * jitter. One bounded retry, two known backoff values, one classification.
+   *
+   * The `retryCounter` parameter is a mutable holder so the caller can
+   * read the final retry count even when this method ultimately throws.
+   * The holder is updated on each retry; on success it reflects the count
+   * of retries that happened before the successful attempt.
+   */
+  private async callReasoningWithRetry(
+    prompt: string,
+    retryCounter: { value: number },
+  ): Promise<string> {
+    const maxAttempts = this.maxReasoningRetries + 1;
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const output = await this.reasoning.reason({
+          system: this.systemPrompt(),
+          prompt,
+          tier: this.genome.model,
+        });
+        return output.text;
+      } catch (error) {
+        lastError = error;
+        // Cancellation must propagate immediately — never retry an abort.
+        if (this.signal?.aborted) throw error;
+        const cls = classifyError(error);
+        if (!isRetryable(cls) || attempt === maxAttempts) {
+          throw error;
+        }
+        // Emit a worker-step event for observability — Mission Control can
+        // see that the worker retried a transient failure and recovered.
+        this.onEvent?.({
+          type: 'worker-step',
+          workerId: this.genome.identity.id,
+          step: 0,
+          action: `reasoning-retry:${cls}`,
+          ok: false,
+          elapsedMs: 0,
+        });
+        const backoff = this.reasoningRetryBackoffMs[attempt - 1] ?? 0;
+        if (backoff > 0) {
+          await new Promise((resolve) => setTimeout(resolve, backoff));
+        }
+        retryCounter.value += 1;
+      }
+    }
+    throw lastError;
+  }
+
   private finish(
     status: WorkerResult['status'],
     summary: string,
-    base: Omit<WorkerResult, 'status' | 'summary' | 'evidence'>,
+    base: Omit<WorkerResult, 'status' | 'summary' | 'evidence' | 'failureClass' | 'reasoningRetries'>,
+    failureClass: FailureClass | undefined = undefined,
+    reasoningRetries = 0,
   ): WorkerResult {
     const result: WorkerResult = {
       workerId: base.workerId,
@@ -861,6 +980,8 @@ export class WorkerAgent {
       steps: base.steps,
       reasoningCalls: base.reasoningCalls,
       refusals: base.refusals,
+      ...(failureClass === undefined ? {} : { failureClass }),
+      reasoningRetries,
     };
     this.onEvent?.({
       type: 'worker-finished',

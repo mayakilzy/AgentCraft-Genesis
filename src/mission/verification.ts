@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import type { Evidence, ReasoningProvider } from '../contracts/core.js';
 import type { WorkerComputer } from '../runtime/computer.js';
 import type { FlightEvent } from './flight-recorder.js';
@@ -84,6 +86,34 @@ export type AcceptanceCheck =
       readonly label: string;
       /** Substring expected in at least one artifact file. */
       readonly expectIncludes: string;
+    }
+  /**
+   * G6-01 (P0 H-06): hash-match check. Verifies that an artifact file's
+   * SHA-256 content hash matches an expected hex string. This is the
+   * strongest content-integrity check: it catches plausible-but-wrong
+   * content produced by a real-LLM worker whose file EXISTS and contains
+   * a substring that satisfies `expectIncludes` but is materially wrong.
+   *
+   * Use cases:
+   *   - Mission with a known-correct gold answer (the expected hash is
+   *     computed from the gold answer before the mission starts).
+   *   - Mission where the artifact must be byte-for-byte identical to a
+   *     reference (e.g. a generated config file with deterministic output).
+   *   - Detecting worker fabrication: a worker that "summarizes" the
+   *     staged input but actually writes fabricated content fails this
+   *     check even when the file exists and contains expected keywords.
+   *
+   * This check does NOT replace the existing `file` and `content-in-artifacts`
+   * checks — it adds a stronger tier for missions that need it. Missions
+   * without a known-correct hash continue to use the existing checks.
+   */
+  | {
+      readonly kind: 'hash-match';
+      readonly label: string;
+      /** Path in the verifier's clean-room copy of the artifacts. */
+      readonly path: string;
+      /** Expected SHA-256 hex string (64 lowercase hex chars). */
+      readonly expectHash: string;
     };
 
 export interface CheckOutcome {
@@ -227,6 +257,9 @@ export class VerificationLoop {
           break;
         case 'content-in-artifacts':
           outcomes.push(await this.checkContentInArtifacts(check, artifacts));
+          break;
+        case 'hash-match':
+          outcomes.push(await this.checkHashMatch(check));
           break;
       }
     }
@@ -394,6 +427,56 @@ export class VerificationLoop {
       ok: false,
       detail: `expected content "${check.expectIncludes.slice(0, 80)}" was NOT found in any artifact across all workers`,
     };
+  }
+
+  /**
+   * G6-01 (P0 H-06): Check that an artifact file's SHA-256 content hash
+   * matches the expected hex string. This is the strongest content-integrity
+   * check: it catches plausible-but-wrong content produced by a real-LLM
+   * worker whose file EXISTS and contains a substring that satisfies
+   * `expectIncludes` but is materially wrong.
+   *
+   * The hash is computed over the verifier's clean-room copy of the file
+   * (not the producing worker's workspace), so a worker cannot leave
+   * anything behind in its own workspace that fakes the pass. The expected
+   * hash is normalized to lowercase before comparison.
+   */
+  private async checkHashMatch(
+    check: Extract<AcceptanceCheck, { kind: 'hash-match' }>,
+  ): Promise<CheckOutcome> {
+    try {
+      const read = await this.verifier.readFile(check.path);
+      const actual =
+        read.text.length === 0
+          ? ''
+          : createHash('sha256').update(read.text, 'utf8').digest('hex');
+      const expected = check.expectHash.toLowerCase();
+      if (actual === expected) {
+        return {
+          label: check.label,
+          kind: 'hash-match',
+          ok: true,
+          detail: `"${check.path}" content hash matches expected (${read.bytes} bytes, sha256=${actual.slice(0, 16)}…)`,
+        };
+      }
+      return {
+        label: check.label,
+        kind: 'hash-match',
+        ok: false,
+        detail:
+          `"${check.path}" content hash does NOT match expected ` +
+          `(expected=${expected.slice(0, 16)}…, actual=${actual.slice(0, 16)}…, ` +
+          `${read.bytes} bytes). The file exists but its content is materially different ` +
+          `from the expected gold answer — plausible-but-wrong content under a real-LLM worker.`,
+      };
+    } catch (error) {
+      return {
+        label: check.label,
+        kind: 'hash-match',
+        ok: false,
+        detail: `"${check.path}" not found in the clean room: ${(error as Error).message.slice(0, 160)}`,
+      };
+    }
   }
 
   private async checkCommand(
