@@ -13,7 +13,7 @@ import type {
 } from '../contracts/core.js';
 import type { GoalCompiler } from '../goal/goal-compiler.js';
 import type { GenomeCompiler } from '../genome/genome-compiler.js';
-import type { OrganizationPlanner } from '../organization/organization-planner.js';
+import { OrganizationPlanner, type AdvisoryPattern } from '../organization/organization-planner.js';
 import type { WorkerComputer, WorkerRuntime, WorkspaceSurface, JobSurface } from '../runtime/computer.js';
 import type { WorkerResult } from '../worker/worker-agent.js';
 import { WorkerAgent } from '../worker/worker-agent.js';
@@ -133,6 +133,16 @@ export interface MissionOrchestratorOptions {
    * durable worker" but never called get_durable_result fails verification.
    */
   readonly missionObligations?: readonly MissionObligation[];
+  /**
+   * PHASE 4.10 (Group 4 closure): promoted organizational patterns from the
+   * learning loop. When provided, these are passed to the OrganizationPlanner
+   * as advisory patterns — the planner may apply or ignore each one. This
+   * closes the learning loop: Experience → Candidate → Evaluation → Pattern
+   * → PatternRetrieval → OrganizationPlanner → future organization. The
+   * planner records which patterns were considered and applied in the plan's
+   * `learned` field so the learning loop can observe real influence.
+   */
+  readonly patterns?: readonly AdvisoryPattern[];
 }
 
 /**
@@ -347,7 +357,16 @@ export class MissionOrchestrator {
         budgetUsd: requirements.budget.maxUsd,
       });
 
-      const plan = this.options.planner.plan(requirements);
+      // PHASE 4.10: when promoted patterns are provided, wrap the injected
+      // planner with those patterns so the learning loop reaches future
+      // organization design. The planner treats patterns as advisory — it
+      // may apply or ignore each one, and records its decisions in the
+      // plan's `learned` field.
+      const planner =
+        this.options.patterns !== undefined && this.options.patterns.length > 0
+          ? new OrganizationPlanner({ patterns: this.options.patterns })
+          : this.options.planner;
+      const plan = planner.plan(requirements);
       record({
         type: 'plan-created',
         missionId,
