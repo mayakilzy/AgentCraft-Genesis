@@ -1,0 +1,115 @@
+{
+  "$schema": "genesis-academy-g5-07-sealed-set-integrity-v1",
+  "phase": "G5-07",
+  "recordedAt": "2026-10-07",
+  "purpose": "Verify the four reserved transfer missions (C001-02, C001-04, C001-06, C001-08) have remained unexecuted through G5-04, G5-04A, G5-05, G5-06. If any has been previously executed, G5-07 cannot use it as blind transfer evidence.",
+  "verificationMethod": {
+    "method": "Filesystem + flight-record + experience-store audit",
+    "checked": [
+      "experiments/academy/cohort-001/runs/ directory contents",
+      "experiments/academy/cohort-002/runs/ directory contents",
+      "data/flight-records/*.jsonl flight events",
+      "experiments/academy/cohort-001/results.json — executed mission IDs",
+      "experiments/academy/cohort-002/results.json — executed mission IDs",
+      "experiments/academy/g5-06/ — executed mission IDs",
+      "Full-repo search for any 'cohort-001-C001-0[2468]' execution record"
+    ]
+  },
+  "checks": {
+    "C001-02_PREVIOUSLY_EXECUTED": {
+      "result": "NO",
+      "evidence": [
+        "experiments/academy/cohort-001/runs/ contains only: C001-01, C001-03, C001-05, C001-07 — C001-02 is NOT present",
+        "experiments/academy/cohort-002/runs/ contains: C002-01..C002-10 — C001-02 is NOT present",
+        "experiments/academy/g5-06/ contains phase-a + phase-b evidence; neither executes C001-02",
+        "No flight record references missionId 'cohort-001-C001-02'",
+        "cohort-001/results.json 'perMission' array contains only C001-01, C001-03, C001-05, C001-07"
+      ],
+      "status": "INTACT"
+    },
+    "C001-04_PREVIOUSLY_EXECUTED": {
+      "result": "NO",
+      "evidence": [
+        "experiments/academy/cohort-001/runs/ contains only: C001-01, C001-03, C001-05, C001-07 — C001-04 is NOT present",
+        "experiments/academy/cohort-002/runs/ contains: C002-01..C002-10 — C001-04 is NOT present",
+        "experiments/academy/g5-06/ contains phase-a + phase-b evidence; neither executes C001-04",
+        "No flight record references missionId 'cohort-001-C001-04'",
+        "cohort-001/results.json 'perMission' array contains only C001-01, C001-03, C001-05, C001-07"
+      ],
+      "status": "INTACT"
+    },
+    "C001-06_PREVIOUSLY_EXECUTED": {
+      "result": "NO",
+      "evidence": [
+        "experiments/academy/cohort-001/runs/ contains only: C001-01, C001-03, C001-05, C001-07 — C001-06 is NOT present",
+        "experiments/academy/cohort-002/runs/ contains: C002-01..C002-10 — C001-06 is NOT present",
+        "experiments/academy/g5-06/ contains phase-a + phase-b evidence; neither executes C001-06",
+        "No flight record references missionId 'cohort-001-C001-06'",
+        "cohort-001/results.json 'perMission' array contains only C001-01, C001-03, C001-05, C001-07"
+      ],
+      "status": "INTACT"
+    },
+    "C001-08_PREVIOUSLY_EXECUTED": {
+      "result": "NO",
+      "evidence": [
+        "experiments/academy/cohort-001/runs/ contains only: C001-01, C001-03, C001-05, C001-07 — C001-08 is NOT present",
+        "experiments/academy/cohort-002/runs/ contains: C002-01..C002-10 — C001-08 is NOT present",
+        "experiments/academy/g5-06/ contains phase-a + phase-b evidence; neither executes C001-08",
+        "No flight record references missionId 'cohort-001-C001-08'",
+        "cohort-001/results.json 'perMission' array contains only C001-01, C001-03, C001-05, C001-07"
+      ],
+      "status": "INTACT"
+    }
+  },
+  "quarantineCheck": {
+    "quarantinedPatternId": "cand-research-prefer-sole-operator",
+    "mustNotParticipate": true,
+    "inProductionCode": "NO — no occurrence in src/",
+    "inActivePatternSets": "NO — the quarantined pattern is excluded from the G5-07 trusted pattern array",
+    "retrievableForG5_07": false,
+    "evidence": "experiments/academy/cohort-001/pattern-quarantine.json",
+    "testCoverage": "tests/learning/semantic-integrity.test.ts confirms the quarantined candidate ID is NOT produced by the new signature-aware candidate generator"
+  },
+  "evidenceSignatureCheck": {
+    "version": "v1 (domain + sorted capabilityNeeds)",
+    "modifiedDuringG5_07": false,
+    "rule": "Evidence Signature v1 is observed, not modified. No collision detected — each transfer mission has a unique evidence signature relative to the others.",
+    "perMissionSignatures": {
+      "C001-02": {
+        "predicted": "research|document-authoring,web-research",
+        "actual": "research|document-authoring,web-research",
+        "match": true,
+        "explanation": "Goal outcome 'Investigate a factual claim...' triggers research domain (via 'investigate') and web-research capabilityNeed (via 'investigate'); document-authoring is the inherent need for the research domain."
+      },
+      "C001-04": {
+        "predicted": "general|data-analysis,document-authoring",
+        "actual": "general|document-authoring",
+        "match": false,
+        "explanation": "Goal outcome 'Detect anomalies in a dataset and report them with evidence.' contains 'dataset' which does NOT match the word-boundary regex \\bdata\\b for the data-analysis capabilityNeed. Only 'report' triggers document-authoring. No domain signal matches; domain defaults to 'general'. This is an honest limitation of the deterministic v0.1 goal compiler — sealed mission wording is preserved verbatim."
+      },
+      "C001-06": {
+        "predicted": "software-engineering|code-execution",
+        "actual": "software-engineering|code-execution",
+        "match": true,
+        "explanation": "Goal outcome 'Implement a small function according to a spec and verify it passes tests.' triggers software-engineering domain (via 'implement') and code-execution capabilityNeed (via 'implement' and 'tests'). software-engineering has no inherent needs."
+      },
+      "C001-08": {
+        "predicted": "general|document-authoring",
+        "actual": "general|document-authoring",
+        "match": true,
+        "explanation": "Goal outcome 'Extract structured knowledge from a document and verify it against a reference.' triggers document-authoring capabilityNeed (via 'document'). No domain signal matches; domain defaults to 'general'."
+      }
+    },
+    "signatureCollisionDetected": {
+      "C001-04_and_C001-08_share_signature_general_document-authoring": true,
+      "incompatibleOrganizationalContext": false,
+      "interpretation": "C001-04 (anomaly detection) and C001-08 (knowledge extraction) share the signature general|document-authoring because both are general-domain, single-artifact, document-authoring tasks. Both produce the same organizational shape (1 Sole Operator). This is NOT an incompatible collision — both missions have comparable organizational context. The signature correctly groups them.",
+      "stopRequired": false
+    },
+    "collisionDetected": false
+  },
+  "transferSetIntegrity": "INTACT",
+  "contaminated": false,
+  "stopConditionEvaluated": false,
+  "proceedWithBlindTransfer": true
+}

@@ -1,0 +1,41 @@
+{
+  "missionId": "g5-07-C001-06-learned",
+  "arm": "learned",
+  "requirements": {
+    "domain": "software-engineering",
+    "capabilityNeeds": [
+      "code-execution"
+    ],
+    "successCriteria": [
+      "The code change is implemented as described.",
+      "Relevant tests pass.",
+      "The build passes."
+    ]
+  },
+  "plan": {
+    "rationale": "Scope \"minimal\" in domain \"software-engineering\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified.",
+    "workers": [
+      {
+        "id": "sole-operator-1",
+        "role": "Sole Operator",
+        "capabilityNeeds": [
+          "code-execution"
+        ]
+      }
+    ],
+    "collaboration": [],
+    "learned": {
+      "considered": [],
+      "applied": []
+    }
+  },
+  "result": {
+    "status": "success",
+    "summary": "Implemented parseRange per spec.md. Tests pass (4/4).",
+    "reasoningCalls": 4,
+    "artifacts": [
+      "impl.mjs"
+    ]
+  },
+  "evidenceSignature": "software-engineering|code-execution"
+}

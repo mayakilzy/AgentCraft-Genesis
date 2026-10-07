@@ -1,0 +1,55 @@
+{
+  "missionId": "C001-02",
+  "missionFamily": "A-research",
+  "missionTextModified": "NO",
+  "previouslyExecuted": "NO",
+  "goalDomain": "research",
+  "capabilityNeeds": [
+    "web-research",
+    "document-authoring"
+  ],
+  "evidenceSignature": "research|document-authoring,web-research",
+  "patternsAvailable": [
+    "cand-research-document-authoring-prefer-sole-operator",
+    "cand-research-document-authoring-web-research-prefer-sole-operator",
+    "cand-general-data-analysis-document-authoring-prefer-sole-operator"
+  ],
+  "patternsRetrieved": [
+    "cand-research-document-authoring-prefer-sole-operator",
+    "cand-research-document-authoring-web-research-prefer-sole-operator"
+  ],
+  "patternApplicable": true,
+  "applicabilityReason": "Pattern retrieved: cand-research-document-authoring-prefer-sole-operator, cand-research-document-authoring-web-research-prefer-sole-operator. Domain + capabilityNeeds intersection satisfied.",
+  "patternInterpreted": true,
+  "patternApplied": false,
+  "patternOverridden": false,
+  "overrideReason": "",
+  "baselineOrganization": {
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ]
+  },
+  "learnedOrganization": {
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ]
+  },
+  "organizationChanged": false,
+  "causalAttribution": false,
+  "baselineVerification": {
+    "ok": true,
+    "passed": 4,
+    "failed": 0
+  },
+  "learnedVerification": {
+    "ok": true,
+    "passed": 4,
+    "failed": 0
+  },
+  "baselineCorrectness": "success",
+  "learnedCorrectness": "success",
+  "transferClassification": "CONFIRMATORY_TRANSFER",
+  "interpretation": "Pattern was retrieved and is legitimately applicable, but baseline organization already satisfies the learned preference (single-worker). The pattern confirms rather than changes the decision. This is valid transfer evidence, but weaker than active causal transfer."
+}

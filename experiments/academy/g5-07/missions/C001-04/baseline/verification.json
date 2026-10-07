@@ -1,0 +1,25 @@
+{
+  "missionId": "g5-07-C001-04-baseline",
+  "arm": "baseline",
+  "checks": [
+    {
+      "label": "report-exists",
+      "ok": true
+    },
+    {
+      "label": "mentions-anomaly-1",
+      "ok": true
+    },
+    {
+      "label": "mentions-anomaly-2",
+      "ok": true
+    },
+    {
+      "label": "mission-input:dataset.json",
+      "ok": true
+    }
+  ],
+  "ok": true,
+  "passed": 4,
+  "failed": 0
+}

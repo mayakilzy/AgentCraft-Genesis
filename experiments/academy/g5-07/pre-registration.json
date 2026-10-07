@@ -1,0 +1,127 @@
+{
+  "$schema": "genesis-academy-g5-07-preregistration-v1",
+  "phase": "G5-07",
+  "missionType": "SEALED_EVALUATION — BLIND_TRANSFER + PATTERN_APPLICABILITY + CAUSAL_TRANSFER_OBSERVATION + BOUNDARY/OVERRIDE_EVALUATION + SCIENTIFIC_CLAIM_GATE",
+  "recordedAt": "2026-10-07",
+  "purpose": "Observe whether Genesis correctly transfers learned organizational knowledge to unseen evidence, including cases where the correct action is to apply, confirm, ignore, or override that knowledge.",
+  "expectedPreviousFinalState": "G5_06_STATUS = MEASURED_ORGANIZATIONAL_LEARNING_PASS",
+  "expectedStartHead": "d97c3b82b93cc6bfd2975784b22ebc351678dd8b",
+  "expectedBranch": "build/group-05-causality-investigation",
+  "transferMissionsSelected": ["C001-02", "C001-04", "C001-06", "C001-08"],
+  "selectionMethod": {
+    "method": "B - deterministic mission-ID ordering",
+    "description": "All four Cohort 001 transfer-designated missions are executed. Selection is determined by the predeclared Cohort 001 design (GENESIS_ACADEMY_COHORT_001_v1.md, sealed at G5-03). No mission is added, removed, reordered, or substituted based on inspection of baseline organization, expected outcome, or pattern applicability. The execution order is the deterministic lexicographic mission-ID order: C001-02 → C001-04 → C001-06 → C001-08.",
+    "declaredAt": "BEFORE planner execution",
+    "independentOfExpectedOrganizationShape": true,
+    "scientificallyDefensible": true
+  },
+  "providerMode": "SCRIPTED_REASONING",
+  "realLlmReasoningUsed": false,
+  "scriptedReasoningUsed": true,
+  "developmentFallbackUsed": false,
+  "trustedPatternsAvailable": [
+    {
+      "id": "cand-research-document-authoring-prefer-sole-operator",
+      "scientificStatus": "TRUSTED",
+      "support": 3,
+      "evidenceSignature": "research|document-authoring",
+      "applicableContext": { "domain": "research", "capabilityNeeds": ["document-authoring"] },
+      "proposedEffect": { "kind": "prefer-role", "targetRole": "Sole Operator" }
+    },
+    {
+      "id": "cand-research-document-authoring-web-research-prefer-sole-operator",
+      "scientificStatus": "TRUSTED",
+      "support": 2,
+      "evidenceSignature": "research|document-authoring,web-research",
+      "applicableContext": { "domain": "research", "capabilityNeeds": ["document-authoring", "web-research"] },
+      "proposedEffect": { "kind": "prefer-role", "targetRole": "Sole Operator" }
+    },
+    {
+      "id": "cand-general-data-analysis-document-authoring-prefer-sole-operator",
+      "scientificStatus": "TRUSTED",
+      "support": 2,
+      "evidenceSignature": "general|data-analysis,document-authoring",
+      "applicableContext": { "domain": "general", "capabilityNeeds": ["data-analysis", "document-authoring"] },
+      "proposedEffect": { "kind": "prefer-role", "targetRole": "Sole Operator" }
+    }
+  ],
+  "quarantinedPatterns": [
+    {
+      "id": "cand-research-prefer-sole-operator",
+      "scientificStatus": "QUARANTINED",
+      "remediationPhase": "G5-04A",
+      "mustNotParticipate": true,
+      "evidence": "experiments/academy/cohort-001/pattern-quarantine.json"
+    }
+  ],
+  "baselinePolicy": {
+    "arm": "BASELINE",
+    "description": "Genesis organization WITHOUT learned patterns. OrganizationPlanner({ patterns: [] }).",
+    "holdsConstant": ["mission text", "mission inputs", "provider mode", "runtime", "available capabilities", "verification", "budgets", "hard constraints", "acceptance criteria"]
+  },
+  "learnedPolicy": {
+    "arm": "LEARNED",
+    "description": "Genesis organization WITH trusted learned patterns available normally. OrganizationPlanner({ patterns: TRUSTED_PATTERNS }).",
+    "holdsConstant": "same as BASELINE — only learned organizational knowledge differs"
+  },
+  "verificationPolicy": {
+    "description": "Independent verification checks mission truth (artifact existence + content correctness + mission-input preservation). Verification does NOT depend on which arm ran. FALSE_SUCCESSES = 0 is required.",
+    "independentAcrossArms": true,
+    "checks": ["file", "content-in-artifacts", "mission-input"]
+  },
+  "transferClassificationRules": {
+    "ACTIVE_TRANSFER": "Pattern retrieved + applicable + applied + causally changes organization design (worker count or role composition) while correctness preserved.",
+    "CONFIRMATORY_TRANSFER": "Pattern legitimately applicable, but baseline organization already satisfies the learned preference. Pattern is considered but not applied. Correctness preserved.",
+    "BOUNDED_TRANSFER": "Pattern retrieved but current mission requirements provide a valid reason NOT to apply it. Pattern overridden/rejected/bounded. Mission remains correct.",
+    "NON_APPLICABLE": "No trusted pattern legitimately applies to the unseen mission. Genesis correctly does not retrieve or use one.",
+    "HARMFUL_TRANSFER": "Learned pattern changes organization AND that change causes lower correctness, failed obligation, failed verification, lower reliability, or another material regression.",
+    "FALSE_TRANSFER": "Pattern applied despite not being legitimately applicable. Semantic failure.",
+    "INCONCLUSIVE": "Infrastructure/provider/evidence limitations prevent reliable classification."
+  },
+  "epistemicIsolation": {
+    "workerInstanceIsolation": "Each WorkerAgent construction is a separate logical instance with a scoped scripted reasoning provider (TASK-022A). No cross-instance hidden memory.",
+    "missionIsolation": "Fresh mission ID, fresh FlightRecorder, fresh workspace per arm. No mission-to-mission state leakage except explicitly declared trusted patterns.",
+    "cohortIsolation": "Transfer missions do NOT feed learning before their evaluation. No candidate generation, no promotion during G5-07.",
+    "noEvaluatorLeakage": "Verification reads only flight events + artifacts. The expected answer / gold organization is NOT in the worker prompt.",
+    "noReasoningContinuityBetweenArms": "Each arm uses its own fresh scripted reasoning provider queue. The Baseline Arm cannot observe Learned Arm output and vice versa."
+  },
+  "frozenPatternState": {
+    "frozen": true,
+    "frozenAt": "BEFORE first transfer mission execution",
+    "rule": "G5-07 is an evaluation stage. Trusted pattern state is frozen before execution. No new trusted patterns generated, no pattern promotion, no support-count modification, no pattern-applicability change between transfer missions. All selected missions see the same pre-G5-07 learned state.",
+    "evidence": "experiments/academy/g5-07/frozen-pattern-state.json"
+  },
+  "sealedSetIntegrity": {
+    "C001-02_PREVIOUSLY_EXECUTED": "NO",
+    "C001-04_PREVIOUSLY_EXECUTED": "NO",
+    "C001-06_PREVIOUSLY_EXECUTED": "NO",
+    "C001-08_PREVIOUSLY_EXECUTED": "NO",
+    "TRANSFER_SET_INTEGRITY": "INTACT",
+    "evidence": "experiments/academy/g5-07/sealed-set-integrity.json"
+  },
+  "transferPatternStateFrozen": "YES",
+  "scientificConstraints": [
+    "DO NOT modify sealed mission wording, scope, capability hints, expected outputs, or acceptance checks.",
+    "DO NOT select missions based on inspection of baseline organization shape.",
+    "DO NOT promote transfer-derived candidates during G5-07.",
+    "DO NOT modify Evidence Signature v1.",
+    "DO NOT modify the quarantined pattern's status.",
+    "DO NOT pass-chase after observing results.",
+    "Production code change preferred: ZERO. Small correctness fixes only under Section 29."
+  ],
+  "claimBoundary": {
+    "allowed": [
+      "If ACTIVE_TRANSFER under valid blind conditions: Genesis transferred previously learned organizational knowledge to an unseen mission and used it to causally influence organization design while preserving independently verified mission correctness (under scripted reasoning conditions).",
+      "If only CONFIRMATORY_TRANSFER: Genesis correctly retrieved and applied learned organizational knowledge to an unseen mission whose baseline organization already satisfied the learned preference; no additional organizational change was required.",
+      "If BOUNDED_TRANSFER: Genesis retrieved learned organizational knowledge on an unseen mission but correctly bounded or overrode it in response to stronger current-mission requirements."
+    ],
+    "notAllowed": [
+      "cross-family generalization (deferred to G5-08)",
+      "real-world autonomous self-improvement",
+      "production-scale organizational intelligence",
+      "universal transfer"
+    ]
+  },
+  "stopAfterG5_07": true,
+  "doNotBeginG5_08": true
+}

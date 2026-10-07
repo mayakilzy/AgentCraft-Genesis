@@ -1,0 +1,39 @@
+{
+  "missionId": "g5-07-C001-04-baseline",
+  "arm": "baseline",
+  "requirements": {
+    "domain": "general",
+    "capabilityNeeds": [
+      "document-authoring"
+    ],
+    "successCriteria": [
+      "A concrete artifact answering the stated outcome exists."
+    ]
+  },
+  "plan": {
+    "rationale": "Scope \"minimal\" in domain \"general\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified.",
+    "workers": [
+      {
+        "id": "sole-operator-1",
+        "role": "Sole Operator",
+        "capabilityNeeds": [
+          "document-authoring"
+        ]
+      }
+    ],
+    "collaboration": [],
+    "learned": {
+      "considered": [],
+      "applied": []
+    }
+  },
+  "result": {
+    "status": "success",
+    "summary": "Detected 2 anomalies (t=10 and t=31) using mean/stdev computation.",
+    "reasoningCalls": 3,
+    "artifacts": [
+      "anomaly-report.md"
+    ]
+  },
+  "evidenceSignature": "general|document-authoring"
+}

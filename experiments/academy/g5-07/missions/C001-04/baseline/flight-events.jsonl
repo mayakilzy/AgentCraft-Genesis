@@ -1,0 +1,8 @@
+{"type":"mission-started","at":"2026-10-07T12:55:17.886Z","missionId":"g5-07-C001-04-baseline","goalOutcome":"Detect anomalies in a dataset and report them with evidence.","budgetUsd":25}
+{"type":"requirements-compiled","missionId":"g5-07-C001-04-baseline","domain":"general","capabilityNeeds":["document-authoring"],"successCriteria":["A concrete artifact answering the stated outcome exists."],"budgetUsd":25}
+{"type":"plan-created","missionId":"g5-07-C001-04-baseline","workers":[{"id":"sole-operator-1","role":"Sole Operator","needs":["document-authoring"]}],"rationale":"Scope \"minimal\" in domain \"general\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified."}
+{"type":"worker-started","workerId":"C001-04-baseline-worker-1","role":"Sole Operator","tier":"cheap"}
+{"type":"worker-step","workerId":"C001-04-baseline-worker-1","step":1,"action":"read_file","ok":true,"elapsedMs":0}
+{"type":"worker-step","workerId":"C001-04-baseline-worker-1","step":2,"action":"write_file","ok":true,"elapsedMs":0}
+{"type":"worker-finished","workerId":"C001-04-baseline-worker-1","result":{"workerId":"C001-04-baseline-worker-1","status":"success","summary":"Detected 2 anomalies (t=10 and t=31) using mean/stdev computation.","evidence":[{"kind":"artifact","description":"Sole Operator deliverable at anomaly-report.md","location":"C001-04-baseline-worker-1:anomaly-report.md"}],"artifacts":["anomaly-report.md"],"steps":2,"reasoningCalls":3,"refusals":[]}}
+{"type":"mission-finished","at":"2026-10-07T12:55:17.887Z","missionId":"g5-07-C001-04-baseline","status":"success","wallMs":1000,"reasoningCalls":3,"worker_reasoning_calls":3,"reviewer_calls":0,"handoff_calls":0}

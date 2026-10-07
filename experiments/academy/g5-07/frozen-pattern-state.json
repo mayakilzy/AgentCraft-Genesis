@@ -1,0 +1,124 @@
+{
+  "$schema": "genesis-academy-g5-07-frozen-pattern-state-v1",
+  "phase": "G5-07",
+  "recordedAt": "2026-10-07",
+  "frozenAtHead": "d97c3b82b93cc6bfd2975784b22ebc351678dd8b",
+  "frozenOnBranch": "build/group-05-causality-investigation",
+  "purpose": "Persist the exact trusted pattern state used by every G5-07 transfer mission. All four transfer missions see the SAME frozen pattern set. No mission can mutate this state.",
+  "frozenTrustedPatterns": [
+    {
+      "id": "cand-research-document-authoring-prefer-sole-operator",
+      "hypothesis": "Prefer a single Sole Operator over specialists for research + document-authoring missions.",
+      "scientificStatus": "TRUSTED",
+      "supportCount": 3,
+      "supportingExperienceIds": ["exp-cohort-001-C001-01", "exp-cohort-002-C002-01", "exp-cohort-002-C002-02"],
+      "applicableContext": { "domain": "research", "capabilityNeeds": ["document-authoring"] },
+      "proposedEffect": {
+        "kind": "prefer-role",
+        "description": "Prefer Sole Operator for research+document-authoring",
+        "targetRole": "Sole Operator"
+      },
+      "evidenceSignature": "research|document-authoring",
+      "promotionEvidence": {
+        "phase": "G5-05",
+        "cohort": "002",
+        "trustReview": "TRUSTED — support=3, no contradiction, all verified"
+      }
+    },
+    {
+      "id": "cand-research-document-authoring-web-research-prefer-sole-operator",
+      "hypothesis": "Prefer a single Sole Operator over specialists for research + document-authoring + web-research missions.",
+      "scientificStatus": "TRUSTED",
+      "supportCount": 2,
+      "supportingExperienceIds": ["exp-cohort-002-C002-09", "exp-cohort-002-C002-10"],
+      "applicableContext": { "domain": "research", "capabilityNeeds": ["document-authoring", "web-research"] },
+      "proposedEffect": {
+        "kind": "prefer-role",
+        "description": "Prefer Sole Operator for research+document-authoring+web-research",
+        "targetRole": "Sole Operator"
+      },
+      "evidenceSignature": "research|document-authoring,web-research",
+      "promotionEvidence": {
+        "phase": "G5-05",
+        "cohort": "002",
+        "trustReview": "TRUSTED — support=2, no contradiction, all verified"
+      }
+    },
+    {
+      "id": "cand-general-data-analysis-document-authoring-prefer-sole-operator",
+      "hypothesis": "Prefer a single Sole Operator over specialists for general + data-analysis + document-authoring missions.",
+      "scientificStatus": "TRUSTED",
+      "supportCount": 2,
+      "supportingExperienceIds": ["exp-cohort-001-C001-03", "exp-cohort-002-C002-04"],
+      "applicableContext": { "domain": "general", "capabilityNeeds": ["data-analysis", "document-authoring"] },
+      "proposedEffect": {
+        "kind": "prefer-role",
+        "description": "Prefer Sole Operator for general+data-analysis+document-authoring",
+        "targetRole": "Sole Operator"
+      },
+      "evidenceSignature": "general|data-analysis,document-authoring",
+      "promotionEvidence": {
+        "phase": "G5-05",
+        "cohort": "002",
+        "trustReview": "TRUSTED — support=2, no contradiction, all verified"
+      }
+    }
+  ],
+  "quarantinedPatterns": [
+    {
+      "id": "cand-research-prefer-sole-operator",
+      "scientificStatus": "QUARANTINED",
+      "remediationPhase": "G5-04A",
+      "reason": "DOMAIN_CLASSIFICATION_ARTIFACT — promoted under old domain-only grouping semantics; not scientifically trusted",
+      "mustNotParticipate": true,
+      "retrievableForG5_07": false,
+      "evidence": "experiments/academy/cohort-001/pattern-quarantine.json"
+    }
+  ],
+  "tentativePatternsExcludedFromActiveRetrieval": [
+    {
+      "id": "cand-research-data-analysis-document-authoring-prefer-sole-operator",
+      "scientificStatus": "TENTATIVE",
+      "supportCount": 1,
+      "reason": "Below promotion threshold (support=1); tentative patterns do not enter the active retrieval set."
+    },
+    {
+      "id": "cand-software-engineering-code-execution-data-analysis-avoid-generalist-worker",
+      "scientificStatus": "TENTATIVE",
+      "supportCount": 1,
+      "reason": "Below promotion threshold (support=1); tentative patterns do not enter the active retrieval set."
+    },
+    {
+      "id": "cand-software-engineering-code-execution-data-analysis-prefer-software-engineer",
+      "scientificStatus": "TENTATIVE",
+      "supportCount": 1,
+      "reason": "Below promotion threshold (support=1); tentative patterns do not enter the active retrieval set."
+    },
+    {
+      "id": "cand-software-engineering-code-execution-prefer-sole-operator",
+      "scientificStatus": "TENTATIVE",
+      "supportCount": 1,
+      "reason": "Below promotion threshold (support=1); tentative patterns do not enter the active retrieval set."
+    }
+  ],
+  "frozenAtG5_05": {
+    "phase": "G5-05",
+    "frozenTrustedCount": 3,
+    "frozenQuarantinedCount": 1,
+    "frozenTentativeCount": 4,
+    "evidence": "experiments/academy/cohort-002/results.json"
+  },
+  "g5_07MutationPolicy": {
+    "transferPatternStateFrozen": "YES",
+    "newPatternsPromotedDuringTransfer": "NO",
+    "supportCountsModifiedDuringTransfer": "NO",
+    "patternApplicabilityModifiedDuringTransfer": "NO",
+    "patternStateChangedDuringTransfer": "NO",
+    "quarantinedPatternUsed": "NO"
+  },
+  "runtimeVersions": {
+    "node": "v24.21.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  }
+}

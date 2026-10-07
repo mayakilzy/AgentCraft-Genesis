@@ -1,0 +1,76 @@
+{
+  "phase": "G5-07",
+  "recordedAt": "2026-10-07T12:55:17.891Z",
+  "overallOutcome": "BLIND_TRANSFER_PASS_WITH_LIMITATION",
+  "strongestSupportedClaim": "Genesis correctly retrieved and applied learned organizational knowledge to unseen missions whose baseline organizations already satisfied the learned preference; no additional organizational change was required (under scripted reasoning conditions). Genesis also correctly did NOT retrieve patterns for missions whose evidence signatures did not match any trusted pattern.",
+  "notSupportedClaims": [
+    "cross-family generalization",
+    "real-world autonomous self-improvement",
+    "production-scale organizational intelligence",
+    "universal transfer",
+    "active causal transfer on these missions"
+  ],
+  "claimGate": {
+    "transferMissionGenuinelyUnseen": true,
+    "missionNotModified": true,
+    "learnedStateFrozen": true,
+    "noEvaluatorOrGoldLeakage": true,
+    "patternApplicabilityIndependentlyDefensible": true,
+    "baselineAndLearnedConditionsEquivalent": true,
+    "missionCorrectnessIndependentlyVerified": true,
+    "noQuarantinedPatternParticipated": true,
+    "noFalseSuccess": true,
+    "activeTransferAdditionalRequirements": {
+      "organizationChanged": false,
+      "changeCausallyAttributableToLearnedPattern": false
+    }
+  },
+  "knownLimitations": [
+    "Scripted reasoning — provenance.source = synthetic on every Experience. The transfer is structural (organizational design), not behavioral (LLM reasoning quality).",
+    "No real LLM worker reasoning was used; behavioral generalization to real LLM workers is not tested.",
+    "No cross-family generalization is claimed; cross-family belongs to G5-08.",
+    "No new operationalNeeds or obligation learning (Level 5 deferred).",
+    "The current planner architecture cannot represent organizational requirements (only capability needs). For all four sealed missions, the minimal-scope early return path produces a Sole Operator before pattern application, so the question of pattern-vs-organizational-requirement override did not arise. This is documented as an architectural observation, not a defect.",
+    "Evidence Signature v1 is observed, not modified."
+  ],
+  "safeToBeginG5_08": true,
+  "nextRecommendedAction": "G5-07 STOPPED per Section 42. Return evidence for human review. DO NOT begin G5-08 without human approval.",
+  "aggregate": {
+    "phase": "G5-07",
+    "recordedAt": "2026-10-07T12:55:17.891Z",
+    "missionsSelected": 4,
+    "missionsExecuted": 8,
+    "missionsVerifiedBaseline": 4,
+    "missionsVerifiedLearned": 4,
+    "classificationCounts": {
+      "ACTIVE_TRANSFER": 0,
+      "CONFIRMATORY_TRANSFER": 3,
+      "BOUNDED_TRANSFER": 0,
+      "NON_APPLICABLE": 1,
+      "HARMFUL_TRANSFER": 0,
+      "FALSE_TRANSFER": 0,
+      "INCONCLUSIVE": 0
+    },
+    "organizationsChanged": 0,
+    "baselineTotalWorkers": 4,
+    "learnedTotalWorkers": 4,
+    "workerDelta": 0,
+    "baselineTotalReasoning": 15,
+    "learnedTotalReasoning": 15,
+    "reasoningDelta": 0,
+    "baselineTotalToolCalls": 0,
+    "learnedTotalToolCalls": 0,
+    "toolCallDelta": 0,
+    "falseSuccesses": 0,
+    "evidenceSignatureCollisions": 0,
+    "integrity": {
+      "missionTextsModified": "NO",
+      "transferSetContaminated": false,
+      "patternStateChangedDuringTransfer": "NO",
+      "newPatternsPromotedDuringTransfer": "NO",
+      "quarantinedPatternUsed": "NO",
+      "evaluatorLeakage": "NO",
+      "passChasingDetected": "NO"
+    }
+  }
+}

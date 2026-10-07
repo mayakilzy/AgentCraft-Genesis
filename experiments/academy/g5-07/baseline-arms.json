@@ -1,0 +1,167 @@
+[
+  {
+    "arm": "baseline",
+    "missionId": "C001-02",
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ],
+    "evidenceSignature": "research|document-authoring,web-research",
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "reasoningCalls": 4,
+    "status": "success",
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "verificationDetails": [
+      {
+        "label": "conclusion-exists",
+        "ok": true
+      },
+      {
+        "label": "mentions-claim",
+        "ok": true
+      },
+      {
+        "label": "references-evidence",
+        "ok": true
+      },
+      {
+        "label": "mission-input:claim.txt",
+        "ok": true
+      }
+    ],
+    "patternsConsidered": [],
+    "patternsApplied": [],
+    "patternsAppliedFlag": false,
+    "planRationale": "Scope \"minimal\" in domain \"research\" with 2 capability need(s): a single Sole Operator is sufficient; no specialist split is justified.",
+    "falseSuccess": false
+  },
+  {
+    "arm": "baseline",
+    "missionId": "C001-04",
+    "domain": "general",
+    "capabilityNeeds": [
+      "document-authoring"
+    ],
+    "evidenceSignature": "general|document-authoring",
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "reasoningCalls": 3,
+    "status": "success",
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "verificationDetails": [
+      {
+        "label": "report-exists",
+        "ok": true
+      },
+      {
+        "label": "mentions-anomaly-1",
+        "ok": true
+      },
+      {
+        "label": "mentions-anomaly-2",
+        "ok": true
+      },
+      {
+        "label": "mission-input:dataset.json",
+        "ok": true
+      }
+    ],
+    "patternsConsidered": [],
+    "patternsApplied": [],
+    "patternsAppliedFlag": false,
+    "planRationale": "Scope \"minimal\" in domain \"general\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified.",
+    "falseSuccess": false
+  },
+  {
+    "arm": "baseline",
+    "missionId": "C001-06",
+    "domain": "software-engineering",
+    "capabilityNeeds": [
+      "code-execution"
+    ],
+    "evidenceSignature": "software-engineering|code-execution",
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "reasoningCalls": 4,
+    "status": "success",
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "verificationDetails": [
+      {
+        "label": "impl-exists",
+        "ok": true
+      },
+      {
+        "label": "has-parseRange",
+        "ok": true
+      },
+      {
+        "label": "has-throw",
+        "ok": true
+      },
+      {
+        "label": "mission-input:spec.md",
+        "ok": true
+      }
+    ],
+    "patternsConsidered": [],
+    "patternsApplied": [],
+    "patternsAppliedFlag": false,
+    "planRationale": "Scope \"minimal\" in domain \"software-engineering\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified.",
+    "falseSuccess": false
+  },
+  {
+    "arm": "baseline",
+    "missionId": "C001-08",
+    "domain": "general",
+    "capabilityNeeds": [
+      "document-authoring"
+    ],
+    "evidenceSignature": "general|document-authoring",
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ],
+    "reasoningCalls": 4,
+    "status": "success",
+    "verificationOk": true,
+    "verificationPassed": 4,
+    "verificationFailed": 0,
+    "verificationDetails": [
+      {
+        "label": "extraction-exists",
+        "ok": true
+      },
+      {
+        "label": "has-hostname",
+        "ok": true
+      },
+      {
+        "label": "has-port",
+        "ok": true
+      },
+      {
+        "label": "mission-input:source.txt",
+        "ok": true
+      }
+    ],
+    "patternsConsidered": [],
+    "patternsApplied": [],
+    "patternsAppliedFlag": false,
+    "planRationale": "Scope \"minimal\" in domain \"general\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified.",
+    "falseSuccess": false
+  }
+]

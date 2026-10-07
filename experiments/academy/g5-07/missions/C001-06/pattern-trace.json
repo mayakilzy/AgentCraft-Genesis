@@ -1,0 +1,51 @@
+{
+  "missionId": "C001-06",
+  "missionFamily": "C-software",
+  "missionTextModified": "NO",
+  "previouslyExecuted": "NO",
+  "goalDomain": "software-engineering",
+  "capabilityNeeds": [
+    "code-execution"
+  ],
+  "evidenceSignature": "software-engineering|code-execution",
+  "patternsAvailable": [
+    "cand-research-document-authoring-prefer-sole-operator",
+    "cand-research-document-authoring-web-research-prefer-sole-operator",
+    "cand-general-data-analysis-document-authoring-prefer-sole-operator"
+  ],
+  "patternsRetrieved": [],
+  "patternApplicable": false,
+  "applicabilityReason": "No trusted pattern matches domain=\"software-engineering\" with capabilityNeeds=[code-execution].",
+  "patternInterpreted": false,
+  "patternApplied": false,
+  "patternOverridden": false,
+  "overrideReason": "",
+  "baselineOrganization": {
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ]
+  },
+  "learnedOrganization": {
+    "workerCount": 1,
+    "roles": [
+      "Sole Operator"
+    ]
+  },
+  "organizationChanged": false,
+  "causalAttribution": false,
+  "baselineVerification": {
+    "ok": true,
+    "passed": 4,
+    "failed": 0
+  },
+  "learnedVerification": {
+    "ok": true,
+    "passed": 4,
+    "failed": 0
+  },
+  "baselineCorrectness": "success",
+  "learnedCorrectness": "success",
+  "transferClassification": "NON_APPLICABLE",
+  "interpretation": "No trusted pattern legitimately applies to this unseen mission. Genesis correctly retrieved no pattern. This is NOT failure — correct non-application is positive evidence of bounded learning."
+}

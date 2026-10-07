@@ -1,0 +1,25 @@
+{
+  "missionId": "g5-07-C001-02-baseline",
+  "arm": "baseline",
+  "checks": [
+    {
+      "label": "conclusion-exists",
+      "ok": true
+    },
+    {
+      "label": "mentions-claim",
+      "ok": true
+    },
+    {
+      "label": "references-evidence",
+      "ok": true
+    },
+    {
+      "label": "mission-input:claim.txt",
+      "ok": true
+    }
+  ],
+  "ok": true,
+  "passed": 4,
+  "failed": 0
+}

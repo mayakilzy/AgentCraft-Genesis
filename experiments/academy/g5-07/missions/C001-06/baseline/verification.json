@@ -1,0 +1,25 @@
+{
+  "missionId": "g5-07-C001-06-baseline",
+  "arm": "baseline",
+  "checks": [
+    {
+      "label": "impl-exists",
+      "ok": true
+    },
+    {
+      "label": "has-parseRange",
+      "ok": true
+    },
+    {
+      "label": "has-throw",
+      "ok": true
+    },
+    {
+      "label": "mission-input:spec.md",
+      "ok": true
+    }
+  ],
+  "ok": true,
+  "passed": 4,
+  "failed": 0
+}

@@ -1,0 +1,42 @@
+{
+  "missionId": "g5-07-C001-02-baseline",
+  "arm": "baseline",
+  "requirements": {
+    "domain": "research",
+    "capabilityNeeds": [
+      "web-research",
+      "document-authoring"
+    ],
+    "successCriteria": [
+      "A written report exists that answers the stated outcome.",
+      "Findings are backed by sources or data."
+    ]
+  },
+  "plan": {
+    "rationale": "Scope \"minimal\" in domain \"research\" with 2 capability need(s): a single Sole Operator is sufficient; no specialist split is justified.",
+    "workers": [
+      {
+        "id": "sole-operator-1",
+        "role": "Sole Operator",
+        "capabilityNeeds": [
+          "web-research",
+          "document-authoring"
+        ]
+      }
+    ],
+    "collaboration": [],
+    "learned": {
+      "considered": [],
+      "applied": []
+    }
+  },
+  "result": {
+    "status": "success",
+    "summary": "Investigated the memoized-Fibonacci performance claim; conclusion (partially true with bounds) is supported by evidence.",
+    "reasoningCalls": 4,
+    "artifacts": [
+      "conclusion.md"
+    ]
+  },
+  "evidenceSignature": "research|document-authoring,web-research"
+}

@@ -1,0 +1,40 @@
+{
+  "missionId": "g5-07-C001-08-baseline",
+  "arm": "baseline",
+  "requirements": {
+    "domain": "general",
+    "capabilityNeeds": [
+      "document-authoring"
+    ],
+    "successCriteria": [
+      "A concrete artifact answering the stated outcome exists."
+    ]
+  },
+  "plan": {
+    "rationale": "Scope \"minimal\" in domain \"general\" with 1 capability need(s): a single Sole Operator is sufficient; no specialist split is justified.",
+    "workers": [
+      {
+        "id": "sole-operator-1",
+        "role": "Sole Operator",
+        "capabilityNeeds": [
+          "document-authoring"
+        ]
+      }
+    ],
+    "collaboration": [],
+    "learned": {
+      "considered": [],
+      "applied": []
+    }
+  },
+  "result": {
+    "status": "success",
+    "summary": "Extracted 15 structured fields from source.txt and verified each against the source.",
+    "reasoningCalls": 4,
+    "artifacts": [
+      "extraction.json",
+      "verification.md"
+    ]
+  },
+  "evidenceSignature": "general|document-authoring"
+}

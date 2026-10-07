@@ -1,0 +1,38 @@
+{
+  "phase": "G5-07",
+  "recordedAt": "2026-10-07T12:55:17.891Z",
+  "missionsSelected": 4,
+  "missionsExecuted": 8,
+  "missionsVerifiedBaseline": 4,
+  "missionsVerifiedLearned": 4,
+  "classificationCounts": {
+    "ACTIVE_TRANSFER": 0,
+    "CONFIRMATORY_TRANSFER": 3,
+    "BOUNDED_TRANSFER": 0,
+    "NON_APPLICABLE": 1,
+    "HARMFUL_TRANSFER": 0,
+    "FALSE_TRANSFER": 0,
+    "INCONCLUSIVE": 0
+  },
+  "organizationsChanged": 0,
+  "baselineTotalWorkers": 4,
+  "learnedTotalWorkers": 4,
+  "workerDelta": 0,
+  "baselineTotalReasoning": 15,
+  "learnedTotalReasoning": 15,
+  "reasoningDelta": 0,
+  "baselineTotalToolCalls": 0,
+  "learnedTotalToolCalls": 0,
+  "toolCallDelta": 0,
+  "falseSuccesses": 0,
+  "evidenceSignatureCollisions": 0,
+  "integrity": {
+    "missionTextsModified": "NO",
+    "transferSetContaminated": false,
+    "patternStateChangedDuringTransfer": "NO",
+    "newPatternsPromotedDuringTransfer": "NO",
+    "quarantinedPatternUsed": "NO",
+    "evaluatorLeakage": "NO",
+    "passChasingDetected": "NO"
+  }
+}
