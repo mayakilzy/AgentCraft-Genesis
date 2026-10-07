@@ -1,0 +1,256 @@
+{
+  "$schema": "genesis-transition-g5-to-g6-census-v1",
+  "recordedAt": "2026-10-07",
+  "transition": "G5 → G6",
+  "group5FinalState": {
+    "GROUP_5_STATUS": "CLOSED_PASS_WITH_LIMITATIONS",
+    "G5_08_STATUS": "PASS",
+    "finalCommitShort": "c100f84",
+    "finalCommitFull": "c100f84667775f0a3e5ba2b637f9b3a0851064d0",
+    "branch": "build/group-05-causality-investigation",
+    "safeToBeginGroup6": true
+  },
+  "validation": {
+    "fullTests": "377 passed | 9 skipped = 386 total",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "productionCodeDeltaG5_08": 0
+  },
+  "engineBaselineCensus": {
+    "firstPartyProductionFiles": 37,
+    "firstPartyProductionLoc": 10529,
+    "testFiles": 44,
+    "totalTests": 377,
+    "modules": [
+      "src/agui",
+      "src/contracts",
+      "src/genome",
+      "src/goal",
+      "src/learning",
+      "src/mission",
+      "src/organization",
+      "src/providers",
+      "src/routing",
+      "src/runtime",
+      "src/runtime/mcp",
+      "src/runtime/openbot",
+      "src/runtime/opendots",
+      "src/runtime/openmuse",
+      "src/work",
+      "src/worker"
+    ],
+    "runtimeDependencies": 3,
+    "runtimeDependencyNames": ["@ag-ui/core", "@modelcontextprotocol/sdk", "yaml"],
+    "protocolDependencies": 2,
+    "protocolDependencyNames": ["@ag-ui/core (AG-UI protocol 1.0)", "@modelcontextprotocol/sdk (MCP protocol)"],
+    "devDependencies": 7,
+    "devDependencyNames": ["@a2a-js/sdk", "@types/node", "eslint", "typescript", "typescript-eslint", "vitest", "zod"]
+  },
+  "responsibilityCensus": {
+    "goal_intelligence": {
+      "modules": ["src/goal/goal-compiler.ts", "src/goal/llm-understanding.ts"],
+      "status": "READY — deterministic v0.1 word-boundary heuristics; LLM provider injectable"
+    },
+    "organization": {
+      "modules": ["src/organization/organization-planner.ts"],
+      "status": "READY — prefer-role (Sole Operator only, G5-06) + avoid-role (Phase 4.11); advisory patterns"
+    },
+    "execution": {
+      "modules": ["src/mission/orchestrator.ts", "src/worker/worker-agent.ts", "src/worker/handoff.ts"],
+      "status": "READY — MissionOrchestrator + WorkerAgent + Handoff; bounded retry; timeout via AbortController"
+    },
+    "runtime_providers": {
+      "modules": ["src/runtime/composite-runtime.ts", "src/runtime/openbot/", "src/runtime/opendots/", "src/runtime/openmuse/", "src/runtime/mcp/"],
+      "status": "READY — three-pillar composite runtime; OpenBot/OpenDots/OpenMuse adapters; MCP capability provider"
+    },
+    "interoperability": {
+      "modules": ["src/runtime/mcp/capability-provider.ts", "src/agui/event-bridge.ts"],
+      "mcp_status": "ACTIVATED (G5-01) — @modelcontextprotocol/sdk@1.32.1",
+      "agui_status": "ACTIVATED (G5-02) — @ag-ui/core@1.0.2",
+      "a2a_status": "NOT_ACTIVATED — @a2a-js/sdk@1.3.0 in devDependencies; deferred to G6-02 federation milestone"
+    },
+    "decision": {
+      "modules": ["src/routing/decision-provider.ts", "src/routing/cognitive-router.ts"],
+      "ruleProvider": "READY — RuleDecisionProvider",
+      "llmProvider": "READY — LlmDecisionProvider exists in contract",
+      "jev_status": "DEFERRED — Jev is GA (self-serve since Sep 2026); benchmark at TASK-037 (G6-03)"
+    },
+    "verification": {
+      "modules": ["src/mission/verification.ts"],
+      "status": "READY — 6 check kinds: command, file, evidence, mission-input, flight-action, content-in-artifacts; clean-room verifier; bounded retry"
+    },
+    "observability": {
+      "modules": ["src/mission/flight-recorder.ts", "src/agui/event-bridge.ts"],
+      "status": "READY — JSONL per mission; AG-UI event bridge; mission/worker/verification/handoff/retry events"
+    },
+    "learning": {
+      "modules": ["src/learning/experience.ts", "src/learning/candidate-generator.ts", "src/learning/evaluation.ts", "src/learning/pattern.ts", "src/learning/experience-store.ts", "src/learning/evolution.ts"],
+      "status": "READY — loop CLOSED; Evidence Signature v1 frozen; quarantine enforced; 3 trusted patterns from G5-05"
+    },
+    "workspace_development": {
+      "modules": ["src/work/git-workspace.ts", "src/work/dev-runtime.ts", "src/work/integration-manager.ts", "src/work/repo-mission.ts"],
+      "status": "READY — GitWorkspace, DevelopmentRuntime (TASK-022 dev fallback), IntegrationManager, RepoMission"
+    }
+  },
+  "dependencyVersionCensus": {
+    "openbot": {
+      "assumption": "External service at /home/z/my-project/upstream/OpenBot; started via start_upstream.py",
+      "versionPin": "EXTERNAL_SERVICE_DEPENDENT — version managed outside Genesis repo",
+      "status": "RISKY (external)"
+    },
+    "opendots": {
+      "assumption": "External service at /home/z/my-project/upstream/OpenDots",
+      "versionPin": "EXTERNAL_SERVICE_DEPENDENT",
+      "status": "RISKY (external)"
+    },
+    "openmuse": {
+      "assumption": "External service at /home/z/my-project/upstream/OpenMuse",
+      "versionPin": "EXTERNAL_SERVICE_DEPENDENT",
+      "status": "RISKY (external)"
+    },
+    "mcp_sdk": {
+      "version": "@modelcontextprotocol/sdk@1.32.1",
+      "specPin": "2026-07-28 (RC)",
+      "status": "ALPHA (RC spec; track RC→GA in G6)"
+    },
+    "ag_ui": {
+      "version": "@ag-ui/core@1.0.2",
+      "protocolVersion": "1.0",
+      "status": "STABLE"
+    },
+    "a2a": {
+      "version": "@a2a-js/sdk@1.3.0",
+      "status": "NOT_ACTIVATED (devDependency only; deferred to G6-02)"
+    },
+    "decision_providers": {
+      "rule": "internal",
+      "llm": "internal (contract)",
+      "jev": "external GA (self-serve Sep 2026); benchmark G6-03"
+    },
+    "storage_database": {
+      "flightRecorder": "JSONL file (durable)",
+      "experienceStore": "in-memory + JSON evidence files",
+      "noDatabase": true
+    },
+    "browser_runtime": {
+      "openbot": "EXTERNAL_SERVICE_DEPENDENT",
+      "status": "RISKY (external)"
+    },
+    "yaml": "yaml@2.9.1 (for ownership.yaml parsing)",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3",
+    "eslint": "10.12.0",
+    "zod": "4.6.5 (devDependency)",
+    "node": ">=24 (engine constraint)"
+  },
+  "productionReadinessCensus": {
+    "status": "PRE_PRODUCTION",
+    "p0Items": 3,
+    "p1Items": 13,
+    "p2Items": 10,
+    "p3Items": 16,
+    "hardeningMatrixDocument": "docs/transition/PRODUCTION_HARDENING_MATRIX.md"
+  },
+  "observabilityCensus": {
+    "mission_state": "AVAILABLE — mission-started, requirements-compiled, plan-created, genomes-compiled, mission-finished, verification, worker-retry",
+    "worker_state": "AVAILABLE — worker-started, worker-step, worker-finished, worker-retry",
+    "organization_state": "AVAILABLE — plan-created (workers, roles, collaboration); learned influence recorded",
+    "task_state": "PARTIAL — task implicit in worker-step; no explicit task entity",
+    "handoff_observability": "AVAILABLE — handoff event recorded (ask_worker)",
+    "runtime_observability": "AVAILABLE — runtime calls in worker-step; providerCallsSource callback",
+    "capability_observability": "PARTIAL — grants in genomes-compiled; invocations in worker-step; no capability health",
+    "artifact_observability": "PARTIAL — artifact paths in worker-finished; no artifact registry/metadata",
+    "verification_observability": "AVAILABLE — verification event (ok, passed, failed, failures)",
+    "learning_observability": "AVAILABLE — learned.considered, learned.applied in plan-created; pattern retrieval implicit",
+    "failure_observability": "PARTIAL — worker-finished with status=failure; no failure taxonomy",
+    "recovery_observability": "PARTIAL — worker-retry event; no recovery-state event"
+  },
+  "g7BackendReadiness": {
+    "genesis_work": "PARTIAL",
+    "genesis_agent": "READY",
+    "mission_control": "PARTIAL",
+    "capability_hub": "PARTIAL",
+    "learning_ui": "READY",
+    "artifacts": "PARTIAL",
+    "replay": "PARTIAL",
+    "performance_insights": "READY",
+    "decision_explainability": "PARTIAL",
+    "criticalG7BackendGaps": 5,
+    "readinessDocument": "docs/transition/G7_PRODUCT_EXPERIENCE_BACKEND_READINESS.md"
+  },
+  "securitySecretsCensus": {
+    "api_keys": {
+      "whereConfigured": "Environment variables (e.g., ZAI_API_KEY for zai-reasoning provider)",
+      "persisted": "NO in Genesis repo; YES in deployment environment",
+      "logged": "NO (not recorded in flight events)",
+      "exposedToWorkers": "NO (provider credentials stay in provider; worker sees only reasoning output)",
+      "isolated": "YES (provider-scoped)"
+    },
+    "provider_credentials": {
+      "whereConfigured": "Provider constructor (zai-reasoning.ts)",
+      "status": "Provider-scoped; not worker-visible"
+    },
+    "mcp_credentials": {
+      "whereConfigured": "MCP server config (external to Genesis)",
+      "status": "MCP adapter receives configured provider; credentials not in Genome"
+    },
+    "openbot_credentials": {
+      "whereConfigured": "OpenBot process config (external)",
+      "status": "External service; Genesis adapter connects via configured endpoint"
+    },
+    "external_service_credentials": {
+      "status": "External to Genesis; not managed by Genesis"
+    },
+    "repository_tokens": {
+      "currentSession": "A repository token was stored at /home/z/my-project/secure/genesis_repo_token during G5-07; will be deleted at end of this transition mission per Section 35",
+      "persisted": "YES (file at secure path, chmod 600)",
+      "logged": "NO (never printed; never in flight events)",
+      "exposedToWorkers": "NO",
+      "isolated": "YES (file permission 600; outside repo worktree)",
+      "deletionScheduled": "YES — at end of this transition mission"
+    },
+    "secret_handling_status": "PARTIAL — provider credentials are isolated; no central secret manager; configuration validation (missing-secret detection) is UNPROVEN (H-33)",
+    "currentRisks": [
+      "No central secret manager — credentials scattered across provider configs",
+      "Configuration validation for missing secrets is UNPROVEN (H-33, P1)",
+      "Session credential file exists during transition (will be deleted at end)"
+    ]
+  },
+  "debtClassification": {
+    "G6_BLOCKER": 0,
+    "G6_HARDENING": "P0 (3) + P1 (13) + P2 (10) hardening items — see PRODUCTION_HARDENING_MATRIX.md",
+    "G7_BACKEND_REQUIREMENT": 5,
+    "G7_UI_ONLY": "H-20 (user-stop vs cancel), replay engine UI, design system",
+    "POST_V1": "H-23 (idempotent resume), statistical confidence, pattern retirement lifecycle",
+    "ACCEPTED_LIMITATION": "scripted reasoning in Academy, GoalCompiler v0.1 heuristics, intersection-based retrieval, N small, single session, no real-LLM in Academy"
+  },
+  "g6Roadmap": [
+    {"stage": "G6-01", "name": "Production Hardening", "purpose": "Error handling, retries, cancellation, partial failure, worker/provider failure, recovery, concurrency, idempotency, observability, auditability, artifact persistence, project/mission history store"},
+    {"stage": "G6-02", "name": "A2A Federation", "purpose": "External agent federation; activate @a2a-js/sdk"},
+    {"stage": "G6-03", "name": "Jev Decision Benchmark", "purpose": "Wrap Jev as MCP tool behind DecisionProvider; benchmark at TASK-037"},
+    {"stage": "G6-04", "name": "Release Candidate + Reproducibility Gate", "purpose": "Configuration metadata, provider health, capability inventory freeze, environment readiness; RC tag"},
+    {"stage": "G6-05", "name": "Final Benchmark + Claims", "purpose": "Performance metrics, comparison metrics, mission evidence; final defensible claims"},
+    {"stage": "G6-06", "name": "Engine v1 Closure", "purpose": "Stable backend contracts; event schema freeze; capability/artifact/decision metadata freeze; UI-facing read models if needed; engine v1 closed"}
+  ],
+  "g7FutureRoadmap": [
+    {"stage": "G7-01", "name": "UX Architecture & Design System"},
+    {"stage": "G7-02", "name": "Genesis Work"},
+    {"stage": "G7-03", "name": "Genesis Agent"},
+    {"stage": "G7-04", "name": "Capability Hub & Plugin Ecosystem"},
+    {"stage": "G7-05", "name": "Mission Control & Organization"},
+    {"stage": "G7-06", "name": "Intelligence & Learning"},
+    {"stage": "G7-07", "name": "Artifacts / Computer / Observability / Replay"},
+    {"stage": "G7-08", "name": "Product Integration & v1.0 Acceptance"}
+  ],
+  "finalState": {
+    "GROUP_5": "CLOSED",
+    "GROUP_6": "NOT_STARTED",
+    "GROUP_7": "NOT_STARTED",
+    "ENGINE_BASELINE": "FROZEN (after this transition's commit)",
+    "PRODUCTION_READINESS_CENSUS": "COMPLETE",
+    "PRODUCTION_HARDENING_MATRIX": "READY",
+    "G7_BACKEND_READINESS": "DOCUMENTED",
+    "G7_IMPLEMENTATION_STARTED": "NO",
+    "SAFE_TO_OPEN_FRESH_G6_SESSION": "YES"
+  }
+}
