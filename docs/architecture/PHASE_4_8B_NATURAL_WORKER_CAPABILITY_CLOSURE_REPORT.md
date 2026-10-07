@@ -256,7 +256,7 @@ The integration check runs a scripted reasoning provider through the real Compos
 
 ## 13. Remediation Commit SHA
 
-**REMEDIATION_COMMIT_SHA =** (recorded post-commit)
+**REMEDIATION_COMMIT_SHA =** `92e8d13c4a3e9ebce64966f54bb804f2fe1e7a39`
 **WORKTREE_BEFORE_4_8C =** CLEAN (after commit)
 
 ---
