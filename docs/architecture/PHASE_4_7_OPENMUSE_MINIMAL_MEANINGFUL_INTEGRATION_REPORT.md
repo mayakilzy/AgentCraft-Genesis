@@ -3,7 +3,7 @@
 **Phase:** 4.7
 **Date:** 2026-10-07
 **Start SHA:** `8886d0665fe7268ad227d3876a4ad52108f42a54`
-**Final SHA:** _(recorded after commit)_
+**Final SHA:** 43630f29bcb903eb3ceb5c0c7adc37cdfda2be4b
 **Branch:** `build/group-03-repository-work`
 
 ---
@@ -268,7 +268,7 @@ None for Phase 4.7. Both the basic probe and the recovery probe PASSED with real
 
 ## 30. Exact Final SHA
 
-_(recorded after commit)_
+43630f29bcb903eb3ceb5c0c7adc37cdfda2be4b
 
 ---
 
