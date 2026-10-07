@@ -53,6 +53,62 @@ export interface StatisticalCandidateGeneratorOptions {
 const MIN_SUPPORT = 1;
 
 /**
+ * G5-04A — Evidence Signature.
+ *
+ * Two experiences support the same context-specific organizational candidate
+ * only when they share a comparable task context — not merely the same
+ * coarse semantic domain. The evidence signature is (domain + sorted
+ * capabilityNeeds): the smallest combination of EXISTING Experience fields
+ * that captures "these missions are actually comparable."
+ *
+ * Why this layer (not GoalCompiler, not schema, not evaluator):
+ *   - GoalCompiler.domain is intentionally coarse (4 values) — a broad
+ *     semantic descriptor for planner shape selection, NOT an evidence-
+ *     grouping key. C001-03 (data) being 'general' and C001-07 (document
+ *     comparison) being 'research' are expected coarse-taxonomy behaviors,
+ *     not defects.
+ *   - The Experience schema already has goal.capabilityNeeds. Adding a new
+ *     field (taskClass, academyFamily) would either couple production to
+ *     Academy metadata or require a new classifier — both are bloat.
+ *   - The evaluator's rules (support ≥ threshold, no contradiction,
+ *     verification quality) are correct GIVEN its inputs. The problem is
+ *     that the inputs (grouped experiences) were semantically invalid.
+ *
+ * The signature prevents accidental cross-family aggregation: C001-01
+ * (capabilityNeeds: [document-authoring]) and C001-07 (capabilityNeeds:
+ * [web-research, document-authoring]) now have DIFFERENT signatures and
+ * cannot support the same context-specific candidate. Genuine cross-context
+ * patterns remain possible when a candidate is explicitly emitted with a
+ * broader applicability (future extension), but accidental aggregation is
+ * structurally prevented.
+ */
+export interface EvidenceSignature {
+  readonly domain: string;
+  readonly capabilityNeeds: readonly string[];
+}
+
+/** Compute the evidence signature for an experience. */
+function evidenceSignature(exp: Experience): EvidenceSignature {
+  return {
+    domain: exp.goal.domain,
+    capabilityNeeds: [...exp.goal.capabilityNeeds].sort(),
+  };
+}
+
+/** String key for Map grouping — stable across experiences with same signature. */
+function signatureKey(sig: EvidenceSignature): string {
+  return `${sig.domain}|${sig.capabilityNeeds.join(',')}`;
+}
+
+/** Human-readable label for the signature (used in candidate text). */
+function signatureLabel(sig: EvidenceSignature): string {
+  const needs = sig.capabilityNeeds.length === 0
+    ? 'no specific capability needs'
+    : sig.capabilityNeeds.join('+');
+  return `${sig.domain} (${needs})`;
+}
+
+/**
  * Deterministic, statistical candidate generator. Reads Experience
  * contributions, detects redundant-role and valuable-role signals per domain,
  * and produces evidence-linked candidates.
@@ -68,19 +124,27 @@ export class StatisticalCandidateGenerator implements CandidateGenerator {
   generate(experiences: readonly Experience[]): readonly LearningCandidate[] {
     if (experiences.length === 0) return [];
 
-    // Group experiences by domain.
-    const byDomain = new Map<string, Experience[]>();
+    // G5-04A: group by evidence SIGNATURE (domain + capabilityNeeds), not
+    // domain alone. Two experiences support the same context-specific
+    // candidate only when they share the same signature — preventing
+    // accidental cross-family aggregation from a coarse domain label.
+    const bySignature = new Map<string, { sig: EvidenceSignature; bucket: Experience[] }>();
     for (const exp of experiences) {
-      const bucket = byDomain.get(exp.goal.domain) ?? [];
-      bucket.push(exp);
-      byDomain.set(exp.goal.domain, bucket);
+      const sig = evidenceSignature(exp);
+      const key = signatureKey(sig);
+      const entry = bySignature.get(key);
+      if (entry === undefined) {
+        bySignature.set(key, { sig, bucket: [exp] });
+      } else {
+        entry.bucket.push(exp);
+      }
     }
 
     const candidates: LearningCandidate[] = [];
-    for (const [domain, bucket] of byDomain) {
+    for (const { sig, bucket } of bySignature.values()) {
       if (bucket.length < MIN_SUPPORT) continue;
-      candidates.push(...this.detectRedundantRoles(domain, bucket));
-      candidates.push(...this.detectValuableRoles(domain, bucket));
+      candidates.push(...this.detectRedundantRoles(sig, bucket));
+      candidates.push(...this.detectValuableRoles(sig, bucket));
     }
     return candidates;
   }
@@ -94,7 +158,7 @@ export class StatisticalCandidateGenerator implements CandidateGenerator {
    * contribution to the deliverable.)
    */
   private detectRedundantRoles(
-    domain: string,
+    sig: EvidenceSignature,
     bucket: readonly Experience[],
   ): LearningCandidate[] {
     // Roles present in every experience of the bucket.
@@ -117,17 +181,21 @@ export class StatisticalCandidateGenerator implements CandidateGenerator {
 
       const supportIds = bucket.map((exp) => exp.id);
       const evidenceStrength = supportIds.length / (supportIds.length + 0);
+      const label = signatureLabel(sig);
       const effect: CandidateEffect = {
         kind: 'avoid-role',
-        description: `Omit the "${role}" role for ${domain} missions; it produced no artifacts across ${supportIds.length} supporting experience(s).`,
+        description: `Omit the "${role}" role for ${label} missions; it produced no artifacts across ${supportIds.length} supporting experience(s).`,
         targetRole: role,
       };
       candidates.push({
-        id: `cand-${domain}-avoid-${slugify(role)}`,
+        id: `cand-${sig.domain}-${sig.capabilityNeeds.join('-')}-avoid-${slugify(role)}`,
         hypothesis:
-          `The "${role}" role is redundant for ${domain} missions: across ` +
+          `The "${role}" role is redundant for ${label} missions: across ` +
           `${supportIds.length} experience(s) it produced no artifacts.`,
-        applicableContext: { domain: domain as never },
+        applicableContext: {
+          domain: sig.domain as never,
+          capabilityNeeds: [...sig.capabilityNeeds] as never,
+        },
         proposedEffect: effect,
         supportingExperienceIds: supportIds,
         contradictingExperienceIds: [],
@@ -147,7 +215,7 @@ export class StatisticalCandidateGenerator implements CandidateGenerator {
    * deliverable — a falsifiable hypothesis that it should be preferred.
    */
   private detectValuableRoles(
-    domain: string,
+    sig: EvidenceSignature,
     bucket: readonly Experience[],
   ): LearningCandidate[] {
     const verifiedBucket = bucket.filter(
@@ -171,18 +239,22 @@ export class StatisticalCandidateGenerator implements CandidateGenerator {
 
       const supportIds = verifiedBucket.map((exp) => exp.id);
       const evidenceStrength = supportIds.length / (supportIds.length + 0);
+      const label = signatureLabel(sig);
       const effect: CandidateEffect = {
         kind: 'prefer-role',
-        description: `Prefer the "${role}" role for ${domain} missions; it produced artifacts across ${supportIds.length} verified experience(s).`,
+        description: `Prefer the "${role}" role for ${label} missions; it produced artifacts across ${supportIds.length} verified experience(s).`,
         targetRole: role,
       };
       candidates.push({
-        id: `cand-${domain}-prefer-${slugify(role)}`,
+        id: `cand-${sig.domain}-${sig.capabilityNeeds.join('-')}-prefer-${slugify(role)}`,
         hypothesis:
-          `The "${role}" role is valuable for ${domain} missions: across ` +
+          `The "${role}" role is valuable for ${label} missions: across ` +
           `${supportIds.length} verified experience(s) it consistently produced ` +
           `artifacts.`,
-        applicableContext: { domain: domain as never },
+        applicableContext: {
+          domain: sig.domain as never,
+          capabilityNeeds: [...sig.capabilityNeeds] as never,
+        },
         proposedEffect: effect,
         supportingExperienceIds: supportIds,
         contradictingExperienceIds: [],

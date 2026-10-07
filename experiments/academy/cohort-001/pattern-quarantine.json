@@ -1,0 +1,32 @@
+{
+  "$schema": "genesis-academy-pattern-quarantine-v1",
+  "createdAt": "2026-10-07",
+  "phase": "G5-04A",
+  "purpose": "Patterns promoted under the old domain-only grouping semantics that are scientifically unsupported. These patterns must NOT influence G5-05 (Cohort 002) organization planning.",
+  "quarantineRule": "A pattern is quarantined when its support was aggregated from experiences that share a coarse domain label but NOT a comparable evidence signature (domain + capabilityNeeds). The pattern is technically promoted under old semantics but scientifically untrusted.",
+  "patterns": [
+    {
+      "id": "cand-research-prefer-sole-operator",
+      "scientificStatus": "QUARANTINED",
+      "reason": "DOMAIN_CLASSIFICATION_ARTIFACT",
+      "description": "Promoted under old domain-only grouping. Support=2 came from C001-01 (research-evidence-synthesis, capabilityNeeds=[document-authoring]) and C001-07 (document-comparison, capabilityNeeds=[web-research, document-authoring]). These are different Academy families with different task contexts. The coarse domain 'research' was shared because both goal texts contain the word 'compare', but the missions are not comparable organizational evidence.",
+      "supportingExperienceIds": ["exp-cohort-001-C001-01", "exp-cohort-001-C001-07"],
+      "originalApplicableContext": {
+        "domain": "research"
+      },
+      "originalEvidenceStrength": 1.0,
+      "originalPromotedAt": "2026-10-07T10:45:33.316Z",
+      "mayInfluenceFutureAcademyLearning": false,
+      "mayInfluenceFutureAcademyRetrieval": false,
+      "historicalEvidencePreserved": true,
+      "historicalEvidenceLocation": "experiments/academy/cohort-001/results.json",
+      "remediationPhase": "G5-04A",
+      "remediationMechanism": "Evidence-signature-aware candidate generation (domain + capabilityNeeds grouping). Re-running the candidate generator on the same 4 Cohort 001 experiences under the new semantics does NOT produce this candidate. The old pattern remains in historical evidence as an audit record of what happened under the old semantics."
+    }
+  ],
+  "invariants": {
+    "CONTAMINATED_PATTERN_RETRIEVABLE_FOR_G5_05": false,
+    "HISTORICAL_EVIDENCE_PRESERVED": true,
+    "HISTORICAL_PATTERN_NOT_DELETED": true
+  }
+}

@@ -215,11 +215,26 @@ export class RuleCandidateEvaluator implements CandidateEvaluator {
     allExperiences: readonly Experience[],
   ): Experience[] {
     const domain = candidate.applicableContext.domain;
+    const candidateNeeds = candidate.applicableContext.capabilityNeeds ?? [];
     const targetRole = candidate.proposedEffect.targetRole;
     if (domain === undefined || targetRole === undefined) return [];
 
     return allExperiences.filter((exp) => {
       if (exp.goal.domain !== domain) return false;
+      // G5-04A: when the candidate carries capabilityNeeds (the new
+      // signature-aware path), a contradiction must be from the SAME
+      // evidence signature (domain + capabilityNeeds), not merely the
+      // same coarse domain. When the candidate has NO capabilityNeeds
+      // (backward-compatible path for older candidates), fall back to
+      // domain-only matching — the original behavior.
+      if (candidateNeeds.length > 0) {
+        const expNeeds = [...exp.goal.capabilityNeeds].sort();
+        const candNeedsSorted = [...candidateNeeds].sort();
+        if (expNeeds.length !== candNeedsSorted.length) return false;
+        for (let i = 0; i < expNeeds.length; i++) {
+          if (expNeeds[i] !== candNeedsSorted[i]) return false;
+        }
+      }
       if (candidate.supportingExperienceIds.includes(exp.id)) return false;
       const contrib = exp.contributions.find((c) => c.role === targetRole);
       if (contrib === undefined) return false;
