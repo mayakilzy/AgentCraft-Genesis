@@ -1,0 +1,322 @@
+{
+  "registry_at": "2026-10-08T00:00:00Z",
+  "source_head": "15243efae798f2ef90ec3a2ea185b17e798858fc",
+  "format": "Each claim has one of four statuses: PROVEN, PROVEN_WITH_LIMITATIONS, NOT_PROVEN, REJECTED. The wording must be precise. Stronger wording requires stronger evidence.",
+  "claims": [
+    {
+      "CLAIM_ID": "C01",
+      "CLAIM_TEXT": "Genesis compiles goals into executable worker organizations.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E3",
+      "SUPPORTING_EXPERIMENTS": ["G6-05-EXP-A"],
+      "SCOPE": "Deterministic GoalCompiler v0.1 + OrganizationPlanner + GenomeCompiler against 3 distinct non-trivial goals spanning software-engineering, diagnostic, and research domains.",
+      "LIMITATIONS": [
+        "GoalCompiler is the deterministic v0.1 heuristic, NOT an LLM-backed understanding provider.",
+        "Organization is generated but not executed in Exp-A; execution is Exp-B.",
+        "N=3 cases; structural difference is qualitative, not statistical.",
+        "Comparator is NONE — no superiority claim over a fixed/static organization."
+      ],
+      "APPROVED_PUBLIC_WORDING": "Genesis demonstrated that a meaningful goal compiles into a structurally varying executable worker organization in 3 verified missions spanning 3 distinct domains (software-engineering, diagnostic, research) under controlled conditions.",
+      "PROHIBITED_WORDING": [
+        "Genesis always compiles goals correctly",
+        "Genesis outperforms fixed organizations",
+        "GoalCompiler uses LLM understanding"
+      ]
+    },
+    {
+      "CLAIM_ID": "C02",
+      "CLAIM_TEXT": "Genesis can execute generated organizations and independently verify outcomes.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E3",
+      "SUPPORTING_EXPERIMENTS": ["G6-05-EXP-B", "phase-4-8a-smoke", "phase-4-8e-blind", "G6-04-smoke-mission"],
+      "SCOPE": "Deterministic full-chain execution (Goal → Requirements → Organization → Genome → Worker → Verification → Outcome) on a multi-artifact mission under scripted reasoning; complements Phase 4.8A/E real-LLM evidence.",
+      "LIMITATIONS": [
+        "DEVELOPMENT_REASONING_FALLBACK reasoning; not real-LLM evidence (Phase 4.8A/E provide that).",
+        "MemoryComputer (in-memory filesystem); not real OpenBot.",
+        "N=3 deterministic runs; not statistical evidence of production-scale reliability."
+      ],
+      "APPROVED_PUBLIC_WORDING": "Genesis executed a non-trivial multi-artifact mission end-to-end with 3/3 verified successes and 0 false successes under controlled conditions using deterministic reasoning; the same chain runs on real LLM + real OpenBot in Phase 4.8A/E.",
+      "PROHIBITED_WORDING": [
+        "Genesis reliably executes any mission",
+        "Genesis guarantees verified outcomes in production"
+      ]
+    },
+    {
+      "CLAIM_ID": "C03",
+      "CLAIM_TEXT": "Genesis can compose OpenBot, OpenDots and OpenMuse capabilities for a mission.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E2",
+      "SUPPORTING_EXPERIMENTS": ["phase-4-8e-blind", "phase-4-8-probe", "phase-4-8a-smoke"],
+      "SCOPE": "Real three-pillar composition (OpenBot + OpenDots + OpenMuse) with real LLM (llm-glm-4-plus) across Phase 4.8A and 4.8E blind missions; Phase 4.8-probe confirmed cross-pillar flow.",
+      "LIMITATIONS": [
+        "Phase 4.8C declared OpenMuse available but Invoked=false despite mission requesting durable delegation — observed limitation, not fixed.",
+        "OpenMuse in-flight recovery (H-22) NOT proven.",
+        "Single mission per composition case."
+      ],
+      "APPROVED_PUBLIC_WORDING": "Genesis demonstrated real three-pillar capability composition (OpenBot + OpenDots + OpenMuse) with real LLM in 2 verified blind missions (Phase 4.8A, 4.8E) where cross-pillar flow produced verified artifacts.",
+      "PROHIBITED_WORDING": [
+        "Genesis composes all three pillars reliably in production",
+        "OpenMuse in-flight recovery is proven",
+        "Genesis reliably composes any capability combination"
+      ]
+    },
+    {
+      "CLAIM_ID": "C04",
+      "CLAIM_TEXT": "Genesis supports MCP-based tool interoperability.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E3",
+      "SUPPORTING_EXPERIMENTS": ["g5-01-mcp-probe-positive", "g5-01-mcp-probe-negative"],
+      "SCOPE": "Local reference MCP server; authorized workers invoke tools correctly; unauthorized workers are blocked with grant refusal and no false success.",
+      "LIMITATIONS": [
+        "Local reference MCP server only; not a real third-party MCP server.",
+        "No production-scale MCP federation proven.",
+        "No universal MCP compatibility claim."
+      ],
+      "APPROVED_PUBLIC_WORDING": "MCP-based tool interoperability was demonstrated with a local reference MCP server: authorized workers invoke tools correctly and unauthorized workers are blocked, with no false success.",
+      "PROHIBITED_WORDING": [
+        "Genesis integrates with any MCP server",
+        "Universal MCP compatibility is proven",
+        "Genesis fully supports MCP in production"
+      ]
+    },
+    {
+      "CLAIM_ID": "C05",
+      "CLAIM_TEXT": "Genesis exposes AG-UI-compatible execution events.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E3",
+      "SUPPORTING_EXPERIMENTS": ["g5-02-ag-ui-probe-success", "g5-02-ag-ui-probe-failure"],
+      "SCOPE": "AG-UI v1.0 protocol emission; 13 ordered event types emitted; consumer reconstructs run; failure probe emits RUN_ERROR; no false success.",
+      "LIMITATIONS": [
+        "In-process consumer only; not a real third-party AG-UI application.",
+        "No production-scale AG-UI streaming proven."
+      ],
+      "APPROVED_PUBLIC_WORDING": "AG-UI-compatible execution events are emitted by Genesis in correct AG-UI v1.0 protocol order, and a consumer can reconstruct the run including failure cases without false success.",
+      "PROHIBITED_WORDING": [
+        "Genesis integrates seamlessly with all AG-UI applications",
+        "AG-UI streaming is production-proven"
+      ]
+    },
+    {
+      "CLAIM_ID": "C06",
+      "CLAIM_TEXT": "Genesis supports outbound A2A federation with an independent reference agent.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E3",
+      "SUPPORTING_EXPERIMENTS": ["g6-02-federation-probe-A", "g6-02-federation-probe-B", "g6-02-federation-probe-C"],
+      "SCOPE": "A2A outbound federation against an independent local reference agent; 3 probes (success, failure, trust-boundary). The trust-boundary invariant (A2A RESULT ≠ VERIFIED GENESIS FACT) is proven.",
+      "LIMITATIONS": [
+        "Outbound federation only — inbound federation deferred.",
+        "Reference agent uses no auth — production authentication not proven.",
+        "Only local reference-agent interoperability proven, not a real third-party A2A agent.",
+        "Polling-based (not streaming)."
+      ],
+      "APPROVED_PUBLIC_WORDING": "Outbound A2A interoperability was demonstrated against an independent local reference agent. The trust-boundary invariant is proven: an external agent claiming success with wrong content does not become Genesis verified success.",
+      "PROHIBITED_WORDING": [
+        "Genesis integrates seamlessly with all A2A agents",
+        "A2A inbound federation is proven",
+        "A2A production authentication is proven",
+        "Genesis federates with arbitrary external agents in production"
+      ]
+    },
+    {
+      "CLAIM_ID": "C07",
+      "CLAIM_TEXT": "Genesis can optionally consume real Jev probabilistic decisions.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E2",
+      "SUPPORTING_EXPERIMENTS": ["g6-03b-positive-causal-probe", "g6-03-benchmark", "g6-03a-real-decisions-api-probe", "g6-03a-failure-truthfulness-probe"],
+      "SCOPE": "Real Jev Decision Model (typesafe/jev-1.13) via OpenRouter Decisions API EU endpoint; positive causal proof (Jev decision causally wired into genome compilation, mission success, $0.000016296 observed); benchmark 27/29 correctness with 7 failure-truthfulness probes PASS.",
+      "LIMITATIONS": [
+        "Jev is OPTIONAL — production default is RuleDecisionProvider.",
+        "Jev correctness NOT strictly superior to Rule (27/29 each; different failures).",
+        "Jev adds cost ($0.00738187 / 34 calls) and latency (avg 3448ms vs Rule 0.069ms).",
+        "No new Jev calls authorized in G6-05."
+      ],
+      "APPROVED_PUBLIC_WORDING": "Real Jev Decision Model integration is proven: a real Jev decision (typesafe/jev-1.13 via OpenRouter Decisions API EU endpoint) is causally wired into Genesis genome compilation with mission success. Jev remains OPTIONAL; production default is RuleDecisionProvider.",
+      "PROHIBITED_WORDING": [
+        "Jev outperforms Rule",
+        "Rule outperforms Jev based on the historical Router benchmark",
+        "Jev is the production default DecisionProvider",
+        "Genesis relies on Jev for bounded probabilistic decisions"
+      ]
+    },
+    {
+      "CLAIM_ID": "C08",
+      "CLAIM_TEXT": "Genesis learns reusable organizational patterns from validated experience.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E3",
+      "SUPPORTING_EXPERIMENTS": ["G6-05-EXP-C", "g5-06-causality", "academy-cohort-001", "academy-cohort-002", "learning-028"],
+      "SCOPE": "Bounded organizational learning loop: validated experiences → candidate generation → evaluation → pattern promotion → planner retrieval → pattern application, under scripted reasoning conditions.",
+      "LIMITATIONS": [
+        "Scripted reasoning throughout Academy cohorts (provenance.source=synthetic on every Experience).",
+        "No real-LLM behavioral evidence of learning.",
+        "Only prefer-role:Sole Operator implemented in v0.1 planner.",
+        "N=14 training experiences (Cohort 001 + 002); small sample."
+      ],
+      "APPROVED_PUBLIC_WORDING": "Genesis demonstrated a bounded organizational learning loop: validated experiences produce reusable organizational patterns that are retrieved and applied by the planner, under controlled scripted conditions.",
+      "PROHIBITED_WORDING": [
+        "Genesis autonomously self-improves",
+        "Genesis learns from real-LLM behavioral experience",
+        "Genesis generalizes learning universally"
+      ]
+    },
+    {
+      "CLAIM_ID": "C09",
+      "CLAIM_TEXT": "Applicable learned patterns can reduce organizational complexity while preserving correctness in controlled cases.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E3",
+      "SUPPORTING_EXPERIMENTS": ["G6-05-EXP-C", "g5-06-causality"],
+      "SCOPE": "Controlled experiment: same goal, provider, tools, runtime; only pattern availability varies. Treatment (prefer-role:Sole Operator available) collapsed 2-specialist baseline to 1 Sole Operator; verification correctness preserved.",
+      "LIMITATIONS": [
+        "STRUCTURAL reduction (worker count), NOT behavioral (real-world cost).",
+        "Per Section 11: 'A reduction in worker count is not automatically proof of lower real-world cost.'",
+        "Control arm failed verification because scripted reasoning cannot coordinate across worker instances — this is a measurement artifact, not a real-world learning benefit.",
+        "N=3 deterministic runs per arm."
+      ],
+      "APPROVED_PUBLIC_WORDING": "In a controlled experiment, an applicable learned pattern reduced worker count from 2 to 1 while preserving verification success, under scripted conditions. The measured reduction is structural, not behavioral.",
+      "PROHIBITED_WORDING": [
+        "Genesis makes agents 50% cheaper",
+        "Learning reduces API costs",
+        "Learning reliably reduces complexity in production"
+      ]
+    },
+    {
+      "CLAIM_ID": "C10",
+      "CLAIM_TEXT": "Genesis can reject non-applicable organizational patterns.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E3",
+      "SUPPORTING_EXPERIMENTS": ["G6-05-EXP-D", "g5-07-sealed-blind-transfer"],
+      "SCOPE": "Blind transfer experiment: research mission (applicable) retrieved 2 patterns; software-engineering mission (non-applicable) retrieved 0 patterns; no harmful transfer.",
+      "LIMITATIONS": [
+        "Pattern retrieval is structural (intersection rule) — confirmatory, not active causal transfer.",
+        "G5-07 found 3 CONFIRMATORY_TRANSFER + 1 NON_APPLICABLE; 0 ACTIVE_TRANSFER.",
+        "Scripted reasoning throughout."
+      ],
+      "APPROVED_PUBLIC_WORDING": "Genesis correctly retrieves applicable patterns for relevant unseen missions and correctly retrieves no pattern for non-applicable missions, with no harmful transfer in tested cases.",
+      "PROHIBITED_WORDING": [
+        "Genesis actively transfers learning to all relevant missions",
+        "Genesis never applies a pattern incorrectly"
+      ]
+    },
+    {
+      "CLAIM_ID": "C11",
+      "CLAIM_TEXT": "Genesis prevents false-success claims in tested verification/failure scenarios.",
+      "STATUS": "PROVEN_WITH_LIMITATIONS",
+      "EVIDENCE_LEVEL": "E3",
+      "SUPPORTING_EXPERIMENTS": ["G6-05-EXP-E", "g6-04-failure-probes", "g6-02-federation-probe-B", "g6-03a-failure-truthfulness-probe", "g5-02-ag-ui-probe-failure"],
+      "SCOPE": "5 failure-injection scenarios in G6-05 Exp-E (unknown action, missing artifact, wrong content, hash-mismatch, verification gate fails) all report failure truthfully; 8 G6-04 failure probes all PASS; 7 Jev failure-truthfulness probes all PASS.",
+      "LIMITATIONS": [
+        "Deterministic failure injection; not exhaustive of all failure modes.",
+        "Real-provider failure modes (OpenBot disconnect, OpenMuse queue failure) covered by G6-01 hardening evidence, not G6-05 Exp-E.",
+        "No claim of zero false-success in production."
+      ],
+      "APPROVED_PUBLIC_WORDING": "Genesis prevented false-success claims across 5 deterministic failure-injection scenarios, 8 G6-04 failure probes, 7 Jev failure-truthfulness probes, and the A2A trust-boundary probe, with flight records preserved on failure in tested cases.",
+      "PROHIBITED_WORDING": [
+        "Genesis never produces false success",
+        "Genesis guarantees no false-success in production"
+      ]
+    },
+    {
+      "CLAIM_ID": "C12",
+      "CLAIM_TEXT": "Genesis Engine can be reproduced from clean source without hidden development state.",
+      "STATUS": "PROVEN",
+      "EVIDENCE_LEVEL": "E1",
+      "SUPPORTING_EXPERIMENTS": ["G6-04-clean-room-1", "G6-04-clean-room-2", "G6-04-reproducibility-comparison"],
+      "SCOPE": "Two independent clean-room runs from commit cf92318 produced semantically identical results: typecheck PASS, lint PASS, 487/9/496 tests, smoke mission PASS with verified artifact. Zero env vars required.",
+      "LIMITATIONS": [
+        "Deterministic core only — MemoryComputer, RuleDecisionProvider, DEVELOPMENT_REASONING_FALLBACK.",
+        "Real providers (OpenBot/OpenDots/OpenMuse/Jev) NOT exercised by clean-room run; their evidence lives in Phase 4.5–4.8E and G6-03B.",
+        "G6-04 commit cf92318 is the RC candidate; G6-05 commit 15243ef adds documentation only."
+      ],
+      "APPROVED_PUBLIC_WORDING": "The Genesis Engine can be taken from its authoritative GitHub repository, installed, configured, executed, verified, and reproduced in a clean environment without relying on hidden historical state. Two independent clean-room runs from the same commit produce semantically identical results.",
+      "PROHIBITED_WORDING": [
+        "Genesis is production-ready",
+        "Genesis has been reproduced in arbitrary environments",
+        "Real-provider reproducibility is proven"
+      ]
+    },
+    {
+      "CLAIM_ID": "C13",
+      "CLAIM_TEXT": "Genesis is production-ready for arbitrary autonomous software development.",
+      "STATUS": "REJECTED",
+      "EVIDENCE_LEVEL": "E5",
+      "SUPPORTING_EXPERIMENTS": [],
+      "SCOPE": "n/a",
+      "LIMITATIONS": [
+        "No evidence of arbitrary autonomous software development.",
+        "Genesis demonstrated bounded missions only.",
+        "Engine v1.0 is NOT declared (per Section 0)."
+      ],
+      "APPROVED_PUBLIC_WORDING": "(No public wording — claim rejected.)",
+      "PROHIBITED_WORDING": [
+        "Genesis is production-ready",
+        "Genesis autonomously develops any software",
+        "Engine v1.0 is declared"
+      ]
+    },
+    {
+      "CLAIM_ID": "C14",
+      "CLAIM_TEXT": "Genesis reliably outperforms fixed multi-agent systems.",
+      "STATUS": "REJECTED",
+      "EVIDENCE_LEVEL": "E5",
+      "SUPPORTING_EXPERIMENTS": [],
+      "SCOPE": "n/a",
+      "LIMITATIONS": [
+        "No head-to-head benchmark against a fixed multi-agent system.",
+        "G6-05 Exp-C comparator is a controlled learning-disabled baseline, not a fixed multi-agent system.",
+        "Per Section 17: 'Do not deliberately sabotage the baseline.'"
+      ],
+      "APPROVED_PUBLIC_WORDING": "(No public wording — claim rejected.)",
+      "PROHIBITED_WORDING": [
+        "Genesis outperforms fixed multi-agent systems",
+        "Genesis is more reliable than fixed teams"
+      ]
+    },
+    {
+      "CLAIM_ID": "C15",
+      "CLAIM_TEXT": "Genesis reduces API costs by a generalizable percentage.",
+      "STATUS": "REJECTED",
+      "EVIDENCE_LEVEL": "E5",
+      "SUPPORTING_EXPERIMENTS": [],
+      "SCOPE": "n/a",
+      "LIMITATIONS": [
+        "G6-05 Exp-C measured STRUCTURAL reduction (worker count), NOT real-world API cost.",
+        "Per Section 15: 'Do not convert reasoning calls into dollars without actual model pricing and usage data.'",
+        "Per Section 15: 'Do not claim token savings without token evidence.'"
+      ],
+      "APPROVED_PUBLIC_WORDING": "(No public wording — claim rejected.)",
+      "PROHIBITED_WORDING": [
+        "Genesis reduces API costs by X percent",
+        "Genesis makes agents 50% cheaper",
+        "Learning saves tokens"
+      ]
+    },
+    {
+      "CLAIM_ID": "C16",
+      "CLAIM_TEXT": "Genesis autonomously builds any requested application.",
+      "STATUS": "REJECTED",
+      "EVIDENCE_LEVEL": "E5",
+      "SUPPORTING_EXPERIMENTS": [],
+      "SCOPE": "n/a",
+      "LIMITATIONS": [
+        "No evidence of arbitrary application building.",
+        "Bounded missions only.",
+        "Engine v1.0 is NOT declared."
+      ],
+      "APPROVED_PUBLIC_WORDING": "(No public wording — claim rejected.)",
+      "PROHIBITED_WORDING": [
+        "Genesis builds any application",
+        "Genesis autonomously develops software",
+        "Engine v1.0 is declared"
+      ]
+    }
+  ],
+  "summary": {
+    "total_claims_evaluated": 16,
+    "PROVEN": 1,
+    "PROVEN_WITH_LIMITATIONS": 10,
+    "NOT_PROVEN": 0,
+    "REJECTED": 4,
+    "rejected_strong_claims": ["C13", "C14", "C15", "C16"],
+    "strongest_claim_supported": "C12 — Genesis Engine can be reproduced from clean source without hidden development state (E1 evidence).",
+    "weakest_accepted_claim": "C04/C05/C06 — reference integrations only, not production-scale (E3 evidence)."
+  }
+}

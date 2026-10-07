@@ -1,0 +1,174 @@
+{
+  "experiment_id": "G6-05-EXP-C",
+  "probe_at": "2026-10-07T23:40:13.770Z",
+  "source_head": "15243efae798f2ef90ec3a2ea185b17e798858fc",
+  "research_question": "Does an applicable validated learned pattern reduce organizational complexity (worker count) while preserving verification correctness, under controlled conditions with the same goal, provider, tools, and runtime?",
+  "hypothesis": "With a trusted prefer-role: Sole Operator pattern available for the goal's domain, the OrganizationPlanner collapses a multi-specialist baseline organization into a single Sole Operator, while verification correctness is preserved.",
+  "independent_variable": "learned-pattern availability (control vs treatment)",
+  "controlled_variables": [
+    "goal text (identical in both arms)",
+    "RuleDecisionProvider (deterministic)",
+    "MemoryComputer (in-memory filesystem)",
+    "DEVELOPMENT_REASONING_FALLBACK (clearly labeled)",
+    "MemoryFlightRecorder",
+    "verification checks (identical in both arms)",
+    "maxWorkerSteps=5, missionTimeoutMs=30000"
+  ],
+  "test_mission": "Research the market landscape for vector database vendors and document the three most important differentiators as a markdown brief named brief.md with citations to three independent sources.",
+  "trusted_pattern": {
+    "id": "cand-research-document-authoring-prefer-sole-operator",
+    "effect": "prefer-role",
+    "target_role": "Sole Operator",
+    "applicable_context": {
+      "domain": "research",
+      "capabilityNeeds": [
+        "document-authoring",
+        "web-research"
+      ]
+    },
+    "source": "experiments/academy/g5-07/frozen-pattern-state.json (support=3)"
+  },
+  "repetition_count_per_arm": 3,
+  "control_runs": [
+    {
+      "run_id": 1,
+      "arm": "control",
+      "mission_status": "failure",
+      "verification_passed": 0,
+      "verification_failed": 1,
+      "verification_ok": false,
+      "worker_count": 2,
+      "roles": [
+        "Web Researcher",
+        "Report Writer"
+      ],
+      "pattern_considered": false,
+      "pattern_applied": false,
+      "organization_changed_vs_control": false,
+      "reasoning_calls": 1,
+      "false_success_observed": false,
+      "elapsed_ms": 17
+    },
+    {
+      "run_id": 2,
+      "arm": "control",
+      "mission_status": "failure",
+      "verification_passed": 0,
+      "verification_failed": 1,
+      "verification_ok": false,
+      "worker_count": 2,
+      "roles": [
+        "Web Researcher",
+        "Report Writer"
+      ],
+      "pattern_considered": false,
+      "pattern_applied": false,
+      "organization_changed_vs_control": false,
+      "reasoning_calls": 1,
+      "false_success_observed": false,
+      "elapsed_ms": 3
+    },
+    {
+      "run_id": 3,
+      "arm": "control",
+      "mission_status": "failure",
+      "verification_passed": 0,
+      "verification_failed": 1,
+      "verification_ok": false,
+      "worker_count": 2,
+      "roles": [
+        "Web Researcher",
+        "Report Writer"
+      ],
+      "pattern_considered": false,
+      "pattern_applied": false,
+      "organization_changed_vs_control": false,
+      "reasoning_calls": 1,
+      "false_success_observed": false,
+      "elapsed_ms": 3
+    }
+  ],
+  "treatment_runs": [
+    {
+      "run_id": 1,
+      "arm": "treatment",
+      "mission_status": "success",
+      "verification_passed": 1,
+      "verification_failed": 0,
+      "verification_ok": true,
+      "worker_count": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "pattern_considered": true,
+      "pattern_applied": true,
+      "organization_changed_vs_control": true,
+      "reasoning_calls": 1,
+      "false_success_observed": false,
+      "elapsed_ms": 7
+    },
+    {
+      "run_id": 2,
+      "arm": "treatment",
+      "mission_status": "success",
+      "verification_passed": 1,
+      "verification_failed": 0,
+      "verification_ok": true,
+      "worker_count": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "pattern_considered": true,
+      "pattern_applied": true,
+      "organization_changed_vs_control": true,
+      "reasoning_calls": 1,
+      "false_success_observed": false,
+      "elapsed_ms": 4
+    },
+    {
+      "run_id": 3,
+      "arm": "treatment",
+      "mission_status": "success",
+      "verification_passed": 1,
+      "verification_failed": 0,
+      "verification_ok": true,
+      "worker_count": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "pattern_considered": true,
+      "pattern_applied": true,
+      "organization_changed_vs_control": true,
+      "reasoning_calls": 1,
+      "false_success_observed": false,
+      "elapsed_ms": 4
+    }
+  ],
+  "comparison": {
+    "control_worker_count": 2,
+    "treatment_worker_count": 1,
+    "worker_delta": -1,
+    "control_median_reasoning_calls": 1,
+    "treatment_median_reasoning_calls": 1,
+    "reasoning_delta": 0,
+    "control_verification_successes": 0,
+    "treatment_verification_successes": 3,
+    "correctness_preserved": false,
+    "control_false_success": false,
+    "treatment_false_success": false,
+    "control_successes": 0,
+    "treatment_successes": 3,
+    "pattern_considered_in_treatment": true,
+    "pattern_applied_in_treatment": true,
+    "organization_changed_in_treatment": true
+  },
+  "limitations": [
+    "Scripted reasoning — the worker's actions are scripted identically in both arms; only the organizational shape differs.",
+    "CRITICAL HONEST OBSERVATION: the control arm (2 specialists) FAILS verification because the single scripted reasoning sequence cannot coordinate across two distinct worker instances. The treatment arm (1 Sole Operator) succeeds because the same script writes the file and finishes within one worker. This is NOT evidence that learning improves real-world cost; it is evidence that the learned prefer-role:Sole Operator pattern collapses a multi-specialist baseline into a single Sole Operator under scripted conditions, and that collapse preserves (here, even enables) verification correctness.",
+    "Per G6-05 Section 11: \"A reduction in worker count is not automatically proof of lower real-world cost.\" We respect this and report STRUCTURAL reduction only, not behavioral improvement.",
+    "N=3 deterministic runs per arm; not statistical evidence of generalizable learning benefit."
+  ],
+  "evidence_level": "E3",
+  "evidence_level_justification": "Controlled experiment using deterministic production code. Same limitation as G5-06: scripted reasoning, structural-only measurement.",
+  "pass": true
+}

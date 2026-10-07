@@ -1,0 +1,184 @@
+{
+  "experiment_id": "G6-05-EXP-A",
+  "probe_at": "2026-10-07T23:34:36.108Z",
+  "source_head": "15243efae798f2ef90ec3a2ea185b17e798858fc",
+  "research_question": "Can Genesis transform a meaningful goal into an executable worker organization whose structure varies with the goal and whose capability needs are fully covered?",
+  "hypothesis": "The real GoalCompiler + OrganizationPlanner + GenomeCompiler pipeline produces an organization whose (domain, capabilityNeeds, worker count, role set) varies meaningfully across at least 3 distinct non-trivial goals, with full capability coverage.",
+  "independent_variable": "goal text (3 distinct goals from 3 distinct mission domains)",
+  "controlled_variables": [
+    "RuleDecisionProvider (deterministic)",
+    "MemoryComputer (not used here; planning only)",
+    "no learning patterns (empty pattern set)",
+    "deterministic GoalCompiler v0.1"
+  ],
+  "comparator": "NONE — absolute capability evidence (no artificial baseline)",
+  "repetition_count_per_case": 3,
+  "deterministic_repeatability_confirmed": true,
+  "cases": [
+    {
+      "case_id": "A1-software-engineering",
+      "domain_hint": "software-engineering",
+      "compiled_domain": "software-engineering",
+      "capability_needs": [
+        "code-execution"
+      ],
+      "worker_count": 1,
+      "roles": [
+        "Sole Operator"
+      ],
+      "coordinator_added": false,
+      "capability_coverage_ok": true,
+      "unsupported_assumptions": [],
+      "planning_failures": [],
+      "execution_readiness_ok": true,
+      "genome_tier_assignments": [
+        {
+          "workerId": "sole-operator-1",
+          "tier": "default"
+        }
+      ],
+      "scope": "unknown",
+      "success_criteria": [
+        "The code change is implemented as described.",
+        "Relevant tests pass.",
+        "The build passes."
+      ],
+      "hard_constraints": [
+        "Must not change any source code under src/",
+        "Must use the existing markdown style"
+      ]
+    },
+    {
+      "case_id": "A2-diagnostic",
+      "domain_hint": "diagnostic",
+      "compiled_domain": "diagnostic",
+      "capability_needs": [
+        "code-execution",
+        "document-authoring",
+        "data-analysis"
+      ],
+      "worker_count": 4,
+      "roles": [
+        "Mission Coordinator",
+        "Reproduction Engineer",
+        "Report Writer",
+        "Diagnostic Analyst"
+      ],
+      "coordinator_added": true,
+      "capability_coverage_ok": true,
+      "unsupported_assumptions": [],
+      "planning_failures": [],
+      "execution_readiness_ok": true,
+      "genome_tier_assignments": [
+        {
+          "workerId": "mission-coordinator-1",
+          "tier": "default"
+        },
+        {
+          "workerId": "reproduction-engineer-1",
+          "tier": "cheap"
+        },
+        {
+          "workerId": "report-writer-2",
+          "tier": "default"
+        },
+        {
+          "workerId": "diagnostic-analyst-3",
+          "tier": "cheap"
+        }
+      ],
+      "scope": "unknown",
+      "success_criteria": [
+        "A diagnosis is stated with supporting evidence.",
+        "The root cause is identified or explicitly ruled out with evidence."
+      ],
+      "hard_constraints": [
+        "Do not modify the source code of the module under diagnosis",
+        "Reproduce the failure deterministically before diagnosing"
+      ]
+    },
+    {
+      "case_id": "A3-research",
+      "domain_hint": "research",
+      "compiled_domain": "research",
+      "capability_needs": [
+        "web-research",
+        "code-execution",
+        "document-authoring"
+      ],
+      "worker_count": 4,
+      "roles": [
+        "Mission Coordinator",
+        "Web Researcher",
+        "Generalist Worker",
+        "Report Writer"
+      ],
+      "coordinator_added": true,
+      "capability_coverage_ok": true,
+      "unsupported_assumptions": [],
+      "planning_failures": [],
+      "execution_readiness_ok": true,
+      "genome_tier_assignments": [
+        {
+          "workerId": "mission-coordinator-1",
+          "tier": "default"
+        },
+        {
+          "workerId": "web-researcher-1",
+          "tier": "cheap"
+        },
+        {
+          "workerId": "generalist-worker-2",
+          "tier": "cheap"
+        },
+        {
+          "workerId": "report-writer-3",
+          "tier": "default"
+        }
+      ],
+      "scope": "unknown",
+      "success_criteria": [
+        "A written report exists that answers the stated outcome.",
+        "Findings are backed by sources or data."
+      ],
+      "hard_constraints": [
+        "Must cite at least three independent sources",
+        "No source code changes"
+      ]
+    }
+  ],
+  "structural_difference_summary": {
+    "distinct_domains_observed": [
+      "software-engineering",
+      "diagnostic",
+      "research"
+    ],
+    "distinct_worker_counts_observed": [
+      1,
+      4
+    ],
+    "distinct_roles_observed": [
+      "Sole Operator",
+      "Mission Coordinator",
+      "Reproduction Engineer",
+      "Report Writer",
+      "Diagnostic Analyst",
+      "Web Researcher",
+      "Generalist Worker"
+    ],
+    "organizations_structurally_different": true
+  },
+  "capability_coverage_summary": {
+    "all_cases_covered": true,
+    "all_cases_execution_ready": true,
+    "all_cases_no_unsupported_assumptions": true
+  },
+  "limitations": [
+    "Organization is generated but NOT executed in this experiment; execution is Experiment B.",
+    "GoalCompiler is the deterministic v0.1 heuristic; LLM-based understanding is not exercised.",
+    "Comparator is NONE — no superiority claim is made.",
+    "N=3 cases; structural difference is qualitative, not statistical."
+  ],
+  "evidence_level": "E3",
+  "evidence_level_justification": "Controlled experiment using deterministic production planning code. Real GoalCompiler + OrganizationPlanner + GenomeCompiler execution; no real LLM; MemoryComputer not exercised. Valid for tested behavior only."
+}

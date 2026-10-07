@@ -1,0 +1,109 @@
+{
+  "experiment_id": "G6-05-EXP-D",
+  "probe_at": "2026-10-07T23:41:14.726Z",
+  "source_head": "15243efae798f2ef90ec3a2ea185b17e798858fc",
+  "research_question": "Does Genesis apply learned patterns to relevant unseen tasks WITHOUT blindly applying them to unrelated tasks?",
+  "hypothesis": "Genesis retrieves and considers an applicable pattern for an unseen research mission AND retrieves no pattern for an unseen software-engineering mission, with mission correctness preserved in both cases.",
+  "independent_variable": "mission domain (research vs software-engineering)",
+  "controlled_variables": [
+    "RuleDecisionProvider (deterministic)",
+    "MemoryComputer (in-memory filesystem)",
+    "DEVELOPMENT_REASONING_FALLBACK (clearly labeled)",
+    "frozen trusted pattern state (3 patterns, 0 software-engineering patterns)",
+    "identical verification checks across arms for each mission"
+  ],
+  "trusted_patterns_count": 3,
+  "held_out_verification": "D1 and D2 use NEW mission wordings distinct from any Cohort 001/002 training mission.",
+  "cases": [
+    {
+      "case_id": "D1-research-applicable",
+      "expected_applicability": "APPLICABLE",
+      "mission_outcome": "Investigate the most common vector database deployment models and document the three most impactful differences as a markdown brief named d1-brief.md with citations.",
+      "baseline_arm": {
+        "arm": "baseline",
+        "patterns_available": 0,
+        "patterns_retrieved": 0,
+        "pattern_applicable": false,
+        "pattern_applied": false,
+        "organization_changed": false,
+        "worker_count": 1,
+        "roles": [
+          "Sole Operator"
+        ],
+        "mission_status": "success",
+        "verification_ok": true,
+        "verification_passed": 1,
+        "verification_failed": 0,
+        "harmful_transfer": false
+      },
+      "learned_arm": {
+        "arm": "learned",
+        "patterns_available": 3,
+        "patterns_retrieved": 2,
+        "pattern_applicable": true,
+        "pattern_applied": false,
+        "organization_changed": false,
+        "worker_count": 1,
+        "roles": [
+          "Sole Operator"
+        ],
+        "mission_status": "success",
+        "verification_ok": true,
+        "verification_passed": 1,
+        "verification_failed": 0,
+        "harmful_transfer": false
+      },
+      "transfer_classification": "CONFIRMATORY_TRANSFER (pattern retrieved, considered; baseline already satisfied preference)",
+      "mission_correctness_preserved": true
+    },
+    {
+      "case_id": "D2-software-engineering-non-applicable",
+      "expected_applicability": "NON_APPLICABLE",
+      "mission_outcome": "Implement a small TypeScript function `sum(a, b)` that returns the sum, and verify it passes a test that asserts sum(2, 3) === 5.",
+      "baseline_arm": {
+        "arm": "baseline",
+        "patterns_available": 0,
+        "patterns_retrieved": 0,
+        "pattern_applicable": false,
+        "pattern_applied": false,
+        "organization_changed": false,
+        "worker_count": 1,
+        "roles": [
+          "Sole Operator"
+        ],
+        "mission_status": "success",
+        "verification_ok": true,
+        "verification_passed": 1,
+        "verification_failed": 0,
+        "harmful_transfer": false
+      },
+      "learned_arm": {
+        "arm": "learned",
+        "patterns_available": 3,
+        "patterns_retrieved": 0,
+        "pattern_applicable": false,
+        "pattern_applied": false,
+        "organization_changed": false,
+        "worker_count": 1,
+        "roles": [
+          "Sole Operator"
+        ],
+        "mission_status": "success",
+        "verification_ok": true,
+        "verification_passed": 1,
+        "verification_failed": 0,
+        "harmful_transfer": false
+      },
+      "transfer_classification": "NON_APPLICABLE (correct non-application)",
+      "mission_correctness_preserved": true
+    }
+  ],
+  "limitations": [
+    "The pattern retrieval is structural (intersection rule) — confirmatory retrieval is NOT active causal transfer. This matches the G5-07 finding (0 ACTIVE_TRANSFER, 3 CONFIRMATORY_TRANSFER, 1 NON_APPLICABLE).",
+    "Scripted reasoning — the worker actions are scripted identically across arms.",
+    "N=2 missions; not statistical evidence of universal transfer."
+  ],
+  "evidence_level": "E3",
+  "evidence_level_justification": "Controlled experiment using deterministic production code. Pattern retrieval and application are real production behavior; reasoning is scripted. Same limitation class as G5-07.",
+  "pass": true
+}

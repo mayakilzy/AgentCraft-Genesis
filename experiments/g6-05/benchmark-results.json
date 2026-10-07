@@ -1,0 +1,149 @@
+{
+  "results_at": "2026-10-08T00:00:00Z",
+  "source_head": "15243efae798f2ef90ec3a2ea185b17e798858fc",
+  "experiments": [
+    {
+      "experiment_id": "G6-05-EXP-A",
+      "name": "Goal → Organization (controlled, real production code)",
+      "status": "PASS",
+      "pass": true,
+      "results_path": "experiments/g6-05/exp-A/results.json",
+      "key_metrics": {
+        "cases_run": 3,
+        "domains_observed": ["software-engineering", "diagnostic", "research"],
+        "worker_counts_observed": [1, 4, 4],
+        "all_cases_capability_coverage_ok": true,
+        "all_cases_execution_ready": true,
+        "all_cases_no_unsupported_assumptions": true,
+        "organizations_structurally_different": true,
+        "repetition_count_per_case": 3,
+        "deterministic_repeatability_confirmed": true
+      },
+      "evidence_level": "E3"
+    },
+    {
+      "experiment_id": "G6-05-EXP-B",
+      "name": "End-to-End Execution (real worker actions → artifact → independent verification)",
+      "status": "PASS",
+      "pass": true,
+      "results_path": "experiments/g6-05/exp-B/results.json",
+      "key_metrics": {
+        "test_mission": "Multi-artifact goal (greet.md + farewell.md, both with H1 heading)",
+        "repetition_count": 3,
+        "mission_successes": 3,
+        "verification_successes": 3,
+        "false_successes": 0,
+        "artifact_a_correct_count": 3,
+        "artifact_b_correct_count": 3,
+        "semantic_match_across_runs": true,
+        "median_elapsed_ms": 5,
+        "elapsed_ms_range": {"min": 4, "max": 18}
+      },
+      "evidence_level": "E3"
+    },
+    {
+      "experiment_id": "G6-05-EXP-C",
+      "name": "Organizational Learning (control vs treatment, same goal/provider/tools)",
+      "status": "PASS",
+      "pass": true,
+      "results_path": "experiments/g6-05/exp-C/results.json",
+      "key_metrics": {
+        "control_worker_count": 2,
+        "treatment_worker_count": 1,
+        "worker_delta": -1,
+        "control_verification_successes": 0,
+        "treatment_verification_successes": 3,
+        "false_successes_control": 0,
+        "false_successes_treatment": 0,
+        "pattern_considered_in_treatment": true,
+        "pattern_applied_in_treatment": true,
+        "organization_changed_in_treatment": true,
+        "repetition_count_per_arm": 3,
+        "honest_observation": "Control fails verification because scripted reasoning cannot coordinate across 2 worker instances; treatment succeeds because 1 Sole Operator handles the same scripted sequence. Structural reduction only."
+      },
+      "evidence_level": "E3"
+    },
+    {
+      "experiment_id": "G6-05-EXP-D",
+      "name": "Transfer & Non-Applicability (held-out tasks)",
+      "status": "PASS",
+      "pass": true,
+      "results_path": "experiments/g6-05/exp-D/results.json",
+      "key_metrics": {
+        "cases_run": 2,
+        "D1_research_applicable": {
+          "classification": "CONFIRMATORY_TRANSFER",
+          "baseline_worker_count": 1,
+          "learned_worker_count": 1,
+          "patterns_retrieved_baseline": 0,
+          "patterns_retrieved_learned": 2,
+          "pattern_applied": false,
+          "harmful_transfer": false,
+          "correctness_preserved": true
+        },
+        "D2_software_engineering_non_applicable": {
+          "classification": "NON_APPLICABLE (correct non-application)",
+          "baseline_worker_count": 1,
+          "learned_worker_count": 1,
+          "patterns_retrieved_baseline": 0,
+          "patterns_retrieved_learned": 0,
+          "pattern_applied": false,
+          "harmful_transfer": false,
+          "correctness_preserved": true
+        }
+      },
+      "evidence_level": "E3"
+    },
+    {
+      "experiment_id": "G6-05-EXP-E",
+      "name": "Failure Truthfulness (false-success count)",
+      "status": "PASS",
+      "pass": true,
+      "results_path": "experiments/g6-05/exp-E/results.json",
+      "key_metrics": {
+        "scenarios_run": 5,
+        "scenarios_failed_truthfully": 5,
+        "false_success_count": 0,
+        "evidence_preserved_count": 5,
+        "flight_records_complete_count": 5,
+        "scenarios": [
+          {"id": "E1-unknown-action", "mission_status": "failure", "verification_ok": false, "false_success": false},
+          {"id": "E2-missing-artifact", "mission_status": "failure", "verification_ok": false, "false_success": false},
+          {"id": "E3-wrong-content", "mission_status": "partial", "verification_ok": false, "false_success": false},
+          {"id": "E4-hash-mismatch", "mission_status": "partial", "verification_ok": false, "false_success": false},
+          {"id": "E5-verification-gate-fails", "mission_status": "partial", "verification_ok": false, "false_success": false}
+        ]
+      },
+      "evidence_level": "E3"
+    },
+    {
+      "experiment_id": "G6-05-EXP-F",
+      "name": "Interoperability Audit (existing persisted evidence only)",
+      "status": "PASS",
+      "pass": true,
+      "results_path": "experiments/g6-05/exp-F/audit.json",
+      "key_metrics": {
+        "integrations_audited": 7,
+        "real_provider_integration_proven": 4,
+        "reference_integration_proven": 3,
+        "production_scale_not_proven": 7,
+        "new_external_calls_in_g6_05": 0,
+        "integrations": ["OpenBot", "OpenDots", "OpenMuse", "MCP", "AG-UI", "A2A", "Jev"]
+      },
+      "evidence_level": "E3"
+    }
+  ],
+  "aggregate": {
+    "new_benchmark_experiments": 6,
+    "controlled_comparisons": 2,
+    "total_benchmark_runs": 18,
+    "real_execution_runs": 18,
+    "scripted_reasoning_runs": 18,
+    "external_provider_calls": 0,
+    "external_provider_cost_usd": 0,
+    "all_experiments_pass": true,
+    "production_code_files_added": 0,
+    "production_loc_delta": 0,
+    "runtime_dependencies_added": 0
+  }
+}

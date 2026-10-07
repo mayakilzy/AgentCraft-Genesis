@@ -1,0 +1,188 @@
+{
+  "experiment_id": "G6-05-EXP-F",
+  "probe_at": "2026-10-08T00:00:00Z",
+  "source_head": "15243efae798f2ef90ec3a2ea185b17e798858fc",
+  "research_question": "What is the strongest defensible interoperability claim Genesis can make for each of: OpenBot, OpenDots, OpenMuse, MCP, AG-UI, A2A, Jev?",
+  "method": "Structured review of EXISTING persisted evidence. NO new external calls authorized (per Section 23 default). NO new code executed.",
+  "integrations": [
+    {
+      "integration": "OpenBot",
+      "purpose": "Execution/computer runtime (worker shell + browser + workspace files)",
+      "strongest_evidence_file": "experiments/phase-4-8e-blind/REPORT.md",
+      "supporting_evidence": [
+        "experiments/phase-4-8a-smoke/REPORT.md (real LLM, real OpenBot)",
+        "experiments/phase-4-8c-blind/REPORT.md (real LLM, real OpenBot, partial)",
+        "experiments/phase-4-5-probe/REPORT.md (provider-neutral surfaces dispatch)"
+      ],
+      "classification": "REAL_PROVIDER_INTEGRATION_PROVEN",
+      "evidence_level": "E2",
+      "scope": "Real OpenBot invoked across 3 blind natural missions (Phase 4.8A/C/E) with real LLM (llm-glm-4-plus). Shell-execution, workspace-files, and browser-chromium domains exercised.",
+      "limitations": [
+        "In-flight recovery (H-08 OpenBot disconnect reconnect) NOT proven — deferred per G6-01.",
+        "Runtime unavailable health check (H-07) NOT proven — deferred per G6-01; applies to real OpenBot only.",
+        "Production-scale authentication not proven."
+      ],
+      "approved_public_wording": "Real OpenBot integration was demonstrated across 3 blind natural missions with real LLM (llm-glm-4-plus), exercising shell-execution, workspace-files, and browser-chromium domains.",
+      "prohibited_wording": [
+        "Genesis fully supports OpenBot in production",
+        "OpenBot in-flight recovery is proven",
+        "OpenBot is the production runtime (it is optional)"
+      ]
+    },
+    {
+      "integration": "OpenDots",
+      "purpose": "Collaborative knowledge/workspace (shared pages)",
+      "strongest_evidence_file": "experiments/phase-4-8e-blind/REPORT.md",
+      "supporting_evidence": [
+        "experiments/phase-4-6-probe/REPORT.md (real OpenDots probe)",
+        "experiments/phase-4-8-probe/REPORT.md (real three-pillar composition)"
+      ],
+      "classification": "REAL_PROVIDER_INTEGRATION_PROVEN",
+      "evidence_level": "E2",
+      "scope": "Real OpenDots invoked across Phase 4.6 (probe PASS, mission failure due to verification gate) and Phase 4.8A/E (page creation, retrieval, multi-worker contribution).",
+      "limitations": [
+        "Phase 4.6 probe PASS but mission status failure (verification gate unrelated to OpenDots itself).",
+        "Production-scale federation not proven."
+      ],
+      "approved_public_wording": "Real OpenDots integration was demonstrated across Phase 4.6 and Phase 4.8A/E missions with real LLM, exercising shared page creation and retrieval.",
+      "prohibited_wording": [
+        "OpenDots is production-ready for arbitrary collaborative workloads",
+        "Genesis integrates seamlessly with all OpenDots deployments"
+      ]
+    },
+    {
+      "integration": "OpenMuse",
+      "purpose": "Durable delegated work (job queues)",
+      "strongest_evidence_file": "experiments/phase-4-8e-blind/REPORT.md",
+      "supporting_evidence": [
+        "tests/phase-4-7-openmuse.test.ts (deterministic stub)",
+        "experiments/phase-4-8-probe/REPORT.md (real OpenMuse invoked)"
+      ],
+      "classification": "REAL_PROVIDER_INTEGRATION_PROVEN",
+      "evidence_level": "E2",
+      "scope": "Real OpenMuse invoked in Phase 4.8E blind mission (durable result agreed with OpenBot computer). Phase 4.8C declared OpenMuse available but did not invoke it.",
+      "limitations": [
+        "In-flight job recovery (H-22) NOT proven — deferred per G6-01; applies to real OpenMuse only.",
+        "Phase 4.8C declared OpenMuse available but Invoked=false despite mission requesting durable delegation — observed limitation, not fixed.",
+        "Queued recovery proven; in-flight recovery NOT proven."
+      ],
+      "approved_public_wording": "Real OpenMuse integration was demonstrated in Phase 4.8E with real LLM (llm-glm-4-plus), exercising durable delegated job execution whose result agreed with the OpenBot computer.",
+      "prohibited_wording": [
+        "OpenMuse in-flight recovery is proven",
+        "Genesis fully supports OpenMuse job queues in production"
+      ]
+    },
+    {
+      "integration": "MCP (Model Context Protocol)",
+      "purpose": "Tool/capability interoperability",
+      "strongest_evidence_file": "experiments/g5-01-mcp-probe/evidence-positive/evidence.json",
+      "supporting_evidence": [
+        "experiments/g5-01-mcp-probe/evidence-negative/evidence.json (authorization enforcement)",
+        "tests/protocol-probe.test.ts (in-process InMemoryTransport)"
+      ],
+      "classification": "REFERENCE_INTEGRATION_PROVEN",
+      "evidence_level": "E3",
+      "scope": "Local MCP server (server.ts) demonstrated positive (authorized worker invokes analyze tool, correct sum computed) and negative (unauthorized worker blocked, grant refusal recorded, no false success) paths.",
+      "limitations": [
+        "Local reference MCP server only — not a real third-party MCP server.",
+        "No production-scale MCP federation proven.",
+        "No universal MCP compatibility claim — only the MCP SDK integration is proven."
+      ],
+      "approved_public_wording": "MCP-based tool interoperability was demonstrated with a local reference MCP server: authorized workers invoke tools correctly, unauthorized workers are blocked with grant refusal, and no false success occurs.",
+      "prohibited_wording": [
+        "Genesis integrates with any MCP server",
+        "Genesis fully supports MCP in production",
+        "Universal MCP compatibility is proven"
+      ]
+    },
+    {
+      "integration": "AG-UI (Agent-UI Protocol)",
+      "purpose": "Agent/application event interoperability",
+      "strongest_evidence_file": "experiments/g5-02-ag-ui-probe/evidence-success/evidence.json",
+      "supporting_evidence": [
+        "experiments/g5-02-ag-ui-probe/evidence-failure/evidence.json (failure-truthfulness)",
+        "tests/agui/event-bridge.test.ts (in-process EventEmitter)"
+      ],
+      "classification": "REFERENCE_INTEGRATION_PROVEN",
+      "evidence_level": "E3",
+      "scope": "AG-UI v1.0 protocol emission demonstrated: 13 ordered event types emitted correctly, consumer reconstructs run, results match. Failure probe (worker exhausts budget) emits RUN_ERROR; consumer sees failure; no false success.",
+      "limitations": [
+        "In-process consumer only — not a real AG-UI application.",
+        "No production-scale AG-UI streaming proven.",
+        "No real third-party AG-UI consumer tested."
+      ],
+      "approved_public_wording": "AG-UI-compatible execution events are emitted by Genesis in the correct AG-UI v1.0 protocol order, and a consumer can reconstruct the run including failure cases without false success.",
+      "prohibited_wording": [
+        "Genesis integrates seamlessly with all AG-UI applications",
+        "AG-UI streaming is production-proven"
+      ]
+    },
+    {
+      "integration": "A2A (Agent-to-Agent Protocol)",
+      "purpose": "Cross-organizational agent federation",
+      "strongest_evidence_file": "experiments/g6-02/evidence/successful-federation.json",
+      "supporting_evidence": [
+        "experiments/g6-02/evidence/failure-probe.json (failure truthfulness)",
+        "experiments/g6-02/evidence/trust-boundary-probe.json (trust-boundary invariant)",
+        "tests/runtime/federation-integration.test.ts (5 real protocol probes)"
+      ],
+      "classification": "REFERENCE_INTEGRATION_PROVEN",
+      "evidence_level": "E3",
+      "scope": "A2A outbound federation demonstrated against an independent local reference agent (server.mjs). Three probes: (A) success — agent returns correct hash, Genesis verifies; (B) failure — agent returns FAILED, Genesis remains truthful; (C) trust-boundary — agent claims success with WRONG hash, Genesis verification rejects (A2A RESULT ≠ VERIFIED GENESIS FACT).",
+      "limitations": [
+        "Outbound federation only — inbound federation deferred per G6-02 Section 21.",
+        "Reference agent uses no auth — production authentication not proven.",
+        "Only local reference-agent interoperability proven, not a real third-party A2A agent.",
+        "Polling-based (not streaming).",
+        "No retry on sendMessage (prevents duplicate remote tasks)."
+      ],
+      "approved_public_wording": "Outbound A2A interoperability was demonstrated against an independent local reference agent. The trust-boundary invariant (A2A RESULT ≠ VERIFIED GENESIS FACT) is proven: an external agent claiming success with wrong content does not become Genesis verified success.",
+      "prohibited_wording": [
+        "Genesis integrates seamlessly with all A2A agents",
+        "A2A inbound federation is proven",
+        "A2A production authentication is proven",
+        "Genesis federates with arbitrary external agents in production"
+      ]
+    },
+    {
+      "integration": "Jev (Decision Model via OpenRouter Decisions API)",
+      "purpose": "Optional bounded probabilistic DecisionProvider",
+      "strongest_evidence_file": "experiments/g6-03b/evidence/positive-causal-probe.json",
+      "supporting_evidence": [
+        "experiments/g6-03/evidence/benchmark-results.json (29 cases, real cost $0.00738187)",
+        "experiments/g6-03a/evidence/real-decisions-api-probe.json (chat-completions NOT used)",
+        "experiments/g6-03a/evidence/failure-truthfulness-probe.json (7 failure modes all throw Jev*Error)",
+        "experiments/g6-03b/evidence/access-diagnosis.json (EU endpoint resolved geo-restriction)"
+      ],
+      "classification": "REAL_PROVIDER_INTEGRATION_PROVEN",
+      "evidence_level": "E2",
+      "scope": "Real Jev Decision Model (typesafe/jev-1.13) via OpenRouter Decisions API (EU endpoint). G6-03B positive causal probe: real Jev decision ('default', prob 0.82, conf 0.73) causally wired into Genesis genome compilation, mission succeeded, $0.000016296 observed cost. G6-03 benchmark: 27/29 correctness on main-run corpus, 7 failure-truthfulness probes all PASS.",
+      "limitations": [
+        "Jev is OPTIONAL — production default is RuleDecisionProvider.",
+        "Jev correctness NOT strictly superior to Rule on the benchmark corpus (27/29 each; different failures).",
+        "Jev adds cost ($0.00738187 total / 34 calls) and latency (avg 3448ms vs Rule's 0.069ms).",
+        "Response schema INFERRED_NOT_VERIFIED due to historical 403 geo-restriction (resolved by G6-03B EU endpoint).",
+        "Jev Router (chat-completions product) was tested in G6-03 but is NOT the same as Jev Decision Model — G6-03A corrected this; G6-03B provided the positive causal proof.",
+        "No new Jev calls authorized in G6-05."
+      ],
+      "approved_public_wording": "Real Jev Decision Model integration is proven: a real Jev decision (typesafe/jev-1.13 via OpenRouter Decisions API EU endpoint) is causally wired into Genesis genome compilation with mission success. Jev remains an OPTIONAL DecisionProvider; the production default is RuleDecisionProvider.",
+      "prohibited_wording": [
+        "Jev outperforms Rule",
+        "Rule outperforms Jev based on the historical Router benchmark",
+        "Jev is the production default DecisionProvider",
+        "Genesis relies on Jev for bounded probabilistic decisions"
+      ]
+    }
+  ],
+  "summary": {
+    "total_integrations_audited": 7,
+    "real_provider_integration_proven_count": 4,
+    "reference_integration_proven_count": 3,
+    "production_scale_not_proven_count": 7,
+    "new_external_calls_in_g6_05": 0,
+    "key_finding": "Genesis has demonstrated real-provider integration for OpenBot, OpenDots, OpenMuse, and Jev; reference integration for MCP, AG-UI, and A2A. NO integration has been proven at production scale. The trust-boundary invariant (A2A RESULT ≠ VERIFIED GENESIS FACT) is the strongest interoperability invariant."
+  },
+  "evidence_level": "E3",
+  "evidence_level_justification": "Audit of existing persisted evidence; no new external calls. Each integration's evidence level reflects its strongest supporting component.",
+  "pass": true
+}

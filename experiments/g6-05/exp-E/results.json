@@ -1,0 +1,104 @@
+{
+  "experiment_id": "G6-05-EXP-E",
+  "probe_at": "2026-10-07T23:42:30.203Z",
+  "source_head": "15243efae798f2ef90ec3a2ea185b17e798858fc",
+  "research_question": "Does Genesis avoid declaring success when required work has not been verified, across 5 failure modes?",
+  "hypothesis": "Across 5 failure-injection scenarios, Genesis reports mission_status != success AND verification.ok = false AND false_success_observed = 0 for every scenario.",
+  "independent_variable": "injected failure mode (5 scenarios)",
+  "controlled_variables": [
+    "RuleDecisionProvider (deterministic)",
+    "MemoryComputer (in-memory filesystem)",
+    "DEVELOPMENT_REASONING_FALLBACK (clearly labeled)",
+    "MemoryFlightRecorder",
+    "identical mission goal across scenarios (only failure injection differs)"
+  ],
+  "comparator": "NONE — truth criterion (failure must not become success)",
+  "scenarios": [
+    {
+      "scenario_id": "E1-unknown-action",
+      "description": "Worker emits an unknown action; parser should reject it",
+      "injected_failure": "unknown action: fly_to_the_moon",
+      "mission_status": "failure",
+      "verification_ok": false,
+      "verification_passed": 0,
+      "verification_failed": 1,
+      "false_success_observed": false,
+      "flight_event_count": 13,
+      "flight_events_complete": true,
+      "evidence_preserved": true,
+      "thrown_error": null
+    },
+    {
+      "scenario_id": "E2-missing-artifact",
+      "description": "Worker finishes without writing the artifact; verification cannot find it",
+      "injected_failure": "no write_file action emitted before finish",
+      "mission_status": "failure",
+      "verification_ok": false,
+      "verification_passed": 0,
+      "verification_failed": 1,
+      "false_success_observed": false,
+      "flight_event_count": 12,
+      "flight_events_complete": true,
+      "evidence_preserved": true,
+      "thrown_error": null
+    },
+    {
+      "scenario_id": "E3-wrong-content",
+      "description": "Worker writes wrong content; expectIncludes check fails",
+      "injected_failure": "wrong content written (# Wrong content entirely)",
+      "mission_status": "partial",
+      "verification_ok": false,
+      "verification_passed": 0,
+      "verification_failed": 1,
+      "false_success_observed": false,
+      "flight_event_count": 13,
+      "flight_events_complete": true,
+      "evidence_preserved": true,
+      "thrown_error": null
+    },
+    {
+      "scenario_id": "E4-hash-mismatch",
+      "description": "Worker writes content whose SHA-256 differs from expectHash; hash-match fails",
+      "injected_failure": "wrong content (plausible but wrong hash)",
+      "mission_status": "partial",
+      "verification_ok": false,
+      "verification_passed": 0,
+      "verification_failed": 1,
+      "false_success_observed": false,
+      "flight_event_count": 13,
+      "flight_events_complete": true,
+      "evidence_preserved": true,
+      "thrown_error": null
+    },
+    {
+      "scenario_id": "E5-verification-gate-fails",
+      "description": "Worker writes correct content but a gate requires an absent substring; gate fails truthfully",
+      "injected_failure": "gate requires substring that content does not contain",
+      "mission_status": "partial",
+      "verification_ok": false,
+      "verification_passed": 0,
+      "verification_failed": 1,
+      "false_success_observed": false,
+      "flight_event_count": 13,
+      "flight_events_complete": true,
+      "evidence_preserved": true,
+      "thrown_error": null
+    }
+  ],
+  "aggregate": {
+    "total_scenarios": 5,
+    "scenarios_failed_truthfully": 5,
+    "false_success_count": 0,
+    "evidence_preserved_count": 5,
+    "flight_records_complete_count": 5
+  },
+  "limitations": [
+    "Deterministic failure injection — the worker's failure behavior is scripted. This is real Genesis production behavior on a controlled failure stub.",
+    "Does NOT exercise the optional-provider-unavailable case (Jev) directly — that case is covered by G6-03A's persisted evidence (7 failure-truthfulness probes all PASS).",
+    "Does NOT exercise external-provider failures (OpenBot disconnect, OpenMuse queue failure) — covered by G6-01 hardening evidence.",
+    "N=5 scenarios; not exhaustive of all failure modes."
+  ],
+  "evidence_level": "E3",
+  "evidence_level_justification": "Controlled experiment using deterministic production code. Failure injection is real Genesis production behavior (WorkerAgent action parsing, VerificationLoop clean-room copy, hash-match check); reasoning is scripted. Valid for tested failure modes only.",
+  "pass": true
+}
