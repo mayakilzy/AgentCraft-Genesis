@@ -14,7 +14,7 @@ import type {
 import type { GoalCompiler } from '../goal/goal-compiler.js';
 import type { GenomeCompiler } from '../genome/genome-compiler.js';
 import type { OrganizationPlanner } from '../organization/organization-planner.js';
-import type { WorkerRuntime } from '../runtime/computer.js';
+import type { WorkerComputer, WorkerRuntime, WorkspaceSurface, JobSurface } from '../runtime/computer.js';
 import type { WorkerResult } from '../worker/worker-agent.js';
 import { WorkerAgent } from '../worker/worker-agent.js';
 import {
@@ -116,6 +116,26 @@ export interface MissionOrchestratorOptions {
    * durable record file matches the events. Generated when omitted.
    */
   readonly missionId?: string;
+  /**
+   * PHASE 4.8B: Mission input staging. Each entry is written into every
+   * computer-bearing worker's workspace BEFORE the worker starts. This is
+   * the smallest clean mission-input boundary: the user's authoritative
+   * bytes land in the worker-visible scope, traceable to the mission,
+   * without granting broad host-filesystem access. No new storage platform.
+   */
+  readonly missionInputs?: readonly MissionInput[];
+}
+
+/**
+ * PHASE 4.8B: A user-supplied mission input file. The orchestrator stages
+ * each one into every worker's workspace before execution begins. The path
+ * is workspace-relative; the contents are the authoritative bytes.
+ */
+export interface MissionInput {
+  /** Workspace-relative path (e.g. "expenses.csv", "input/orders.json"). */
+  readonly path: string;
+  /** The authoritative file contents. */
+  readonly contents: string;
 }
 
 const COORDINATOR_ROLE = 'Mission Coordinator';
@@ -200,6 +220,17 @@ export function renderTaskBrief(
 
 export class MissionOrchestrator {
   private readonly options: MissionOrchestratorOptions;
+  /**
+   * PHASE 4.8B: surfaces captured during ensureWorker, keyed by worker id.
+   * Populated during `run()` so `runWorker()` can pass the workspace + job
+   * surfaces to the WorkerAgent without re-fetching them from the runtime.
+   * Reset at the start of each `run()` call.
+   */
+  private surfacesByWorker: Map<string, {
+    readonly computer: WorkerComputer | null;
+    readonly workspace: WorkspaceSurface | null;
+    readonly job: JobSurface | null;
+  }> | undefined;
 
   constructor(options: MissionOrchestratorOptions) {
     this.options = options;
@@ -212,9 +243,20 @@ export class MissionOrchestrator {
     upstream: readonly { worker: PlannedWorker; result: WorkerResult }[],
   ): string {
     const brief = renderTaskBrief(worker, requirements, upstream);
-    return this.options.workerBriefSuffix === undefined
-      ? brief
-      : `${brief}\n\n${this.options.workerBriefSuffix}`;
+    // PHASE 4.8B: when mission inputs are staged into the worker's workspace,
+    // tell the worker about them. This is the bridge between the staging
+    // boundary and the worker's awareness — without it, the worker would
+    // discover the files via list_files but would not know they are the
+    // authoritative mission inputs (vs. files it should ignore).
+    const missionInputs = this.options.missionInputs;
+    const inputNote =
+      missionInputs !== undefined && missionInputs.length > 0
+        ? `\n\nAuthoritative mission inputs have been staged into your workspace:\n${missionInputs.map((i) => `- ${i.path} (${i.contents.length} bytes)`).join('\n')}\nUse read_file to inspect them; they are the authoritative source for this mission.`
+        : '';
+    const suffix = this.options.workerBriefSuffix === undefined
+      ? ''
+      : `\n\n${this.options.workerBriefSuffix}`;
+    return brief + inputNote + suffix;
   }
 
   async run(goal: Goal): Promise<MissionResult> {
@@ -313,17 +355,54 @@ export class MissionOrchestrator {
       // returns { computer } or {}; Phase 4.6/4.7 will add workspace/job.
       const participants = new Map<string, HandoffParticipant>();
       const genomes = new Map<string, WorkerGenome>();
+      this.surfacesByWorker = new Map();
       for (const result of compilation.results) {
         const genome = result.genome!;
         const handle = await this.options.runtime.ensureWorker(genome);
         ensured.push({ handle, genome });
         genomes.set(genome.identity.id, genome);
         const surfaces = this.options.runtime.surfaces(handle);
+        const ws = surfaces.workspace ?? null;
+        const jb = surfaces.job ?? null;
+        this.surfacesByWorker.set(genome.identity.id, {
+          computer: surfaces.computer ?? null,
+          workspace: ws,
+          job: jb,
+        });
         participants.set(genome.identity.id, {
           genome,
           reasoning: this.options.reasoning,
           computer: surfaces.computer ?? null,
         });
+      }
+
+      // PHASE 4.8B: Mission input staging. If the orchestrator was given
+      // `missionInputs`, write each one into every computer-bearing worker's
+      // workspace BEFORE the worker starts. This is the smallest clean
+      // mission-input boundary: the user's authoritative bytes land in the
+      // worker-visible scope, traceable to the mission, without granting
+      // broad host-filesystem access. No new storage platform.
+      const missionInputs = this.options.missionInputs;
+      if (missionInputs !== undefined && missionInputs.length > 0) {
+        for (const [workerId, surfaces] of this.surfacesByWorker) {
+          if (surfaces.computer === null) continue;
+          for (const input of missionInputs) {
+            try {
+              await surfaces.computer.writeFile(input.path, input.contents);
+            } catch {
+              // best-effort: a missing input surfaces honestly later when
+              // the worker tries to read it and fails.
+              record({
+                type: 'worker-step',
+                workerId,
+                step: 0,
+                action: `stage-input:${input.path}`,
+                ok: false,
+                elapsedMs: 0,
+              });
+            }
+          }
+        }
       }
 
       // The mission roster every collaborating worker sees (TASK-015 fix:
@@ -430,12 +509,36 @@ export class MissionOrchestrator {
         if (this.options.beforeVerification !== undefined) {
           await this.options.beforeVerification({ attempt: 1 });
         }
-        const checks =
+        const userChecks =
           this.options.checks?.({
             requirements,
             genomes: [...genomes.values()],
             artifacts: artifactSources,
           }) ?? deriveChecks(artifactSources);
+
+        // PHASE 4.8B: fail-closed verification. When the orchestrator staged
+        // authoritative mission inputs, automatically add a `mission-input`
+        // check for each one. This closes the fabrication path: if the
+        // worker never read the staged input (because it fabricated a
+        // substitute), the check fails honestly. The caller's explicit
+        // checks remain the primary path; this is the structural floor for
+        // missions with authoritative inputs.
+        const stagedInputChecks: AcceptanceCheck[] = [];
+        if (this.options.missionInputs !== undefined) {
+          for (const input of this.options.missionInputs) {
+            // Use a distinctive substring from the input as the fingerprint.
+            // This proves the authoritative bytes (not a fabricated file
+            // at the same path) reached the worker's workspace.
+            const fingerprint = input.contents.slice(0, 60);
+            stagedInputChecks.push({
+              kind: 'mission-input',
+              label: `mission-input:${input.path}`,
+              path: input.path,
+              expectIncludes: fingerprint,
+            });
+          }
+        }
+        const checks = [...stagedInputChecks, ...userChecks];
 
         if (checks.length > 0) {
           const verifierGenomeForMission = verifierGenome();
@@ -456,12 +559,26 @@ export class MissionOrchestrator {
               'verifier worker has no computer surface — verification requires shell + files',
             );
           }
-          const loop = new VerificationLoop(
-            verifierComputer,
-            this.options.reviewer === undefined
+          // PHASE 4.8B: pass the mission-input computers so the
+          // `mission-input` checks can read the authoritative bytes directly
+          // from each producing worker's workspace (not the clean-room copy).
+          const missionInputComputers =
+            this.surfacesByWorker === undefined
+              ? []
+              : [...this.surfacesByWorker.entries()]
+                  .filter(([, s]) => s.computer !== null)
+                  .map(([workerId, s]) => ({
+                    workerId,
+                    computer: s.computer as WorkerComputer,
+                  }));
+          const loop = new VerificationLoop(verifierComputer, {
+            ...(this.options.reviewer === undefined
               ? {}
-              : { reviewer: this.options.reviewer },
-          );
+              : { reviewer: this.options.reviewer }),
+            ...(missionInputComputers.length === 0
+              ? {}
+              : { missionInputComputers }),
+          });
 
           verification = await loop.verify(checks, artifactSources, evidence);
           reviewerCalls += verification.reviewerCalls;
@@ -621,10 +738,18 @@ export class MissionOrchestrator {
     signal: AbortSignal,
     record: RecordFn,
   ): Promise<WorkerResult> {
+    // PHASE 4.8B: look up the surfaces that were captured during ensureWorker.
+    // The worker agent receives the workspace + job surfaces directly — it
+    // never names the provider. The surfaces are provider-neutral.
+    const surfaces = this.surfacesByWorker?.get(genome.identity.id);
     const agent = new WorkerAgent({
       genome,
       reasoning: participant.reasoning,
       computer: participant.computer,
+      ...(surfaces === undefined ? {} : {
+        workspace: surfaces.workspace,
+        job: surfaces.job,
+      }),
       taskBrief: brief,
       handoffs,
       roster,

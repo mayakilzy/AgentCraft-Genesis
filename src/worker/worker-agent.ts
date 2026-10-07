@@ -4,7 +4,11 @@ import type {
   ScopeableReasoningProvider,
   WorkerGenome,
 } from '../contracts/core.js';
-import type { WorkerComputer } from '../runtime/computer.js';
+import type {
+  JobSurface,
+  WorkerComputer,
+  WorkspaceSurface,
+} from '../runtime/computer.js';
 import type { HandoffSink } from './handoff.js';
 
 /**
@@ -62,6 +66,22 @@ export type WorkerAction =
       readonly constraints?: readonly string[];
       readonly answerShape: string;
     }
+  // PHASE 4.8B: provider-neutral workspace actions. The worker reads from
+  // and appends to the shared collaborative workspace surface. The surface
+  // is provided by the runtime (CompositeRuntime → OpenDots adapter); the
+  // worker never names the provider.
+  | { readonly action: 'read_shared_workspace' }
+  | {
+      readonly action: 'append_shared_workspace';
+      readonly section: string;
+      readonly content: string;
+    }
+  // PHASE 4.8B: provider-neutral durable-delegation actions. The worker
+  // inspects the durable task's status and retrieves its result. Creating
+  // the durable task belongs to ensureWorker (the adapter's ensureJob); the
+  // worker only observes the result of work that already exists.
+  | { readonly action: 'check_durable_status' }
+  | { readonly action: 'get_durable_result' }
   | {
       readonly action: 'finish';
       readonly summary: string;
@@ -107,6 +127,21 @@ export interface WorkerAgentOptions {
   readonly reasoning: ReasoningProvider;
   /** The worker's computer; null only when the genome requires none. */
   readonly computer: WorkerComputer | null;
+  /**
+   * PHASE 4.8B: the shared collaborative-workspace surface, when the worker's
+   * genome declares the `collaborative-workspace` operational need. Null when
+   * the worker has no workspace surface. The worker reads/appends through
+   * provider-neutral actions; it never names the provider.
+   */
+  readonly workspace?: WorkspaceSurface | null;
+  /**
+   * PHASE 4.8B: the durable-delegation surface, when the worker's genome
+   * declares the `durable-delegation` operational need. Null when the worker
+   * has no job surface. The worker inspects status/retrieves result through
+   * provider-neutral actions; it never names the provider. Creating the
+   * durable task belongs to ensureWorker (the adapter's ensureJob).
+   */
+  readonly job?: JobSurface | null;
   /** The assignment: objective, mission context, upstream results. */
   readonly taskBrief: string;
   /** The mission's worker-to-worker channel (TASK-011), when one exists. */
@@ -152,6 +187,8 @@ export class WorkerAgent {
   private readonly genome: WorkerGenome;
   private readonly reasoning: ReasoningProvider;
   private readonly computer: WorkerComputer | null;
+  private readonly workspace: WorkspaceSurface | null;
+  private readonly job: JobSurface | null;
   private readonly taskBrief: string;
   private readonly handoffs: HandoffSink | undefined;
   private readonly roster: ReadonlyMap<string, string> | undefined;
@@ -167,6 +204,8 @@ export class WorkerAgent {
         `${options.genome.identity.id}#${(nextInstanceOrdinal += 1)}`,
     );
     this.computer = options.computer;
+    this.workspace = options.workspace ?? null;
+    this.job = options.job ?? null;
     this.taskBrief = options.taskBrief;
     this.handoffs = options.handoffs;
     this.roster = options.roster;
@@ -214,6 +253,26 @@ export class WorkerAgent {
         colleagues.length > 0
           ? `{"action":"ask_worker","target":"<colleague-id>","task":"...","constraints":["..."],"answerShape":"..."} — ask a colleague in this mission to do work and answer with evidence. Your colleagues (target must be one of these exact ids): ${colleagues.join(', ')}`
           : '{"action":"ask_worker","target":"<colleague-id>","task":"...","constraints":["..."],"answerShape":"..."} — ask a colleague in this mission to do work and answer with evidence (no colleagues are addressable in this mission)',
+      );
+    }
+    // PHASE 4.8B: provider-neutral workspace actions. The worker can read
+    // the current shared workspace content and append a new section to it.
+    // This is the natural worker surface for collaborative-workspace needs.
+    if (this.workspace !== null) {
+      granted.push('read_shared_workspace', 'append_shared_workspace');
+      examples.push(
+        '{"action":"read_shared_workspace"} — read the current content of the shared collaborative workspace (returns the full page content and revision)',
+        '{"action":"append_shared_workspace","section":"Section Title","content":"markdown content"} — append a new titled section to the shared workspace',
+      );
+    }
+    // PHASE 4.8B: provider-neutral durable-delegation actions. The worker
+    // can inspect the durable task's status and retrieve its result. The
+    // task was created at mission start; the worker observes its outcome.
+    if (this.job !== null) {
+      granted.push('check_durable_status', 'get_durable_result');
+      examples.push(
+        '{"action":"check_durable_status"} — check the status of the durable delegated task (returns one of: queued, running, succeeded, failed, cancelled, paused)',
+        '{"action":"get_durable_result"} — retrieve the durable task result if it has succeeded (returns the result string or null if not yet succeeded)',
       );
     }
     granted.push('finish');
@@ -273,6 +332,20 @@ export class WorkerAgent {
         return this.genome.skills.includes('collaboration') && this.handoffs !== undefined
           ? null
           : 'the collaboration skill and a mission handoff channel';
+      // PHASE 4.8B: workspace actions require the workspace surface (the
+      // runtime must have provided it). This is provider-neutral: any
+      // adapter that implements WorkspaceSurface satisfies it.
+      case 'read_shared_workspace':
+      case 'append_shared_workspace':
+        return this.workspace !== null
+          ? null
+          : 'a collaborative-workspace surface (genome did not declare collaborative-workspace, or runtime provided no surface)';
+      // PHASE 4.8B: job actions require the job surface. Provider-neutral.
+      case 'check_durable_status':
+      case 'get_durable_result':
+        return this.job !== null
+          ? null
+          : 'a durable-delegation surface (genome did not declare durable-delegation, or runtime provided no surface)';
       case 'finish':
         return null;
       default:
@@ -300,6 +373,101 @@ export class WorkerAgent {
         ok: result.ok,
         observation: JSON.stringify(result),
       };
+    }
+    // PHASE 4.8B: provider-neutral workspace actions. These do NOT require
+    // a computer — the workspace surface is independent.
+    if (action.action === 'read_shared_workspace') {
+      if (this.workspace === null) {
+        return {
+          ok: false,
+          observation: 'refused: this worker has no workspace surface',
+        };
+      }
+      try {
+        const { content, revision } = await this.workspace.readPage();
+        const trimmed =
+          content.length > OBSERVATION_STDOUT_LIMIT
+            ? `${content.slice(0, OBSERVATION_STDOUT_LIMIT)}…[truncated]`
+            : content;
+        return {
+          ok: true,
+          observation: JSON.stringify({ revision, contentChars: content.length, content: trimmed }),
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          observation: `workspace read failed: ${(error as Error).message.slice(0, 300)}`,
+        };
+      }
+    }
+    if (action.action === 'append_shared_workspace') {
+      if (this.workspace === null) {
+        return {
+          ok: false,
+          observation: 'refused: this worker has no workspace surface',
+        };
+      }
+      try {
+        const { revision } = await this.workspace.appendContent(
+          this.genome.role,
+          `### ${action.section}\n\n${action.content}`,
+        );
+        return {
+          ok: true,
+          observation: JSON.stringify({ revision, section: action.section }),
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          observation: `workspace append failed: ${(error as Error).message.slice(0, 300)}`,
+        };
+      }
+    }
+    // PHASE 4.8B: provider-neutral durable-delegation actions. These do NOT
+    // require a computer — the job surface is independent.
+    if (action.action === 'check_durable_status') {
+      if (this.job === null) {
+        return {
+          ok: false,
+          observation: 'refused: this worker has no durable-delegation surface',
+        };
+      }
+      try {
+        const status = await this.job.getStatus();
+        return { ok: true, observation: JSON.stringify({ status }) };
+      } catch (error) {
+        return {
+          ok: false,
+          observation: `durable status check failed: ${(error as Error).message.slice(0, 300)}`,
+        };
+      }
+    }
+    if (action.action === 'get_durable_result') {
+      if (this.job === null) {
+        return {
+          ok: false,
+          observation: 'refused: this worker has no durable-delegation surface',
+        };
+      }
+      try {
+        const status = await this.job.getStatus();
+        if (status !== 'succeeded') {
+          return {
+            ok: true,
+            observation: JSON.stringify({ status, result: null, note: 'task has not succeeded yet' }),
+          };
+        }
+        const result = await this.job.getResult();
+        return {
+          ok: true,
+          observation: JSON.stringify({ status, result }),
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          observation: `durable result retrieval failed: ${(error as Error).message.slice(0, 300)}`,
+        };
+      }
     }
     if (this.computer === null) {
       return {

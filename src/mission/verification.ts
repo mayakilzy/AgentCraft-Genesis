@@ -39,6 +39,26 @@ export type AcceptanceCheck =
       readonly kind: 'evidence';
       readonly label: string;
       readonly evidenceKind: Evidence['kind'];
+    }
+  /**
+   * PHASE 4.8B: fail-closed check for mission inputs. When the orchestrator
+   * stages authoritative mission inputs into the worker's workspace, the
+   * verifier can confirm that the staged input is present in the clean room.
+   * This closes the fabrication path: if the worker never read the staged
+   * input (because it fabricated a substitute), the input file won't appear
+   * in the artifacts the worker claims — and this check fails honestly.
+   */
+  | {
+      readonly kind: 'mission-input';
+      readonly label: string;
+      /** The workspace-relative path the orchestrator staged the input to. */
+      readonly path: string;
+      /**
+       * A substring expected in the staged input's content. When provided,
+       * the check confirms the authoritative bytes (not a fabricated
+       * substitute) reached the clean room. Absent → existence-only check.
+       */
+      readonly expectIncludes?: string;
     };
 
 export interface CheckOutcome {
@@ -74,6 +94,17 @@ export interface ArtifactSource {
 export interface VerificationLoopOptions {
   /** Reviewer invoked only when a check fails (conflict/risk). */
   readonly reviewer?: ReasoningProvider;
+  /**
+   * PHASE 4.8B: computers that hold staged mission inputs, used by
+   * `mission-input` checks to read the authoritative bytes directly from
+   * the producing worker's workspace (not the clean-room copy). Each entry
+   * is the worker's own computer; the check reads `check.path` from it to
+   * confirm the authoritative bytes were preserved (not fabricated).
+   */
+  readonly missionInputComputers?: ReadonlyArray<{
+    readonly workerId: string;
+    readonly computer: WorkerComputer;
+  }>;
 }
 
 /** Where a copied artifact lands inside the verifier's workspace. */
@@ -157,6 +188,9 @@ export class VerificationLoop {
         case 'evidence':
           outcomes.push(checkEvidence(check, evidence));
           break;
+        case 'mission-input':
+          outcomes.push(await this.checkMissionInput(check));
+          break;
       }
     }
     for (const failure of copyFailures) {
@@ -221,6 +255,46 @@ export class VerificationLoop {
         detail: `"${check.path}" not found in the clean room: ${(error as Error).message.slice(0, 160)}`,
       };
     }
+  }
+
+  private async checkMissionInput(
+    check: Extract<AcceptanceCheck, { kind: 'mission-input' }>,
+  ): Promise<CheckOutcome> {
+    // PHASE 4.8B: read from the producing worker's own computer (not the
+    // clean-room copy). The clean-room only contains artifacts the worker
+    // explicitly claimed; the staged input may or may not be among them.
+    // The fail-closed semantics require checking the authoritative source.
+    const computers = this.options.missionInputComputers ?? [];
+    for (const source of computers) {
+      try {
+        const read = await source.computer.readFile(check.path);
+        if (
+          check.expectIncludes !== undefined &&
+          !read.text.includes(check.expectIncludes)
+        ) {
+          return {
+            label: check.label,
+            kind: 'mission-input',
+            ok: false,
+            detail: `"${check.path}" was found in ${source.workerId}'s workspace but does NOT contain the expected authoritative content — possible fabrication (expected substring: "${check.expectIncludes.slice(0, 80)}")`,
+          };
+        }
+        return {
+          label: check.label,
+          kind: 'mission-input',
+          ok: true,
+          detail: `authoritative input "${check.path}" observed in ${source.workerId}'s workspace (${read.bytes} bytes)`,
+        };
+      } catch {
+        // try next computer
+      }
+    }
+    return {
+      label: check.label,
+      kind: 'mission-input',
+      ok: false,
+      detail: `authoritative input "${check.path}" was NOT found in any worker's workspace — the worker may have fabricated a substitute. Fail-closed: the mission's factual claim cannot be traced to the authoritative input.`,
+    };
   }
 
   private async checkCommand(

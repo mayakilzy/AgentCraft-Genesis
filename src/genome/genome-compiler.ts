@@ -248,7 +248,7 @@ export class GenomeCompiler {
       return { worker, gaps };
     }
 
-    const computer: ComputerSpec = {
+    let computer: ComputerSpec = {
       required: grantedDomains.size > 0,
       browser: grantedDomains.has(COMPUTER_FLAG_DOMAINS.browser),
       shell: grantedDomains.has(COMPUTER_FLAG_DOMAINS.shell),
@@ -285,7 +285,36 @@ export class GenomeCompiler {
         if (need.kind === 'durable-delegation') {
           grants.add('openmuse:durable-delegation');
         }
+        // PHASE 4.8B: operational-need → usable-capability invariant.
+        // When `shell-execution` is explicitly injected via extraOperationalNeeds,
+        // the worker must also receive the `openbot:shell-execution` TOOL GRANT
+        // so run_command is actually usable. Without this, the genome would
+        // declare shell-execution as a need but the worker agent would refuse
+        // run_command actions (the Phase 4.8A blind mission exposed this gap).
+        // The grant mirrors what the ownership-registry path produces when
+        // a capabilityNeed like `code-execution` resolves to shell-execution.
+        if (need.kind === 'shell-execution') {
+          grants.add('openbot:shell-execution');
+          // Ensure the ComputerSpec reflects shell access too — the OpenBot
+          // adapter reads genome.computer to decide whether to start a process.
+          if (!computer.shell) {
+            // Mutating a `readonly`-typed field is not allowed; rebuild it.
+            // The ComputerSpec is a plain object built above; reconstruct it
+            // with shell=true, preserving the other flags.
+            // (computer is a const here — reassign via a fresh object below.)
+          }
+        }
       }
+    }
+
+    // PHASE 4.8B: if shell-execution was injected above, ensure computer.shell
+    // is true so the OpenBot adapter actually starts a computer process. The
+    // ComputerSpec was built from capabilityNeeds before the extra injection;
+    // the extra injection may have added shell-execution without a matching
+    // capabilityNeed. Rebuild the spec to include shell when the need exists.
+    const hasShellNeed = operationalNeeds.some((n) => n.kind === 'shell-execution');
+    if (hasShellNeed && !computer.shell) {
+      computer = { ...computer, shell: true, required: true };
     }
 
     const tier = await this.options.selectTier({
