@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-07",
+  "a2a_protocol_baseline": "A2A Protocol Specification v1.0.0",
+  "a2a_sdk": "@a2a-js/sdk",
+  "a2a_sdk_version": "1.3.0",
+  "source_of_version_evidence": [
+    "package.json dependencies",
+    "node_modules/@a2a-js/sdk/package.json",
+    "data/dependency-baseline.json (verified 2026-10-05)"
+  ],
+  "transport": "JSON-RPC 2.0 over HTTP (the canonical A2A wire protocol)",
+  "reference_agent": {
+    "path": "experiments/g6-02/reference-agent/server.mjs",
+    "runtime": "Node.js built-in http module (no Express dependency)",
+    "independent_process": true,
+    "serves": [
+      "GET /.well-known/agent-card.json — agent discovery",
+      "POST / — JSON-RPC handler for SendMessage, GetTask, CancelTask"
+    ],
+    "modes": ["success", "failure", "trust-boundary"],
+    "computes": "SHA-256 hash of input text (deterministic, verifiable)"
+  },
+  "wire_format": {
+    "content_type": "application/json",
+    "jsonrpc": "2.0",
+    "methods": {
+      "SendMessage": "params: SendMessageRequest; result: { task: Task } or { message: Message }",
+      "GetTask": "params: { id: string }; result: Task",
+      "CancelTask": "params: { id: string }; result: Task"
+    },
+    "part_wire_format": "Oneof fields are top-level keys: { text: 'value', filename: '', mediaType: 'text/plain' } (NOT nested under content)",
+    "task_state_enum": "TASK_STATE_UNSPECIFIED=0, SUBMITTED=1, WORKING=2, COMPLETED=3, FAILED=4, CANCELED=5, INPUT_REQUIRED=6, REJECTED=7, AUTH_REQUIRED=8"
+  }
+}

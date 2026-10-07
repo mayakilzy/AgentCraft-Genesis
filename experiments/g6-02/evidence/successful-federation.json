@@ -1,0 +1,32 @@
+{
+  "probe": "A — successful federation",
+  "section": "36",
+  "date": "2026-10-07",
+  "result": "PASS",
+  "description": "Genesis delegates bounded work to an independent external A2A agent. The agent returns a result. Genesis records provenance. Genesis verifies the relevant result independently. Mission succeeds only after verification.",
+  "reference_agent": {
+    "path": "experiments/g6-02/reference-agent/server.mjs",
+    "mode": "success",
+    "independent_process": true,
+    "protocol": "A2A v1.0 JSON-RPC over HTTP",
+    "computes": "SHA-256 hash of the input text"
+  },
+  "federation_flow": [
+    "FederationService.discover(endpoint) → fetches AgentCard from /.well-known/agent-card.json",
+    "FederationService.delegate({ agent, task }) → sendMessage JSON-RPC",
+    "Reference agent computes SHA-256 and returns Task with status=COMPLETED",
+    "FederationService returns FederationResult with ok=true, result=<hash>, provenance",
+    "Genesis verification (hash-match check) independently confirms the result"
+  ],
+  "provenance": {
+    "externalAgentId": "ext:a2a:http://127.0.0.1:<port>",
+    "externalAgentName": "Genesis G6-02 Reference Agent",
+    "remoteTaskId": "<UUID assigned by the reference agent>",
+    "evidence_location": "a2a:<agentId>:<taskId>"
+  },
+  "test": "tests/runtime/federation-integration.test.ts > Probe A",
+  "events_emitted": [
+    "federation-delegated",
+    "federation-result-received"
+  ]
+}

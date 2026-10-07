@@ -1,0 +1,27 @@
+{
+  "probe": "C — trust-boundary probe",
+  "section": "38",
+  "date": "2026-10-07",
+  "result": "PASS",
+  "description": "External A2A agent claims success BUT the returned result does not satisfy Genesis verification. Genesis rejects or fails verification. External success does NOT become Genesis success.",
+  "reference_agent": {
+    "path": "experiments/g6-02/reference-agent/server.mjs",
+    "mode": "trust-boundary",
+    "behavior": "Returns Task with status=COMPLETED but the artifact contains a WRONG hash (hash of 'wrong:<input>' instead of hash of '<input>')"
+  },
+  "critical_invariant": {
+    "section": "23",
+    "statement": "A2A RESULT ≠ VERIFIED GENESIS FACT",
+    "verification": "The FederationService returns ok=true (the federation succeeded), but the result is wrong. Genesis verification (hash-match check with the correct hash) would FAIL. External success does NOT force Genesis success."
+  },
+  "observed_behavior": [
+    "FederationResult.ok === true (the federation itself succeeded)",
+    "FederationResult.status === 'completed' (the external agent reported success)",
+    "FederationResult.result is a 64-char hex string (looks like a valid hash)",
+    "FederationResult.result !== correctHash (the result is materially wrong)",
+    "FederationResult does NOT carry a 'verified' flag",
+    "The caller MUST subject result to Genesis verification before treating it as mission truth"
+  ],
+  "test": "tests/runtime/federation-integration.test.ts > Probe C",
+  "acceptance": "This is the critical G6-02 acceptance test (Section 38). PASS."
+}

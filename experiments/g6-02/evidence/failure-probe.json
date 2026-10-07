@@ -1,0 +1,26 @@
+{
+  "probe": "B — failure probe",
+  "section": "37",
+  "date": "2026-10-07",
+  "result": "PASS",
+  "description": "A real protocol-level failure path is proven safe. Genesis remains truthful; no false success; failure observable; mission state coherent.",
+  "reference_agent": {
+    "path": "experiments/g6-02/reference-agent/server.mjs",
+    "mode": "failure",
+    "behavior": "Returns Task with status=FAILED and a failure message"
+  },
+  "failure_mapping": {
+    "a2a_task_state": "TASK_STATE_FAILED (4)",
+    "genesis_failure_class": "WORKER_FAILURE",
+    "genesis_federation_status": "failed"
+  },
+  "invariants_verified": [
+    "result.ok === false",
+    "result.status === 'failed'",
+    "result.failureClass === 'WORKER_FAILURE'",
+    "result.result === '' (no false success)",
+    "federation-failed event emitted with failureClass='WORKER_FAILURE'",
+    "mission state is coherent (failure → no false success)"
+  ],
+  "test": "tests/runtime/federation-integration.test.ts > Probe B"
+}
