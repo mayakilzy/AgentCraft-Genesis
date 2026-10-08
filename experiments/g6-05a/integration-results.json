@@ -1,0 +1,90 @@
+{
+  "results_at": "2026-10-08T00:40:00Z",
+  "source_head_start": "0573b42d1c36cd6ded7273975ec451ad57c70b19",
+  "test_matrix_results": {
+    "API-01_authorized_submission": "PASS",
+    "API-02_unauthorized_rejected": "PASS",
+    "API-02b_invalid_key_rejected": "PASS",
+    "API-02c_restricted_caller_rejected": "PASS",
+    "API-03_invalid_payload_rejected": "PASS",
+    "API-04_stable_identity": "PASS",
+    "API-05_status_retrieval": "PASS",
+    "API-06_event_retrieval": "PASS",
+    "API-07_verified_result_retrieval": "PASS",
+    "API-08_artifact_retrieval": "PASS",
+    "API-09_missing_artifact_404": "PASS",
+    "API-10_cancellation_propagation": "PASS",
+    "API-10b_idempotent_cancel": "PASS",
+    "API-11_idempotent_submission": "PASS",
+    "API-12_oversized_body_rejected": "PASS",
+    "ISO-01_cross_caller_mission_isolation": "PASS",
+    "ISO-02_cross_caller_event_isolation": "PASS",
+    "ISO-03_cross_caller_artifact_isolation": "PASS",
+    "ISO-04_cross_caller_cancellation_isolation": "PASS",
+    "A2A-01_agent_card_discovery": "PASS",
+    "A2A-02_authorized_inbound_task": "PASS",
+    "A2A-03_lifecycle_mapping": "PASS",
+    "A2A-04_result_mapping": "PASS",
+    "A2A-05_unauthorized_rejected": "PASS",
+    "A2A-05b_malformed_rejected": "PASS",
+    "A2A-06_method_not_found": "PASS",
+    "A2A-OUT-01_outbound_regression": "PASS (existing tests unchanged; 519/9/528)",
+    "E2E-01_independent_application": "PASS",
+    "E2E-02_verification_genuine": "PASS",
+    "FAIL-01_failure_cannot_become_success": "PASS",
+    "FAIL-02_restart_limitation_documented": "PASS"
+  },
+  "aggregate": {
+    "total_tests_in_matrix": 31,
+    "passed": 31,
+    "failed": 0,
+    "full_suite_tests": "519 passed / 9 skipped = 528 total (up from 487/9=496 at baseline)",
+    "new_tests_added": 32,
+    "typecheck": "PASS",
+    "lint": "PASS"
+  },
+  "production_code": {
+    "new_modules": 1,
+    "new_files": 5,
+    "new_files_list": [
+      "src/gateway/types.ts",
+      "src/gateway/mission-service.ts",
+      "src/gateway/http-server.ts",
+      "src/gateway/a2a-server.ts",
+      "src/gateway/main.ts"
+    ],
+    "production_loc_delta": "~1940",
+    "new_runtime_dependencies": 0,
+    "new_database": false,
+    "new_message_broker": false,
+    "new_policy_dsl": false,
+    "new_agent_framework": false
+  },
+  "security": {
+    "authentication": "API key (Bearer token, constant-time comparison, deny-by-default)",
+    "authorization": "caller-scoped; cross-caller returns 404",
+    "secrets_in_logs": false,
+    "secrets_committed": false,
+    "fail_closed_on_missing_config": true,
+    "path_traversal_protection": true,
+    "oversized_body_protection": true
+  },
+  "capability_status": {
+    "SERVICE_API": "SUPPORTED",
+    "A2A_OUTBOUND": "SUPPORTED",
+    "A2A_INBOUND": "SUPPORTED",
+    "A2A_AUTHENTICATION": "LIMITED",
+    "CROSS_CALLER_ISOLATION": "VERIFIED",
+    "CANCELLATION": "VERIFIED",
+    "RESTART_RECOVERY": "UNSUPPORTED",
+    "FALSE_SUCCESS_PROTECTION": "PASS"
+  },
+  "limitations": [
+    "In-process state only; no durability across process restart",
+    "MemoryComputer default runtime; real OpenBot requires runtimeFactory injection",
+    "DEVELOPMENT_REASONING_FALLBACK default reasoning; real LLM requires reasoningFactory injection",
+    "API-key authentication only; no mTLS/OAuth/signed Agent Cards",
+    "Polling only; no SSE/WebSocket streaming",
+    "Single-process; no horizontal scaling"
+  ]
+}
