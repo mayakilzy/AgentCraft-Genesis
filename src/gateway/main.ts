@@ -175,6 +175,7 @@ async function buildRealRuntimeFactory(): Promise<((ctx: { missionId: string }) 
     // Per-mission factory: returns a FRESH MemoryRuntime for each mission.
     // MemoryRuntime implements ArtifactsProvider, so the gateway's
     // getArtifacts() retrieves genuine (in-memory) artifacts.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return (_ctx: { missionId: string }): { runtime: WorkerRuntime } => {
       return { runtime: new memoryRuntimeCtor() };
     };

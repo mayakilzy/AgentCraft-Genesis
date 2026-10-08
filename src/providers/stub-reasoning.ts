@@ -52,6 +52,10 @@ export class StubReasoningProvider implements ReasoningProvider {
   }
 
   async reason(_input: ReasoningInput): Promise<ReasoningOutput> {
+    // G6-08 (Phase 5 lint fix): _input is intentionally unused — the stub
+    // ignores the reasoning input and emits a fixed deterministic action.
+    // Prefix with _ to signal intentional non-use to eslint.
+    void _input;
     this.step += 1;
     if (this.step === 1) {
       return {

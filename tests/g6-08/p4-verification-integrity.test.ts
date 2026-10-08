@@ -14,14 +14,10 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
-import { MissionService } from '../../src/gateway/mission-service.js';
 import { VerificationLoop } from '../../src/mission/verification.js';
 import { MemoryComputer } from '../../src/runtime/memory-computer.js';
-import { MemoryFlightRecorder } from '../../src/mission/flight-recorder.js';
-import type { CallerIdentity } from '../../src/gateway/types.js';
 import type { AcceptanceCheck, ArtifactSource } from '../../src/mission/verification.js';
 import type { WorkerComputer } from '../../src/runtime/computer.js';
-import type { RuntimeHandle, WorkerGenome } from '../../src/contracts/core.js';
 
 /**
  * A minimal WorkerComputer stub for verification tests. Verifier reads/writes

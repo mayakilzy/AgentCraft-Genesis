@@ -22,7 +22,14 @@ import {
   MissionHandoffs,
   type HandoffParticipant,
 } from '../worker/handoff.js';
-import { MemoryFlightRecorder, type FlightEvent, type FlightRecorder } from './flight-recorder.js';
+import { MemoryFlightRecorder as _MemoryFlightRecorder, type FlightEvent, type FlightRecorder } from './flight-recorder.js';
+
+// G6-08 (Phase 8 lint fix): MemoryFlightRecorder is no longer directly referenced
+// in this file after the Phase 4 C-VERIFY-FINDING-004 fix (inMemoryFlightEvents
+// replaces the instanceof check). The import is kept as `_MemoryFlightRecorder`
+// to avoid breaking any re-export patterns, but the underscore signals intentional
+// non-use to eslint. The type-only imports (FlightEvent, FlightRecorder) ARE used.
+void _MemoryFlightRecorder;
 import {
   VerificationLoop,
   deriveChecks,
