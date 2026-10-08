@@ -22,6 +22,7 @@
  */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 import type { MissionService } from './mission-service.js';
 import type { CallerIdentity, GatewayConfig, MissionSubmission, MissionStatus } from './types.js';
@@ -66,30 +67,29 @@ class GenesisAgentExecutor implements AgentExecutorInterface {
   private readonly service: MissionService;
   private readonly bindings = new Map<string, TaskMissionBinding>();
   /**
-   * The caller identity for the CURRENT request, set by the HTTP handler
-   * before dispatching to the SDK. This bridges the gap where the SDK's
-   * AgentExecutor.cancelTask() does not receive a RequestContext and
-   * therefore cannot see who is calling. Cleared after each request.
+   * Request-scoped caller identity storage using AsyncLocalStorage.
+   *
+   * This replaces the previous mutable shared `currentRequestCaller`
+   * field which was unsafe under concurrency: concurrent requests
+   * could overwrite each other's caller identity before `cancelTask`
+   * read it.
+   *
+   * AsyncLocalStorage carries the caller through the async call chain
+   * without shared mutable state. Each request gets its own context;
+   * concurrent requests cannot contaminate each other.
    */
-  private currentRequestCaller: CallerIdentity | null = null;
+  private readonly callerContext = new AsyncLocalStorage<CallerIdentity>();
 
   constructor(service: MissionService) {
     this.service = service;
   }
 
   /**
-   * Set the caller for the current request. Called by the HTTP handler
-   * BEFORE dispatching to the SDK transport handler.
+   * Run a function within a request-scoped caller context.
+   * Called by the HTTP handler BEFORE dispatching to the SDK.
    */
-  setCurrentRequestCaller(caller: CallerIdentity): void {
-    this.currentRequestCaller = caller;
-  }
-
-  /**
-   * Clear the current request caller after the request completes.
-   */
-  clearCurrentRequestCaller(): void {
-    this.currentRequestCaller = null;
+  runWithCaller<T>(caller: CallerIdentity, fn: () => Promise<T>): Promise<T> {
+    return this.callerContext.run(caller, fn);
   }
 
   async execute(
@@ -164,11 +164,11 @@ class GenesisAgentExecutor implements AgentExecutorInterface {
     }
 
     // P1-A2A-CANCELTASK-NO-CALLER-AUTHZ fix: verify the requesting caller
-    // owns this task. The currentRequestCaller is set by the HTTP handler
-    // before dispatching to the SDK. If it doesn't match the binding's
-    // original callerId, reject the cancellation.
-    const requestingCaller = this.currentRequestCaller;
-    if (requestingCaller === null) {
+    // owns this task. The caller is carried via AsyncLocalStorage (request-
+    // scoped, concurrency-safe). If it doesn't match the binding's original
+    // callerId, reject the cancellation.
+    const requestingCaller = this.callerContext.getStore();
+    if (requestingCaller === undefined) {
       // No caller context — should not happen (auth is enforced before
       // dispatch). Fail closed: do NOT cancel.
       eventBus.publish({ kind: 'task', data: buildTask(taskId, 'FAILED') });
@@ -350,37 +350,35 @@ async function handleA2ARequest(
       parsedBody = body;
     }
 
-    // Set the current request caller on the executor BEFORE dispatching
-    // to the SDK. This bridges the gap where AgentExecutor.cancelTask()
-    // does not receive a RequestContext.
-    executor.setCurrentRequestCaller(caller);
-    try {
-      const result = await transportHandler.handle(parsedBody, context);
+    // Run the SDK transport handler within a request-scoped caller context.
+    // AsyncLocalStorage carries the caller through the async call chain
+    // (including into AgentExecutor.cancelTask) without shared mutable state.
+    // This is concurrency-safe: concurrent requests each get their own context.
+    const result = await executor.runWithCaller(caller, () =>
+      transportHandler.handle(parsedBody, context),
+    );
 
-      // The SDK returns a single JSONRPCResponse for non-streaming methods
-      // (SendMessage blocking, GetTask, CancelTask). Streaming methods
-      // (sendMessageStream, subscribe) return an AsyncGenerator — we do
-      // not support streaming in v1 (the AgentCard declares streaming:false).
-      if (isAsyncGenerator(result)) {
-        // Take the first response and discard the rest (no streaming in v1).
-        const first = await result.next();
-        if (first.done || first.value === undefined) {
-          sendJson(res, 200, {
-            jsonrpc: '2.0' as const,
-            error: { code: -32603, message: 'no response from streaming method' },
-            id: extractJsonRpcId(body),
-          });
-          return;
-        }
-        sendJson(res, 200, first.value);
+    // The SDK returns a single JSONRPCResponse for non-streaming methods
+    // (SendMessage blocking, GetTask, CancelTask). Streaming methods
+    // (sendMessageStream, subscribe) return an AsyncGenerator — we do
+    // not support streaming in v1 (the AgentCard declares streaming:false).
+    if (isAsyncGenerator(result)) {
+      // Take the first response and discard the rest (no streaming in v1).
+      const first = await result.next();
+      if (first.done || first.value === undefined) {
+        sendJson(res, 200, {
+          jsonrpc: '2.0' as const,
+          error: { code: -32603, message: 'no response from streaming method' },
+          id: extractJsonRpcId(body),
+        });
         return;
       }
-
-      sendJson(res, 200, result);
+      sendJson(res, 200, first.value);
       return;
-    } finally {
-      executor.clearCurrentRequestCaller();
     }
+
+    sendJson(res, 200, result);
+    return;
   }
 
   res.writeHead(404, { 'Content-Type': 'text/plain' });

@@ -42,6 +42,9 @@ import { startA2AServer } from './a2a-server.js';
 import type { CallerIdentity, GatewayConfig } from './types.js';
 import type { ReasoningProvider } from '../contracts/core.js';
 import type { WorkerRuntime } from '../runtime/computer.js';
+import type { MemoryComputer } from '../../tests/helpers/memory-runtime.js';
+import type { ZAIReasoningOptions, ZAIReasoningProvider as ZAIReasoningProviderType } from '../providers/zai-reasoning.js';
+import type { OpenBotAdapterOptions } from '../runtime/openbot/adapter.js';
 
 type ExecutionMode = 'development' | 'production';
 
@@ -66,17 +69,23 @@ async function buildRealReasoningProvider(): Promise<ReasoningProvider | null> {
   }
   switch (provider) {
     case 'zai': {
-      const apiKey = process.env.ZAI_API_KEY;
+      // The ZAI SDK resolves credentials internally (via ZAI_SDK_PATH env
+      // or the default z-ai-web-dev-sdk package). There is no apiKey
+      // parameter on ZAIReasoningOptions. We verify that either
+      // ZAI_SDK_PATH is set or the default SDK package is available.
       const sdkPath = process.env.ZAI_SDK_PATH;
-      if (!apiKey && !sdkPath) {
-        console.error('FATAL: GENESIS_REASONING_PROVIDER=zai requires ZAI_API_KEY or ZAI_SDK_PATH.');
+      // If ZAI_API_KEY is set, we pass it through createEnv so the SDK
+      // can use it; if neither ZAI_SDK_PATH nor ZAI_API_KEY is set, fail closed.
+      if (!sdkPath && !process.env.ZAI_API_KEY) {
+        console.error('FATAL: GENESIS_REASONING_PROVIDER=zai requires ZAI_SDK_PATH or ZAI_API_KEY to be set.');
         return null;
       }
       try {
         const mod = await import('../providers/zai-reasoning.js') as {
-          ZAIReasoningProvider: new (opts: { apiKey?: string; sdkPath?: string }) => ReasoningProvider;
+          ZAIReasoningProvider: new (opts?: ZAIReasoningOptions) => ZAIReasoningProviderType;
         };
-        return new mod.ZAIReasoningProvider({ apiKey, sdkPath });
+        const opts: ZAIReasoningOptions = sdkPath ? { sdkPath } : {};
+        return new mod.ZAIReasoningProvider(opts);
       } catch (e) {
         console.error('FATAL: Failed to load ZAIReasoningProvider:', e instanceof Error ? e.message : e);
         return null;
@@ -99,7 +108,7 @@ async function buildRealReasoningProvider(): Promise<ReasoningProvider | null> {
  * a checkout directory and root directory that are deployment-specific;
  * we verify the endpoint is present and let the factory handle construction.
  */
-async function buildRealRuntime(): Promise<{ runtime: WorkerRuntime; computers: Map<string, import('../../tests/helpers/memory-runtime.js').MemoryComputer> } | null> {
+async function buildRealRuntime(): Promise<{ runtime: WorkerRuntime; computers: Map<string, MemoryComputer> } | null> {
   const provider = process.env.GENESIS_RUNTIME_PROVIDER;
   if (!provider) {
     console.error('FATAL: GENESIS_EXECUTION_MODE=production requires GENESIS_RUNTIME_PROVIDER to be set.');
@@ -110,27 +119,29 @@ async function buildRealRuntime(): Promise<{ runtime: WorkerRuntime; computers: 
     return null;
   }
   if (provider === 'openbot') {
-    const endpoint = process.env.OPENBOT_ENDPOINT;
-    if (!endpoint) {
-      console.error('FATAL: GENESIS_RUNTIME_PROVIDER=openbot requires OPENBOT_ENDPOINT.');
+    // The OpenBot adapter spawns the OpenBot process locally — it does
+    // NOT connect to an external endpoint. It requires:
+    //   checkoutDir: path to the local OpenBot repo checkout
+    //   rootDir: temp directory for per-worker workspaces
+    const checkoutDir = process.env.OPENBOT_CHECKOUT_DIR;
+    if (!checkoutDir) {
+      console.error('FATAL: GENESIS_RUNTIME_PROVIDER=openbot requires OPENBOT_CHECKOUT_DIR (path to the local OpenBot checkout).');
       return null;
     }
-    // The OpenBot adapter requires checkoutDir and rootDir which are
-    // deployment-specific. In production, the operator must configure these.
-    // We verify the endpoint is present; the adapter is constructed lazily
-    // by the runtimeFactory on first mission.
+    const rootDir = process.env.OPENBOT_ROOT_DIR;
+    if (!rootDir) {
+      console.error('FATAL: GENESIS_RUNTIME_PROVIDER=openbot requires OPENBOT_ROOT_DIR (directory for per-worker workspaces).');
+      return null;
+    }
     try {
-      const mod = await import('../runtime/openbot/adapter.js') as unknown as {
-        OpenBotRuntimeAdapter: new (opts: Record<string, unknown>) => WorkerRuntime;
+      const mod = await import('../runtime/openbot/adapter.js') as {
+        OpenBotRuntimeAdapter: new (opts: OpenBotAdapterOptions) => WorkerRuntime;
       };
-      const checkoutDir = process.env.OPENBOT_CHECKOUT_DIR ?? '/tmp/openbot-checkout';
-      const rootDir = process.env.OPENBOT_ROOT_DIR ?? '/tmp/openbot-root';
-      const runtime = new mod.OpenBotRuntimeAdapter({
-        endpoint,
-        token: process.env.OPENBOT_TOKEN,
+      const opts: OpenBotAdapterOptions = {
         checkoutDir,
         rootDir,
-      });
+      };
+      const runtime = new mod.OpenBotRuntimeAdapter(opts);
       return { runtime, computers: new Map() };
     } catch (e) {
       console.error('FATAL: Failed to load OpenBotRuntimeAdapter:', e instanceof Error ? e.message : e);
@@ -263,9 +274,12 @@ async function main(): Promise<void> {
   // Graceful shutdown.
   const shutdown = (signal: string): void => {
     console.error(`[genesis-gateway] received ${signal}, shutting down...`);
+    // Close servers (stops accepting new connections).
     http.server.close();
     a2a.server.close();
-    setTimeout(() => process.exit(0), 500);
+    // Force exit after a short grace period — do not wait indefinitely
+    // for lingering keep-alive connections to close.
+    setTimeout(() => process.exit(0), 1000);
   };
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
