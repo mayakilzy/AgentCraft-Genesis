@@ -13,6 +13,7 @@ import { ArtifactList } from "@/components/genesis/ArtifactList";
 import { ArtifactPreview } from "@/components/genesis/ArtifactPreview";
 import { ReplayTimeline } from "@/components/genesis/ReplayTimeline";
 import { StudioCatalog } from "@/components/genesis/StudioCatalog";
+import { InsightsSection as InsightsSectionImpl } from "@/components/genesis/InsightsSection";
 import { extractWorkers } from "@/lib/genesis/events";
 import { genesisApi } from "@/lib/genesis/client";
 import type { MissionEventRecord } from "@/lib/genesis/types";
@@ -393,25 +394,5 @@ export function StudioSection() {
 }
 
 export function InsightsSection() {
-  const connectionState = useGenesisStore((s) => s.connectionState);
-  return (
-    <div className="space-y-4">
-      <SectionHeader
-        icon={BarChart3}
-        title="Insights"
-        description="Observed metrics, durations, failures, costs where metered, and learning evidence where actually wired."
-      />
-      <InfoCard title="G7-06 deliverable" tone="warning">
-        Source-labeled metrics arrive in G7-06. Cost = $0 is shown as
-        &quot;Not measured&quot; (never as success). Learning charts show
-        &quot;No measurement available&quot; unless backed by Experience JSON
-        (which is not served by the gateway). Per-mission metrics only — no
-        aggregation endpoint exists.
-      </InfoCard>
-      <EmptyState
-        state={connectionState === "disconnected" ? "disconnected" : "empty"}
-        customDescription="No metrics available. Per-mission metrics arrive in G7-06 once a mission has terminated."
-      />
-    </div>
-  );
+  return <InsightsSectionImpl />;
 }
