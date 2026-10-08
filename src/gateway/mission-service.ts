@@ -37,6 +37,66 @@ import {
 import { classifyError } from '../mission/failure-class.js';
 import { MemoryFlightRecorder, type FlightEvent } from '../mission/flight-recorder.js';
 import { MissionOrchestrator } from '../mission/orchestrator.js';
+
+/**
+ * G6-09C fix for C-053 (P2, defense-in-depth): scrub common secret patterns
+ * from error messages before they are stored in failureMessage/cleanupError
+ * and exposed via the public API.
+ *
+ * Patterns scrubbed:
+ *   - Bearer tokens (Authorization: Bearer ...)
+ *   - GitHub PATs (ghp_..., gho_..., ghs_..., ghu_..., gha_...)
+ *   - OpenRouter API keys (sk-or-v1-...)
+ *   - Anthropic API keys (sk-ant-...)
+ *   - OpenAI API keys (sk-...)
+ *   - AWS secret keys (AWS_SECRET_ACCESS_KEY=..., aws_secret_access_key=...)
+ *   - Generic API key patterns (api_key=..., api-key=..., x-api-key=...)
+ *
+ * The scrub replaces the secret value with '[REDACTED]' while preserving
+ * the surrounding error context (so operators can still diagnose the failure).
+ *
+ * This is defense-in-depth — the primary defense is preventing secrets from
+ * reaching error messages in the first place (per the G6-09B env allowlist fix).
+ * But when an upstream error DOES echo a secret (e.g., a misconfigured provider
+ * includes "Authorization: Bearer ghp_..." in its error), this scrub prevents
+ * the secret from leaking into the public failureMessage field.
+ */
+const SECRET_PATTERNS: ReadonlyArray<{ readonly pattern: RegExp; readonly label: string }> = [
+  // Authorization: Bearer <token>
+  { pattern: /Bearer\s+[A-Za-z0-9_\-\.]+/g, label: 'Bearer token' },
+  // GitHub PATs (ghp_, gho_, ghs_, ghu_, gha_ prefixes followed by 36+ chars)
+  // Include underscores in the char class to handle non-canonical formats
+  { pattern: /gh[opua]_[A-Za-z0-9_]{36,}/g, label: 'GitHub PAT' },
+  // OpenRouter API keys (sk-or-v1- prefix followed by 20+ chars)
+  // Permissive: real keys are 64 hex chars, but we scrub any 20+ char suffix
+  { pattern: /sk-or-v1-[A-Za-z0-9_]{20,}/gi, label: 'OpenRouter key' },
+  // Anthropic API keys (sk-ant- prefix followed by 20+ chars)
+  { pattern: /sk-ant-[A-Za-z0-9_\-]{20,}/g, label: 'Anthropic key' },
+  // OpenAI API keys (sk- prefix followed by 20+ chars, but NOT sk-or or sk-ant)
+  // Use negative lookahead to avoid matching OpenRouter/Anthropic keys
+  { pattern: /sk-(?!or-|ant-)[A-Za-z0-9_]{20,}/g, label: 'OpenAI key' },
+  // AWS secret access key assignments (values can contain alnum, /, +, =, _)
+  { pattern: /(?:AWS_SECRET_ACCESS_KEY|aws_secret_access_key)\s*[=:]\s*[A-Za-z0-9\/+=_]{20,}/g, label: 'AWS secret' },
+  // Generic api_key / api-key / x-api-key assignments (values can contain alnum, _, -)
+  { pattern: /(?:api_key|api-key|x-api-key)\s*[=:]\s*[A-Za-z0-9_\-]{20,}/gi, label: 'API key' },
+];
+
+/**
+ * Scrub common secret patterns from a text string. Returns the scrubbed text
+ * with secrets replaced by '[REDACTED]'.
+ *
+ * @param text - the text to scrub (typically an error message)
+ * @param maxLength - the maximum length of the returned text (applied AFTER scrubbing)
+ */
+function scrubSecrets(text: string, maxLength: number = 300): string {
+  let scrubbed = text;
+  for (const { pattern } of SECRET_PATTERNS) {
+    // Reset the regex lastIndex (patterns are global)
+    pattern.lastIndex = 0;
+    scrubbed = scrubbed.replace(pattern, '[REDACTED]');
+  }
+  return scrubbed.slice(0, maxLength);
+}
 import {
   cleanRoomPath,
   type AcceptanceCheck,
@@ -337,7 +397,7 @@ export class MissionService {
             timedOut = true;
           }
         } catch (e) {
-          cleanupError = e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200);
+          cleanupError = scrubSecrets(e instanceof Error ? e.message : String(e), 200);
           drained = isTerminal(rt.status);
         }
       } else {
@@ -396,7 +456,7 @@ export class MissionService {
             closed = true;
           }
         } catch (e) {
-          closeError = e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200);
+          closeError = scrubSecrets(e instanceof Error ? e.message : String(e), 200);
         }
       } else {
         closed = true;
@@ -643,7 +703,7 @@ export class MissionService {
         // a MissionResult.status='failure'). This is an infrastructure error.
         const failureClass = classifyError(error);
         missionRuntime.failureClass = failureClass;
-        missionRuntime.failureMessage = error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300);
+        missionRuntime.failureMessage = scrubSecrets(error instanceof Error ? error.message : String(error), 300);
         missionRuntime.finishedAt = new Date().toISOString();
         missionRuntime.status = missionRuntime.canceled ? 'CANCELLED' : 'FAILED';
         // Synthesize a failure MissionResult for callers.
