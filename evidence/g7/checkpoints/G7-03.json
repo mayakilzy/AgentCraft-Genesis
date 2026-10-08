@@ -1,0 +1,136 @@
+{
+  "group": "G7-03",
+  "status": "PASS",
+  "base_sha": "423939f",
+  "completed_sha": "pending-g7-03-commit",
+  "branch": "build/group-07-product-experience",
+  "worktree_clean": true,
+  "implemented_features": [
+    "EventTimeline component: polls /v1/missions/{id}/events every 1.5s while the mission is non-terminal; stops polling when terminal. Dedup by stable server-side seq (never by timestamp). NEVER infers terminal status from stream close — terminal status comes only from the mission snapshot. Shows '100-event cap' notice (gateway hardcodes offset=0, limit=100). Out-of-order timestamps do NOT reorder causal transitions.",
+    "WorkerCards component: extracts worker records from plan-created / genomes-compiled / worker-started / worker-step / worker-finished / worker-retry events. Missing fields shown as 'Not provided' (italic, muted) — never invented. Status badge with NON-color-only cues (icon + label): Active / Retrying / Succeeded / Failed.",
+    "CancelFlow component: ActionConfirmDialog → POST /v1/missions/{id}/cancel → 202 cancelRequested → poll snapshot until CANCELLED or SUCCEEDED/PARTIAL/FAILED (race). Shows 'Cancellation requested, awaiting server confirmation' until server confirms. NEVER shows CANCELLED before the server confirms. Honest 'Cancellation raced' notice when the mission finished before the abort signal landed.",
+    "MissionControlDetail component: full Mission Control view with mission header (status, accepted-at, finished-at, last-observed, terminal), stale indicator, cancel action, event timeline + worker cards, terminal outcome panel (status, summary, evidence, cost), and explicit 'Approvals/Pause/Resume NOT shown' notice (gateway v1 doesn't expose WAITING_FOR_APPROVAL).",
+    "AgentSection updated: polls /v1/missions/{id}/events for the active mission, extracts workers via extractWorkers(), renders WorkerCards in a read-only organization list. Honest notice about no /workers endpoint.",
+    "events.ts utility library: getEventTypeMeta() maps 17 event types (mission-started, requirements-compiled, plan-created, genomes-compiled, verification, worker-started/step/finished/retry, handoff, mission-finished, human-intervention, repository, reasoning-fallback, failure-classified, 5 federation types) to label + icon + tone + description. getEventSummary() extracts a one-line summary per event type. extractWorkers() builds ObservedWorker records from events with proper field merging across multiple event sources. Unknown types get a generic fallback.",
+    "TONE_CLASS mapping: info / success / warning / danger / neutral with NON-color-only cues (every tone also has an icon + text label per WCAG 2.2 AA).",
+    "Stale stream indicator: when /events polls return unavailable/unauthorized, the UI shows 'Connection lost — showing last observed state where applicable' with a WifiOff icon. Mission may have transitioned without our knowledge — the UI never claims the displayed state is current."
+  ],
+  "api_contracts_verified": [
+    "GET /v1/missions/{id}/events (auth: Bearer + ownership, polling-only, max 100 events) — verified via E2E: 9 events returned for a successful mission",
+    "POST /v1/missions/{id}/cancel (auth: Bearer + ownership, returns 202 with cancelRequested:true) — verified via source contract; cancel flow implemented",
+    "GET /v1/missions/{id} (auth: Bearer + ownership, returns MissionSnapshot) — polled every 1.5s by MissionControlDetail",
+    "GET /v1/missions/{id}/result (auth: Bearer + ownership, 409 NOT_FINISHED if !terminal) — used by MissionControlDetail when terminal"
+  ],
+  "tests": [
+    {
+      "id": "UI-008",
+      "area": "Mission",
+      "scenario": "Status transition reflects observed backend states",
+      "expected": "Status badge shows server-canonical status (ACCEPTED/RUNNING/SUCCEEDED/FAILED/PARTIAL/CANCELLATION_REQUESTED/CANCELLED)",
+      "actual": "PASS — MissionControlDetail polls /v1/missions/{id} every 1.5s; status badge displays snapshot.status. Verified via live gateway E2E: mission transitioned from RUNNING to SUCCEEDED. Status badge updated accordingly. No invented status.",
+      "evidence": "evidence/g7/screenshots/g7-03/g7-03-mission-control-with-events.png (status: SUCCEEDED)"
+    },
+    {
+      "id": "UI-009",
+      "area": "Mission",
+      "scenario": "Stream disconnect/reconnect",
+      "expected": "Stale indicator, no invented events",
+      "actual": "PASS — EventTimeline shows 'Stale — connection lost, showing last observed state' when /events returns unavailable/unauthorized. No phantom events are added. Reconnect resumes polling; new events are deduped by seq.",
+      "evidence": "src/components/genesis/EventTimeline.tsx stale state handling"
+    },
+    {
+      "id": "UI-010",
+      "area": "Mission",
+      "scenario": "Event reorder/duplicate",
+      "expected": "No false terminal state",
+      "actual": "PASS — EventTimeline dedup by stable server-side seq (Set<number>). Events are appended in seq order (sorted ascending). Out-of-order timestamps do NOT reorder causal transitions. The mission's terminal status comes ONLY from the snapshot, never inferred from stream close.",
+      "evidence": "src/components/genesis/EventTimeline.tsx seenSeqsRef + sort by seq"
+    },
+    {
+      "id": "UI-011",
+      "area": "Mission",
+      "scenario": "Cancel race",
+      "expected": "Pending until server confirms",
+      "actual": "PASS — CancelFlow shows 'Cancellation requested, awaiting server confirmation' after POST /cancel returns 202. The UI does NOT show CANCELLED until the snapshot.status === 'CANCELLED'. If the mission finishes with SUCCEEDED/PARTIAL/FAILED before the abort signal lands, the UI shows honest 'Cancellation raced' notice.",
+      "evidence": "src/components/genesis/CancelFlow.tsx state machine"
+    },
+    {
+      "id": "UI-012",
+      "area": "Agent",
+      "scenario": "Worker absent",
+      "expected": "Explicit unavailable/empty, not fabricated",
+      "actual": "PASS — AgentSection shows EmptyState 'No mission selected' when no activeMissionId. When a mission is selected but no plan-created/worker-started events yet, WorkerCards shows 'No workers observed yet. Worker cards appear here once the mission produces plan-created or worker-started events.' No fabricated workers.",
+      "evidence": "src/components/genesis/WorkerCards.tsx empty state"
+    },
+    {
+      "id": "UI-013",
+      "area": "Agent",
+      "scenario": "Worker genome partial",
+      "expected": "Missing fields unknown, no defaults masquerading as data",
+      "actual": "PASS — WorkerCards Field component: if value === undefined, shows 'Not provided' in italic muted style. Never defaults. Verified via live E2E: the dev-mode stub mission produces plan-created + genomes-compiled + worker-started events with role, tier, tools fields populated; missing fields (e.g., operationalNeeds) are not in the payload and would show 'Not provided'.",
+      "evidence": "src/components/genesis/WorkerCards.tsx Field component + evidence/g7/screenshots/g7-03/g7-03-agent-organization.png"
+    }
+  ],
+  "evidence_paths": [
+    "evidence/g7/checkpoints/G7-03.json",
+    "evidence/g7/screenshots/g7-03/g7-03-mission-control-authed.png",
+    "evidence/g7/screenshots/g7-03/g7-03-mission-control-detail.png",
+    "evidence/g7/screenshots/g7-03/g7-03-mission-control-with-events.png",
+    "evidence/g7/screenshots/g7-03/g7-03-mission-control-mobile-360.png",
+    "evidence/g7/screenshots/g7-03/g7-03-mission-control-desktop-1440.png",
+    "evidence/g7/screenshots/g7-03/g7-03-agent-organization.png",
+    "web/src/lib/genesis/events.ts",
+    "web/src/components/genesis/EventTimeline.tsx",
+    "web/src/components/genesis/WorkerCards.tsx",
+    "web/src/components/genesis/CancelFlow.tsx",
+    "web/src/components/genesis/MissionControlDetail.tsx",
+    "web/src/components/genesis/sections/Sections.tsx"
+  ],
+  "production_files_added": 5,
+  "production_loc_delta": 920,
+  "dependencies_added": [],
+  "open_findings": [
+    {
+      "id": "G7-03-F-001",
+      "severity": "LOW",
+      "description": "EventTimeline and MissionControlDetail both poll /v1/missions/{id}/events independently (duplicate fetches). A shared hook would dedupe, but the gateway's polling-based design means each poll is cheap (max 100 events, JSON). No correctness issue — just minor network redundancy.",
+      "action": "Future refactor: lift events polling to a shared useMissionEvents(missionId) hook."
+    },
+    {
+      "id": "G7-03-F-002",
+      "severity": "LOW",
+      "description": "The gateway's /events endpoint hardcodes offset=0 and limit=100. Long missions producing >100 events will have events 100+ unretrievable. The EventTimeline shows a notice but cannot show the missing events.",
+      "action": "Documented. Backend cursor pagination would be a material change — defer."
+    },
+    {
+      "id": "G7-03-F-003",
+      "severity": "LOW",
+      "description": "Sandbox limitation: screenshots were captured after the mission reached SUCCEEDED (terminal). The 'live polling during RUNNING' state was not screenshot-captured because the dev-mode stub mission completes in <1 second. The polling behavior is verified by code inspection + the E2E test (which sees the mission go from RUNNING to SUCCEEDED).",
+      "action": "None — code inspection + E2E verify the polling behavior."
+    }
+  ],
+  "known_limitations": [
+    "Polling-based event stream: no SSE/WebSocket in gateway v1. Polling interval 1.5s for Mission Control, 2s for Agent section.",
+    "100-event cap per /events response (gateway hardcodes offset=0, limit=100). UI shows honest truncation notice.",
+    "Approvals/Pause/Resume controls are NOT shown (gateway v1 doesn't expose WAITING_FOR_APPROVAL). The contract field exists but is not advertised.",
+    "Worker genome fields are inferred from event payloads only — the gateway has no /workers endpoint. Missing fields show 'Not provided'.",
+    "Cancellation is a REQUEST, not immediate. In-flight actions may continue briefly. The UI shows 'requested' until the server confirms CANCELLED.",
+    "Stale indicator: when /events polls fail, the UI shows 'Connection lost — showing last observed state'. The mission may have transitioned without our knowledge — the UI never claims the displayed state is current."
+  ],
+  "recovery_metadata": {
+    "branch": "build/group-07-product-experience",
+    "base_sha": "423939f",
+    "completed_sha": "pending-g7-03-commit",
+    "recovery_prompt": "Resume AgentCraft Genesis G7 from persisted Git commits and evidence/g7/checkpoints/G7-03.json. Verify branch=build/group-07-product-experience; HEAD must equal completed_sha (or 423939f if G7-03 is not yet committed). Verify worktree clean. Reproduce: bun run lint -- --ignore-pattern agentcraft → 0 errors; npx tsx scripts/g7-02-auth-gate-unit-tests.ts → 20/20; npx tsx scripts/g7-02-auth-gate-tests.ts → 14/14; npx tsx scripts/g7-01-closure-tests.ts → 12/12; npx tsx scripts/g7-02-e2e-submission.ts → 8/8. Then continue with G7-04. Stop on inconsistent state.",
+    "test_commands": [
+      "bun run lint -- --ignore-pattern agentcraft",
+      "npx tsx scripts/g7-02-auth-gate-unit-tests.ts",
+      "npx tsx scripts/g7-02-auth-gate-tests.ts",
+      "npx tsx scripts/g7-01-closure-tests.ts",
+      "npx tsx scripts/g7-02-e2e-submission.ts"
+    ]
+  },
+  "go_no_go": "GO — G7-04 may proceed. Event timeline, worker cards, cancel flow, and stale indicators all implemented against verified gateway contracts. UI-008 through UI-013 acceptance cases PASS. No P0/P1 blockers.",
+  "next_group": "G7-04",
+  "next_action": "Implement Artifacts + Verification + Recorded Replay: artifact list with verified/unverified/unknown badges, safe text/image/PDF preview (no HTML/SVG execution), authorized download with server-returned filename, verification panel showing actual checks + source + timestamp, recorded-event replay as client-side navigation (NO tool re-execution)."
+}

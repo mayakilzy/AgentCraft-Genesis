@@ -6,6 +6,12 @@ import { EmptyState } from "@/components/genesis/EmptyState";
 import { useGenesisStore } from "@/lib/genesis/store";
 import { GoalComposer } from "@/components/genesis/GoalComposer";
 import { MissionList, MissionLookup } from "@/components/genesis/MissionList";
+import { MissionControlDetail } from "@/components/genesis/MissionControlDetail";
+import { WorkerCards } from "@/components/genesis/WorkerCards";
+import { extractWorkers } from "@/lib/genesis/events";
+import { genesisApi } from "@/lib/genesis/client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { MissionEventRecord } from "@/lib/genesis/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -130,7 +136,50 @@ export function WorkSection() {
 // ---------------------------------------------------------------------------
 
 export function AgentSection() {
+  const missionId = useGenesisStore((s) => s.activeMissionId);
   const connectionState = useGenesisStore((s) => s.connectionState);
+  const [events, setEvents] = useState<readonly MissionEventRecord[]>([]);
+  const seenSeqsRef = useRef<Set<number>>(new Set());
+
+  // Poll events for the active mission to populate the organization list.
+  useEffect(() => {
+    if (!missionId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEvents([]);
+      seenSeqsRef.current = new Set();
+      return;
+    }
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const poll = async () => {
+      if (cancelled) return;
+      const res = await genesisApi.getEvents(missionId, controller.signal);
+      if (cancelled) return;
+      if (res.kind === "ok" && res.data) {
+        const newOnes = res.data.events.filter(
+          (e) => !seenSeqsRef.current.has(e.seq),
+        );
+        for (const e of newOnes) seenSeqsRef.current.add(e.seq);
+        if (newOnes.length > 0) {
+          setEvents((prev) =>
+            [...prev, ...newOnes].sort((a, b) => a.seq - b.seq),
+          );
+        }
+      }
+    };
+
+    void poll();
+    const interval = setInterval(() => void poll(), 2000); // 2s for Agent section
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearInterval(interval);
+    };
+  }, [missionId]);
+
+  const workers = useMemo(() => extractWorkers(events), [events]);
+
   return (
     <div className="space-y-4">
       <SectionHeader
@@ -138,16 +187,38 @@ export function AgentSection() {
         title="Agent"
         description="Organization list/graph, roles, genomes, capabilities and execution ownership."
       />
-      <InfoCard title="G7-03 deliverable" tone="warning">
-        The organization list and worker genome inspector are implemented in
-        G7-03. Worker genomes are inferred from mission events only — the gateway
-        has no <code>/workers</code> endpoint. Missing fields are shown as
-        &quot;Not provided&quot;, never guessed.
+      <InfoCard title="Read-only organization view" tone="info">
+        Worker genomes are inferred from mission events only — the gateway has
+        no <code>/workers</code> endpoint. Missing fields are shown as
+        &quot;Not provided&quot;, never guessed. The list is for the currently
+        selected mission; switch to Mission Control to see live event details.
       </InfoCard>
-      <EmptyState
-        state={connectionState === "disconnected" ? "disconnected" : "empty"}
-        customDescription="No active organization. Worker cards appear here once a mission produces worker-started events."
-      />
+      {missionId ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center justify-between gap-2">
+              <span>Organization for mission {missionId.slice(0, 8)}…</span>
+              <span className="text-xs text-muted-foreground font-normal">
+                {Object.keys(workers).length} worker{Object.keys(workers).length === 1 ? "" : "s"}
+              </span>
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Workers are extracted from <code className="font-mono">plan-created</code>,
+              <code className="font-mono">genomes-compiled</code>, and worker
+              lifecycle events. Fields not present in event payloads are
+              shown as &quot;Not provided&quot;.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WorkerCards workers={workers} />
+          </CardContent>
+        </Card>
+      ) : (
+        <EmptyState
+          state={connectionState === "disconnected" ? "disconnected" : "empty"}
+          customDescription="No mission selected. Submit a goal in Work or look up a known mission ID, then switch to Agent to inspect the organization."
+        />
+      )}
     </div>
   );
 }
@@ -160,29 +231,17 @@ export function MissionControlSection() {
       <SectionHeader
         icon={Activity}
         title="Mission Control"
-        description="Real-time mission lifecycle, timeline, worker actions, approval/cancel controls and errors."
+        description="Real-time mission lifecycle, timeline, worker actions, cancel controls and errors."
       />
-      <InfoCard title="G7-03 deliverable" tone="warning">
-        Lifecycle timeline and worker actions are implemented in G7-03. The
-        gateway exposes polling events (max 100 per response, no SSE/WebSocket).
-        Approvals / pause / resume controls are NOT shown (the contract field
-        exists but is not exposed by gateway v1).
+      <InfoCard title="Polling-based stream (no SSE/WebSocket)" tone="info">
+        The gateway exposes polling events (max 100 per response, no SSE/WebSocket
+        in v1). The EventTimeline polls every 1.5s while the mission is
+        non-terminal; events are deduplicated by stable server-side sequence
+        number. Approvals / pause / resume controls are NOT shown (the contract
+        field exists but is not exposed by gateway v1).
       </InfoCard>
       {missionId ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Active mission <span className="font-mono text-xs text-muted-foreground">{missionId.slice(0, 8)}…</span>
-            </CardTitle>
-            <CardDescription>
-              Detailed timeline arrives in G7-03. The connection state is
-              shown in the top-right corner.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EmptyState state="empty" customDescription="Mission selected — detail view arrives in G7-03." />
-          </CardContent>
-        </Card>
+        <MissionControlDetail missionId={missionId} />
       ) : (
         <EmptyState
           state={connectionState === "disconnected" ? "disconnected" : "empty"}
