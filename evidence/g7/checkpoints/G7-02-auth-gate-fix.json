@@ -4,7 +4,7 @@
   "status": "PASS",
   "base_sha": "842f5e4",
   "completed_sha": "9bf80c1",
-  "auth_gate_fix_sha": "pending-auth-gate-commit",
+  "auth_gate_fix_sha": "81c07b5",
   "branch": "build/group-07-product-experience",
   "worktree_clean": true,
   "fix_summary": "G7-02 Independent Review correction: replaced the anonymous /api/auth/setup endpoint (which let any caller mint a signed cookie) with a PIN-validated /api/auth/login endpoint. The BFF now requires an operator-authenticated cookie carrying the op='operator' claim; cookies without this claim are rejected even if their signature is valid.",
@@ -127,7 +127,7 @@
     "branch": "build/group-07-product-experience",
     "base_sha": "842f5e4",
     "completed_sha": "9bf80c1",
-    "auth_gate_fix_sha": "pending-auth-gate-commit",
+    "auth_gate_fix_sha": "81c07b5",
     "recovery_prompt": "Resume AgentCraft Genesis G7 from persisted Git commits and evidence/g7/checkpoints/G7-02-auth-gate-fix.json, not from chat history. Verify branch=build/group-07-product-experience; HEAD must equal auth_gate_fix_sha (or completed_sha=9bf80c1 if the auth-gate fix is not yet committed). Verify worktree clean. Reproduce essential smoke tests: bun run lint -- --ignore-pattern agentcraft → 0 errors; npx tsx scripts/g7-02-auth-gate-unit-tests.ts → 20/20 PASS; npx tsx scripts/g7-02-auth-gate-tests.ts → 14/14 PASS; npx tsx scripts/g7-01-closure-tests.ts → 12/12 PASS; npx tsx scripts/g7-02-e2e-submission.ts → 8/8 PASS (requires engine repo at agentcraft/repo/ with deps installed). Then continue with G7-03. Stop on inconsistent state.",
     "test_commands": [
       "bun run lint -- --ignore-pattern agentcraft",
