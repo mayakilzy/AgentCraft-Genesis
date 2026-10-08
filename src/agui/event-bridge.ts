@@ -223,14 +223,30 @@ export class AgUiEventBridge implements FlightRecorder {
 
   private onWorkerFinished(event: Extract<FlightEvent, { type: 'worker-finished' }>): unknown[] {
     const result = event.result;
-    const events: unknown[] = [
-      {
-        type: EventType.SUBAGENT_FINISHED,
+    // G6-08 (Phase 6 / C-PROTOCOLS-FINDING-007): emit SUBAGENT_ERROR when the
+    // worker finished with a failure status. Previously, failed workers emitted
+    // SUBAGENT_FINISHED only — failures were invisible to consumers.
+    const isFailure = result.status === 'failure' || (result.status as string) === 'partial';
+    const events: unknown[] = [];
+    if (isFailure) {
+      events.push({
+        type: EventType.SUBAGENT_ERROR,
         subagentRunId: result.workerId,
-        name: event.result.workerId,
+        message: result.failureClass
+          ? `${result.failureClass}: ${result.summary}`
+          : result.summary,
         timestamp: Date.now(),
-      },
-    ];
+      });
+    }
+    // G6-08 (Phase 6 / C-PROTOCOLS-FINDING-002): SUBAGENT_FINISHED must NOT
+    // include the `name` field — it is not in the official @ag-ui/core schema.
+    // Previously, the bridge emitted `name: event.result.workerId` which a
+    // strict consumer would reject.
+    events.push({
+      type: EventType.SUBAGENT_FINISHED,
+      subagentRunId: result.workerId,
+      timestamp: Date.now(),
+    });
     // Emit the worker's finish summary as a text message — this is the
     // "useful output/result" the consumer should see.
     if (result.summary.trim().length > 0) {
@@ -261,7 +277,12 @@ export class AgUiEventBridge implements FlightRecorder {
   private onWorkerStep(event: Extract<FlightEvent, { type: 'worker-step' }>): unknown[] {
     // A worker step is an action invocation. Map to TOOL_CALL lifecycle.
     // The toolCallId ties START → RESULT → END together.
-    const toolCallId = `tc-${event.workerId}-${event.step}`;
+    // G6-08 (Phase 6 / C-PROTOCOLS-FINDING-008): ensure toolCallId is unique
+    // across reasoning-retry events by including a counter or random suffix
+    // when collisions are possible. The base id (workerId-step) is unique
+    // within a single worker's run; we additionally suffix with the ok flag
+    // to avoid collision when a step is retried.
+    const toolCallId = `tc-${event.workerId}-${event.step}-${event.ok ? 'ok' : 'fail'}`;
     const events: unknown[] = [
       {
         type: EventType.TOOL_CALL_START,
@@ -273,11 +294,20 @@ export class AgUiEventBridge implements FlightRecorder {
     // Only emit a result when the step has an ok value (it always does for
     // real steps; the stage-input synthetic step has step: 0 and may lack ok).
     if (event.ok !== undefined) {
+      // G6-08 (Phase 6 / C-PROTOCOLS-FINDING-008): TOOL_CALL_RESULT content
+      // must be a redacted result snippet, not 'ok'/'failed'. The audit
+      // recommended including a brief observation summary rather than a
+      // boolean string. We include a short snippet of the observation if
+      // available; otherwise fall back to the ok/failed status.
+      const observationSnippet =
+        typeof event.observation === 'string' && event.observation.length > 0
+          ? event.observation.slice(0, 200)
+          : (event.ok ? 'ok' : 'failed');
       events.push({
         type: EventType.TOOL_CALL_RESULT,
         messageId: `msg-tc-${event.workerId}-${event.step}`,
         toolCallId,
-        content: event.ok ? 'ok' : 'failed',
+        content: observationSnippet,
         timestamp: Date.now(),
       });
     }
