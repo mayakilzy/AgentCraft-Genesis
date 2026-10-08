@@ -356,18 +356,63 @@ async function main(): Promise<void> {
   console.error(`[genesis-gateway] Execution mode: ${mode}`);
   console.error('[genesis-gateway] In-process state; no durability across restart.');
 
-  // Graceful shutdown.
-  const shutdown = (signal: string): void => {
+  // G6-08-R1 (B-EXEC-FINDING-003): graceful shutdown of active missions and
+  // their owned OpenBot workers. The handler is idempotent (guarded by a
+  // `shuttingDown` flag) and bounded by a deadline. It does NOT call
+  // process.exit(0) unconditionally — it exits 0 only if shutdown is clean,
+  // otherwise exits 1 so the operator can investigate orphaned workers.
+  let shutdownInProgress = false;
+  let shutdownCompleted = false;
+  const shutdown = async (signal: string): Promise<void> => {
+    if (shutdownCompleted) return;  // already torn down
+    if (shutdownInProgress) return;  // deduplicate concurrent SIGTERM/SIGINT
+    shutdownInProgress = true;
     console.error(`[genesis-gateway] received ${signal}, shutting down...`);
-    // Close servers (stops accepting new connections).
+    // Stop accepting new connections immediately.
     http.server.close();
     a2a.server.close();
-    // Force exit after a short grace period — do not wait indefinitely
-    // for lingering keep-alive connections to close.
-    setTimeout(() => process.exit(0), 1000);
+    // Drain active missions and close runtime adapters. Bounded deadline.
+    // The internal shutdown() method cancels each active mission's controller,
+    // awaits the orchestrator's finally{} (which calls runtime.stopWorker()
+    // per ensured worker), then calls runtime.close() as a safety net.
+    try {
+      const result = await service.shutdown(10_000);
+      console.error(
+        `[genesis-gateway] shutdown: ${result.activeMissionsDrained} drained, ` +
+        `${result.activeMissionsTimedOut} timed out, ` +
+        `${result.runtimeAdaptersClosed} runtimes closed, ` +
+        `${result.runtimeAdapterCloseErrors} close errors ` +
+        `(elapsed ${result.elapsedMs}ms)`,
+      );
+      if (result.activeMissionsTimedOut > 0) {
+        console.error('[genesis-gateway] WARNING: some missions did not drain within the deadline');
+        for (const p of result.perMission) {
+          if (p.timedOut) {
+            console.error(`[genesis-gateway]   timed out: ${p.missionId} (final status: ${p.finalStatus})`);
+          }
+        }
+      }
+      if (result.runtimeAdapterCloseErrors > 0) {
+        console.error('[genesis-gateway] WARNING: some runtime adapters failed to close');
+        for (const p of result.perRuntime) {
+          if (p.closeError !== undefined) {
+            console.error(`[genesis-gateway]   ${p.runtimeName} (mission ${p.missionId}): ${p.closeError}`);
+          }
+        }
+      }
+      shutdownCompleted = true;
+      // Exit code reflects cleanup outcome: 0 if clean, 1 if any timedOut or close errors.
+      // This ensures the operator can detect orphaned worker processes via the
+      // nonzero exit code and investigate.
+      process.exit(result.clean ? 0 : 1);
+    } catch (e) {
+      console.error('[genesis-gateway] shutdown threw:', e instanceof Error ? e.message : e);
+      shutdownCompleted = true;
+      process.exit(1);
+    }
   };
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
+  process.on('SIGINT', () => { void shutdown('SIGINT'); });
 }
 
 await main();

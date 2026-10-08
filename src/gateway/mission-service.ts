@@ -170,6 +170,48 @@ const DEFAULT_TERMINAL_RETENTION_MS = 5 * 60_000;
 const DEFAULT_SWEEP_INTERVAL_MS = 60_000;
 
 /**
+ * G6-08-R1 (B-EXEC-FINDING-003): structured result of a graceful shutdown.
+ *
+ * `clean: true` iff every active mission drained within its deadline AND
+ * every runtime adapter's close() succeeded. The caller (gateway shutdown
+ * handler) uses `clean` to decide exit code: 0 if clean, 1 otherwise.
+ */
+export interface ShutdownResult {
+  /** True iff all missions drained and all runtimes closed without errors. */
+  readonly clean: boolean;
+  /** Total elapsed wall-clock ms (bounded by `deadlineMs`). */
+  readonly elapsedMs: number;
+  /** Active missions that reached terminal within their per-mission deadline. */
+  readonly activeMissionsDrained: number;
+  /** Active missions that did NOT reach terminal within their deadline. */
+  readonly activeMissionsTimedOut: number;
+  /** Runtime adapters whose close() succeeded (or had no close() method). */
+  readonly runtimeAdaptersClosed: number;
+  /** Runtime adapters whose close() threw. */
+  readonly runtimeAdapterCloseErrors: number;
+  /** Per-mission breakdown. */
+  readonly perMission: readonly ShutdownMissionResult[];
+  /** Per-runtime-adapter breakdown. */
+  readonly perRuntime: readonly ShutdownRuntimeResult[];
+}
+
+interface ShutdownMissionResult {
+  readonly missionId: string;
+  readonly callerId: string;
+  readonly drained: boolean;
+  readonly timedOut: boolean;
+  readonly finalStatus: MissionStatus;
+  readonly cleanupError?: string;
+}
+
+interface ShutdownRuntimeResult {
+  readonly missionId: string;
+  readonly runtimeName: string;
+  readonly closed: boolean;
+  readonly closeError?: string;
+}
+
+/**
  * The shared mission service. Both HTTP API and inbound A2A delegate here.
  *
  * Thread-safety: this class is safe for concurrent start/get/cancel calls
@@ -192,6 +234,8 @@ export class MissionService {
   private sweepTimer: ReturnType<typeof setInterval> | null = null;
   /** G6-08 (Phase 3): count of eviction sweeps performed (for tests/observability). */
   private sweepCount = 0;
+  /** G6-08-R1 (B-EXEC-FINDING-003): true once shutdown() has been invoked. */
+  private shuttingDown = false;
 
   constructor(options: MissionServiceOptions = {}) {
     this.runtimeFactory = options.runtimeFactory;
@@ -223,6 +267,138 @@ export class MissionService {
       clearInterval(this.sweepTimer);
       this.sweepTimer = null;
     }
+  }
+
+  /**
+   * G6-08-R1 (B-EXEC-FINDING-003): graceful shutdown of all active missions
+   * and their owned runtime workers.
+   *
+   * INTERNAL lifecycle operation — NOT exposed through the public API used
+   * by HTTP/A2A transports. Called only by the gateway's SIGTERM/SIGINT
+   * handler. Does NOT use a synthetic public caller identity; operates
+   * directly on the internal MissionRuntime registry.
+   *
+   * Lifecycle:
+   *   1. Mark service as shuttingDown (start() rejects new submissions).
+   *   2. Stop the background sweeper.
+   *   3. For each active mission: abort controller, await runPromise with
+   *      a per-mission deadline (orchestrator finally{} calls stopWorker()
+   *      for each ensured worker).
+   *   4. Safety net: call runtime.close() on each mission's runtime adapter
+   *      to stop any workers that survived per-mission stopWorker.
+   *   5. Report structured result so the caller can decide exit code.
+   *
+   * Does NOT call process.exit() — caller's responsibility.
+   */
+  async shutdown(deadlineMs: number = 10_000): Promise<ShutdownResult> {
+    this.shuttingDown = true;
+    this.close();
+
+    const startedAt = Date.now();
+    const perMission: ShutdownMissionResult[] = [];
+    const perRuntime: ShutdownRuntimeResult[] = [];
+
+    // Snapshot active missions (defensive copy).
+    const activeSnapshots: Array<{ missionId: string; rt: MissionRuntime }> = [];
+    for (const [missionId, rt] of this.missions) {
+      if (!isTerminal(rt.status)) {
+        activeSnapshots.push({ missionId, rt });
+      }
+    }
+
+    // Abort each active mission's controller.
+    for (const { rt } of activeSnapshots) {
+      if (!rt.canceled) {
+        rt.canceled = true;
+        rt.status = 'CANCELLATION_REQUESTED';
+        try { rt.controller.abort(); } catch { /* best-effort */ }
+      }
+    }
+
+    // Await each mission's runPromise with a per-mission deadline.
+    const perMissionDeadline = Math.min(deadlineMs, 5_000);
+    for (const { missionId, rt } of activeSnapshots) {
+      const missionDeadline = Math.min(
+        perMissionDeadline,
+        Math.max(0, deadlineMs - (Date.now() - startedAt)),
+      );
+      let drained = false;
+      let timedOut = false;
+      let cleanupError: string | undefined;
+      if (rt.runPromise !== undefined) {
+        try {
+          await Promise.race([
+            rt.runPromise,
+            new Promise<void>((resolve) => setTimeout(resolve, missionDeadline)),
+          ]);
+          if (isTerminal(rt.status)) {
+            drained = true;
+          } else {
+            timedOut = true;
+          }
+        } catch (e) {
+          cleanupError = e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200);
+          drained = isTerminal(rt.status);
+        }
+      } else {
+        // No runPromise — mission accepted but orchestrator never started.
+        rt.status = 'CANCELLED';
+        rt.finishedAt = new Date().toISOString();
+        drained = true;
+      }
+      perMission.push({
+        missionId,
+        callerId: rt.callerId,
+        drained,
+        timedOut,
+        finalStatus: rt.status,
+        ...(cleanupError !== undefined ? { cleanupError } : {}),
+      });
+    }
+
+    // Safety net: call runtime.close() on each mission's runtime adapter.
+    const seenRuntimes = new Set<WorkerRuntime>();
+    for (const [missionId, rt] of this.missions) {
+      if (rt.runtime === undefined) continue;
+      if (seenRuntimes.has(rt.runtime)) continue;
+      seenRuntimes.add(rt.runtime);
+      const runtimeName = rt.runtime.name ?? '<unnamed>';
+      let closed = false;
+      let closeError: string | undefined;
+      if (typeof rt.runtime.close === 'function') {
+        try {
+          await rt.runtime.close();
+          closed = true;
+        } catch (e) {
+          closeError = e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200);
+        }
+      } else {
+        closed = true;
+      }
+      perRuntime.push({
+        missionId,
+        runtimeName,
+        closed,
+        ...(closeError !== undefined ? { closeError } : {}),
+      });
+    }
+
+    const totalDrained = perMission.filter((p) => p.drained).length;
+    const totalTimedOut = perMission.filter((p) => p.timedOut).length;
+    const totalClosed = perRuntime.filter((p) => p.closed).length;
+    const totalCloseErrors = perRuntime.filter((p) => p.closeError !== undefined).length;
+    const elapsedMs = Date.now() - startedAt;
+
+    return {
+      clean: totalTimedOut === 0 && totalCloseErrors === 0,
+      elapsedMs,
+      activeMissionsDrained: totalDrained,
+      activeMissionsTimedOut: totalTimedOut,
+      runtimeAdaptersClosed: totalClosed,
+      runtimeAdapterCloseErrors: totalCloseErrors,
+      perMission,
+      perRuntime,
+    };
   }
 
   /**
@@ -298,6 +474,12 @@ export class MissionService {
     submission: MissionSubmission,
     caller: CallerIdentity,
   ): { missionId: string; status: MissionStatus } {
+    // G6-08-R1 (B-EXEC-FINDING-003): reject new submissions during shutdown.
+    if (this.shuttingDown) {
+      throw new MissionAdmissionError(
+        'gateway is shutting down — new mission submissions are not accepted',
+      );
+    }
     // 1. Validate input.
     if (!submission.outcome || submission.outcome.trim().length === 0) {
       throw new MissionAdmissionError('mission outcome is required');

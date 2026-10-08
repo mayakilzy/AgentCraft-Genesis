@@ -1031,11 +1031,27 @@ export class WorkerAgent {
     let lastError: unknown;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
-        const output = await this.reasoning.reason({
+        // G6-08-R1 (B-EXEC-FINDING-003): race the reasoning call against the
+        // abort signal so a never-resolving provider doesn't pin the
+        // orchestrator (and thus the gateway shutdown path). The abort
+        // wins via Promise.race + a never-resolving promise; the rejected
+        // promise propagates as a throw, caught below.
+        const reasonPromise = this.reasoning.reason({
           system: this.systemPrompt(),
           prompt,
           tier: this.genome.model,
         });
+        const output = this.signal?.aborted
+          ? await Promise.reject(new Error('aborted'))
+          : await (this.signal
+            ? Promise.race([
+                reasonPromise,
+                new Promise<never>((_, reject) => {
+                  if (this.signal!.aborted) reject(new Error('aborted'));
+                  else this.signal!.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+                }),
+              ])
+            : reasonPromise);
         return output.text;
       } catch (error) {
         lastError = error;

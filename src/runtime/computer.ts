@@ -168,6 +168,20 @@ export interface WorkerRuntime extends RuntimeAdapter {
    * `{ computer: ... }`. Phase 4.6+ will add `workspace` and `job` surfaces.
    */
   surfaces(handle: RuntimeHandle): WorkerSurfaces;
+  /**
+   * G6-08-R1 (B-EXEC-FINDING-003): optional best-effort close that stops
+   * every worker this runtime still holds. Implementations that hold
+   * external process resources (OpenBotRuntimeAdapter) override this to
+   * terminate child processes gracefully. Implementations with no external
+   * resources (MemoryRuntime) can omit it — the default is a no-op.
+   *
+   * Called by MissionService.shutdown() after all active missions have
+   * been cancelled and their orchestrator finally{} blocks have run
+   * stopWorker() per-worker. close() is the safety net for any workers
+   * that survived per-mission stopWorker (e.g., the verifier worker that
+   * was ensured after the mission's main workers retired).
+   */
+  close?(): Promise<void>;
 }
 
 /**
