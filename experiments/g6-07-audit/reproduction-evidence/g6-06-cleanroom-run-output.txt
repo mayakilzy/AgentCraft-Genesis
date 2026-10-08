@@ -1,0 +1,67 @@
+=== G6-06 Clean-Room Reproduction ===
+Commit: 8e0ba68d8764d5769127b821cfc2b05918ca8810
+Output: /tmp/g6-06-cleanroom-fpack
+
+=== Step 1: Clone ===
+Cloned. HEAD=8e0ba68d8764d5769127b821cfc2b05918ca8810
+=== Step 2: Worktree status ===
+Worktree: CLEAN
+=== Step 3: Environment ===
+Node: v24.21.0
+npm:  11.19.0
+Lockfile SHA256: 1f0c22908d844a42c9e37e0b6563347f92a81b7c7ab55f5755cffc96fa40557a
+=== Step 4: Install (npm ci) ===
+
+74 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+=== Step 5: Typecheck ===
+> agentcraft-genesis@0.1.0 typecheck
+> tsc --noEmit
+
+Typecheck exit: 0
+=== Step 6: Lint ===
+> agentcraft-genesis@0.1.0 lint
+> eslint .
+
+Lint exit: 0
+=== Step 7: Tests ===
+ Test Files  62 passed (62)
+      Tests  536 passed | 9 skipped (545)
+Tests exit: 0
+=== Step 8: Smoke mission ===
+  "mission_cost_wall_ms": 5,
+  "mission_cost_human_interventions": 0,
+  "pass": true
+}
+--- END EVIDENCE ---
+Smoke exit: 0
+=== Step 9: Gateway startup ===
+[genesis-gateway] EXECUTION MODE: development
+[genesis-gateway] ⚠️  USING DEVELOPMENT FIXTURES: MemoryComputer + DEVELOPMENT_REASONING_FALLBACK
+[genesis-gateway] ⚠️  This is NOT real AI execution. Do NOT use in production.
+[genesis-gateway] HTTP API listening on http://127.0.0.1:52673
+[genesis-gateway] A2A inbound listening on http://127.0.0.1:36441
+[genesis-gateway] Agent Card at http://127.0.0.1:36441/.well-known/agent-card.json
+[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.
+[genesis-gateway] 1 caller(s) configured.
+[genesis-gateway] Execution mode: development
+[genesis-gateway] In-process state; no durability across restart.
+Gateway: READY (health check passed)
+Mission submitted: 5190a520-3cf7-4d34-90a8-62a79872c15e
+
+=== Summary ===
+{
+  "commit": "8e0ba68d8764d5769127b821cfc2b05918ca8810",
+  "node_version": "v24.21.0",
+  "npm_version": "11.19.0",
+  "lockfile_sha256": "1f0c22908d844a42c9e37e0b6563347f92a81b7c7ab55f5755cffc96fa40557a",
+  "typecheck": "PASS",
+  "lint": "PASS",
+  "tests": "PASS",
+  "smoke": "PASS",
+  "gateway_startup": "PASS",
+  "overall": "PASS"
+}
+Clean-room directory removed.

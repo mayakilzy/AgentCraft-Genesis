@@ -1,0 +1,154 @@
+===== Fresh clone run =====
+Date: 2026-10-08T02:31:48Z
+Node: v24.21.0
+npm: 11.19.0
+Commit: 8e0ba68d8764d5769127b821cfc2b05918ca8810
+Branch: build/group-06-productionization
+
+===== npm ci =====
+
+added 218 packages in 2s
+EXIT_CODE=0
+===== npm run typecheck =====
+
+> agentcraft-genesis@0.1.0 typecheck
+> tsc --noEmit
+
+EXIT_CODE=0
+
+===== npm run lint =====
+
+> agentcraft-genesis@0.1.0 lint
+> eslint .
+
+EXIT_CODE=0
+===== npm test =====
+
+> agentcraft-genesis@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.3 /tmp/fresh-clone-g6-07
+
+ ✓ tests/phase-4-8-composition.test.ts (15 tests) 245ms
+ ✓ tests/phase-4-8b-closure.test.ts (21 tests) 144ms
+ ✓ tests/phase-4-6-opendots.test.ts (18 tests) 104ms
+ ✓ tests/phase-4-5-foundation.test.ts (13 tests) 1022ms
+   ✓ PHASE 4.5 — MissionOrchestrator dispatches through surfaces() (1)
+     ✓ runs an end-to-end mission through the generalized seam (OpenBot path) 1009ms
+ ✓ tests/providers/jev-decision-provider.test.ts (32 tests) 47ms
+ ✓ tests/phase-4-8d-obligations.test.ts (15 tests) 66ms
+ ✓ tests/runtime/federation-service.test.ts (17 tests) 64ms
+ ✓ tests/phase-4-6a-completion.test.ts (9 tests) 77ms
+ ✓ tests/mission/completion-contract.test.ts (5 tests) 1049ms
+   ✓ TASK-019 — completion contract and metric separation (5)
+     ✓ a dead retry does not erase committed round-1 work 1006ms
+ ✓ tests/work/git-workspace.test.ts (13 tests) 942ms
+ ✓ tests/phase-4-7-openmuse.test.ts (23 tests) 145ms
+ ✓ tests/work/fallback-isolation.test.ts (3 tests) 2113ms
+   ✓ fallback instance isolation (TASK-022A) (3)
+     ✓ implicit cross-instance memory is impossible: a marker given to instance A cannot surface in worker B or in a second instance of A 798ms
+     ✓ explicit Genesis communication still crosses the boundary: a fact sent through ask_worker reaches the isolated serving instance 783ms
+     ✓ same-instance continuity is preserved: repeated calls of ONE instance keep their private session history 529ms
+ ✓ tests/mission/orchestrator.test.ts (6 tests) 419ms
+   ✓ MissionOrchestrator — the Born loop (6)
+     ✓ aborts on mission timeout and still retires every worker 308ms
+ ✓ tests/work/integration-manager.test.ts (5 tests | 1 skipped) 484ms
+ ✓ tests/work/dev-runtime.test.ts (14 tests | 1 skipped) 465ms
+   ✓ killPortServerCommand — stale-server cleanup that cannot self-match (2)
+     ✓ the probing shell survives its own kill prefix 311ms
+ ✓ tests/work/browser-verification.test.ts (7 tests | 1 skipped) 44ms
+ ✓ tests/learning/semantic-integrity.test.ts (8 tests) 7ms
+ ✓ tests/learning/experience-store.test.ts (6 tests) 40ms
+ ✓ tests/gateway/cancellation.test.ts (4 tests) 2113ms
+   ✓ G6-05A-R1 — Active-mission cancellation (4)
+     ✓ CANCEL-01: cancellation reaches AbortSignal and mission reaches CANCELLED (not SUCCEEDED) 525ms
+     ✓ CANCEL-02: event history accurately represents the cancellation 505ms
+     ✓ CANCEL-03: repeated cancellation requests behave consistently 505ms
+     ✓ CANCEL-04: no further work scheduled after cancellation takes effect 505ms
+ ✓ tests/agui/event-bridge.test.ts (16 tests) 13ms
+ ✓ tests/academy/g5-07-transfer.test.ts (15 tests) 9ms
+ ✓ tests/worker/handoff.test.ts (5 tests) 13ms
+ ✓ tests/runtime/openbot-adapter.test.ts (8 tests | 6 skipped) 46ms
+ ✓ tests/runtime/federation-integration.test.ts (5 tests) 370ms
+ ✓ tests/runtime/mcp-capability-provider.test.ts (11 tests) 125ms
+ ✓ tests/academy/g5-08-closure.test.ts (17 tests) 51ms
+ ✓ tests/work/diagnostic-organization.test.ts (7 tests) 94ms
+ ✓ tests/gateway/http-api.test.ts (17 tests) 146ms
+ ✓ tests/gateway/clean-room-gateway.test.ts (4 tests) 1049ms
+ ✓ tests/learning/evaluation.test.ts (8 tests) 6ms
+ ✓ tests/worker/worker-agent.test.ts (8 tests) 8ms
+ ✓ tests/gateway/separate-process-e2e.test.ts (2 tests) 1052ms
+ ✓ tests/mission/secret-redaction.test.ts (12 tests) 12ms
+ ✓ tests/genome-compiler.test.ts (10 tests) 33ms
+ ✓ tests/mission/verification.test.ts (6 tests) 7ms
+ ✓ tests/learning/candidate-generator.test.ts (8 tests) 7ms
+ ✓ tests/gateway/concurrent-a2a.test.ts (5 tests) 489ms
+ ✓ tests/learning/pattern-retrieval.test.ts (8 tests) 11ms
+ ✓ tests/learning/evolution-sandbox.test.ts (8 tests) 6ms
+ ✓ tests/worker/worker-agent-retry.test.ts (6 tests) 10ms
+ ✓ tests/mission/artifact-record.test.ts (12 tests) 27ms
+ ✓ tests/phase-4-10-learning-closure.test.ts (3 tests) 27ms
+ ✓ tests/mission/flight-recorder.test.ts (3 tests) 24ms
+ ✓ tests/work/benchmark-epistemic-gate.test.ts (13 tests) 7ms
+ ✓ tests/organization-planner.test.ts (8 tests) 18ms
+ ✓ tests/work/dev-fallback.test.ts (3 tests) 892ms
+   ✓ development reasoning fallback (TASK-022 rule) (3)
+     ✓ journals the exact provider input and consumes the actor response 355ms
+     ✓ labels the real actor when TASK-023 fresh-session serving is declared 372ms
+ ✓ tests/mission/verification-hash-match.test.ts (5 tests) 5ms
+ ✓ tests/ownership-gate.test.ts (6 tests) 42ms
+ ✓ tests/goal/llm-understanding.test.ts (4 tests) 29ms
+ ✓ tests/pipeline.integration.test.ts (5 tests) 14ms
+ ✓ tests/gateway/a2a-inbound.test.ts (7 tests) 281ms
+ ✓ tests/cognitive-router.test.ts (9 tests) 9ms
+ ✓ tests/protocol-probe.test.ts (4 tests) 189ms
+ ✓ tests/goal-compiler.test.ts (9 tests) 12ms
+ ✓ tests/mission/config-validator.test.ts (8 tests) 12ms
+ ✓ tests/gateway/execution-mode.test.ts (2 tests) 1599ms
+   ✓ G6-06 — Execution mode boundary (2)
+     ✓ production mode fails closed when reasoning provider is missing 669ms
+     ✓ development mode starts with dev fixtures banner 927ms
+ ✓ tests/learning/experiment-028.test.ts (1 test) 37ms
+ ✓ tests/gateway/e2e.test.ts (4 tests) 122ms
+ ✓ tests/mission/failure-class.test.ts (13 tests) 5ms
+ ✓ tests/learning/experiment-029.test.ts (1 test) 26ms
+ ✓ tests/gateway/isolation.test.ts (4 tests) 118ms
+ ✓ tests/smoke.test.ts (1 test) 3ms
+
+ Test Files  62 passed (62)
+      Tests  536 passed | 9 skipped (545)
+   Start at  02:32:04
+   Duration  25.76s (tests 84%, import 10%, transform 4%, worker 1%)
+
+    Isolate  62 workers spawned · ~90ms startup each (spawn + environment, per file)
+             at least ~5.48s faster with isolate: false — reuses workers across files instead of one per file
+
+EXIT_CODE=0
+
+===== F-PACKAGE SUMMARY =====
+
+Fresh-clone reproduction (commit 8e0ba68d8764d5769127b821cfc2b05918ca8810):
+  npm ci:        SUCCESS (218 packages, 0 vulnerabilities, no peer dep warnings, no lifecycle scripts)
+  typecheck:     SUCCESS (tsc --noEmit exit 0)
+  lint:          SUCCESS (eslint . exit 0)
+  test:          SUCCESS (536 passed | 9 skipped | 545 total | 62 files | 25.76s)
+
+The clean-room build pipeline IS reproducible from a fresh local clone. No
+hidden historical state required. The 9 skipped tests are gated by SKIP_SLOW
+or external-service availability (per residual-risk-register.md and
+engine-v1-evidence-index.md claim "none are silently disabled to hide
+failures" — verified consistent with code).
+
+NOTE: The fresh-clone test run and the g6-06 clean-room script run BOTH left
+orphaned gateway processes (14 total) that were not cleaned up by
+`kill $GATEWAY_PID`. This confirms B-GATEWAY-FINDING-001 applies to the
+clean-room script as well as the in-process tests.
+
+Stale doc claims (test counts):
+  - clean-room-reproduction.md line 33:  "525 passed / 9 skipped = 534 total"
+  - final-analysis.md line 74-75:        "BASELINE 525/9/534; FINAL 527/9/536"
+  - engine-v1-install-and-run.md line 37: "527 passed, 9 skipped, 536 total"
+  - engine-v1-evidence-index.md line 88:  "527 passed / 9 skipped"
+  - REPRODUCIBILITY.md line 66:           "487 passed, 9 skipped, 496 total"
+  - ACTUAL on audited commit:             536 passed / 9 skipped / 545 total

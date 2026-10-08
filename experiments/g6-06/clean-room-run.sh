@@ -88,6 +88,12 @@ echo "=== Step 9: Gateway startup ==="
 HTTP_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()")
 A2A_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()")
 
+# G6-08 (RB-3): spawn the gateway in its own process group with setsid so
+# SIGTERM reaches the actual gateway process (and any descendants like the
+# bun processes spawned by OpenBot workers), not just the npx parent.
+# Without this, `kill $GATEWAY_PID` kills only the npx parent and leaves
+# the gateway grandchild orphaned on the listening port — a false-positive
+# clean-room PASS that masks real regressions.
 GENESIS_EXECUTION_MODE=development \
 GENESIS_HTTP_HOST=127.0.0.1 \
 GENESIS_HTTP_PORT=$HTTP_PORT \
@@ -95,7 +101,7 @@ GENESIS_A2A_HOST=127.0.0.1 \
 GENESIS_A2A_PORT=$A2A_PORT \
 GENESIS_A2A_BASE_URL=http://127.0.0.1:$A2A_PORT \
 GENESIS_API_KEYS='{"cleanroom-key":{"callerId":"cleanroom-caller","allowedOperations":["mission:submit"],"maxActiveMissions":5,"maxMissionTimeoutMs":60000}}' \
-npx tsx src/gateway/main.ts &
+setsid npx tsx src/gateway/main.ts &
 GATEWAY_PID=$!
 
 # Wait for readiness.
@@ -123,9 +129,31 @@ else
   GATEWAY_EXIT=1
 fi
 
-# Kill the gateway.
-kill $GATEWAY_PID 2>/dev/null || true
+# G6-08 (RB-3): kill the entire process GROUP (negative PID = process group),
+# not just the parent. This terminates the gateway grandchild, the npx parent,
+# and any descendant processes (bun, Chromium for browser surface, etc.) that
+# were spawned with the same session ID via setsid.
+# Grace period: SIGTERM, wait up to 3s for clean exit, then SIGKILL.
+kill -TERM -$GATEWAY_PID 2>/dev/null || kill -TERM $GATEWAY_PID 2>/dev/null || true
+for i in $(seq 1 30); do
+  if ! kill -0 -$GATEWAY_PID 2>/dev/null && ! kill -0 $GATEWAY_PID 2>/dev/null; then
+    break
+  fi
+  sleep 0.1
+done
+kill -KILL -$GATEWAY_PID 2>/dev/null || kill -KILL $GATEWAY_PID 2>/dev/null || true
 wait $GATEWAY_PID 2>/dev/null || true
+
+# G6-08 (RB-3): assert no orphan gateway processes remain.
+ORPHANS=$(pgrep -f "src/gateway/main.ts" 2>/dev/null || true)
+if [ -n "$ORPHANS" ]; then
+  echo "WARN: orphaned gateway processes detected (PIDs: $ORPHANS)"
+  # Best-effort cleanup.
+  for orphan in $ORPHANS; do
+    kill -KILL "$orphan" 2>/dev/null || true
+  done
+  GATEWAY_EXIT=2  # signal that orphans were detected
+fi
 
 # Step 10: Summary.
 echo ""

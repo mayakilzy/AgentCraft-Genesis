@@ -223,7 +223,7 @@ async function handleMissionResource(
       return;
     }
     if (req.method === 'GET' && subresource === 'artifacts') {
-      const artifacts = service.getArtifacts(missionId, caller);
+      const artifacts = await service.getArtifacts(missionId, caller);
       sendJson(res, 200, { missionId, artifacts });
       return;
     }

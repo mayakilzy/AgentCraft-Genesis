@@ -1,5 +1,7 @@
 import type { RuntimeHandle, WorkerGenome } from '../../contracts/core.js';
 import type {
+  ArtifactSnapshot,
+  ArtifactsProvider,
   WorkerComputer,
   WorkerRuntime,
   WorkerSurfaces,
@@ -41,7 +43,16 @@ interface RunningWorker {
   readonly computer: RunningComputer | null;
 }
 
-export class OpenBotRuntimeAdapter implements WorkerRuntime {
+/** Worker IDs whose computers hold clean-room verifier copies (not deliverables). */
+const VERIFIER_WORKER_PREFIX = 'mission-verifier';
+/** Files at or above this size are returned without inlined content. */
+const ARTIFACT_INLINE_LIMIT = 65_536;
+
+function isVerifierWorkerId(workerId: string): boolean {
+  return workerId === 'mission-verifier-1' || workerId.startsWith(VERIFIER_WORKER_PREFIX);
+}
+
+export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
   readonly name = 'openbot-runtime-v0.1.0';
 
   private readonly options: OpenBotAdapterOptions;
@@ -178,6 +189,60 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime {
     }
     this.computers.delete(botId);
     this.workers.delete(botId);
+  }
+
+  /**
+   * G6-08 (RB-1) — Snapshot of all worker artifacts produced by this runtime,
+   * EXCLUDING verifier clean-room workers (mission-verifier-*).
+   *
+   * For each non-verifier worker that has a computer, lists the workspace files
+   * and reads their content (inlining files ≤ 64KB). Returns a stable ordering
+   * by (workerId, path) so callers can compare snapshots deterministically.
+   *
+   * Verifier workers are excluded because their `artifacts/` subtree holds
+   * copies made by the VerificationLoop for clean-room checks, not mission
+   * deliverables.
+   */
+  async listArtifacts(): Promise<readonly ArtifactSnapshot[]> {
+    if (this.closed) {
+      // Closed adapter has no live workers — return empty rather than throw,
+      // because the gateway's getArtifacts() is called after the mission
+      // terminates and the orchestrator's finally{} has retired workers.
+      return [];
+    }
+    const out: ArtifactSnapshot[] = [];
+    for (const [botId, computer] of this.computers) {
+      if (isVerifierWorkerId(botId)) continue;
+      try {
+        const entries = await computer.listFiles();
+        for (const entry of entries) {
+          if (entry.kind !== 'file') continue;
+          // Path traversal protection (defense-in-depth — the worker's
+          // workspace is already confined by the computer contract).
+          if (entry.path.includes('..') || entry.path.startsWith('/')) continue;
+          const bytes = entry.bytes ?? 0;
+          let content: string | undefined;
+          if (bytes <= ARTIFACT_INLINE_LIMIT) {
+            try {
+              const r = await computer.readFile(entry.path);
+              content = r.text;
+            } catch {
+              // File vanished between list and read — report by size only.
+              content = undefined;
+            }
+          }
+          out.push({ workerId: botId, path: entry.path, bytes, content });
+        }
+      } catch {
+        // Worker's computer process may have exited — skip this worker.
+      }
+    }
+    out.sort((a, b) =>
+      a.workerId === b.workerId
+        ? a.path < b.path ? -1 : a.path > b.path ? 1 : 0
+        : a.workerId < b.workerId ? -1 : 1,
+    );
+    return out;
   }
 
   /** Stop every worker this adapter still holds (mission teardown path). */

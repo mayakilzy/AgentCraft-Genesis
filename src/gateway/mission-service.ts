@@ -27,7 +27,6 @@ import { randomUUID } from 'node:crypto';
 import type {
   MissionResult,
   ReasoningProvider,
-  RuntimeHandle,
 } from '../contracts/core.js';
 import { GoalCompiler } from '../goal/goal-compiler.js';
 import {
@@ -46,8 +45,11 @@ import {
 import { OrganizationPlanner } from '../organization/organization-planner.js';
 import { CognitiveRouter } from '../routing/cognitive-router.js';
 import { RuleDecisionProvider } from '../routing/decision-provider.js';
-import { MemoryComputer } from '../../tests/helpers/memory-runtime.js';
-import type { WorkerComputer, WorkerRuntime, WorkerSurfaces } from '../runtime/computer.js';
+import { MemoryComputer, MemoryRuntime } from '../runtime/memory-computer.js';
+import type {
+  ArtifactsProvider,
+  WorkerRuntime,
+} from '../runtime/computer.js';
 
 import type {
   CallerIdentity,
@@ -84,7 +86,14 @@ interface MissionRuntime {
   readonly controller: AbortController;
   readonly recorder: MemoryFlightRecorder;
   readonly goalOutcome: string;
-  /** Computers per worker — captured so the gateway can read artifacts after completion. */
+  /**
+   * Computers per worker — captured so the gateway can read artifacts after completion.
+   *
+   * G6-08 (RB-1): used only by the legacy dev-path runtime constructed inside
+   * MissionService (`buildDefaultRuntime`). For runtimes that implement
+   * {@link ArtifactsProvider} (MemoryRuntime, OpenBotRuntimeAdapter), the
+   * gateway reads artifacts through {@link MissionRuntime.runtime}.listArtifacts().
+   */
   readonly computers: Map<string, MemoryComputer>;
   /** The orchestrator's runtime adapter (kept for artifact retrieval). */
   runtime?: WorkerRuntime;
@@ -101,15 +110,23 @@ interface MissionRuntime {
  */
 export interface MissionServiceOptions {
   /**
-   * Factory for the runtime adapter to use per mission. The service
-   * calls this for each new mission and captures the computers map
-   * so artifacts can be retrieved after the mission finishes.
+   * Factory for the runtime adapter to use per mission.
+   *
+   * G6-08 (RB-2): the factory receives the missionId so it can construct a
+   * FRESH adapter per mission (no shared adapter, no shared workers, no
+   * shared workspace directories across concurrent missions). The factory
+   * MUST return a distinct adapter instance on every call.
+   *
+   * The returned runtime SHOULD implement {@link ArtifactsProvider} so the
+   * gateway can retrieve mission artifacts via `getArtifacts()`. If it does
+   * not, the gateway falls back to iterating the dev-path `computers` Map
+   * (only present for the default MemoryRuntime).
    *
    * Default: a MemoryRuntime-based factory (deterministic, no external services).
    */
-  readonly runtimeFactory?: () => {
+  readonly runtimeFactory?: (ctx: { missionId: string }) => {
     runtime: WorkerRuntime;
-    computers: Map<string, MemoryComputer>;
+    computers?: Map<string, MemoryComputer>;
   };
   /**
    * Factory for the reasoning provider. Default: a scripted reasoning
@@ -225,12 +242,14 @@ export class MissionService {
     const recorder = new MemoryFlightRecorder();
     const goalOutcome = submission.outcome;
 
-    // 5. Build the runtime (MemoryRuntime by default).
+    // 5. Build the runtime — FRESH per mission (G6-08 RB-2).
+    //    Production runtimes (OpenBot) get a per-mission rootDir so worker
+    //    workspace directories do not collide across concurrent missions.
     const runtimeBuild = this.runtimeFactory
-      ? this.runtimeFactory()
+      ? this.runtimeFactory({ missionId })
       : this.buildDefaultRuntime();
     const runtime = runtimeBuild.runtime;
-    const computers = runtimeBuild.computers;
+    const computers = runtimeBuild.computers ?? new Map<string, MemoryComputer>();
 
     // 6. Build the goal.
     const goal = submissionToGoal(submission);
@@ -284,12 +303,22 @@ export class MissionService {
     // 9. Start the orchestrator in the background.
     missionRuntime.status = 'RUNNING';
     missionRuntime.runPromise = orchestrator.run(goal).then(
-      (result) => {
+      async (result) => {
         missionRuntime.result = result;
         missionRuntime.finishedAt = new Date().toISOString();
         missionRuntime.status = statusFromResult(result, missionRuntime.canceled);
         // Capture verification result from flight events for per-artifact verified flag.
-        this.captureVerificationResult(missionRuntime);
+        // G6-08 (RB-1): this is now async — it may call runtime.listArtifacts()
+        // to enumerate actual worker workspace files (production OpenBot path).
+        // Awaiting here means any subsequent awaitCompletion() / getArtifacts()
+        // call sees a fully-populated verifiedPaths set.
+        try {
+          await this.captureVerificationResult(missionRuntime);
+        } catch {
+          // Capture failure must not mask the mission result itself.
+          missionRuntime.verificationOk = false;
+          missionRuntime.verifiedPaths = new Set<string>();
+        }
         return result;
       },
       (error) => {
@@ -349,6 +378,12 @@ export class MissionService {
    * Get the artifacts produced by a mission. Enforces caller isolation.
    * Returns content for files small enough to inline (< 64KB).
    *
+   * G6-08 (RB-1): the gateway reads artifacts from the runtime adapter
+   * (which is the source of truth for what files exist in each worker's
+   * workspace) via {@link ArtifactsProvider.listArtifacts} when available.
+   * Falls back to iterating the legacy dev-path `computers` Map for runtimes
+   * that do not implement ArtifactsProvider.
+   *
    * Per-artifact `verified` flag: based on the actual VerificationResult
    * captured when the mission finished. If the mission has not reached
    * verification (e.g., still RUNNING or CANCELLED before verification),
@@ -358,14 +393,34 @@ export class MissionService {
    * Verifier clean-room copies (workerId='mission-verifier-1') are excluded
    * — they are internal verifier bookkeeping, not mission deliverables.
    */
-  getArtifacts(missionId: string, caller: CallerIdentity): MissionArtifactRecord[] {
+  async getArtifacts(missionId: string, caller: CallerIdentity): Promise<MissionArtifactRecord[]> {
     const rt = this.requireMission(missionId, caller);
-    const records: MissionArtifactRecord[] = [];
     const verificationOk = rt.verificationOk ?? false;
     const verifiedPaths = rt.verifiedPaths ?? new Set<string>();
+
+    // G6-08 (RB-1): prefer the runtime's listArtifacts() when available.
+    // This is the production path — OpenBotRuntimeAdapter populates its
+    // internal `computers` Map from the actual worker processes, which
+    // the gateway previously could not see.
+    const provider = rt.runtime as (WorkerRuntime & Partial<ArtifactsProvider>) | undefined;
+    if (provider && typeof provider.listArtifacts === 'function') {
+      const snapshots = await provider.listArtifacts();
+      const records: MissionArtifactRecord[] = [];
+      for (const s of snapshots) {
+        records.push({
+          workerId: s.workerId,
+          path: s.path,
+          content: s.content,
+          verified: verificationOk && verifiedPaths.has(s.path),
+          bytes: s.bytes,
+        });
+      }
+      return records;
+    }
+
+    // Legacy dev-path fallback (default MemoryRuntime built inside MissionService).
+    const records: MissionArtifactRecord[] = [];
     for (const [workerId, computer] of rt.computers) {
-      // Exclude the verifier's clean-room computer — it holds copies
-      // for verification purposes, not mission deliverables.
       if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
         continue;
       }
@@ -472,8 +527,14 @@ export class MissionService {
    * Extract the verification result from the flight recorder events
    * and store it on the mission runtime. This is used by getArtifacts()
    * to set the per-artifact `verified` flag truthfully.
+   *
+   * G6-08 (RB-1): the verified-paths set is populated from the runtime's
+   * listArtifacts() when available — that path reflects actual worker
+   * workspaces (production OpenBot path), not just the legacy dev Map.
+   * The verification event itself is read synchronously from the flight
+   * recorder; the artifact enumeration is async, so this method is async.
    */
-  private captureVerificationResult(rt: MissionRuntime): void {
+  private async captureVerificationResult(rt: MissionRuntime): Promise<void> {
     const events = rt.recorder.events as FlightEvent[];
     const verificationEvent = events.find((e) => e.type === 'verification') as
       | { ok: boolean; passed: number; failed: number; failures: readonly string[] }
@@ -486,6 +547,17 @@ export class MissionService {
       // file path as verified.
       if (verificationEvent.ok) {
         const paths = new Set<string>();
+        // G6-08 (RB-1): prefer runtime's listArtifacts() (production path).
+        const provider = rt.runtime as (WorkerRuntime & Partial<ArtifactsProvider>) | undefined;
+        if (provider && typeof provider.listArtifacts === 'function') {
+          try {
+            const snapshots = await provider.listArtifacts();
+            for (const s of snapshots) paths.add(s.path);
+          } catch {
+            // Adapter may have been closed already — fall through to legacy path.
+          }
+        }
+        // Legacy dev-path fallback (MemoryComputer.files).
         for (const [workerId, computer] of rt.computers) {
           if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
             continue;
@@ -592,34 +664,16 @@ export class MissionService {
     runtime: WorkerRuntime;
     computers: Map<string, MemoryComputer>;
   } {
-    // Use the MemoryComputer helper from tests/helpers (lazy import via
-    // a dynamic require would break ESM; we import it statically since
-    // this is the default path and tests/helpers/memory-runtime.ts is
-    // part of the project).
-    const computers = new Map<string, MemoryComputer>();
-    const runtime: WorkerRuntime = {
-      name: 'gateway-default-memory-runtime',
-      async ensureWorker(genome) {
-        const id = genome.identity.id;
-        if (!computers.has(id)) {
-          computers.set(id, new MemoryComputer());
-        }
-        return { workerId: id, ref: `memory:${id}` };
-      },
-      async stopWorker() { /* no-op */ },
-      computer(handle: RuntimeHandle): WorkerComputer {
-        const c = computers.get(handle.workerId);
-        if (!c) {
-          throw new Error(`no computer for worker ${handle.workerId}`);
-        }
-        return c as unknown as WorkerComputer;
-      },
-      surfaces(handle: RuntimeHandle): WorkerSurfaces {
-        const c = computers.get(handle.workerId);
-        return c === undefined ? {} : { computer: c as unknown as WorkerComputer };
-      },
+    // G6-08 (RB-1): use the promoted MemoryRuntime from src/runtime/memory-computer.ts.
+    // MemoryRuntime implements ArtifactsProvider so the gateway's getArtifacts()
+    // reads actual worker workspace files through the same contract as the
+    // production OpenBot path. The legacy `computers` Map is still kept as a
+    // fallback for runtimes that do not implement ArtifactsProvider.
+    const runtime = new MemoryRuntime();
+    return {
+      runtime,
+      computers: runtime.computers as Map<string, MemoryComputer>,
     };
-    return { runtime, computers };
   }
 
   private buildDefaultReasoning(): ReasoningProvider {

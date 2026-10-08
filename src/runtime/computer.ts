@@ -32,6 +32,43 @@ export interface WorkspaceEntry {
   readonly bytes?: number;
 }
 
+// ---------------------------------------------------------------------------
+// G6-08 (RB-1) — Artifacts retrieval contract
+// ---------------------------------------------------------------------------
+
+/**
+ * G6-08 (RB-1) — One worker's artifact as observed by the runtime adapter.
+ *
+ * The runtime is the source of truth for what files exist in each worker's
+ * workspace; the gateway's `getArtifacts()` retrieval path delegates to the
+ * runtime's {@link ArtifactsProvider.listArtifacts} to enumerate them.
+ *
+ * `content` is inlined iff the file is small enough (≤ 64KB); larger files are
+ * reported by size only — callers must retrieve their content out-of-band.
+ */
+export interface ArtifactSnapshot {
+  readonly workerId: string;
+  readonly path: string;
+  readonly bytes: number;
+  /** Inlined file content (≤ 64KB). Undefined for larger files. */
+  readonly content?: string;
+}
+
+/**
+ * G6-08 (RB-1) — Optional runtime capability: enumerate the artifacts
+ * produced by every worker this runtime has ensured.
+ *
+ * Runtimes that hold their own internal `computers` Map (the OpenBot adapter,
+ * MemoryRuntime) implement this so the gateway's `getArtifacts()` retrieves
+ * genuine artifacts rather than an empty list.
+ *
+ * Verifier clean-room workers (`mission-verifier-*`) are excluded by
+ * convention — they hold verification copies, not mission deliverables.
+ */
+export interface ArtifactsProvider {
+  listArtifacts(): Promise<readonly ArtifactSnapshot[]>;
+}
+
 /** Result of reading one workspace file (OpenBot `/files/read` contract). */
 export interface ReadResult {
   readonly path: string;

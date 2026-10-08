@@ -1,0 +1,268 @@
+{
+  "audit_id": "G6-07",
+  "audit_date": "2026-10-08",
+  "audited_repository": "https://github.com/mayakilzy/AgentCraft-Genesis",
+  "audited_branch": "build/group-06-productionization",
+  "audited_head": "8e0ba68d8764d5769127b821cfc2b05918ca8810",
+  "audit_status": "COMPLETE",
+  "production_code_modified": false,
+  "existing_tests_modified": false,
+  "changes_pushed": false,
+  "total_findings": 90,
+  "severity_counts": {
+    "CRITICAL": 3,
+    "HIGH": 17,
+    "MEDIUM": 38,
+    "LOW": 27,
+    "POSITIVE": 5
+  },
+  "evidence_class_counts": {
+    "CONFIRMED_DEFECT": 14,
+    "CODE_CONFIRMED_DEFECT": 22,
+    "HIGH_CONFIDENCE_RISK": 19,
+    "EVIDENCE_GAP": 8,
+    "DOCUMENTATION_MISMATCH": 16,
+    "ENVIRONMENT_BLOCKED": 2,
+    "NOT_A_DEFECT": 5,
+    "POSITIVE_CONFIRMATION": 4
+  },
+  "release_blockers": [
+    {
+      "id": "RB-1",
+      "title": "Production getArtifacts() silently returns []",
+      "severity": "CRITICAL",
+      "root_cause_cluster": "RC-1",
+      "primary_finding_ids": ["B-EXEC-FINDING-001", "C-LEARNING-FINDING-016", "G-CLAIMS-FINDING-002"],
+      "affected_files": ["src/gateway/main.ts:145,250", "src/gateway/mission-service.ts:361-385", "src/runtime/openbot/adapter.ts:49,108"],
+      "minimal_fix": "Make runtimeFactory return a fresh adapter per mission that exposes its internal computers Map; OR add an artifact-retrieval adapter method that walks worker workspaces."
+    },
+    {
+      "id": "RB-2",
+      "title": "Concurrent production missions collide on shared OpenBot adapter",
+      "severity": "CRITICAL",
+      "root_cause_cluster": "RC-1,RC-2",
+      "primary_finding_ids": ["B-EXEC-FINDING-002", "C-VERIFY-FINDING-003", "E-CONCURRENCY-FINDING-005", "C-LEARNING-FINDING-015"],
+      "affected_files": ["src/gateway/main.ts:248-252", "src/runtime/openbot/adapter.ts:48-49,82-87", "src/mission/orchestrator.ts:207", "src/organization/organization-planner.ts:197,245"],
+      "minimal_fix": "Either (a) make runtimeFactory return a fresh adapter per mission, OR (b) namespace worker IDs by missionId (e.g., `${missionId}-mission-verifier-1`)."
+    },
+    {
+      "id": "RB-3",
+      "title": "Clean-room PASS is false-positive — orphaned gateway processes survive SIGTERM",
+      "severity": "CRITICAL",
+      "root_cause_cluster": "RC-3",
+      "primary_finding_ids": ["B-GATEWAY-FINDING-001", "B-GATEWAY-FINDING-004", "F-PACKAGE-FINDING-002", "G-CLAIMS-FINDING-006"],
+      "affected_files": ["experiments/g6-06/clean-room-run.sh:127-128", "tests/gateway/clean-room-gateway.test.ts:110-127,145,218", "tests/gateway/separate-process-e2e.test.ts:100-116,151", "src/gateway/main.ts:274-285"],
+      "minimal_fix": "Spawn with detached:true and kill via process.kill(-pgid, signal) — mirror the pattern in src/runtime/openbot/computer-process.ts:173-290. Tighten GATEWAY-04 assertion to verify ports released + SIGTERM handler logged."
+    }
+  ],
+  "root_cause_clusters": [
+    {
+      "id": "RC-1",
+      "title": "Production wiring structurally asymmetric with dev wiring",
+      "covers_findings": ["B-EXEC-FINDING-001", "B-EXEC-FINDING-002", "B-EXEC-FINDING-003", "B-EXEC-FINDING-006", "B-EXEC-FINDING-007", "C-LEARNING-FINDING-015", "C-LEARNING-FINDING-016"],
+      "fix": "Make runtimeFactory return a fresh adapter per mission that exposes its internal computers Map"
+    },
+    {
+      "id": "RC-2",
+      "title": "Mutable shared state across missions (deterministic worker IDs)",
+      "covers_findings": ["B-EXEC-FINDING-002", "C-VERIFY-FINDING-002", "C-VERIFY-FINDING-003", "E-CONCURRENCY-FINDING-005"],
+      "fix": "Namespace worker IDs by missionId OR give each mission its own adapter"
+    },
+    {
+      "id": "RC-3",
+      "title": "Test infrastructure masquerading as production infrastructure",
+      "covers_findings": ["B-GATEWAY-FINDING-001", "B-GATEWAY-FINDING-002", "B-GATEWAY-FINDING-003", "B-GATEWAY-FINDING-004", "F-PACKAGE-FINDING-002", "F-PACKAGE-FINDING-003"],
+      "fix": "Use detached:true + process.kill(-pgid, signal); tighten assertions"
+    },
+    {
+      "id": "RC-4",
+      "title": "Documentation drift — release docs describe G6-04 behavior",
+      "covers_findings": ["B-EXEC-FINDING-004", "G-CLAIMS-FINDING-001", "G-CLAIMS-FINDING-002", "G-CLAIMS-FINDING-003", "G-CLAIMS-FINDING-004", "G-CLAIMS-FINDING-005", "G-CLAIMS-FINDING-006", "G-CLAIMS-FINDING-007", "G-CLAIMS-FINDING-008", "G-CLAIMS-FINDING-009", "G-CLAIMS-FINDING-010", "G-CLAIMS-FINDING-011", "G-CLAIMS-FINDING-012", "G-CLAIMS-FINDING-013", "F-PACKAGE-FINDING-004", "F-PACKAGE-FINDING-010", "F-PACKAGE-FINDING-011", "F-PACKAGE-FINDING-014"],
+      "fix": "Add CI step asserting doc-claimed env vars match code, test counts match actual, .gitignore matches doc claims"
+    },
+    {
+      "id": "RC-5",
+      "title": "Production code imports test infrastructure",
+      "covers_findings": ["B-EXEC-FINDING-007"],
+      "fix": "Promote MemoryComputer to src/runtime/memory-computer.ts"
+    },
+    {
+      "id": "RC-6",
+      "title": "Unbounded in-memory state with no eviction policy",
+      "covers_findings": ["B-REGISTRY-FINDING-001", "B-REGISTRY-FINDING-002", "B-REGISTRY-FINDING-003", "B-A2A-FINDING-003", "C-VERIFY-FINDING-009", "C-LEARNING-FINDING-009", "C-LEARNING-FINDING-010", "C-LEARNING-FINDING-011"],
+      "fix": "Add retention policy (TTL or LRU) for terminal missions + idempotency keys + flight events"
+    },
+    {
+      "id": "RC-7",
+      "title": "Missing verification lifecycle invariants",
+      "covers_findings": ["C-VERIFY-FINDING-001", "C-VERIFY-FINDING-002", "C-VERIFY-FINDING-004", "C-VERIFY-FINDING-005", "C-VERIFY-FINDING-012"],
+      "fix": "Store full VerificationResult with outcomes; clear verifier workspace at start of verify(); decouple event capture from durable recording; add hash-match for staged inputs; default case for unknown check kinds"
+    }
+  ],
+  "findings": [
+    {
+      "FINDING_ID": "B-EXEC-FINDING-001",
+      "TITLE": "Production getArtifacts() always returns []",
+      "DOMAIN": "D15",
+      "EVIDENCE_CLASS": "CODE_CONFIRMED_DEFECT",
+      "SEVERITY": "CRITICAL",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["src/gateway/main.ts:145,250", "src/gateway/mission-service.ts:229-233,276,361-385,476-507", "src/runtime/openbot/adapter.ts:49,108"],
+      "ROOT_CAUSE": "buildRealRuntime returns { runtime, computers: new Map() } but the OpenBot adapter populates its OWN internal computers Map. MissionService.getArtifacts only iterates the empty Map.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "Every successful production mission returns zero artifacts via HTTP/A2A. Silent contract violation.",
+      "MINIMAL_RECOMMENDED_FIX": "Make OpenBotRuntimeAdapter expose its internal computers Map; OR have runtimeFactory return a fresh per-mission adapter that owns its own computers Map.",
+      "REGRESSION_TEST_REQUIRED": "Production-mode integration test that submits a mission, awaits completion, asserts getArtifacts returns non-empty list.",
+      "ESTIMATED_FIX_COMPLEXITY": "MEDIUM",
+      "RELATED_FINDINGS": ["B-EXEC-FINDING-002", "C-LEARNING-FINDING-016", "G-CLAIMS-FINDING-002"],
+      "ROOT_CAUSE_CLUSTER": "RC-1"
+    },
+    {
+      "FINDING_ID": "B-EXEC-FINDING-002",
+      "TITLE": "Concurrent production missions collide on shared OpenBot adapter",
+      "DOMAIN": "D19",
+      "EVIDENCE_CLASS": "CODE_CONFIRMED_DEFECT",
+      "SEVERITY": "CRITICAL",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["src/gateway/main.ts:248-252", "src/runtime/openbot/adapter.ts:48-49,82-87", "src/mission/orchestrator.ts:207", "src/organization/organization-planner.ts:197,245,347,394,566,598", "src/runtime/openbot/computer-process.ts:164-165"],
+      "ROOT_CAUSE": "runtimeFactory reuses the SAME adapter. Worker IDs are deterministic. ensureWorker is idempotent by botId. Two concurrent missions produce workers sharing the same process and workspace.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "Cross-mission data contamination; cross-caller isolation defeated; Mission A's stopWorker kills Mission B's worker.",
+      "MINIMAL_RECOMMENDED_FIX": "Make runtimeFactory return a fresh adapter per mission; OR namespace worker IDs by missionId.",
+      "REGRESSION_TEST_REQUIRED": "Concurrency test with two production-mode missions asserting isolated workers and workspaces.",
+      "ESTIMATED_FIX_COMPLEXITY": "MEDIUM",
+      "RELATED_FINDINGS": ["B-EXEC-FINDING-001", "C-VERIFY-FINDING-003", "E-CONCURRENCY-FINDING-005", "C-LEARNING-FINDING-015"],
+      "ROOT_CAUSE_CLUSTER": "RC-1,RC-2"
+    },
+    {
+      "FINDING_ID": "B-GATEWAY-FINDING-001",
+      "TITLE": "child.kill('SIGTERM') on npx tsx kills only npx parent; gateway grandchild orphaned",
+      "DOMAIN": "D21",
+      "EVIDENCE_CLASS": "CONFIRMED_DEFECT",
+      "SEVERITY": "HIGH",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["experiments/g6-06/clean-room-run.sh:99,127", "tests/gateway/clean-room-gateway.test.ts:110-127,145,218", "tests/gateway/separate-process-e2e.test.ts:100-116,151", "src/gateway/main.ts:274-285"],
+      "ROOT_CAUSE": "npx --yes tsx creates a two-level process tree. child.kill delivers SIGTERM only to the npx shim. Gateway grandchild reparented to PID 1, keeps ports open, SIGTERM handler never invoked.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "Tests pass vacuously; orphan accumulation; CI resource leak; no graceful shutdown; clean-room false positives.",
+      "MINIMAL_RECOMMENDED_FIX": "Spawn with detached:true; kill via process.kill(-pgid, signal). Tighten GATEWAY-04 to verify SIGTERM handler logged + ports released + no orphan processes.",
+      "REGRESSION_TEST_REQUIRED": "GATEWAY-05: no orphan gateway processes after SIGTERM; assert pgrep -f gateway/main.ts returns empty.",
+      "ESTIMATED_FIX_COMPLEXITY": "LOW",
+      "RELATED_FINDINGS": ["B-GATEWAY-FINDING-004", "F-PACKAGE-FINDING-002", "G-CLAIMS-FINDING-006"],
+      "ROOT_CAUSE_CLUSTER": "RC-3"
+    },
+    {
+      "FINDING_ID": "B-REGISTRY-FINDING-001",
+      "TITLE": "Terminal missions never evicted from MissionService.missions — unbounded registry growth",
+      "DOMAIN": "D19",
+      "EVIDENCE_CLASS": "CODE_CONFIRMED_DEFECT",
+      "SEVERITY": "HIGH",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["src/gateway/mission-service.ts:145,279,424-433", "src/mission/flight-recorder.ts:262-268", "tests/helpers/memory-runtime.ts:17"],
+      "ROOT_CAUSE": "No eviction code. No TTL, no LRU, no post-terminal delete. Map grows monotonically for process lifetime.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "Memory-exhaustion DoS via repeated mission submissions. Each retained MissionRuntime holds unbounded MemoryFlightRecorder.events + MemoryComputer.files + runPromise closure graph.",
+      "MINIMAL_RECOMMENDED_FIX": "Add periodic sweeper that removes terminal missions older than configurable retention window. Bound MemoryFlightRecorder.events. Add LRU backstop on missions size.",
+      "REGRESSION_TEST_REQUIRED": "Submit N missions, await completion, advance clock, assert service.health().totalMissions drops to retention bound.",
+      "ESTIMATED_FIX_COMPLEXITY": "MEDIUM",
+      "RELATED_FINDINGS": ["B-REGISTRY-FINDING-002", "B-REGISTRY-FINDING-003", "G-CLAIMS-FINDING-004"],
+      "ROOT_CAUSE_CLUSTER": "RC-6"
+    },
+    {
+      "FINDING_ID": "B-A2A-FINDING-001",
+      "TITLE": "Cross-caller cancelTask publishes actual task status, contradicting 'do not leak' comment",
+      "DOMAIN": "D12",
+      "EVIDENCE_CLASS": "CODE_CONFIRMED_DEFECT",
+      "SEVERITY": "MEDIUM",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["src/gateway/a2a-server.ts:177-190"],
+      "ROOT_CAUSE": "Cross-caller branch calls service.get with binding's callerId (bypassing requireMission check) and publishes buildTask(taskId, snapshot) — leaking the live mission status.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "Currently latent because SDK's InMemoryTaskStore owner-scopes reject cross-caller before executor runs. Becomes live if SDK scoping changes or a custom UserBuilder is introduced. Misleading comment creates false security signal.",
+      "MINIMAL_RECOMMENDED_FIX": "Either delete the dead branch (rely on SDK owner-scoping) OR publish generic buildTask(taskId, 'CANCELLED') without calling service.get. Update comment to describe actual enforcement layer.",
+      "REGRESSION_TEST_REQUIRED": "Test calling GenesisAgentExecutor.cancelTask DIRECTLY with non-owning callerContext asserting no real status in published event. Also test cross-caller CancelTask via JSON-RPC returns TaskNotFoundError.",
+      "ESTIMATED_FIX_COMPLEXITY": "LOW",
+      "RELATED_FINDINGS": ["C-PROTOCOLS-FINDING-019", "G-CLAIMS-FINDING-005"],
+      "ROOT_CAUSE_CLUSTER": "—"
+    },
+    {
+      "FINDING_ID": "B-EXEC-FINDING-004",
+      "TITLE": "Documentation defect: OPENBOT_ENDPOINT named as production env var but never read",
+      "DOMAIN": "D22",
+      "EVIDENCE_CLASS": "DOCUMENTATION_MISMATCH",
+      "SEVERITY": "HIGH",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["src/gateway/main.ts:30", "src/gateway/main.ts:126-135", "docs/release/engine-v1-configuration.md:45,84,99", "docs/release/engine-v1-install-and-run.md:98", "src/mission/config-validator.ts:188"],
+      "ROOT_CAUSE": "Original OpenBot integration assumed HTTP endpoint. Implementation switched to local-spawn. Header comment, release docs, and config-validator not updated.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "Operator following documented setup fails to start production gateway. Empirically reproduced.",
+      "MINIMAL_RECOMMENDED_FIX": "Update main.ts header comment + release docs + config-validator to use OPENBOT_CHECKOUT_DIR and OPENBOT_ROOT_DIR.",
+      "REGRESSION_TEST_REQUIRED": "Lint test that env vars in main.ts header comment match those read by buildRealRuntime/buildRealReasoningProvider.",
+      "ESTIMATED_FIX_COMPLEXITY": "LOW",
+      "RELATED_FINDINGS": ["F-PACKAGE-FINDING-004", "G-CLAIMS-FINDING-001"],
+      "ROOT_CAUSE_CLUSTER": "RC-4"
+    },
+    {
+      "FINDING_ID": "C-VERIFY-FINDING-002",
+      "TITLE": "Verifier clean-room workspace never cleared between verify() calls",
+      "DOMAIN": "D15",
+      "EVIDENCE_CLASS": "CODE_CONFIRMED_DEFECT",
+      "SEVERITY": "HIGH",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["src/mission/verification.ts:219-294", "src/mission/orchestrator.ts:750-754", "src/runtime/openbot/adapter.ts:155-166", "src/runtime/openbot/computer-process.ts:167-168"],
+      "ROOT_CAUSE": "VerificationLoop.verify copies artifacts via writeFile but never clears the artifacts/ subtree first. Within-mission retry and cross-mission (shared adapter) both inherit stale content.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "A file/hash-match check can pass against STALE content from a previous verify round or previous mission. False-positive verification.",
+      "MINIMAL_RECOMMENDED_FIX": "At start of verify(), delete artifacts/ subtree in verifier workspace. stopWorker should call resetComputerProcess for verifier.",
+      "REGRESSION_TEST_REQUIRED": "Within-mission: worker switches from a.txt to b.txt; assert round-1 file:a.txt check FAILS in round 2. Cross-mission: assert mission 2's verifier workspace is empty before clean-room copy.",
+      "ESTIMATED_FIX_COMPLEXITY": "MEDIUM",
+      "RELATED_FINDINGS": ["C-VERIFY-FINDING-003", "B-EXEC-FINDING-002"],
+      "ROOT_CAUSE_CLUSTER": "RC-2,RC-7"
+    },
+    {
+      "FINDING_ID": "C-SECURITY-FINDING-001",
+      "TITLE": "Worker run_command unrestricted shell execution, no Genesis-layer defense-in-depth",
+      "DOMAIN": "D20",
+      "EVIDENCE_CLASS": "HIGH_CONFIDENCE_RISK",
+      "SEVERITY": "HIGH",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["src/worker/worker-agent.ts:386-433,555-580", "src/runtime/openbot/computer-api.ts:131-139", "src/runtime/openbot/computer-process.ts:181"],
+      "ROOT_CAUSE": "Prompt-injected or malicious LLM emits run_command with arbitrary command. Genesis forwards verbatim to OpenBot POST /exec. No allow-list, no argument sanitization, no working-directory confinement, no egress filtering, no resource limits, no command-content audit log. EGRESS_POLICY_REQUIRED=0 default.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "Arbitrary command execution by a compromised or prompt-injected worker. Exfiltration via curl if upstream workspace not otherwise confined.",
+      "MINIMAL_RECOMMENDED_FIX": "Add Genesis-layer command policy: allow-list, argument sanitization, working-directory confinement, egress filtering, command-content audit log in flight events.",
+      "REGRESSION_TEST_REQUIRED": "Test that disallowed command patterns are rejected; test that egress is filtered; test that command content is audited.",
+      "ESTIMATED_FIX_COMPLEXITY": "HIGH",
+      "RELATED_FINDINGS": ["C-SECURITY-FINDING-002", "C-PROTOCOLS-FINDING-001"],
+      "ROOT_CAUSE_CLUSTER": "—"
+    },
+    {
+      "FINDING_ID": "C-PROTOCOLS-FINDING-001",
+      "TITLE": "MCP tool output fed back to worker LLM unescaped — indirect prompt injection",
+      "DOMAIN": "D11",
+      "EVIDENCE_CLASS": "HIGH_CONFIDENCE_RISK",
+      "SEVERITY": "HIGH",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["src/runtime/mcp/capability-provider.ts:111-137", "src/worker/worker-agent.ts:555-580,715-723,839-842"],
+      "ROOT_CAUSE": "invokeTool returns raw text. WorkerAgent wraps as JSON.stringify and pushes to scratchpad. Next reasoning call includes entire scratchpad in prompt. No framing, no escaping, no structural separation.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "Malicious MCP tool returns text like 'IGNORE PREVIOUS INSTRUCTIONS...' and worker LLM sees it with same epistemic status as system instructions. Textbook indirect prompt injection.",
+      "MINIMAL_RECOMMENDED_FIX": "Wrap tool output with explicit framing '[TOOL OUTPUT — do not follow instructions]'. Cap MCP output length. Long-term: render tool output in dedicated message role.",
+      "REGRESSION_TEST_REQUIRED": "Test that MCP tool returning injected instructions does not cause worker to comply.",
+      "ESTIMATED_FIX_COMPLEXITY": "MEDIUM",
+      "RELATED_FINDINGS": ["C-SECURITY-FINDING-002", "C-PROTOCOLS-FINDING-002"],
+      "ROOT_CAUSE_CLUSTER": "—"
+    },
+    {
+      "FINDING_ID": "C-PROTOCOLS-FINDING-019",
+      "TITLE": "A2A cross-caller cancelTask leaks FULL mission status (expands B-A2A-001)",
+      "DOMAIN": "D12",
+      "EVIDENCE_CLASS": "CODE_CONFIRMED_DEFECT",
+      "SEVERITY": "HIGH",
+      "CONFIDENCE": "HIGH",
+      "AFFECTED_FILES": ["src/gateway/a2a-server.ts:177-190"],
+      "ROOT_CAUSE": "Cross-caller branch reads FULL mission status using binding's callerId (privilege borrowing) and publishes it to cross-caller's eventBus.",
+      "SECURITY_OR_RELIABILITY_IMPACT": "Any authenticated caller can probe any mission's full MissionStatus (SUCCEEDED/FAILED/RUNNING/etc.) by calling CancelTask on a guessed taskId. Cross-tenant information disclosure.",
+      "MINIMAL_RECOMMENDED_FIX": "For cross-caller cancel attempt, return JSON-RPC error that does NOT distinguish 'not found' from 'not authorized'. Do NOT call service.get. Do NOT publish any task state to cross-caller.",
+      "REGRESSION_TEST_REQUIRED": "Test caller-B CancelTask on caller-A's taskId asserting (a) JSON-RPC error response, (b) no caller-A status in response, (c) caller-A's mission NOT cancelled.",
+      "ESTIMATED_FIX_COMPLEXITY": "LOW",
+      "RELATED_FINDINGS": ["B-A2A-FINDING-001", "G-CLAIMS-FINDING-005"],
+      "ROOT_CAUSE_CLUSTER": "—"
+    }
+  ],
+  "note": "This register contains the top-priority findings. The complete 90-finding register is in findings-detailed.md. Each finding there follows the full Required Finding Record schema from G6-07 Section 7.",
+  "remediation_batches_proposed": 9,
+  "safe_to_begin_g6_08_remediation": "YES",
+  "safe_to_begin_g6_09_adversarial_qualification": "NO"
+}

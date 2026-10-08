@@ -42,7 +42,6 @@ import { startA2AServer } from './a2a-server.js';
 import type { CallerIdentity, GatewayConfig } from './types.js';
 import type { ReasoningProvider } from '../contracts/core.js';
 import type { WorkerRuntime } from '../runtime/computer.js';
-import type { MemoryComputer } from '../../tests/helpers/memory-runtime.js';
 import type { ZAIReasoningOptions, ZAIReasoningProvider as ZAIReasoningProviderType } from '../providers/zai-reasoning.js';
 import type { OpenBotAdapterOptions } from '../runtime/openbot/adapter.js';
 
@@ -98,17 +97,26 @@ async function buildRealReasoningProvider(): Promise<ReasoningProvider | null> {
 }
 
 /**
- * Build a real runtime adapter for production mode.
- * Returns null if the required configuration is missing.
+ * G6-08 (RB-2) — Build a per-mission runtime FACTORY for production mode.
  *
- * In production mode, the gateway verifies that real runtime configuration
- * is present and fails closed if it is not. The actual runtime adapter
- * is constructed by the MissionService's runtimeFactory, which is injected
- * here using the environment variables. For OpenBot, the adapter requires
- * a checkout directory and root directory that are deployment-specific;
- * we verify the endpoint is present and let the factory handle construction.
+ * Returns null if the required configuration is missing (fail-closed).
+ *
+ * The factory is invoked once per mission and constructs a FRESH
+ * `OpenBotRuntimeAdapter` with a per-mission rootDir subdirectory
+ * (`${baseRootDir}/${missionId}/`). This guarantees:
+ *   - Each mission owns its own adapter (no shared internal `computers` Map).
+ *   - Each mission's worker workspace directories are isolated at the
+ *     filesystem level — no cross-mission data contamination even when
+ *     two missions use the same deterministic worker IDs
+ *     (`generalist-worker-1`, `mission-verifier-1`, etc.).
+ *   - Each mission's workers can be stopped independently (Mission A's
+ *     stopWorker does not affect Mission B).
+ *
+ * Validation of `OPENBOT_CHECKOUT_DIR` and `OPENBOT_ROOT_DIR` happens
+ * up-front, before any mission is accepted — production mode fails closed
+ * at startup if either is missing.
  */
-async function buildRealRuntime(): Promise<{ runtime: WorkerRuntime; computers: Map<string, MemoryComputer> } | null> {
+async function buildRealRuntimeFactory(): Promise<((ctx: { missionId: string }) => { runtime: WorkerRuntime }) | null> {
   const provider = process.env.GENESIS_RUNTIME_PROVIDER;
   if (!provider) {
     console.error('FATAL: GENESIS_EXECUTION_MODE=production requires GENESIS_RUNTIME_PROVIDER to be set.');
@@ -133,23 +141,44 @@ async function buildRealRuntime(): Promise<{ runtime: WorkerRuntime; computers: 
       console.error('FATAL: GENESIS_RUNTIME_PROVIDER=openbot requires OPENBOT_ROOT_DIR (directory for per-worker workspaces).');
       return null;
     }
+    // Verify the adapter module loads AND cache its constructor — the
+    // factory closure below is synchronous, so it cannot await import().
     try {
-      const mod = await import('../runtime/openbot/adapter.js') as {
-        OpenBotRuntimeAdapter: new (opts: OpenBotAdapterOptions) => WorkerRuntime;
-      };
-      const opts: OpenBotAdapterOptions = {
-        checkoutDir,
-        rootDir,
-      };
-      const runtime = new mod.OpenBotRuntimeAdapter(opts);
-      return { runtime, computers: new Map() };
+      await loadOpenBotAdapterCtor();
     } catch (e) {
-      console.error('FATAL: Failed to load OpenBotRuntimeAdapter:', e instanceof Error ? e.message : e);
+      console.error('FATAL: Failed to load OpenBotRuntimeAdapter module:', e instanceof Error ? e.message : e);
       return null;
     }
+    // Capture locally so the closure sees a non-null reference.
+    const OpenBotRuntimeAdapterCtor = openBotAdapterCtor!;
+    // Return a per-mission factory.
+    return (ctx: { missionId: string }): { runtime: WorkerRuntime } => {
+      // Per-mission rootDir subdirectory — isolates worker workspaces.
+      // The adapter creates this lazily inside startComputerProcess.
+      const missionRootDir = `${rootDir}/${ctx.missionId}`;
+      const opts: OpenBotAdapterOptions = {
+        checkoutDir,
+        rootDir: missionRootDir,
+      };
+      return { runtime: new OpenBotRuntimeAdapterCtor(opts) };
+    };
   }
   console.error(`FATAL: Unknown GENESIS_RUNTIME_PROVIDER: ${provider}`);
   return null;
+}
+
+// Cache the OpenBotRuntimeAdapter constructor synchronously after the
+// async factory has validated it can be imported. The factory closure
+// below is synchronous, so it cannot await import(); we resolve the
+// constructor once during startup and reuse it for every mission.
+let openBotAdapterCtor: (new (opts: OpenBotAdapterOptions) => WorkerRuntime) | null = null;
+async function loadOpenBotAdapterCtor(): Promise<new (opts: OpenBotAdapterOptions) => WorkerRuntime> {
+  if (openBotAdapterCtor !== null) return openBotAdapterCtor;
+  const mod = await import('../runtime/openbot/adapter.js') as {
+    OpenBotRuntimeAdapter: new (opts: OpenBotAdapterOptions) => WorkerRuntime;
+  };
+  openBotAdapterCtor = mod.OpenBotRuntimeAdapter;
+  return mod.OpenBotRuntimeAdapter;
 }
 
 function loadConfig(): GatewayConfig {
@@ -238,16 +267,18 @@ async function main(): Promise<void> {
       console.error('Set GENESIS_REASONING_PROVIDER and the corresponding credential environment variable.');
       process.exit(1);
     }
-    const runtimeBuild = await buildRealRuntime();
-    if (runtimeBuild === null) {
+    const runtimeFactory = await buildRealRuntimeFactory();
+    if (runtimeFactory === null) {
       console.error('FATAL: Production mode requires a configured runtime provider.');
       console.error('Set GENESIS_RUNTIME_PROVIDER and the corresponding endpoint/credential.');
       process.exit(1);
     }
     // In production, wire the real providers. No fallback to dev fixtures.
+    // G6-08 (RB-2): runtimeFactory constructs a FRESH adapter per mission
+    // (no shared adapter, no shared workers, no shared workspace directories).
     service = new MissionService({
       defaultMissionTimeoutMs: config.defaultMissionTimeoutMs,
-      runtimeFactory: () => ({ runtime: runtimeBuild.runtime, computers: runtimeBuild.computers }),
+      runtimeFactory: runtimeFactory,
       reasoningFactory: () => reasoning,
     });
   } else {

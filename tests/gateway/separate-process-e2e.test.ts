@@ -112,6 +112,9 @@ beforeAll(async () => {
         GENESIS_API_KEYS: apiKeysJson,
       },
       stdio: ['pipe', 'pipe', 'pipe'],
+      // G6-08 (RB-3): own process group so SIGTERM reaches the gateway
+      // grandchild, not just the npx parent.
+      detached: true,
     },
   );
 
@@ -147,10 +150,16 @@ beforeAll(async () => {
 }, 30_000);
 
 afterAll(() => {
-  if (gatewayProcess) {
-    gatewayProcess.kill('SIGTERM');
-    gatewayProcess = null;
+  // G6-08 (RB-3): kill the whole process group, not just the npx parent.
+  if (gatewayProcess && !gatewayProcess.killed) {
+    try {
+      process.kill(-gatewayProcess.pid!, 'SIGTERM');
+    } catch {
+      // Process group may already be gone — fall back to direct kill.
+      gatewayProcess.kill('SIGTERM');
+    }
   }
+  gatewayProcess = null;
 });
 
 describe('G6-05A-R1 — Separate-process E2E', () => {
