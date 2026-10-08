@@ -261,9 +261,33 @@ export interface FlightRecorder {
 /** Collects events in memory — tests and small inline runs. */
 export class MemoryFlightRecorder implements FlightRecorder {
   readonly events: FlightEvent[] = [];
+  /**
+   * G6-08 (Phase 3 / RC-6): maximum number of events retained. When this cap
+   * is reached, the OLDEST event is dropped before each new push. Default:
+   * 1000. Set to Infinity (or a large number) for tests that need the full
+   * event history.
+   */
+  readonly maxEvents: number;
+  private readonly maxFieldLength: number;
+
+  constructor(opts: { maxEvents?: number; maxFieldLength?: number } = {}) {
+    this.maxEvents = opts.maxEvents ?? 1000;
+    this.maxFieldLength = opts.maxFieldLength ?? DEFAULT_MAX_FIELD_LENGTH;
+  }
 
   record(event: FlightEvent): void {
-    this.events.push(event);
+    // G6-08 (Phase 3 / RC-6): bound the event log to prevent unbounded memory
+    // growth in long-running missions. Each event carries reasoning text,
+    // tool payloads, and other payload — without a cap, a single mission
+    // could produce thousands of events and exhaust memory.
+    if (this.events.length >= this.maxEvents) {
+      this.events.shift();  // drop oldest
+    }
+    // G6-08 (Phase 3 / C-VERIFY-FINDING-009): sanitize events on push to match
+    // FileFlightRecorder behavior — secrets should never leak through the
+    // in-memory recorder either.
+    const sanitized = sanitize(event, this.maxFieldLength) as FlightEvent;
+    this.events.push(sanitized);
   }
 }
 

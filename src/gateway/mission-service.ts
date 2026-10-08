@@ -144,11 +144,30 @@ export interface MissionServiceOptions {
   readonly maxActiveMissionsGlobal?: number;
   /** Maximum request body size (bytes) — enforced at submission. */
   readonly maxOutcomeLength?: number;
+  /**
+   * G6-08 (Phase 3 / RC-6): retention window for terminal missions (ms).
+   * Missions that have reached a terminal state AND whose `finishedAt` is
+   * older than this window are evicted from the in-memory registry to
+   * bound memory growth. Default: 5 minutes (300_000 ms).
+   *
+   * Set to a large value (e.g., 24h = 86_400_000) in tests that need
+   * indefinite retention.
+   */
+  readonly terminalMissionRetentionMs?: number;
+  /**
+   * G6-08 (Phase 3 / RC-6): interval between sweeper runs (ms).
+   * Default: 60 seconds. Set to 0 to disable background sweeping.
+   */
+  readonly sweepIntervalMs?: number;
 }
 
 const DEFAULT_OUTCOME_MAX_LENGTH = 10_000;
 const DEFAULT_MISSION_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_ACTIVE_GLOBAL = 50;
+/** G6-08 (Phase 3): 5 minutes — see terminalMissionRetentionMs. */
+const DEFAULT_TERMINAL_RETENTION_MS = 5 * 60_000;
+/** G6-08 (Phase 3): 60 seconds — see sweepIntervalMs. */
+const DEFAULT_SWEEP_INTERVAL_MS = 60_000;
 
 /**
  * The shared mission service. Both HTTP API and inbound A2A delegate here.
@@ -167,6 +186,12 @@ export class MissionService {
   private readonly defaultMissionTimeoutMs: number;
   private readonly maxActiveMissionsGlobal: number;
   private readonly maxOutcomeLength: number;
+  /** G6-08 (Phase 3): retention window for terminal missions (ms). */
+  private readonly terminalMissionRetentionMs: number;
+  /** G6-08 (Phase 3): sweeper interval handle (kept so close() can clear it). */
+  private sweepTimer: ReturnType<typeof setInterval> | null = null;
+  /** G6-08 (Phase 3): count of eviction sweeps performed (for tests/observability). */
+  private sweepCount = 0;
 
   constructor(options: MissionServiceOptions = {}) {
     this.runtimeFactory = options.runtimeFactory;
@@ -175,6 +200,90 @@ export class MissionService {
     this.defaultMissionTimeoutMs = options.defaultMissionTimeoutMs ?? DEFAULT_MISSION_TIMEOUT_MS;
     this.maxActiveMissionsGlobal = options.maxActiveMissionsGlobal ?? DEFAULT_MAX_ACTIVE_GLOBAL;
     this.maxOutcomeLength = options.maxOutcomeLength ?? DEFAULT_OUTCOME_MAX_LENGTH;
+    this.terminalMissionRetentionMs =
+      options.terminalMissionRetentionMs ?? DEFAULT_TERMINAL_RETENTION_MS;
+    // G6-08 (Phase 3 / RC-6): start the background sweeper unless explicitly disabled.
+    // The sweeper unref()s the timer so it does NOT keep the Node process alive.
+    const sweepIntervalMs = options.sweepIntervalMs ?? DEFAULT_SWEEP_INTERVAL_MS;
+    if (sweepIntervalMs > 0) {
+      this.sweepTimer = setInterval(() => {
+        try { this.sweepTerminalMissions(); } catch { /* best-effort */ }
+      }, sweepIntervalMs);
+      this.sweepTimer.unref();
+    }
+  }
+
+  /**
+   * G6-08 (Phase 3 / RC-6): stop the background sweeper and release all
+   * per-mission state. Safe to call multiple times. Used by tests and
+   * graceful shutdown paths.
+   */
+  close(): void {
+    if (this.sweepTimer !== null) {
+      clearInterval(this.sweepTimer);
+      this.sweepTimer = null;
+    }
+  }
+
+  /**
+   * G6-08 (Phase 3 / RC-6): evict terminal missions whose `finishedAt` is
+   * older than the retention window. Also evicts the corresponding
+   * idempotencyIndex entries (so the key can be reused by a future
+   * submission from the same caller — RC-6 / B-REGISTRY-FINDING-002).
+   *
+   * This method is safe to call from the setInterval background sweeper.
+   * It does NOT touch active (non-terminal) missions.
+   *
+   * Verifier workspaces, runtime adapters, and other per-mission state
+   * are NOT explicitly closed here — they will be garbage-collected once
+   * the MissionRuntime reference is dropped. Production runtimes
+   * (OpenBotRuntimeAdapter) clean up their worker processes via
+   * stopWorker() in the orchestrator's finally{} block.
+   */
+  sweepTerminalMissions(now: number = Date.now()): { evicted: number; remaining: number } {
+    const cutoff = now - this.terminalMissionRetentionMs;
+    const toEvict: string[] = [];
+    for (const [missionId, rt] of this.missions) {
+      if (!isTerminal(rt.status)) continue;
+      const finishedAtMs = rt.finishedAt ? Date.parse(rt.finishedAt) : NaN;
+      // If finishedAt is missing or unparseable, fall back to acceptedAt
+      // (defensive — the mission reached terminal somehow).
+      const referenceMs = Number.isNaN(finishedAtMs)
+        ? Date.parse(rt.acceptedAt)
+        : finishedAtMs;
+      if (Number.isNaN(referenceMs) || referenceMs <= cutoff) {
+        toEvict.push(missionId);
+      }
+    }
+    for (const missionId of toEvict) {
+      const rt = this.missions.get(missionId);
+      if (rt === undefined) continue;
+      this.missions.delete(missionId);
+      // RC-6 / B-REGISTRY-FINDING-002: also remove the idempotency key so it
+      // can be reused by a future submission from the same caller.
+      if (rt.idempotencyKey !== undefined) {
+        this.idempotencyIndex.delete(rt.idempotencyKey);
+      }
+    }
+    this.sweepCount += 1;
+    return { evicted: toEvict.length, remaining: this.missions.size };
+  }
+
+  /**
+   * G6-08 (Phase 3): test/observability accessor for sweep stats.
+   */
+  getSweepStats(): { sweepCount: number; totalMissions: number; terminalMissions: number; activeMissions: number } {
+    let terminal = 0;
+    let active = 0;
+    for (const rt of this.missions.values()) {
+      if (isTerminal(rt.status)) terminal += 1; else active += 1;
+    }
+    return {
+      sweepCount: this.sweepCount,
+      totalMissions: this.missions.size,
+      terminalMissions: terminal,
+      activeMissions: active,
+    };
   }
 
   /**

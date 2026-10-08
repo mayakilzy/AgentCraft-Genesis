@@ -213,9 +213,13 @@ class GenesisAgentExecutor implements AgentExecutorInterface {
     eventBus: ExecutionEventBus,
     signal: AbortSignal,
   ): Promise<{ status: MissionStatus; result?: { summary: string }; failureClass?: string; failureMessage?: string }> {
-    // Poll until terminal. Use the MissionService's awaitCompletion for
-    // efficiency, but check the abort signal between polls.
+    // G6-08 (Phase 3 / B-A2A-FINDING-002): wall-clock deadline to prevent
+    // a hung mission from pinning execute() and the HTTP connection
+    // indefinitely. The deadline = caller.maxMissionTimeoutMs + 30s slack.
+    // On deadline exceeded, publish FAILED and break.
     const pollIntervalMs = 50;
+    const deadlineMs = (caller.maxMissionTimeoutMs ?? 60_000) + 30_000;
+    const startedAt = Date.now();
     for (;;) {
       if (signal.aborted) {
         // The CancelTask handler aborted us. Wait briefly for the
@@ -225,6 +229,24 @@ class GenesisAgentExecutor implements AgentExecutorInterface {
       const snapshot = this.service.get(missionId, caller);
       if (snapshot.terminal) {
         return snapshot;
+      }
+      // G6-08 (Phase 3): wall-clock deadline check.
+      if (Date.now() - startedAt >= deadlineMs) {
+        // Deadline exceeded — publish FAILED, abort the mission, and break.
+        try {
+          this.service.cancel(missionId, caller);
+        } catch {
+          // Mission may have already terminated — best-effort.
+        }
+        eventBus.publish({ kind: 'task', data: buildTask(taskId, 'FAILED') });
+        // G6-08 (Phase 3 / B-A2A-FINDING-003): clean up the binding so the
+        // registry does not leak when execute() never returns normally.
+        this.bindings.delete(taskId);
+        return {
+          status: 'FAILED',
+          failureClass: 'deadline-exceeded',
+          failureMessage: `pollToTerminal exceeded deadline (${deadlineMs}ms)`,
+        };
       }
       await new Promise((r) => setTimeout(r, pollIntervalMs));
     }
