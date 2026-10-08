@@ -389,25 +389,25 @@ export const genesisApi = {
    * listMissions — ABSENT in the gateway (verified by source inspection).
    * Per 04_GATEWAY_DISCOVERY, square-bracket operations are not synthesized.
    * UI MissionList is client-side only (browser-known missions).
+   *
+   * The `undefined as never` assignment documents the absence in the type
+   * system: any caller attempting `genesisApi.listMissions(...)` will get
+   * a compile error because `undefined` is not callable.
    */
-  // @ts-expect-error — intentional: documents the absence so callers see it
   listMissions: undefined as never,
   /**
    * listWorkers / getOrganization — ABSENT (no /workers endpoint).
    * Worker info is inferred from event payloads only (PARTIAL).
    */
-  // @ts-expect-error — intentional: documents the absence
   listWorkers: undefined as never,
   /**
    * Capability discovery — ABSENT (no /capabilities endpoint).
    * UI Studio renders static data/ownership.yaml labeled "Documentation only".
    */
-  // @ts-expect-error — intentional: documents the absence
   listCapabilities: undefined as never,
   /**
    * Approvals/HITL — ABSENT (WAITING_FOR_APPROVAL not advertised).
    * UI hides approval controls.
    */
-  // @ts-expect-error — intentional: documents the absence
   requestApproval: undefined as never,
 } as const;

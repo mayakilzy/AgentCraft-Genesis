@@ -186,19 +186,20 @@ export function GoalComposer() {
 
     if (res.kind === "ok" && res.data) {
       // 3. Acknowledged — capture server-canonical mission ID. NEVER before this.
+      const { missionId } = res.data;
       setSubmissionState("acknowledged", {
-        lastSubmittedMissionId: res.data.missionId,
+        lastSubmittedMissionId: missionId,
         pendingIdempotencyKey: undefined,
         pendingGoalText: undefined,
       });
       upsertKnownMission({
-        missionId: res.data.missionId,
+        missionId,
         firstSeenAt: new Date().toISOString(),
         source: "submit",
       });
       // Auto-navigate to Mission Control after a short delay (let the user see the ack).
       setTimeout(() => {
-        setActiveMissionId(res.data.missionId);
+        setActiveMissionId(missionId);
         setActiveSection("mission-control");
       }, 600);
       return;
@@ -298,18 +299,19 @@ export function GoalComposer() {
     );
 
     if (res.kind === "ok" && res.data) {
+      const { missionId } = res.data;
       setSubmissionState("acknowledged", {
-        lastSubmittedMissionId: res.data.missionId,
+        lastSubmittedMissionId: missionId,
         pendingIdempotencyKey: undefined,
         pendingGoalText: undefined,
       });
       upsertKnownMission({
-        missionId: res.data.missionId,
+        missionId,
         firstSeenAt: new Date().toISOString(),
         source: "submit",
       });
       setTimeout(() => {
-        setActiveMissionId(res.data.missionId);
+        setActiveMissionId(missionId);
         setActiveSection("mission-control");
       }, 600);
     } else if (res.kind === "uncertain" || res.kind === "unavailable") {

@@ -18,7 +18,7 @@ import {
   verificationStateFromArtifact,
   VERIFICATION_META,
   type VerificationState,
-} from "../src/lib/genesis/artifacts";
+} from "../web/src/lib/genesis/artifacts";
 
 interface TestResult {
   id: string;

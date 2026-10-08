@@ -262,7 +262,7 @@ export function InsightsSection() {
             meta={METRIC_META.usd}
             value={cost?.usd}
             // CRITICAL: $0 → NOT_AVAILABLE (NOT $0 success)
-            display={(v) => (v > 0 ? `$${v.toFixed(4)}` : "Not measured")}
+            display={(v) => (typeof v === "number" && v > 0 ? `$${v.toFixed(4)}` : "Not measured")}
             overrideKind={cost?.usd === 0 ? "NOT_AVAILABLE" : undefined}
             isTerminal={isTerminal}
           />

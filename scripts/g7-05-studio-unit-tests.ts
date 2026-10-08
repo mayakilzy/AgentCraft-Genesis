@@ -10,7 +10,7 @@ import {
   determineStatus,
   loadCatalog,
   type CapabilityCard,
-} from "../src/lib/studio/catalog";
+} from "../web/src/lib/studio/catalog";
 import { writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";

@@ -25,8 +25,6 @@ import { dirname, resolve } from "node:path";
 const REPO_ROOT = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "..",
-  "agentcraft",
-  "repo",
 );
 const GATEWAY_ENTRY = resolve(REPO_ROOT, "src", "gateway", "main.ts");
 const UI_BASE = "http://localhost:3000";

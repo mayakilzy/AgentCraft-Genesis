@@ -151,7 +151,7 @@ export function ArtifactPreview({ artifact, onClose }: ArtifactPreviewProps) {
       )}
 
       {content && previewKind.startsWith("image-") && (
-        <ImageDataPreview content={content} kind={previewKind} path={artifact.path} />
+        <ImageDataPreview content={content} kind={previewKind as "image-png" | "image-jpeg" | "image-gif" | "image-webp"} path={artifact.path} />
       )}
 
       {content && previewKind === "pdf" && (

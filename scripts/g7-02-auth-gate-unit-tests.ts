@@ -19,7 +19,7 @@ import {
   issueAuthenticatedCookie,
   verifyTokenWithSecret,
   type CookiePayload,
-} from "../src/lib/auth/cookie";
+} from "../web/src/lib/auth/cookie";
 
 interface TestResult {
   id: string;

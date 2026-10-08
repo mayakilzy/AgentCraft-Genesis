@@ -6,6 +6,10 @@ coverage/
 .env.*
 .DS_Store
 
+# Next.js build output and TypeScript incremental build cache
+.next/
+*.tsbuildinfo
+
 # secrets & credentials (G6-08 Phase 7: F-PACKAGE-FINDING-014 — `.secure/` was claimed
 # gitignored but was missing; `*.token` and `*.env.local` cover ad-hoc credential files)
 .secure/
