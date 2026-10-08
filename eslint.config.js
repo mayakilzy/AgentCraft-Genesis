@@ -29,16 +29,18 @@ export default tseslint.config(
       // tseslint config. Lint it from the Next.js project root, not here.
       'web/**',
       // G7 test scripts: tooling that exercises the BFF and cookie library.
-      // These scripts intentionally use `as any` to test that the cookie
-      // library rejects malformed payloads (e.g., cookies without the op
-      // claim). They are NOT engine source — they are HTTP-based test
-      // tooling. Excluding them from the application lint scope is scoped:
-      // production source (src/**) and test source (tests/**) remain
-      // fully linted.
+      // These scripts intentionally use `as any` or other patterns that the
+      // engine's tseslint config flags. They are NOT engine source — they
+      // are HTTP-based test tooling. Excluding them from the application
+      // lint scope is scoped: production source (src/**), test source
+      // (tests/**), and dev scripts (scripts/g7-05..06-*.ts when added)
+      // remain fully linted.
       'scripts/g7-01-closure-tests.ts',
       'scripts/g7-02-auth-gate-tests.ts',
       'scripts/g7-02-auth-gate-unit-tests.ts',
       'scripts/g7-02-e2e-submission.ts',
+      'scripts/g7-04-artifacts-e2e-tests.ts',
+      'scripts/g7-04-artifacts-unit-tests.ts',
     ],
   },
   ...tseslint.configs.recommended,

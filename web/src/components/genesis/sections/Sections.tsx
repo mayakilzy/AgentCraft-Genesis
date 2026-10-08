@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Target, Users, Activity, FileText, Wrench, BarChart3, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { EmptyState } from "@/components/genesis/EmptyState";
@@ -8,9 +9,11 @@ import { GoalComposer } from "@/components/genesis/GoalComposer";
 import { MissionList, MissionLookup } from "@/components/genesis/MissionList";
 import { MissionControlDetail } from "@/components/genesis/MissionControlDetail";
 import { WorkerCards } from "@/components/genesis/WorkerCards";
+import { ArtifactList } from "@/components/genesis/ArtifactList";
+import { ArtifactPreview } from "@/components/genesis/ArtifactPreview";
+import { ReplayTimeline } from "@/components/genesis/ReplayTimeline";
 import { extractWorkers } from "@/lib/genesis/events";
 import { genesisApi } from "@/lib/genesis/client";
-import { useEffect, useMemo, useRef, useState } from "react";
 import type { MissionEventRecord } from "@/lib/genesis/types";
 import { cn } from "@/lib/utils";
 
@@ -253,7 +256,66 @@ export function MissionControlSection() {
 }
 
 export function ArtifactsSection() {
+  const missionId = useGenesisStore((s) => s.activeMissionId);
   const connectionState = useGenesisStore((s) => s.connectionState);
+  const [selectedArtifact, setSelectedArtifact] = useState<
+    import("@/lib/genesis/types").MissionArtifactRecord | null
+  >(null);
+  // Poll events for the ReplayTimeline.
+  const [events, setEvents] = useState<readonly MissionEventRecord[]>([]);
+  const seenSeqsRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (!missionId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEvents([]);
+      seenSeqsRef.current = new Set();
+      return;
+    }
+    let cancelled = false;
+    const controller = new AbortController();
+    const poll = async () => {
+      if (cancelled) return;
+      const res = await genesisApi.getEvents(missionId, controller.signal);
+      if (cancelled) return;
+      if (res.kind === "ok" && res.data) {
+        const newOnes = res.data.events.filter(
+          (e) => !seenSeqsRef.current.has(e.seq),
+        );
+        for (const e of newOnes) seenSeqsRef.current.add(e.seq);
+        if (newOnes.length > 0) {
+           
+          setEvents((prev) =>
+            [...prev, ...newOnes].sort((a, b) => a.seq - b.seq),
+          );
+        }
+      }
+    };
+    void poll();
+    const interval = setInterval(() => void poll(), 2500); // 2.5s for Artifacts section
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearInterval(interval);
+    };
+  }, [missionId]);
+
+  if (!missionId) {
+    return (
+      <div className="space-y-4">
+        <SectionHeader
+          icon={FileText}
+          title="Artifacts & Replay"
+          description="Actual files/outputs, verification state, provenance and recorded-event replay (not re-run)."
+        />
+        <EmptyState
+          state={connectionState === "disconnected" ? "disconnected" : "empty"}
+          customDescription="No mission selected. Submit a goal in Work or look one up by ID, then switch to Artifacts & Replay to inspect outputs and recorded events."
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <SectionHeader
@@ -261,15 +323,49 @@ export function ArtifactsSection() {
         title="Artifacts & Replay"
         description="Actual files/outputs, verification state, provenance and recorded-event replay (not re-run)."
       />
-      <InfoCard title="G7-04 deliverable" tone="warning">
-        Artifact list, safe preview, authorized download, verification panel,
-        and recorded-event replay arrive in G7-04. Replay is a client-side
-        navigation of recorded events — no tool execution or mission mutation.
+      <InfoCard title="Verification originates from engine evidence only" tone="info">
+        Verification status (VERIFIED / UNVERIFIED / UNKNOWN / NOT_AVAILABLE) is
+        read from the gateway&apos;s{" "}
+        <code className="font-mono">artifact.verified</code> field — never inferred
+        from mission success, artifact presence, filename, or UI heuristics. The
+        gateway computes it from the actual VerificationResult captured when the
+        mission finished. No separate /verification endpoint exists in v1.
       </InfoCard>
-      <EmptyState
-        state={connectionState === "disconnected" ? "disconnected" : "empty"}
-        customDescription="No artifacts available. Artifacts appear once a terminal mission produces them."
-      />
+      <InfoCard title="Safe preview + sandboxed download" tone="info">
+        Only text/markdown/image/PDF are previewed inline. HTML, SVG, XML, JS,
+        CSS, and JSON render as ESCAPED text source code — never executed.
+        Downloads use the authenticated BFF boundary (no public URLs, no Gateway
+        API key exposure). Filenames are sanitized to basename only.
+      </InfoCard>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium">Artifacts</h2>
+          <ArtifactList
+            missionId={missionId}
+            onSelectArtifact={setSelectedArtifact}
+            selectedPath={selectedArtifact?.path}
+          />
+          {selectedArtifact && (
+            <div className="rounded-lg border border-border bg-card p-3">
+              <h3 className="text-xs font-medium mb-2">Preview</h3>
+              <ArtifactPreview
+                artifact={selectedArtifact}
+                onClose={() => setSelectedArtifact(null)}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium">Recorded-event Replay</h2>
+          <ReplayTimeline
+            missionId={missionId}
+            events={events}
+            truncated={events.length >= 100}
+          />
+        </div>
+      </div>
     </div>
   );
 }
