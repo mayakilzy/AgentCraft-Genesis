@@ -2,7 +2,7 @@
   "group": "G7-02",
   "status": "PASS",
   "base_sha": "ac9de9d",
-  "completed_sha": "pending-g7-02-commit",
+  "completed_sha": "9bf80c1",
   "closure_sha": null,
   "branch": "build/group-07-product-experience",
   "worktree_clean": true,
@@ -125,7 +125,7 @@
   "recovery_metadata": {
     "branch": "build/group-07-product-experience",
     "base_sha": "ac9de9d",
-    "completed_sha": "pending-g7-02-commit",
+    "completed_sha": "9bf80c1",
     "recovery_prompt": "Resume AgentCraft Genesis G7 from persisted Git commits and evidence/g7/checkpoints/G7-02.json, not from chat history. Verify branch=build/group-07-product-experience; HEAD must equal completed_sha (or ac9de9d if G7-02 is not yet committed). Verify worktree clean. Reproduce essential smoke tests: npx tsx scripts/g7-01-closure-tests.ts → 12/12 PASS; npx tsx scripts/g7-02-e2e-submission.ts → 8/8 PASS (requires the engine repo at agentcraft/repo/ with deps installed); bun run lint → 0 errors. Then continue with G7-03. Stop on inconsistent state.",
     "test_commands": [
       "bun run lint -- --ignore-pattern agentcraft",
