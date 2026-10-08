@@ -31,9 +31,15 @@ export function ConnectionStatus() {
   const setLastConnectionCheckAt = useGenesisStore(
     (s) => s.setLastConnectionCheckAt,
   );
+  const bffReady = useGenesisStore((s) => s.bffReady);
   const abortRef = useRef<AbortController | null>(null);
 
   const checkHealth = async () => {
+    if (!bffReady) {
+      // Wait for the BFF cookie to be issued by /api/auth/setup.
+      // This prevents the very first poll from racing the cookie-setter.
+      return;
+    }
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -58,6 +64,7 @@ export function ConnectionStatus() {
   };
 
   useEffect(() => {
+    if (!bffReady) return; // wait for AppShell to acquire the cookie
     void checkHealth();
     // Poll every 15s for connection liveness (bounded; per 05_SECURITY §Resilience).
     const interval = setInterval(() => void checkHealth(), 15_000);
@@ -65,7 +72,7 @@ export function ConnectionStatus() {
       clearInterval(interval);
       abortRef.current?.abort();
     };
-  }, []);
+  }, [bffReady]);
 
   const config: Record<
     typeof connectionState,

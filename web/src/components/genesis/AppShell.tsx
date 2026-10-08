@@ -17,6 +17,7 @@ import {
   SheetContent,
   SheetTrigger,
   SheetTitle,
+  SheetDescription,
   SheetClose,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -106,6 +107,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [setActiveSection]);
 
+  // Acquire the BFF session cookie on mount. The /api/genesis/* proxy
+  // requires this cookie — without it, every call returns 401.
+  // The /api/auth/setup endpoint is idempotent: if a valid cookie is already
+  // present, it returns 200 without re-issuing.
+  const setBffReady = useGenesisStore((s) => s.setBffReady);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/auth/setup", {
+          method: "GET",
+          credentials: "include",
+        });
+        if (cancelled) return;
+        if (res.ok) {
+          // Cookie is set (or was already). Signal ConnectionStatus to begin polling.
+          setBffReady(true);
+        } else {
+          // The cookie wasn't issued. The UI will see 401 on subsequent
+          // /api/genesis/* calls and show the unauthorized state honestly.
+          console.warn(
+            "[genesis-shell] BFF cookie setup failed:",
+            res.status,
+          );
+          setBffReady(true); // still allow polling so the UI shows the 401 truthfully
+        }
+      } catch (e) {
+        if (cancelled) return;
+        console.warn("[genesis-shell] BFF cookie setup error:", e);
+        setBffReady(true); // allow polling so we see the real failure
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [setBffReady]);
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Top bar — present on all viewports. */}
@@ -120,7 +158,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               type="button"
               aria-label="Open navigation"
               aria-keyshortcuts="Alt+M"
-              className="inline-flex size-10 items-center justify-center rounded-md text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring md:hidden"
+              // size-11 = 44px — meets WCAG 2.2 AA touch target recommendation
+              className="inline-flex size-11 items-center justify-center rounded-md text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring md:hidden"
             >
               <Menu className="size-5" aria-hidden="true" />
             </button>
@@ -129,6 +168,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <SheetTitle className="sr-only">
               AgentCraft Genesis navigation
             </SheetTitle>
+            <SheetDescription className="sr-only">
+              Choose one of the six product destinations: Work, Agent, Mission
+              Control, Artifacts &amp; Replay, Studio, or Insights. Each item
+              can also be reached with Alt and the number 1 through 6.
+            </SheetDescription>
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <span className="text-sm font-semibold">Sections</span>
               <SheetClose asChild>

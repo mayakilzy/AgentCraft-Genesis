@@ -72,6 +72,10 @@ async function fetchGenesis(
       method: opts.method ?? "GET",
       headers: { "Content-Type": "application/json" },
       signal: controller.signal,
+      // Include the BFF cookie (SameSite=Strict + HttpOnly). The cookie is
+      // auto-issued by /api/auth/setup on AppShell mount. Without this,
+      // the BFF returns 401 for every call.
+      credentials: "include",
     };
     if (opts.body !== undefined) {
       init.body = JSON.stringify(opts.body);

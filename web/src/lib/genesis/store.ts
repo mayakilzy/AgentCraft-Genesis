@@ -93,6 +93,13 @@ export interface GenesisUiState {
   lastConnectionCheckAt?: string;
   setLastConnectionCheckAt: (iso: string) => void;
 
+  // BFF session cookie readiness. ConnectionStatus should not poll /health
+  // until the BFF cookie has been issued by /api/auth/setup. Without this
+  // gate, the very first poll fires before the cookie arrives and sees 401
+  // (which is correct fail-closed behavior, but a poor UX).
+  bffReady: boolean;
+  setBffReady: (v: boolean) => void;
+
   // Mission context (active selection)
   activeMissionId?: string;
   setActiveMissionId: (id: string | undefined) => void;
@@ -114,6 +121,9 @@ export const useGenesisStore = create<GenesisUiState>((set) => ({
   connectionState: "connecting",
   setConnectionState: (s) => set({ connectionState: s }),
   setLastConnectionCheckAt: (iso) => set({ lastConnectionCheckAt: iso }),
+
+  bffReady: false,
+  setBffReady: (v) => set({ bffReady: v }),
 
   setActiveMissionId: (id) => set({ activeMissionId: id }),
 

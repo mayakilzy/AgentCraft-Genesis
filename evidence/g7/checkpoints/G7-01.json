@@ -2,7 +2,8 @@
   "group": "G7-01",
   "status": "PASS",
   "base_sha": "bff7b0a6f8b4e35880a9c7453d4e6de343e4e001",
-  "completed_sha": "pending-commit",
+  "completed_sha": "c17b006",
+  "closure_sha": "pending-closure-commit",
   "branch": "build/group-07-product-experience",
   "worktree_clean": true,
   "implemented_features": [
@@ -23,9 +24,17 @@
     "Defense-in-depth secret redaction in BFF proxy (GitHub PAT, OpenAI key, Bearer header, env var leak patterns)",
     "Honest EmptyState component with loading/loaded/empty/error/disconnected variants and live regions",
     "ConnectionStatus polls /health every 15s; auto-detects dev-mode fixtures from health.limitations array",
-    "EnvironmentStatus permanent visible banner: 'Controlled test environment — not a live production provider'",
+    "EnvironmentStatus permanent visible banner: 'Controled test environment — not a live production provider'",
     "MissionBreadcrumb shows mission pill with status tone (NON-color-only cues: icon + text label), last-observed timestamp, clear button",
-    "Six section placeholders with explicit 'G7-02..06 deliverable' notices — no fabricated functionality"
+    "Six section placeholders with explicit 'G7-02..06 deliverable' notices — no fabricated functionality",
+    "CLOSURE: Minimal BFF caller boundary (HMAC-signed HttpOnly+SameSite=Strict cookie; /api/auth/setup endpoint)",
+    "CLOSURE: Bounded upstream timeout (default 30s, configurable via GENESIS_BFF_TIMEOUT_MS, bounded 1s-60s) with abort propagation from incoming request",
+    "CLOSURE: Path safety — reject '..', null bytes, control chars; method whitelist (GET/POST only); URL constructor (no string concat); redirect: 'error' on upstream",
+    "CLOSURE: Permissive CORS removed — no Access-Control-Allow-Origin header; same-origin only",
+    "CLOSURE: Mobile nav button size-11 (44px) — meets WCAG 2.2 AA touch target",
+    "CLOSURE: SheetDescription added to mobile Sheet (sr-only) — fixes React a11y warning",
+    "CLOSURE: bffReady gate in store + ConnectionStatus waits for cookie before polling",
+    "CLOSURE: 12 regression tests covering auth, missing creds, gateway failure, allowlist, traversal, methods, CORS, secret non-disclosure, tamper, idempotency, cookie attrs, timeout config"
   ],
   "api_contracts_verified": [
     "GET /health (public, no auth) — src/gateway/http-server.ts:93-108",
@@ -51,31 +60,31 @@
       "area": "Shell",
       "scenario": "Gateway down",
       "expected": "Honest disconnected state, retry",
-      "actual": "PASS — ConnectionStatus shows 'Disconnected' with retry button; /api/genesis/health returns 503 when gateway not running; no fake 'all green' default",
-      "evidence": "evidence/g7/screenshots/g7-01-retry-connection.png + dev.log line 'GET /api/genesis/health 503'"
+      "actual": "PASS — ConnectionStatus shows 'Disconnected' with retry button after bffReady gate; /api/genesis/health returns 503 when gateway not running (verified by T3 regression test); no fake 'all green' default",
+      "evidence": "evidence/g7/screenshots/g7-01-retry-connection.png + scripts/g7-01-closure-tests.ts:T3"
     },
     {
       "id": "UI-003",
       "area": "Auth",
       "scenario": "No credentials/401/403",
       "expected": "No protected data/action exposed",
-      "actual": "PASS (partial) — without gateway running, BFF proxy returns 503 (not 401). With gateway running in dev mode, GENESIS_API_KEY env var must match a GENESIS_API_KEYS entry or 401 is returned. Full 401/403 verification deferred to G7-02 (requires a running gateway).",
-      "evidence": "src/app/api/genesis/[...path]/route.ts:38-39 + src/components/genesis/ConnectionStatus.tsx"
+      "actual": "PASS — BFF returns 401 without cookie (T1), 401 for tampered cookie (T10), 405 for disallowed methods (T6). Cookie is HttpOnly + SameSite=Strict (T11). GENESIS_API_KEY is server-side only (verified by secret-sentinel scan).",
+      "evidence": "scripts/g7-01-closure-tests.ts:T1,T6,T10,T11 + secret-sentinel grep on src/"
     },
     {
       "id": "UI-024",
       "area": "A11y",
       "scenario": "Keyboard journey + reduced motion",
       "expected": "Operable, understandable",
-      "actual": "PASS — Alt+1..6 keyboard shortcuts; focus-visible ring (2px outline-ring); ARIA roles on header/nav/main/footer/aside; aria-current=page on active nav item; aria-live=polite on status regions; prefers-reduced-motion CSS disables animations",
-      "evidence": "src/app/globals.css:114-127 + src/components/genesis/AppShell.tsx:34-55"
+      "actual": "PASS — Alt+1..6 keyboard shortcuts; focus-visible ring (2px outline-ring); ARIA roles on header/nav/main/footer/aside; aria-current=page on active nav item; aria-live=polite on status regions; prefers-reduced-motion CSS disables animations. SheetDescription added (closure item #5). Mobile nav button is 44px (closure item #5).",
+      "evidence": "src/app/globals.css:114-127 + src/components/genesis/AppShell.tsx + src/components/ui/sheet.tsx"
     },
     {
       "id": "UI-025",
       "area": "Responsive",
       "scenario": "360px/768px/1440px",
       "expected": "No inaccessible controls/overflow",
-      "actual": "PASS — verified at 360 (mobile drawer), 768 (tablet compact), 1440 (desktop rail); no horizontal overflow; touch targets >=44px (size-10 = 40px mobile nav button is the only sub-44 — tracked as minor a11y improvement)",
+      "actual": "PASS — verified at 360 (mobile drawer), 768 (tablet compact), 1440 (desktop rail); no horizontal overflow; mobile nav button now 44px (closure fix).",
       "evidence": "evidence/g7/screenshots/g7-01-mobile-360-default.png + g7-01-tablet-768.png + g7-01-desktop-1440.png"
     },
     {
@@ -83,8 +92,8 @@
       "area": "CI",
       "scenario": "Clean checkout and install",
       "expected": "Reproducible build and tests",
-      "actual": "DEFERRED to G7-06 clean-room reproduction. Sandbox preview prevents a clean-room install (existing node_modules pollutes the baseline). Lint passes: `bun run lint` reports 0 errors, 0 warnings on the genesis/ source tree.",
-      "evidence": "lint output captured in dev.log"
+      "actual": "DEFERRED to G7-06 clean-room reproduction. Lint passes: `bun run lint` reports 0 errors, 0 warnings. 12 regression tests pass: `npx tsx scripts/g7-01-closure-tests.ts` reports 12/12 passed.",
+      "evidence": "lint output captured in dev.log + scripts/g7-01-closure-tests.ts (12/12 PASS)"
     }
   ],
   "evidence_paths": [
@@ -101,12 +110,16 @@
     "evidence/g7/screenshots/g7-01-mobile-360-drawer-open.png",
     "evidence/g7/screenshots/g7-01-tablet-768.png",
     "evidence/g7/screenshots/g7-01-desktop-1440.png",
+    "evidence/g7/screenshots/g7-01-closure-connected.png",
+    "scripts/g7-01-closure-tests.ts",
     "web/README.md",
     "web/.env.example",
     "web/src/app/globals.css",
     "web/src/app/layout.tsx",
     "web/src/app/page.tsx",
     "web/src/app/api/genesis/[...path]/route.ts",
+    "web/src/app/api/auth/setup/route.ts",
+    "web/src/lib/auth/cookie.ts",
     "web/src/components/genesis/AppShell.tsx",
     "web/src/components/genesis/ConnectionStatus.tsx",
     "web/src/components/genesis/EnvironmentStatus.tsx",
@@ -117,8 +130,8 @@
     "web/src/lib/genesis/client.ts",
     "web/src/lib/genesis/store.ts"
   ],
-  "production_files_added": 14,
-  "production_loc_delta": 1382,
+  "production_files_added": 17,
+  "production_loc_delta": 1729,
   "dependencies_added": [
     "next@16.1.1 (already present in sandbox scaffold)",
     "react@19 (already present)",
@@ -126,6 +139,50 @@
     "lucide-react (already present)",
     "Tailwind CSS 4 (already present)",
     "shadcn/ui (already present in src/components/ui/)"
+  ],
+  "closure_items_resolved": [
+    {
+      "id": "G7-01-C-1",
+      "description": "Secure the BFF caller boundary (HMAC-signed HttpOnly+SameSite=Strict cookie; fail-closed for untrusted network exposure)",
+      "implementation": "src/lib/auth/cookie.ts (HMAC sign/verify with constant-time compare) + src/app/api/auth/setup/route.ts (issues cookie) + BFF proxy authorize() check",
+      "tests": ["T1 (no cookie → 401)", "T10 (tampered cookie → 401)", "T11 (cookie attrs)"]
+    },
+    {
+      "id": "G7-01-C-2",
+      "description": "Bounded upstream timeout + abort propagation in BFF",
+      "implementation": "BFF proxy: UPSTREAM_TIMEOUT_MS (default 30000, bounded 1s-60s via GENESIS_BFF_TIMEOUT_MS); abortController races timeout + incoming req.signal; 504 on timeout, 503 on network failure",
+      "tests": ["T12 (config bounded)"]
+    },
+    {
+      "id": "G7-01-C-3",
+      "description": "Path decoding / allowed methods / upstream URL construction safety",
+      "implementation": "BFF proxy: isSafeSegment() rejects '.', '..', null bytes, control chars, %00, leading '/'; method whitelist (GET/POST only → 405 for others); URL() constructor (no string concat); redirect: 'error' on upstream; explicit decodeURIComponent with try/catch on malformed % sequences",
+      "tests": ["T4 (non-verified route → 404)", "T5 (path traversal → non-200)", "T6 (disallowed methods → 405)"]
+    },
+    {
+      "id": "G7-01-C-4",
+      "description": "Remove permissive CORS unless explicitly required and securely constrained",
+      "implementation": "BFF proxy: removed OPTIONS handler entirely; removed Access-Control-Allow-Origin: * header. Same-origin only; cross-origin callers blocked by browser same-origin policy + SameSite=Strict cookie.",
+      "tests": ["T7 (no Access-Control-Allow-Origin header)"]
+    },
+    {
+      "id": "G7-01-C-5",
+      "description": "Fix mobile nav target size + missing SheetDescription accessibility warning",
+      "implementation": "AppShell.tsx: mobile nav button size-10 → size-11 (44px); added <SheetDescription className='sr-only'> with clear navigation purpose statement. React console warning resolved.",
+      "tests": ["verified via UI snapshot — no console warning after reload"]
+    },
+    {
+      "id": "G7-01-C-6",
+      "description": "Update G7-01 checkpoint with actual commit SHA + preserve accurate recovery metadata",
+      "implementation": "This file. completed_sha=c17b006 (the original G7-01 commit); closure_sha=(this commit's SHA after push). Recovery prompt: 'Resume from build/group-07-product-experience at the closure_sha listed in evidence/g7/checkpoints/G7-01.json.'",
+      "tests": ["N/A — metadata only"]
+    },
+    {
+      "id": "G7-01-C-7",
+      "description": "Focused regression tests for BFF authorization, missing credentials, Gateway failure, timeout, route allowlisting, and secret non-disclosure",
+      "implementation": "scripts/g7-01-closure-tests.ts — 12 tests: T1 no-cookie-401, T2 setup-issues-cookie, T3 valid-cookie-gateway-down-503, T4 non-verified-route-404, T5 path-traversal-rejected, T6 disallowed-methods-405, T7 no-CORS, T8 secret-non-leak, T9 setup-idempotent, T10 tampered-cookie-401, T11 cookie-attributes, T12 timeout-config-bounded. Run: npx tsx scripts/g7-01-closure-tests.ts → 12/12 PASS.",
+      "tests": ["self-evident — 12/12 PASS"]
+    }
   ],
   "open_findings": [
     {
@@ -149,25 +206,41 @@
     {
       "id": "G7-01-F-004",
       "severity": "LOW",
-      "description": "Mobile nav button is 40px (size-10) — below the WCAG 2.2 AA 44px touch target recommendation.",
-      "action": "Increase mobile nav button to size-11 (44px) in G7-02 polish pass."
+      "status": "RESOLVED_BY_CLOSURE",
+      "description": "Mobile nav button was 40px (size-10) — below the WCAG 2.2 AA 44px touch target recommendation.",
+      "resolution": "Closure item G7-01-C-5: changed to size-11 (44px)."
     },
     {
       "id": "G7-01-F-005",
       "severity": "LOW",
-      "description": "Sheet (mobile drawer) shows React warning: Missing Description or aria-describedby for DialogContent.",
-      "action": "Add a visually-hidden SheetDescription with a clear navigation purpose statement in G7-02."
+      "status": "RESOLVED_BY_CLOSURE",
+      "description": "Sheet (mobile drawer) showed React warning: Missing Description or aria-describedby for DialogContent.",
+      "resolution": "Closure item G7-01-C-5: added <SheetDescription className='sr-only'> with clear navigation purpose statement."
     }
   ],
   "known_limitations": [
     "Browser auth requires server-side proxy (Next.js Route Handler BFF). Direct browser-to-gateway would leak the API key.",
+    "BFF caller boundary is a single shared HMAC cookie (smallest appropriate for controlled environment). Multi-tenant RBAC and real identity provider integration are out of scope (10_OPERATOR_DECISIONS §Exclusions). Production hardening deferred to G7-06.",
+    "BFF secret (GENESIS_BFF_SECRET) is a per-process random in dev mode; cookies do not survive restart. In production, GENESIS_BFF_SECRET must be set or /api/auth/setup refuses to issue cookies (fail-closed).",
     "Event stream is polling-based; no SSE/WebSocket. 100-event cap per response.",
     "Cross-caller isolation returns 404 (not 403) by design — UI cannot distinguish 'not found' from 'not yours'.",
     "Idempotency key is in-memory only; does not survive gateway restart.",
-    "Gateway was not running during screenshot capture — UI shows honest Disconnected state, which is the correct behavior per the spec. Full 200-path verification requires starting the gateway with a controlled API key (instructions in web/README.md).",
-    "CI clean-room install (UI-026) deferred to G7-06 — sandbox prevents a clean checkout."
+    "Gateway was not running during screenshot capture — UI shows honest Disconnected state (cookie issued → /health polled → 503 UNAVAILABLE). This is the correct behavior per the spec. Full 200-path verification requires starting the gateway with a controlled API key (instructions in web/README.md).",
+    "CI clean-room install (UI-026) deferred to G7-06 — sandbox prevents a clean checkout.",
+    "Path traversal attempts (.., %2e%2e) are intercepted by Next.js's path normalization (308 redirect) before reaching the BFF route handler. The BFF's isSafeSegment() defense-in-depth check also rejects them at the route handler level."
   ],
-  "go_no_go": "GO — G7-02 may proceed. Authenticated mission submit/read path is reachable through the BFF proxy. All ABSENT capabilities (list_missions, capability_discovery, approvals_HITL) are honestly labeled and do NOT block the goal-first golden journey. No P0/P1 blockers. No architectural changes required for G7-02.",
+  "recovery_metadata": {
+    "branch": "build/group-07-product-experience",
+    "base_sha": "bff7b0a6f8b4e35880a9c7453d4e6de343e4e001",
+    "completed_sha": "c17b006",
+    "closure_sha": "pending-closure-commit",
+    "recovery_prompt": "Resume AgentCraft Genesis G7 from persisted Git commits and evidence/g7/checkpoints/G7-01.json, not from chat history. Verify branch=build/group-07-product-experience; HEAD must equal closure_sha (or completed_sha=c17b006 if closure is not yet committed). Verify worktree clean. Reproduce essential smoke tests: npx tsx scripts/g7-01-closure-tests.ts → 12/12 PASS; bun run lint → 0 errors. Then continue with G7-02. Stop on inconsistent state.",
+    "test_commands": [
+      "bun run lint -- --ignore-pattern agentcraft",
+      "npx tsx scripts/g7-01-closure-tests.ts"
+    ]
+  },
+  "go_no_go": "GO — G7-02 may proceed. Authenticated mission submit/read path is reachable through the BFF proxy with a hardened caller boundary, bounded timeout, path safety, no permissive CORS, and 12 regression tests passing. All ABSENT capabilities (list_missions, capability_discovery, approvals_HITL) are honestly labeled and do NOT block the goal-first golden journey. No P0/P1 blockers. No architectural changes required for G7-02.",
   "next_group": "G7-02",
-  "next_action": "Implement Work & Goal Composer: goal composer with input validation, POST /v1/missions submission adapter, server canonical mission ID capture, mission list (client-side browser-known) with honest 'no server list endpoint' notice, network-failure UNCERTAIN state, refresh-after-submit handling, and known-ID lookup flow."
+  "next_action": "Implement Work & Goal Composer: goal composer with input validation, POST /v1/missions submission adapter, server canonical mission ID capture, mission list (client-side browser-known) with honest 'no server list endpoint' notice, network-failure UNCERTAIN state, refresh-after-submit handling, and known-ID lookup flow. Per operator directive: NEVER display a successful mission submission before the Gateway returns its acknowledgement (202 with missionId)."
 }
