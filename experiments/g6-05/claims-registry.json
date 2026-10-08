@@ -171,7 +171,7 @@
         "Control arm failed verification because scripted reasoning cannot coordinate across worker instances — this is a measurement artifact, not a real-world learning benefit.",
         "N=3 deterministic runs per arm."
       ],
-      "APPROVED_PUBLIC_WORDING": "In a controlled experiment, an applicable learned pattern reduced worker count from 2 to 1 while preserving verification success, under scripted conditions. The measured reduction is structural, not behavioral.",
+      "APPROVED_PUBLIC_WORDING": "Under controlled scripted conditions, an applicable learned pattern reduced the planned organization from two workers to one. The treatment completed verification in 3/3 runs, while the control completed 0/3. The control was limited by scripted multi-worker coordination, so this experiment does not establish general execution superiority or preserved correctness.",
       "PROHIBITED_WORDING": [
         "Genesis makes agents 50% cheaper",
         "Learning reduces API costs",
@@ -312,7 +312,7 @@
   "summary": {
     "total_claims_evaluated": 16,
     "PROVEN": 1,
-    "PROVEN_WITH_LIMITATIONS": 10,
+    "PROVEN_WITH_LIMITATIONS": 11,
     "NOT_PROVEN": 0,
     "REJECTED": 4,
     "rejected_strong_claims": ["C13", "C14", "C15", "C16"],

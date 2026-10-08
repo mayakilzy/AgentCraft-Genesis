@@ -69,7 +69,7 @@ ELAPSED_TIME_COMPARISONS = { control_median_ms: 17, treatment_median_ms: 6 } (Ex
 OBSERVED_COST_COMPARISONS = { control_usd: 0, treatment_usd: 0 } (deterministic core)
 
 CLAIMS_PROVEN = 1
-CLAIMS_PROVEN_WITH_LIMITATIONS = 10
+CLAIMS_PROVEN_WITH_LIMITATIONS = 11
 CLAIMS_NOT_PROVEN = 0
 CLAIMS_REJECTED = 4
 
@@ -393,7 +393,7 @@ Per Section 6 historical corrections:
 | Status | Count | Claims |
 |--------|-------|--------|
 | PROVEN | 1 | C12 (clean-room reproducibility, E1) |
-| PROVEN_WITH_LIMITATIONS | 10 | C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11 |
+| PROVEN_WITH_LIMITATIONS | 11 | C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11 |
 | NOT_PROVEN | 0 | — |
 | REJECTED | 4 | C13 (production-ready arbitrary), C14 (outperforms fixed), C15 (API cost reduction), C16 (autonomously builds any app) |
 
@@ -506,8 +506,8 @@ G6-05 has made those strengths visible without hiding the limitations:
   probes, A2A trust-boundary invariant).
 - **Learn useful organizational patterns under clearly defined
   conditions:** C08, C09, C10 PROVEN_WITH_LIMITATIONS (bounded learning
-  loop, structural reduction with preserved correctness, correct
-  non-applicability).
+  loop, structural organization reduction without introducing false
+  success, correct non-applicability).
 - **Reproduce from clean source:** C12 PROVEN (E1 evidence — two
   independent clean-room runs).
 
