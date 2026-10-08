@@ -12,6 +12,7 @@ import { WorkerCards } from "@/components/genesis/WorkerCards";
 import { ArtifactList } from "@/components/genesis/ArtifactList";
 import { ArtifactPreview } from "@/components/genesis/ArtifactPreview";
 import { ReplayTimeline } from "@/components/genesis/ReplayTimeline";
+import { StudioCatalog } from "@/components/genesis/StudioCatalog";
 import { extractWorkers } from "@/lib/genesis/events";
 import { genesisApi } from "@/lib/genesis/client";
 import type { MissionEventRecord } from "@/lib/genesis/types";
@@ -371,7 +372,6 @@ export function ArtifactsSection() {
 }
 
 export function StudioSection() {
-  const connectionState = useGenesisStore((s) => s.connectionState);
   return (
     <div className="space-y-4">
       <SectionHeader
@@ -379,17 +379,15 @@ export function StudioSection() {
         title="Studio"
         description="Capabilities, skills, tools, integrations and their trust/connection status (read-only)."
       />
-      <InfoCard title="G7-05 deliverable" tone="warning">
-        Capability catalog arrives in G7-05. The gateway has no
-        <code>/capabilities</code> endpoint — Studio renders static
-        <code>data/ownership.yaml</code> entries labeled &quot;Documentation
-        only — not runtime discovery&quot;. No Install / Connect CTAs without
-        real authorized backend workflows.
+      <InfoCard title="Read-only catalog — no plugin manager" tone="info">
+        The gateway has no <code>/capabilities</code> endpoint in v1. This
+        catalog is loaded from the controlled <code>data/</code> directory
+        (YAML files). Statuses are DOCUMENTED (YAML only) or INTEGRATED
+        (verified source wiring). RUNTIME_VERIFIED requires actual runtime
+        probing and is NOT claimed. No Install / Connect / Enable / Execute
+        actions — read-only.
       </InfoCard>
-      <EmptyState
-        state={connectionState === "disconnected" ? "disconnected" : "empty"}
-        customDescription="No capability discovery endpoint. Static documentation catalog arrives in G7-05."
-      />
+      <StudioCatalog />
     </div>
   );
 }

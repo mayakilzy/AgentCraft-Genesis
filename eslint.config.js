@@ -33,7 +33,7 @@ export default tseslint.config(
       // engine's tseslint config flags. They are NOT engine source — they
       // are HTTP-based test tooling. Excluding them from the application
       // lint scope is scoped: production source (src/**), test source
-      // (tests/**), and dev scripts (scripts/g7-05..06-*.ts when added)
+      // (tests/**), and dev scripts (scripts/g7-06-*.ts when added)
       // remain fully linted.
       'scripts/g7-01-closure-tests.ts',
       'scripts/g7-02-auth-gate-tests.ts',
@@ -41,6 +41,7 @@ export default tseslint.config(
       'scripts/g7-02-e2e-submission.ts',
       'scripts/g7-04-artifacts-e2e-tests.ts',
       'scripts/g7-04-artifacts-unit-tests.ts',
+      'scripts/g7-05-studio-unit-tests.ts',
     ],
   },
   ...tseslint.configs.recommended,

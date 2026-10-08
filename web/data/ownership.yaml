@@ -1,0 +1,146 @@
+# AgentCraft Genesis — Canonical Ownership & Deduplication Registry
+#
+# One canonical owner per capability domain. Derived from the Founding Architecture
+# v0.1 (REISSUED), section 8, and cross-checked against data/upstream-capabilities.yaml
+# (TASK-002 census). Enforced by tests/ownership-gate.test.ts.
+#
+# Field reference:
+#   domain          unique capability domain key
+#   description     what the domain covers
+#   canonical_owner the single system that owns this domain for Genesis
+#   decision        REUSE | ADAPT | DEFER | DROP_DUPLICATE | GENESIS-BUILD
+#   satisfies       mission-level capability needs this domain can cover
+#                   (consumed by the Genome Compiler to grant tools/computers)
+#   notes           engineering context
+
+baseline: 2026-10-05
+
+ownership:
+  # --- Execution runtime (canonical: OpenBot) ---
+  - domain: computer-container
+    description: Per-worker containerized computer
+    canonical_owner: openbot
+    decision: REUSE
+    satisfies: []
+    notes: OpenBot is the canonical computer/container baseline; duplicates dropped.
+  - domain: browser-chromium
+    description: Chromium browser with persistent profile
+    canonical_owner: openbot
+    decision: REUSE
+    satisfies: [web-research, browser-verification]
+    notes: Covers web research and browser-based verification needs.
+  - domain: shell-execution
+    description: Shell command execution inside the worker container
+    canonical_owner: openbot
+    decision: REUSE
+    satisfies: [code-execution, data-analysis, browser-verification]
+    notes: >-
+      Commands run inside the container, never on the host. GROUP 3 addition:
+      browser-verification is included because a verification worker must
+      start the preview it verifies (dev server/process lifecycle, TASK-018
+      steps) — a browser with no way to launch anything cannot verify a
+      running application.
+  - domain: workspace-files
+    description: Persistent /workspace files per worker
+    canonical_owner: openbot
+    decision: REUSE
+    satisfies: [code-execution, document-authoring, browser-verification]
+    notes: >-
+      Where code is checked out and artifacts are written. GROUP 3 addition:
+      browser-verification workers also produce structured verification
+      evidence (reports) in their workspace, so they need the files surface
+      alongside the browser.
+  - domain: computer-supervisor
+    description: Computer lifecycle supervisor (ensure/stop/reset/list)
+    canonical_owner: openbot
+    decision: REUSE
+    satisfies: []
+    notes: No parallel sandbox manager in Genesis.
+  - domain: policy-audit-credentials
+    description: Basic policy gateway, audit trail, credentials
+    canonical_owner: openbot
+    decision: REUSE
+    satisfies: []
+    notes: No new policy engine, audit platform, or vault in v0.1.
+
+  # --- Durable delegated work (canonical: OpenMuse patterns) ---
+  - domain: durable-jobs-plans-checkpoints
+    description: Durable jobs, plans, checkpoints, leases, retries, action receipts
+    canonical_owner: openmuse
+    decision: ADAPT
+    satisfies: []
+    notes: Reuse patterns for long-running missions; not a code dependency.
+
+  # --- Specialist workspace (canonical: OpenDots, deferred) ---
+  - domain: specialist-workspaces
+    description: Spaces/Pages specialist collaboration surfaces
+    canonical_owner: opendots
+    decision: DEFER
+    satisfies: []
+    notes: Future value; not an MVP requirement.
+
+  # --- Shared intelligence (canonical: CopilotKit Intelligence) ---
+  - domain: threads-memory-channels
+    description: Rich threads, user memories, channels
+    canonical_owner: copilotkit-intelligence
+    decision: REUSE
+    satisfies: []
+    notes: No parallel thread store or memory engine.
+
+  # --- Protocols (canonical: the standards themselves) ---
+  - domain: agent-ui-lifecycle
+    description: Agent to UI/application event lifecycle
+    canonical_owner: ag-ui
+    decision: REUSE
+    satisfies: []
+    notes: AG-UI 1.0; never invent parallel lifecycle events.
+  - domain: tools-resources
+    description: Worker to tools/resources/prompts protocol
+    canonical_owner: mcp
+    decision: REUSE
+    satisfies: []
+    notes: MCP 2026-07-28 final; official SDK only, no custom transport.
+  - domain: external-agent-interop
+    description: Independent agent to independent agent interoperability
+    canonical_owner: a2a
+    decision: REUSE
+    satisfies: []
+    notes: A2A 1.0.0; activated G6-02 as edge-only FederationService. Official @a2a-js/sdk@1.3.0; outbound federation proven; inbound deferred.
+
+  # --- Genesis first-party (the only domains we build) ---
+  - domain: goal-compiler
+    description: Human goal to structured requirements compilation
+    canonical_owner: genesis
+    decision: GENESIS-BUILD
+    satisfies: []
+    notes: Core Genesis invention.
+  - domain: organization-planner
+    description: Requirements to logical organization planning
+    canonical_owner: genesis
+    decision: GENESIS-BUILD
+    satisfies: []
+    notes: Core Genesis invention.
+  - domain: genome-compiler
+    description: Planned roles to runnable worker genomes
+    canonical_owner: genesis
+    decision: GENESIS-BUILD
+    satisfies: []
+    notes: Core Genesis invention.
+  - domain: cognitive-resource-router
+    description: Model/provider/tool/computer routing by need and cost
+    canonical_owner: genesis
+    decision: GENESIS-BUILD
+    satisfies: []
+    notes: Core Genesis invention.
+  - domain: organizational-learning
+    description: Structured experience and organizational pattern learning
+    canonical_owner: genesis
+    decision: DEFER
+    satisfies: []
+    notes: Genesis-owned; deliberately deferred to Phase 3 (Genesis Learns).
+  - domain: software-engineering-coordination
+    description: Git/worktree/process/preview/test/integration coordination
+    canonical_owner: genesis
+    decision: GENESIS-BUILD
+    satisfies: []
+    notes: Built as a thin layer only where upstream leaves a real gap.

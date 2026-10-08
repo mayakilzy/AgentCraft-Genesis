@@ -1,0 +1,94 @@
+{
+  "group": "G7-05",
+  "status": "PASS",
+  "base_sha": "e6e079d",
+  "completed_sha": "pending-g7-05-commit",
+  "branch": "build/group-07-product-experience",
+  "worktree_clean": true,
+  "implemented_features": [
+    "Server-side endpoint /api/studio/catalog loads data/ownership.yaml + data/upstream-capabilities.yaml from a controlled path (process.cwd()/data/). NO user input for the file path. NO secrets, NO env vars, NO arbitrary filesystem access.",
+    "studio/catalog.ts utility: loadCatalog() parses both YAML files, validates required fields (domain/id + canonical_owner), detects duplicates, records errors for malformed/missing entries. determineStatus() maps capability keys to DOCUMENTED or INTEGRATED based on the INTEGRATED_EVIDENCE map (hardcoded from actual source inspection at pinned SHA). NEVER returns RUNTIME_VERIFIED.",
+    "INTEGRATED_EVIDENCE map: 16 capabilities verified as wired into engine source code (goal-compiler → src/goal/goal-compiler.ts; organization-planner → src/organization/organization-planner.ts; genome-compiler → src/genome/genome-compiler.ts; cognitive-resource-router → src/routing/; external-agent-interop → src/gateway/a2a-server.ts; agent-ui-lifecycle → src/agui/event-bridge.ts; tools-resources → src/runtime/mcp/capability-provider.ts; computer-container → src/runtime/openbot/adapter.ts; etc.).",
+    "StudioCatalog component: searchable (name/domain/owner/decision/notes/evidence/upstream), filterable (owner/status/source), grid of capability cards. Each card shows: name, owner, domain, source, evidence, status badge (DOCUMENTED/INTEGRATED/RUNTIME_VERIFIED with NON-color-only cues), upstream project, upstream status, future value, decision, satisfies, notes, upstream reference link (rel=noopener noreferrer nofollow).",
+    "Status mapping (req #2): DOCUMENTED = appears in YAML only. INTEGRATED = verified source-code wiring (from INTEGRATED_EVIDENCE map). RUNTIME_VERIFIED = NEVER claimed (requires actual runtime probing, out of scope for controlled environment). Summary stats show runtime_verified=0 honestly.",
+    "Honest notices: 'Documentation only — not runtime discovery' banner (gateway has no /capabilities endpoint in v1). 'No Install / Connect / Enable / Execute actions — read-only' (req #5, #6). Parsing errors surface as a collapsible details panel.",
+    "NO second capability registry or plugin manager (req #6). The catalog is purely a read-only viewer over the YAML files.",
+    "15 unit tests covering: INTEGRATED status for source-wired capabilities, DOCUMENTED for YAML-only, NEVER RUNTIME_VERIFIED (critical), real catalog loads, required fields, status counts, malformed YAML, missing fields, duplicate records, unavailable sources, missing owner, no YAML→INTEGRATED promotion, total count, INTEGRATED evidence. All 15/15 PASS."
+  ],
+  "tests": [
+    {
+      "id": "UI-019",
+      "area": "Studio",
+      "scenario": "Integration unavailable",
+      "expected": "Not shown as connected/installable",
+      "actual": "PASS — No Install/Connect/Enable/Execute buttons anywhere in the StudioCatalog component. All capabilities show status badge (DOCUMENTED or INTEGRATED). RUNTIME_VERIFIED is never shown (count=0 in summary stats). Honest 'Documentation only' notice is permanent.",
+      "evidence": "src/components/genesis/StudioCatalog.tsx (no action buttons) + evidence/g7/screenshots/g7-05/g7-05-studio-catalog.png"
+    },
+    {
+      "id": "G7-05-UNIT",
+      "area": "studio-catalog",
+      "scenario": "Unit tests for catalog loading + status determination",
+      "expected": "15/15 PASS",
+      "actual": "PASS — All 15 unit tests pass. Critical tests: U3 (NEVER RUNTIME_VERIFIED), U13 (YAML-only → DOCUMENTED, NOT INTEGRATED), U8-U12 (malformed/missing/duplicate/unavailable error handling).",
+      "evidence": "scripts/g7-05-studio-unit-tests.ts (15/15 PASS)"
+    }
+  ],
+  "evidence_paths": [
+    "evidence/g7/checkpoints/G7-05.json",
+    "evidence/g7/screenshots/g7-05/g7-05-studio-catalog.png",
+    "evidence/g7/screenshots/g7-05/g7-05-studio-mobile-360.png",
+    "evidence/g7/screenshots/g7-05/g7-05-studio-desktop-1440.png",
+    "scripts/g7-05-studio-unit-tests.ts",
+    "web/data/ownership.yaml",
+    "web/data/upstream-capabilities.yaml",
+    "web/src/lib/studio/catalog.ts",
+    "web/src/app/api/studio/catalog/route.ts",
+    "web/src/components/genesis/StudioCatalog.tsx",
+    "web/src/components/genesis/sections/Sections.tsx"
+  ],
+  "production_files_added": 5,
+  "production_loc_delta": 720,
+  "dependencies_added": ["yaml@2.9.1 (already in engine repo deps; added to Next.js project)"],
+  "open_findings": [
+    {
+      "id": "G7-05-F-001",
+      "severity": "LOW",
+      "description": "INTEGRATED_EVIDENCE map is hardcoded based on source inspection at pinned SHA bff7b0a. If the engine source changes (e.g., a capability is unwired), the map would become stale. A future improvement would verify INTEGRATED status dynamically by actually checking the source files at runtime — but that would require arbitrary filesystem access (which req #7 forbids).",
+      "action": "Documented. The map is version-controlled alongside the UI; updates require a new commit."
+    },
+    {
+      "id": "G7-05-F-002",
+      "severity": "LOW",
+      "description": "The data/ YAML files are copied into web/data/ for the Next.js project. They are duplicates of agentcraft/repo/data/. If the engine repo's YAML files change, the copies must be updated manually.",
+      "action": "Future: symlink or build-time copy. For now, documented as a manual sync step."
+    }
+  ],
+  "known_limitations": [
+    "No /capabilities gateway endpoint exists in v1. The catalog is loaded from controlled data/ YAML files only.",
+    "Statuses are DOCUMENTED (YAML only) or INTEGRATED (verified source wiring). RUNTIME_VERIFIED requires actual runtime probing and is NEVER claimed.",
+    "INTEGRATED_EVIDENCE map is hardcoded from source inspection at pinned SHA bff7b0a. Updates require a new commit.",
+    "The data/ YAML files are copied into web/data/ (manual sync with agentcraft/repo/data/).",
+    "Read-only catalog — no Install/Connect/Enable/Execute actions (req #5, #6).",
+    "No second capability registry or plugin manager built inside the UI (req #6).",
+    "Controlled server-side path: the endpoint reads from process.cwd()/data/ only. NO arbitrary filesystem access, NO secrets, NO env vars (req #7)."
+  ],
+  "recovery_metadata": {
+    "branch": "build/group-07-product-experience",
+    "base_sha": "e6e079d",
+    "completed_sha": "pending-g7-05-commit",
+    "recovery_prompt": "Resume AgentCraft Genesis G7 from persisted Git commits and evidence/g7/checkpoints/G7-05.json. Verify branch=build/group-07-product-experience; HEAD must equal completed_sha (or e6e079d if G7-05 is not yet committed). Verify worktree clean. Reproduce: bun run lint -- --ignore-pattern agentcraft → 0 errors; npx tsx scripts/g7-05-studio-unit-tests.ts → 15/15; npx tsx scripts/g7-04-artifacts-unit-tests.ts → 20/20; npx tsx scripts/g7-04-artifacts-e2e-tests.ts → 13/13; npx tsx scripts/g7-02-auth-gate-unit-tests.ts → 20/20; npx tsx scripts/g7-02-auth-gate-tests.ts → 14/14; npx tsx scripts/g7-01-closure-tests.ts → 12/12; npx tsx scripts/g7-02-e2e-submission.ts → 8/8. Then continue with G7-06. Stop on inconsistent state.",
+    "test_commands": [
+      "bun run lint -- --ignore-pattern agentcraft",
+      "npx tsx scripts/g7-05-studio-unit-tests.ts",
+      "npx tsx scripts/g7-04-artifacts-unit-tests.ts",
+      "npx tsx scripts/g7-04-artifacts-e2e-tests.ts",
+      "npx tsx scripts/g7-02-auth-gate-unit-tests.ts",
+      "npx tsx scripts/g7-02-auth-gate-tests.ts",
+      "npx tsx scripts/g7-01-closure-tests.ts",
+      "npx tsx scripts/g7-02-e2e-submission.ts"
+    ]
+  },
+  "go_no_go": "GO — G7-06 may proceed. Studio catalog implemented against verified YAML schemas. DOCUMENTED / INTEGRATED / RUNTIME_VERIFIED distinction enforced (RUNTIME_VERIFIED never claimed). Read-only, no Install/Connect/Enable/Execute. Controlled server-side path. UI-019 PASS. 15/15 unit tests PASS. No P0/P1 blockers.",
+  "next_group": "G7-06",
+  "next_action": "Implement Insights & UX Hardening + Product Release Gate: source-labeled metrics from MissionResult.cost only (no aggregation endpoint), full cross-section integration verification, accessibility + responsive checks (WCAG 2.2 AA), error-state verification, security regression, clear distinction between measured/derived/unavailable metrics. Two independent verdicts: G7_PRODUCT_DEVELOPMENT and PRODUCTION_DEPLOYMENT (do NOT claim production readiness just because 6 groups pass). Produce G7-Final-Release-Evidence.zip for independent review."
+}

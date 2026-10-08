@@ -1,0 +1,357 @@
+# AgentCraft Genesis — Upstream Capability Census (machine-readable inventory)
+#
+# Derived from the Founding Architecture v0.1 (REISSUED) and re-verified 2026-10-05:
+#   - all source_url links returned HTTP 200 on 2026-10-05
+#   - upstream release state verified via GitHub API on 2026-10-05
+#
+# This is an INVENTORY of treasures, not a vendor dump: no upstream code enters Genesis.
+# Deferred entries are preserved knowledge, not MVP requirements.
+#
+# Field reference:
+#   id               unique census key "<source>.<capability>"
+#   capability       human-readable capability name
+#   source           upstream project providing it
+#   source_url       canonical verification link
+#   status           shipped | template | roadmap | experimental
+#                    (template = capability of an alpha/template upstream, not a stable package)
+#   genesis_decision REUSE | REUSE_PATTERN | ADAPT | DEFER | DROP_DUPLICATE | EXTEND
+#   canonical_owner  the one system that canonically owns this capability for Genesis
+#   notes            engineering context
+#   future_value     high | medium | low — value if/when activated later
+
+census:
+  # ---------------------------------------------------------------- OpenBot
+  # Canonical execution runtime (alpha template; thin adapters only).
+  - id: openbot.per-bot-computer
+    capability: Per-bot containerized computer
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/architecture.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: Independent computer per worker; the canonical execution runtime for Genesis.
+    future_value: high
+  - id: openbot.chromium-browser-profile
+    capability: Chromium + persistent browser profile
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/architecture.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: Real browser with persistent sessions; covers web research and browser verification.
+    future_value: high
+  - id: openbot.workspace-files
+    capability: /workspace + files
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/architecture.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: Per-worker file workspace; the place artifacts are written.
+    future_value: high
+  - id: openbot.container-shell
+    capability: Shell execution inside the container
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/architecture.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: Commands run inside the container, never on the host.
+    future_value: high
+  - id: openbot.computer-supervisor
+    capability: Computer supervisor (ensure/stop/reset/list)
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/architecture.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: Lifecycle control for worker computers; no parallel sandbox manager in Genesis.
+    future_value: high
+  - id: openbot.human-takeover
+    capability: Human takeover of the browser
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/coworkers.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: Hand the browser to a human and back; supports supervised autonomy.
+    future_value: medium
+  - id: openbot.policy-gateway-audit
+    capability: Policy gateway + audit
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/configuration.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: Use as-is; no new policy engine in Genesis v0.1.
+    future_value: medium
+  - id: openbot.credentials
+    capability: Credentials handling
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/configuration.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: No new credential vault.
+    future_value: medium
+  - id: openbot.mcp-grants
+    capability: MCP capability grants to workers
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/coworkers.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: Granting tools/resources to workers via MCP.
+    future_value: high
+  - id: openbot.bot-to-bot-handoff
+    capability: Bot-to-Bot handoff
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/coworkers.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: Preferred over internal A2A until true agent independence is required.
+    future_value: medium
+  - id: openbot.routines-components-skills
+    capability: Routines / components / skills library
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/coworkers.md
+    status: template
+    genesis_decision: DEFER
+    canonical_owner: OpenBot
+    notes: Preserved treasure; enters MVP only when a concrete need appears.
+    future_value: medium
+  - id: openbot.postgresql-pgvector
+    capability: PostgreSQL + pgvector storage
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/deployment.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: OpenBot
+    notes: No new database; reuse the upstream storage layer.
+    future_value: medium
+  - id: openbot.gvisor-isolation
+    capability: gVisor (runsc) stronger sandboxing
+    source: OpenBot
+    source_url: https://github.com/CopilotKit/OpenBot/blob/main/docs/deployment.md
+    status: template
+    genesis_decision: DEFER
+    canonical_owner: OpenBot
+    notes: Enable when isolation needs are proven and the infrastructure supports it.
+    future_value: medium
+
+  # ---------------------------------------------------------------- OpenMuse
+  # Durable delegated work (alpha/template; reuse patterns, not the codebase).
+  - id: openmuse.server-owned-jobs
+    capability: Server-owned durable jobs
+    source: OpenMuse
+    source_url: https://github.com/CopilotKit/openmuse/blob/main/ROADMAP.md
+    status: template
+    genesis_decision: ADAPT
+    canonical_owner: OpenMuse
+    notes: Reference for long-running mission work owned by the server, not the user session.
+    future_value: high
+  - id: openmuse.plans-checkpoints
+    capability: Plans + checkpoints
+    source: OpenMuse
+    source_url: https://github.com/CopilotKit/openmuse/blob/main/ROADMAP.md
+    status: template
+    genesis_decision: REUSE_PATTERN
+    canonical_owner: OpenMuse
+    notes: Useful for extended Genesis missions.
+    future_value: high
+  - id: openmuse.sql-leases
+    capability: SQL leases for coordination
+    source: OpenMuse
+    source_url: https://github.com/CopilotKit/openmuse/blob/main/ROADMAP.md
+    status: template
+    genesis_decision: REUSE_PATTERN
+    canonical_owner: OpenMuse
+    notes: Worker coordination/recovery without inventing a complex scheduler.
+    future_value: medium
+  - id: openmuse.retries-cancellation
+    capability: Retries + cancellation
+    source: OpenMuse
+    source_url: https://github.com/CopilotKit/openmuse/blob/main/ROADMAP.md
+    status: template
+    genesis_decision: REUSE_PATTERN
+    canonical_owner: OpenMuse
+    notes: Foundation of robust operation.
+    future_value: high
+  - id: openmuse.action-receipts
+    capability: Action receipts
+    source: OpenMuse
+    source_url: https://github.com/CopilotKit/openmuse/blob/main/ROADMAP.md
+    status: template
+    genesis_decision: REUSE_PATTERN
+    canonical_owner: OpenMuse
+    notes: Traceable evidence of executed actions.
+    future_value: medium
+  - id: openmuse.goals-milestones
+    capability: Goals / milestones
+    source: OpenMuse
+    source_url: https://github.com/CopilotKit/openmuse/blob/main/ROADMAP.md
+    status: roadmap
+    genesis_decision: DEFER
+    canonical_owner: OpenMuse
+    notes: High future value; not an MVP condition.
+    future_value: high
+  - id: openmuse.reviewed-external-writes
+    capability: Reviewed external writes (Gmail/Calendar)
+    source: OpenMuse
+    source_url: https://github.com/CopilotKit/openmuse/blob/main/ROADMAP.md
+    status: template
+    genesis_decision: DEFER
+    canonical_owner: OpenMuse
+    notes: Keep the design in mind when external actions are added.
+    future_value: high
+  - id: openmuse.pdf-workflows
+    capability: PDF workflows
+    source: OpenMuse
+    source_url: https://github.com/CopilotKit/openmuse/blob/main/ROADMAP.md
+    status: template
+    genesis_decision: DEFER
+    canonical_owner: OpenMuse
+    notes: Functional treasure; do not load the MVP with it.
+    future_value: medium
+  - id: openmuse.native-computer-browser
+    capability: Native computer/browser stack
+    source: OpenMuse
+    source_url: https://github.com/CopilotKit/openmuse/blob/main/docs/OPENBOT-INTEGRATION.md
+    status: template
+    genesis_decision: DROP_DUPLICATE
+    canonical_owner: OpenBot
+    notes: Duplicate of the canonical OpenBot runtime; OpenBot owns this domain in Genesis.
+    future_value: low
+
+  # ---------------------------------------------------------------- OpenDots
+  # Specialist workspace & collaboration (template; patterns and references).
+  - id: opendots.specialist-identity
+    capability: Specialist (Dot) identity
+    source: OpenDots
+    source_url: https://github.com/CopilotKit/OpenDots/blob/main/docs/SETUP.md
+    status: template
+    genesis_decision: ADAPT
+    canonical_owner: OpenDots
+    notes: Reference for worker identity — a pattern, never a fixed class in Genesis.
+    future_value: high
+  - id: opendots.spaces
+    capability: Spaces (knowledge/work areas)
+    source: OpenDots
+    source_url: https://github.com/CopilotKit/OpenDots/blob/main/docs/SETUP.md
+    status: template
+    genesis_decision: DEFER
+    canonical_owner: OpenDots
+    notes: Future knowledge/work spaces.
+    future_value: medium
+  - id: opendots.pages-revision-checks
+    capability: Pages + revision checks
+    source: OpenDots
+    source_url: https://github.com/CopilotKit/OpenDots/blob/main/docs/SETUP.md
+    status: template
+    genesis_decision: DEFER
+    canonical_owner: OpenDots
+    notes: Useful for documentary and collaborative work later.
+    future_value: medium
+  - id: opendots.page-conversations
+    capability: Page conversations (context bound to artifacts)
+    source: OpenDots
+    source_url: https://github.com/CopilotKit/OpenDots/blob/main/docs/SETUP.md
+    status: template
+    genesis_decision: DEFER
+    canonical_owner: OpenDots
+    notes: Ties conversation context to artifacts.
+    future_value: low
+  - id: opendots.slack-via-intelligence
+    capability: Slack channel via CopilotKit Intelligence
+    source: OpenDots
+    source_url: https://github.com/CopilotKit/OpenDots/blob/main/docs/SETUP.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: CopilotKit Intelligence
+    notes: No Genesis-specific Slack server.
+    future_value: medium
+  - id: opendots.voice-webrtc
+    capability: Voice / WebRTC
+    source: OpenDots
+    source_url: https://github.com/CopilotKit/OpenDots/blob/main/docs/SETUP.md
+    status: template
+    genesis_decision: DEFER
+    canonical_owner: OpenDots
+    notes: Future value, not MVP.
+    future_value: low
+  - id: opendots.scheduled-background-work
+    capability: Scheduled / background work
+    source: OpenDots
+    source_url: https://github.com/CopilotKit/OpenDots/blob/main/docs/COMPUTERS.md
+    status: template
+    genesis_decision: REUSE_PATTERN
+    canonical_owner: OpenDots
+    notes: Useful later for recurring missions.
+    future_value: medium
+  - id: opendots.per-dot-permissions
+    capability: Per-specialist permissions
+    source: OpenDots
+    source_url: https://github.com/CopilotKit/OpenDots/blob/main/docs/COMPUTERS.md
+    status: template
+    genesis_decision: REUSE_PATTERN
+    canonical_owner: OpenDots
+    notes: No new entitlement ontology.
+    future_value: medium
+  - id: opendots.automatic-learning-containers
+    capability: Automatic Learning container integration
+    source: OpenDots
+    source_url: https://github.com/CopilotKit/OpenDots/blob/main/docs/COMPUTERS.md
+    status: template
+    genesis_decision: REUSE
+    canonical_owner: CopilotKit Intelligence
+    notes: Paves the way to learning without building a new platform.
+    future_value: high
+
+  # ------------------------------------------------- CopilotKit Intelligence
+  # Shared intelligence infrastructure (production layer).
+  - id: intelligence.rich-threads
+    capability: Rich threads
+    source: CopilotKit Intelligence
+    source_url: https://docs.copilotkit.ai/intelligence/overview
+    status: shipped
+    genesis_decision: REUSE
+    canonical_owner: CopilotKit Intelligence
+    notes: No new thread store in Genesis.
+    future_value: high
+  - id: intelligence.user-memories
+    capability: User memories
+    source: CopilotKit Intelligence
+    source_url: https://docs.copilotkit.ai/intelligence/overview
+    status: shipped
+    genesis_decision: REUSE
+    canonical_owner: CopilotKit Intelligence
+    notes: No new memory engine in Genesis.
+    future_value: high
+  - id: intelligence.channels
+    capability: Channels (Slack today, more via upstream)
+    source: CopilotKit Intelligence
+    source_url: https://docs.copilotkit.ai/intelligence/overview
+    status: shipped
+    genesis_decision: REUSE
+    canonical_owner: CopilotKit Intelligence
+    notes: Follow upstream for additional integrations.
+    future_value: medium
+  - id: intelligence.product-analytics
+    capability: Product analytics
+    source: CopilotKit Intelligence
+    source_url: https://docs.copilotkit.ai/intelligence/overview
+    status: shipped
+    genesis_decision: DEFER
+    canonical_owner: CopilotKit Intelligence
+    notes: May help measurement later.
+    future_value: low
+  - id: intelligence.automatic-learning
+    capability: Automatic Learning (insights → reviewed skills)
+    source: CopilotKit Intelligence
+    source_url: https://docs.copilotkit.ai/mastra/learning
+    status: shipped
+    genesis_decision: EXTEND
+    canonical_owner: CopilotKit Intelligence
+    notes: Reuse evidence-backed insights/skills; Genesis adds organizational learning on top.
+    future_value: high
