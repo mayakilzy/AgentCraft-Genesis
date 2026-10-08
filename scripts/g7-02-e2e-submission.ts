@@ -80,7 +80,13 @@ async function fetchBff(
 }
 
 async function obtainBffCookie(): Promise<string | undefined> {
-  const res = await fetch(`${UI_BASE}/api/auth/setup`, { method: "GET" });
+  // G7-02 auth-gate fix: cookies are issued by POST /api/auth/login with a
+  // server-validated operator PIN. The .env.local default is 'dev-local-pin'.
+  const res = await fetch(`${UI_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pin: "dev-local-pin" }),
+  });
   const sc = res.headers.get("set-cookie");
   if (sc) {
     return sc.split(";")[0];
@@ -145,7 +151,7 @@ async function main() {
         id: "E2E-0",
         name: "BFF cookie setup",
         pass: false,
-        detail: "could not obtain cookie from /api/auth/setup",
+        detail: "could not obtain cookie from /api/auth/login (PIN validation failed?)",
       });
       throw new Error("no cookie");
     }

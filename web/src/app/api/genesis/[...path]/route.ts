@@ -26,7 +26,11 @@
  */
 
 import { type NextRequest, NextResponse } from "next/server";
-import { BFF_COOKIE_NAME, isValidBffCookie } from "@/lib/auth/cookie";
+import {
+  BFF_COOKIE_NAME,
+  decodeAuthenticatedCookie,
+  isValidAuthenticatedCookie,
+} from "@/lib/auth/cookie";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -134,21 +138,35 @@ function redactSecrets(text: string): string {
 }
 
 /**
- * Authorize the incoming request: must carry a valid BFF cookie.
- * Fail-closed: no cookie / invalid cookie / expired cookie = 401.
+ * Authorize the incoming request: must carry a valid, operator-authenticated
+ * BFF cookie. Fail-closed: no cookie / invalid cookie / expired cookie /
+ * cookie without `op: "operator"` claim = 401.
+ *
+ * Per G7-02 Independent Review: a signed cookie is not authorization if
+ * anonymous callers can mint one on demand. The cookie must include the
+ * `op: "operator"` claim, which is ONLY set by /api/auth/login AFTER the
+ * operator PIN has been validated.
  */
 function authorize(req: NextRequest): NextResponse | null {
   const cookie = req.cookies.get(BFF_COOKIE_NAME)?.value;
-  if (!cookie || !isValidBffCookie(cookie)) {
+  if (!cookie || !isValidAuthenticatedCookie(cookie)) {
     return NextResponse.json(
       {
         error: {
           code: "UNAUTHENTICATED" as const,
           message:
-            "BFF cookie missing or invalid. Call /api/auth/setup to obtain one.",
+            "BFF cookie missing, invalid, expired, or not operator-authenticated. Call POST /api/auth/login with a valid operator PIN to obtain an authenticated session.",
         },
       },
       { status: 401 },
+    );
+  }
+  // The cookie is valid and operator-authenticated. Optionally bind the
+  // request to the operator context (e.g., for audit logging).
+  const payload = decodeAuthenticatedCookie(cookie);
+  if (payload) {
+    console.debug(
+      `[genesis-bff] authorized operator=${payload.operatorId} exp=${new Date(payload.exp).toISOString()}`,
     );
   }
   return null; // authorized

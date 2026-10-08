@@ -1,47 +1,58 @@
 /**
- * AgentCraft Genesis G7 — Minimal BFF Auth Boundary
+ * AgentCraft Genesis G7 — Minimal BFF Auth Boundary (Operator PIN model)
  *
- * Per 04_GATEWAY_DISCOVERY_AND_ADAPTER_CONTRACT.md §Authentication and secrets
- * + 05_SECURITY_ACCESSIBILITY_AND_OPERATIONS.md §Security boundaries:
+ * G7-02 Independent Review correction. The previous model (any caller could
+ * obtain a signed cookie via GET /api/auth/setup) was a design flaw: a signed
+ * cookie is not authorization if anonymous callers can mint one on demand.
  *
- *   "If existing gateway only supports server-to-server keys, use a minimal
- *    secure server-side proxy."
+ * The new model:
+ *   - The BFF cookie is ONLY issued by POST /api/auth/login, which requires
+ *     a server-validated operator PIN.
+ *   - The PIN is read from process.env.GENESIS_OPERATOR_PIN. In dev mode
+ *     (NODE_ENV !== 'production') the default dev PIN 'dev-local-pin' is
+ *     used so the operator can authenticate locally without friction.
+ *     In production, GENESIS_OPERATOR_PIN MUST be set or /api/auth/login
+ *     fails closed (503 BFF_PIN_NOT_CONFIGURED) — refusing to issue cookies.
+ *   - The cookie payload includes the claim `op: "operator"` + an
+ *     `operatorId` bound to the authenticated context. Cookies without these
+ *     claims are REJECTED by the BFF.
  *
- *   "Browser authentication must match actual gateway architecture. If
- *    server-side API key proxy is necessary, make it minimal and protected;
- *    do not ship a shared privileged API key to every browser."
+ * Trust boundary (residual, documented):
+ *   - Anyone with the operator PIN can mint a BFF session.
+ *   - The PIN is a shared secret — single-factor. Suitable for controlled
+ *     environments with operator-only network access. NOT for untrusted
+ *     network exposure without additional layers (rate limiting, IP allow-list,
+ *     mTLS, OAuth).
+ *   - All BFF sessions share the single GENESIS_API_KEY's callerId. We do NOT
+ *     claim multi-user isolation. The `operatorId` field records WHICH
+ *     operator authenticated via PIN (for audit logging only).
+ *   - Cookies are HttpOnly + SameSite=Strict + Secure (in production) +
+ *     Max-Age=8h. They do NOT survive server restart unless
+ *     GENESIS_BFF_SECRET is set (otherwise a per-process random secret is
+ *     used and old cookies become invalid).
  *
  * This is NOT a full identity platform. It is the SMALLEST appropriate
- * authentication/authorization boundary for the current controlled environment:
- *
- *   - Server-side HMAC-signed cookie, auto-issued by /api/auth/setup.
- *   - HttpOnly + SameSite=Strict + Secure (when HTTPS) + Max-Age bounded.
- *   - All /api/genesis/* calls verify the cookie; reject 401 if missing/invalid.
- *   - Fail-closed: no anonymous calls to /api/genesis/*.
- *   - The Gateway's callerId semantics are preserved — the BFF maps all
- *     authenticated UI callers to the single GENESIS_API_KEY's callerId.
- *     This is acceptable for the controlled environment; multi-tenant RBAC
- *     is out of scope (10_OPERATOR_DECISIONS §Exclusions).
- *
- * The cookie secret is read from process.env.GENESIS_BFF_SECRET. If missing,
- * a per-process random secret is generated (sessions don't survive restart;
- * UI re-issues the cookie transparently on next /api/auth/setup call).
+ * authentication mechanism for the current controlled environment that
+ * does not rely solely on NODE_ENV, CORS, or SameSite for security.
  */
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const BFF_COOKIE_NAME = "genesis_bff";
 const COOKIE_TTL_SECONDS = 8 * 60 * 60; // 8 hours — bounded session
-const COOKIE_MAX_AGE = COOKIE_TTL_SECONDS;
 
-// Per-process fallback secret. Used ONLY when GENESIS_BFF_SECRET is unset
-// (controlled environment). Logged loudly so the operator notices.
+// Default dev PIN. Used ONLY when GENESIS_OPERATOR_PIN is unset AND
+// NODE_ENV !== 'production'. In production, GENESIS_OPERATOR_PIN MUST be set
+// or /api/auth/login fails closed (503 BFF_PIN_NOT_CONFIGURED).
+export const DEFAULT_DEV_PIN = "dev-local-pin";
+
 const FALLBACK_SECRET = process.env.GENESIS_BFF_SECRET
   ? process.env.GENESIS_BFF_SECRET
   : (() => {
       if (process.env.NODE_ENV === "production") {
-        // Fail-closed in production: refuse to start without an explicit secret.
-        // The /api/auth/setup route will refuse to issue cookies.
+        // Fail-closed in production: refuse to issue cookies without an
+        // explicit secret. The /api/auth/login route will detect this and
+        // return 503 BFF_PIN_NOT_CONFIGURED.
         console.error(
           "[genesis-bff] FATAL: GENESIS_BFF_SECRET is not set in production mode; refusing to issue cookies.",
         );
@@ -57,21 +68,42 @@ const FALLBACK_SECRET = process.env.GENESIS_BFF_SECRET
 
 const SECRET: string = FALLBACK_SECRET;
 
-interface CookiePayload {
+/**
+ * Get the expected operator PIN.
+ * Returns null in production when GENESIS_OPERATOR_PIN is unset (fail-closed).
+ */
+export function getOperatorPin(): string | null {
+  if (process.env.GENESIS_OPERATOR_PIN) {
+    return process.env.GENESIS_OPERATOR_PIN;
+  }
+  if (process.env.NODE_ENV === "production") {
+    return null; // fail closed
+  }
+  return DEFAULT_DEV_PIN; // local dev convenience
+}
+
+export interface CookiePayload {
   /** ISO timestamp when issued. */
   readonly iat: string;
   /** Unix ms expiry timestamp. */
   readonly exp: number;
   /** Fixed scope — the BFF does not manage multiple roles. */
   readonly scope: "bff";
+  /**
+   * Operator authorization claim. Cookies without `op: "operator"` are
+   * REJECTED by the BFF. This is the critical difference from the G7-01
+   * closure's flawed model: a signed cookie without this claim is NOT
+   * privileged.
+   */
+  readonly op: "operator";
+  /**
+   * The operator identity this session is bound to. NOT multi-user isolation
+   * — all BFF calls still use the single GENESIS_API_KEY's callerId. This
+   * field just records WHICH operator authenticated via PIN, for audit.
+   */
+  readonly operatorId: string;
 }
 
-/**
- * Sign a payload with the server-side secret. Returns a base64url string
- * "payload.signature" where payload is also base64url-encoded JSON.
- *
- * The signature is HMAC-SHA256 with constant-time verification.
- */
 function signToken(payload: CookiePayload): string {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const sig = createHmac("sha256", SECRET).update(body).digest("base64url");
@@ -79,22 +111,25 @@ function signToken(payload: CookiePayload): string {
 }
 
 /**
- * Verify a token: parse, check signature (constant-time), check expiry.
- * Returns the payload on success, or null on any failure.
+ * Verify a token with an explicit secret. Exported for unit testing so tests
+ * can sign tokens with a known secret and verify them without depending on
+ * the production SECRET constant.
  */
-function verifyToken(token: string): CookiePayload | null {
-  if (!SECRET) return null;
+export function verifyTokenWithSecret(
+  token: string,
+  secret: string,
+): CookiePayload | null {
+  if (!secret) return null;
+  if (typeof token !== "string" || token.length === 0) return null;
   const dot = token.lastIndexOf(".");
   if (dot <= 0 || dot === token.length - 1) return null;
   const body = token.slice(0, dot);
   const sig = token.slice(dot + 1);
 
-  // Compute expected signature.
-  const expectedSig = createHmac("sha256", SECRET)
+  const expectedSig = createHmac("sha256", secret)
     .update(body)
     .digest("base64url");
 
-  // Constant-time comparison.
   const a = Buffer.from(sig);
   const b = Buffer.from(expectedSig);
   if (a.length !== b.length) return null;
@@ -108,6 +143,14 @@ function verifyToken(token: string): CookiePayload | null {
       return null;
     }
     if (payload.scope !== "bff") return null;
+    // CRITICAL: cookies without the operator claim are NOT privileged.
+    if (payload.op !== "operator") return null;
+    if (
+      typeof payload.operatorId !== "string" ||
+      payload.operatorId.length === 0
+    ) {
+      return null;
+    }
     if (Date.now() > payload.exp) return null;
     return payload;
   } catch {
@@ -115,24 +158,66 @@ function verifyToken(token: string): CookiePayload | null {
   }
 }
 
+function verifyToken(token: string): CookiePayload | null {
+  return verifyTokenWithSecret(token, SECRET);
+}
+
 /**
- * Issue a new BFF cookie value. Called by /api/auth/setup.
+ * Issue an authenticated cookie for the given operator. Called by
+ * /api/auth/login AFTER the PIN has been validated.
  */
-export function issueBffCookieValue(): string {
+export function issueAuthenticatedCookie(operatorId: string): string {
   const now = Date.now();
   return signToken({
     iat: new Date(now).toISOString(),
-    exp: now + COOKIE_MAX_AGE * 1000,
+    exp: now + COOKIE_TTL_SECONDS * 1000,
     scope: "bff",
+    op: "operator",
+    operatorId,
   });
 }
 
 /**
- * Verify a BFF cookie value from the incoming request. Returns true if valid.
+ * Verify an incoming cookie. Returns true iff the cookie has a valid
+ * signature, the operator claim, and has not expired.
  */
-export function isValidBffCookie(value: string | undefined | null): boolean {
+export function isValidAuthenticatedCookie(
+  value: string | undefined | null,
+): boolean {
   if (typeof value !== "string" || value.length === 0) return false;
   return verifyToken(value) !== null;
+}
+
+/**
+ * Decode an authenticated cookie and return its payload. Used by the BFF to
+ * bind the request to the operator context (e.g., for audit logging).
+ */
+export function decodeAuthenticatedCookie(
+  value: string | undefined | null,
+): CookiePayload | null {
+  if (typeof value !== "string" || value.length === 0) return null;
+  return verifyToken(value);
+}
+
+/**
+ * Constant-time string comparison. Returns true iff the strings are equal
+ * in length and content. Compares all bytes (does not short-circuit).
+ *
+ * Used for PIN comparison to avoid timing attacks that could reveal the PIN
+ * length or prefix.
+ */
+export function constantTimePinCompare(a: string, b: string): boolean {
+  if (a.length === 0 || b.length === 0) return false;
+  if (a.length !== b.length) {
+    // Still do a comparison to avoid leaking length via timing.
+    timingSafeEqual(Buffer.from(a), Buffer.from(a));
+    return false;
+  }
+  try {
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -149,17 +234,12 @@ export function getCookieAttributes(): {
   return {
     httpOnly: true,
     sameSite: "strict",
-    // In the sandbox preview, the connection may be plain HTTP — Secure would
-    // cause the cookie to be dropped. In production with HTTPS, set Secure=true.
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: COOKIE_MAX_AGE,
+    maxAge: COOKIE_TTL_SECONDS,
   };
 }
 
-/**
- * Compute the Set-Cookie header value for the BFF cookie.
- */
 export function buildSetCookieHeader(value: string): string {
   const attrs = getCookieAttributes();
   const parts = [
@@ -173,9 +253,6 @@ export function buildSetCookieHeader(value: string): string {
   return parts.join("; ");
 }
 
-/**
- * Cookie attributes to send on a deletion (Set-Cookie with Max-Age=0).
- */
 export function buildClearCookieHeader(): string {
   return `${BFF_COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Strict`;
 }

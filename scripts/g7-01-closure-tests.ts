@@ -45,9 +45,12 @@ let bffCookie: string | undefined;
 
 async function obtainBffCookie(): Promise<string | undefined> {
   if (bffCookie) return bffCookie;
-  const res = await fetch(`${BASE}/api/auth/setup`, {
-    method: "GET",
-    credentials: "include",
+  // G7-02 auth-gate fix: cookies are issued by POST /api/auth/login with a
+  // server-validated operator PIN. The .env.local default is 'dev-local-pin'.
+  const res = await fetch(`${BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pin: "dev-local-pin" }),
   });
   const sc = res.headers.get("set-cookie");
   if (sc) {
@@ -77,15 +80,20 @@ async function test_noCookieReturns401() {
 }
 
 // ---------------------------------------------------------------------------
-// Test 2: BFF returns 200 for /api/auth/setup and Set-Cookie header is present.
+// Test 2: /api/auth/login issues a Set-Cookie header after PIN validation.
+// (G7-02 auth-gate fix: the old /api/auth/setup endpoint was REMOVED.)
 // ---------------------------------------------------------------------------
 
 async function test_setupIssuesCookie() {
-  const res = await fetch(`${BASE}/api/auth/setup`, { method: "GET" });
+  const res = await fetch(`${BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pin: "dev-local-pin" }),
+  });
   const sc = res.headers.get("set-cookie");
   record({
     id: "T2",
-    name: "/api/auth/setup issues a Set-Cookie header",
+    name: "POST /api/auth/login (correct PIN) → 200 + Set-Cookie",
     pass: res.status === 200 && sc !== null && sc.includes("genesis_bff="),
     detail: `status=${res.status}, set-cookie=${sc ? "present" : "absent"}`,
   });
@@ -176,13 +184,16 @@ async function test_disallowedMethodsRejected() {
   });
 }
 
-// ---------------------------------------------------------------------------
 // Test 7: No Access-Control-Allow-Origin header (permissive CORS removed).
-// ---------------------------------------------------------------------------
+// Auth-gate fix: check the /api/auth/login response (POST + Set-Cookie).
 
 async function test_noPermissiveCors() {
-  const r = await fetchRaw("/api/auth/setup", { method: "GET" });
-  const aco = r.headers.get("access-control-allow-origin");
+  const res = await fetch(`${BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pin: "dev-local-pin" }),
+  });
+  const aco = res.headers.get("access-control-allow-origin");
   record({
     id: "T7",
     name: "No Access-Control-Allow-Origin header (CORS constrained)",
@@ -221,21 +232,25 @@ async function test_noSecretLeakInError() {
 }
 
 // ---------------------------------------------------------------------------
-// Test 9: Setup endpoint is idempotent — second call returns 200 with
-// "status: existing" when a valid cookie is already present.
+// Test 9: Re-authenticating with the same PIN always issues a fresh
+// cookie (the login endpoint is NOT idempotent — each call issues a new
+// signed cookie with a new exp). This is intentional: a fresh login should
+// refresh the session, not silently reuse an old one.
 // ---------------------------------------------------------------------------
 
 async function test_setupIsIdempotent() {
   const cookie = await obtainBffCookie();
-  const res = await fetch(`${BASE}/api/auth/setup`, {
-    method: "GET",
-    headers: { Cookie: cookie ?? "" },
+  // Login again — should succeed and issue a new cookie.
+  const res = await fetch(`${BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pin: "dev-local-pin" }),
   });
   const body = (await res.json()) as { ok: boolean; status: string };
   record({
     id: "T9",
-    name: "/api/auth/setup is idempotent (existing cookie → 200, status: existing)",
-    pass: res.status === 200 && body.ok === true && body.status === "existing",
+    name: "POST /api/auth/login re-authenticates (200, status: authenticated)",
+    pass: res.status === 200 && body.ok === true && body.status === "authenticated",
     detail: `status=${res.status}, body=${JSON.stringify(body)}`,
   });
 }
@@ -276,14 +291,18 @@ async function test_tamperedCookieRejected() {
 // ---------------------------------------------------------------------------
 
 async function test_cookieAttributes() {
-  const res = await fetch(`${BASE}/api/auth/setup`, { method: "GET" });
+  const res = await fetch(`${BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pin: "dev-local-pin" }),
+  });
   const sc = res.headers.get("set-cookie") ?? "";
   const hasSameSiteStrict = /SameSite=Strict/i.test(sc);
   const hasHttpOnly = /HttpOnly/i.test(sc);
   const hasPath = /Path=\//i.test(sc);
   record({
     id: "T11",
-    name: "Cookie has SameSite=Strict, HttpOnly, Path=/",
+    name: "Login cookie has SameSite=Strict, HttpOnly, Path=/",
     pass: hasSameSiteStrict && hasHttpOnly && hasPath,
     detail: `SameSite=${hasSameSiteStrict}, HttpOnly=${hasHttpOnly}, Path=${hasPath}`,
   });

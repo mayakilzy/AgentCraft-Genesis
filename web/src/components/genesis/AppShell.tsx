@@ -107,42 +107,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [setActiveSection]);
 
-  // Acquire the BFF session cookie on mount. The /api/genesis/* proxy
-  // requires this cookie — without it, every call returns 401.
-  // The /api/auth/setup endpoint is idempotent: if a valid cookie is already
-  // present, it returns 200 without re-issuing.
-  const setBffReady = useGenesisStore((s) => s.setBffReady);
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch("/api/auth/setup", {
-          method: "GET",
-          credentials: "include",
-        });
-        if (cancelled) return;
-        if (res.ok) {
-          // Cookie is set (or was already). Signal ConnectionStatus to begin polling.
-          setBffReady(true);
-        } else {
-          // The cookie wasn't issued. The UI will see 401 on subsequent
-          // /api/genesis/* calls and show the unauthorized state honestly.
-          console.warn(
-            "[genesis-shell] BFF cookie setup failed:",
-            res.status,
-          );
-          setBffReady(true); // still allow polling so the UI shows the 401 truthfully
-        }
-      } catch (e) {
-        if (cancelled) return;
-        console.warn("[genesis-shell] BFF cookie setup error:", e);
-        setBffReady(true); // allow polling so we see the real failure
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [setBffReady]);
+  // G7-02 Independent Review: the /api/auth/setup endpoint was removed
+  // (anonymous callers could mint signed cookies). Auth state is now handled
+  // by <GenesisApp>, which calls <AuthGate> when the BFF returns 401. The
+  // `bffReady` flag is set by GenesisApp after auth confirmation, which
+  // gates ConnectionStatus's polling.
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
