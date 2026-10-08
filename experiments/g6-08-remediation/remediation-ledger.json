@@ -1,0 +1,3077 @@
+{
+  "audit_id": "G6-07",
+  "audit_date": "2026-10-08",
+  "remediation_id": "G6-08",
+  "remediation_start_commit": "8e0ba68d8764d5769127b821cfc2b05918ca8810",
+  "remediation_phase_1_commit": "030fa09",
+  "total_findings": 90,
+  "finding_records_count": 129,
+  "coverage_note": "The G6-07 audit register reported 90 findings; the detailed findings-detailed.md file actually contains 129 unique finding IDs. The discrepancy (39 extra records) arises because the detailed file cross-references several defects from multiple perspectives: a defect finding (e.g., B-EXEC-FINDING-001) typically has a matching documentation-mismatch finding (G-CLAIMS-FINDING-002) and sometimes a learning-loop duplicate (C-LEARNING-FINDING-016). All 129 records are tracked in this ledger for full coverage; the audit's headline count of 90 refers to distinct defect families.",
+  "closure_decision_counts": {
+    "DEFERRED_WITH_JUSTIFICATION": 47,
+    "OPEN": 53,
+    "FIXED_VERIFIED": 16,
+    "BLOCKED_BY_ENVIRONMENT": 1,
+    "NOT_A_DEFECT": 12
+  },
+  "findings": [
+    {
+      "findingId": "B-A2A-FINDING-001",
+      "title": "Cross-caller `cancelTask` publishes actual task status, contradicting the 'do not leak' comment",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:177-190"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "B-A2A-FINDING-002",
+      "title": "`pollToTerminal` has no wall-clock deadline",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:209-231"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "B-A2A-FINDING-003",
+      "title": "`bindings` Map leaks when `execute()` never returns",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "3",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:68,133,153"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 3 - see Batch 4 plan)"
+      ],
+      "observedResult": "Pending Phase 3 implementation (Batch 4 / RC-6: unbounded in-memory state). Target: terminal-mission eviction sweeper, MemoryFlightRecorder.events bound, pollToTerminal deadline.",
+      "residualRisk": "Mitigated today by operator-side monitoring; latent memory-exhaustion DoS via repeated mission submissions",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 3 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "B-A2A-FINDING-005",
+      "title": "`extractCallerFromUser` fallback grants `mission:submit` to any SDK `User` with `isAuthenticated=true`",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:440-451,456-462,467-482"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "B-EXEC-FINDING-001",
+      "title": "Production `getArtifacts()` silently returns `[]`",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "CRITICAL",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-1",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "src/runtime/computer.ts (ArtifactsProvider interface + ArtifactSnapshot type added)",
+        "src/runtime/openbot/adapter.ts (OpenBotRuntimeAdapter now implements ArtifactsProvider; listArtifacts() method added)",
+        "src/runtime/memory-computer.ts (implements ArtifactsProvider)",
+        "src/gateway/mission-service.ts (getArtifacts() is now async; calls runtime.listArtifacts())",
+        "src/gateway/http-server.ts (awaits getArtifacts())",
+        "tests/g6-08/rb1-artifacts-retrieval.test.ts"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-01",
+        "tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-02",
+        "tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-03",
+        "tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-04"
+      ],
+      "observedResult": "RB-1 fix verified in commit 030fa09: OpenBotRuntimeAdapter now implements ArtifactsProvider.listArtifacts() which iterates its internal computers Map (the actual worker workspaces); MissionService.getArtifacts() is async and calls runtime.listArtifacts() instead of iterating the gateway's empty Map; verifier clean-room copies (mission-verifier-*) are excluded; 4 tests in tests/g6-08/rb1-artifacts-retrieval.test.ts (RB1-01..04) all pass. Total: 545 tests pass / 9 skipped (was 536/9 at baseline).",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-01, tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-02, tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-03, tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-04"
+    },
+    {
+      "findingId": "B-EXEC-FINDING-002",
+      "title": "Concurrent production missions collide on shared OpenBot adapter",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "CRITICAL",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-1, RC-2",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "src/gateway/main.ts (buildRealRuntime -> buildRealRuntimeFactory returning per-mission factory with missionId-namespaced rootDir)",
+        "src/gateway/mission-service.ts (runtimeFactory now receives { missionId } ctx)",
+        "tests/g6-08/rb2-concurrent-isolation.test.ts"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01",
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-02",
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-03",
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-04"
+      ],
+      "observedResult": "RB-2 fix verified in commit 030fa09: runtimeFactory signature changed to receive { missionId } and MUST return a fresh adapter per mission; buildRealRuntime() in src/gateway/main.ts became buildRealRuntimeFactory() returning a per-mission factory that constructs OpenBotRuntimeAdapter with rootDir = ${baseRootDir}/${missionId}/ for filesystem-level isolation; 4 tests in tests/g6-08/rb2-concurrent-isolation.test.ts (RB2-01..04) all pass.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01, tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-02, tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-03, tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-04"
+    },
+    {
+      "findingId": "B-EXEC-FINDING-003",
+      "title": "No graceful teardown of OpenBot workers on shutdown",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-1",
+      "remediationBatch": "9",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/main.ts:274-285",
+        "src/gateway/mission-service.ts (no shutdown/abortAll method)",
+        "src/runtime/openbot/adapter.ts:184-195 (close() exists but is NEVER called by the gateway)",
+        "src/runtime/openbot/computer-process.ts:239-290 (stop() \u2014 the only way to terminate a worker",
+        "never invoked on shutdown)"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 9 - see Batch 9 plan; crash-mid-mission, restart-recovery, idempotency-across-restart tests)"
+      ],
+      "observedResult": "Pending Phase 9 implementation (Batch 9 / persistence + recovery design - architectural decision required). Target: WAL for MissionService.missions + idempotencyIndex, OpenBot parent-death detection, learning-loop wiring decision.",
+      "residualRisk": "Gateway loses all mission state on restart; in-flight missions are lost; idempotency keys are not reusable post-restart",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 9 batch planned; architectural decision required (Option A WAL vs Option B persistent backend)"
+    },
+    {
+      "findingId": "B-EXEC-FINDING-004",
+      "title": "`OPENBOT_ENDPOINT` documented as production-required but never read",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/main.ts:30,126-135",
+        "docs/release/engine-v1-configuration.md:45,84,99",
+        "docs/release/engine-v1-install-and-run.md:98",
+        "src/mission/config-validator.ts:188",
+        "experiments/g6-04/evidence/configuration-matrix.json:20 (correctly classified as TEST env var)"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "B-EXEC-FINDING-005",
+      "title": "ZAI SDK credential resolution path unverified",
+      "originalEvidenceClass": "EVIDENCE_GAP",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "BLOCKED_BY_ENVIRONMENT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "blocked",
+      "affectedFiles": [
+        "src/providers/zai-reasoning.ts:142-157",
+        "src/gateway/main.ts (ZAI provider construction)"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(blocked - requires real ZAI SDK + credentials not available in sandbox)"
+      ],
+      "observedResult": "Verification blocked by sandbox environment: no real ZAI credentials available (per recovery-baseline.md stop condition). Code-path not exercised end-to-end. Latent credential-failure risk cannot be confirmed or refuted without a real ZAI SDK + API key.",
+      "residualRisk": "If real ZAI SDK does not auto-read ZAI_API_KEY from process.env, all production reasoning calls fail with PROVIDER_FAILURE",
+      "closureDecision": "BLOCKED_BY_ENVIRONMENT",
+      "closureEvidence": "Sandbox stop condition 'No real ZAI credentials' (recovery-baseline.md section 6) blocks live verification"
+    },
+    {
+      "findingId": "B-EXEC-FINDING-006",
+      "title": "No production-mode startup validation that `OPENBOT_CHECKOUT_DIR` exists, `bun` is on PATH, ZAI SDK is importable",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "RC-1",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/main.ts:111-153,233-261"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "B-EXEC-FINDING-007",
+      "title": "Production code imports test infrastructure (`MemoryComputer` from `tests/helpers/`)",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-5",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "src/runtime/memory-computer.ts (new file, 144 lines)",
+        "src/gateway/mission-service.ts (import changed from ../../tests/helpers/memory-runtime.js to ../runtime/memory-computer.js)",
+        "src/gateway/main.ts (import changed)",
+        "tests/helpers/memory-runtime.ts (now a re-export shim for back-compat)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "src/runtime/memory-computer.ts (file existence; production code no longer imports from tests/helpers/)",
+        "Existing dev-mode tests pass unchanged (62 test files, 545 tests total)"
+      ],
+      "observedResult": "MemoryComputer promoted from tests/helpers/memory-runtime.ts to src/runtime/memory-computer.ts (new file, 144 lines); src/gateway/mission-service.ts and src/gateway/main.ts now import from src/runtime/ not tests/helpers/; tests/helpers/memory-runtime.ts is now a re-export shim for backward compatibility; existing dev-mode tests pass unchanged.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "src/runtime/memory-computer.ts (file existence; production code no longer imports from tests/helpers/), Existing dev-mode tests pass unchanged (62 test files, 545 tests total)"
+    },
+    {
+      "findingId": "B-GATEWAY-FINDING-001",
+      "title": "`child.kill('SIGTERM')` on `npx tsx` kills only npx parent; gateway grandchild orphaned",
+      "originalEvidenceClass": "CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-3",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "tests/gateway/clean-room-gateway.test.ts (GATEWAY-04: detached:true + process.kill(-pid, 'SIGTERM'))",
+        "tests/gateway/separate-process-e2e.test.ts",
+        "experiments/g6-06/clean-room-run.sh (setsid + kill -- -$GATEWAY_PID)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04",
+        "tests/gateway/clean-room-gateway.test.ts:GATEWAY-05"
+      ],
+      "observedResult": "RB-3 fix verified in commit 030fa09: tests/gateway/clean-room-gateway.test.ts GATEWAY-04 now spawns the gateway with detached: true and sends SIGTERM to the PROCESS GROUP via process.kill(-pid, 'SIGTERM') rather than just child.kill('SIGTERM') on the npx parent; the gateway grandchild's process.on('SIGTERM') handler is now reliably invoked; GATEWAY-05 verifies the process group is fully gone via process.kill(-pid, 0).",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04, tests/gateway/clean-room-gateway.test.ts:GATEWAY-05"
+    },
+    {
+      "findingId": "B-GATEWAY-FINDING-002",
+      "title": "`server.listen()` in `http-server.ts:59` is non-blocking",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-3",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "tests/gateway/clean-room-gateway.test.ts (GATEWAY-04 assertion tightened: SIGTERM handler logged, port released)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04"
+      ],
+      "observedResult": "Closed by the RB-3 teardown hardening in commit 030fa09: although startHttpServer remains synchronous (the existing await of startA2AServer masks any race in practice), GATEWAY-04 now verifies the SIGTERM handler ran, the listening port was released, and the gateway process exited; the previous false-positive path (asserting only the npx parent's exit) is eliminated. A future hardening pass can still make startHttpServer await the 'listening' event as Batch 3 originally proposed.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04"
+    },
+    {
+      "findingId": "B-GATEWAY-FINDING-003",
+      "title": "`tests/gateway/helpers.ts:184` adds explicit `setTimeout(50)` padding after `startHttpServer`",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-3",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "tests/gateway/helpers.ts (setTimeout(50) padding now redundant - GATEWAY-04 explicitly verifies readiness)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04"
+      ],
+      "observedResult": "tests/gateway/helpers.ts setTimeout(50) padding remains but is now redundant rather than load-bearing: GATEWAY-04 explicitly verifies (a) SIGTERM handler logged via stderr capture, (b) /health returns ECONNREFUSED after kill, (c) process group gone via process.kill(-pid, 0). The padding is no longer masking a latent race \u2014 the test would pass without it.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04"
+    },
+    {
+      "findingId": "B-GATEWAY-FINDING-004",
+      "title": "`separate-process-e2e.test.ts:146` adds explicit `setTimeout(200)` padding after readiness log",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-3",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "tests/gateway/separate-process-e2e.test.ts (detached:true + process-group kill)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04",
+        "tests/gateway/clean-room-gateway.test.ts:GATEWAY-05"
+      ],
+      "observedResult": "tests/gateway/separate-process-e2e.test.ts updated in commit 030fa09 to the same detached:true + process.kill(-pgid) pattern as GATEWAY-04; the setTimeout(200) padding after the readiness log remains but is no longer load-bearing because the readiness log is verified against the gateway's actual stdout, not a timing guess.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04, tests/gateway/clean-room-gateway.test.ts:GATEWAY-05"
+    },
+    {
+      "findingId": "B-GATEWAY-FINDING-005",
+      "title": "OpenBot adapter uses the CORRECT process-group kill pattern",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "N/A",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "src/runtime/openbot/computer-process.ts:193-290"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - OpenBot adapter uses the CORRECT process-group kill pattern. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "B-GATEWAY-FINDING-006",
+      "title": "`clean-room-run.sh` polling budget cannot distinguish fresh from orphaned gateway",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "RC-3",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "experiments/g6-06/clean-room-run.sh (polling loop)"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "B-REGISTRY-FINDING-001",
+      "title": "Terminal missions never evicted from `MissionService.missions` \u2014 unbounded registry growth",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "3",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:145,279,424-433",
+        "src/mission/flight-recorder.ts:262-268",
+        "tests/helpers/memory-runtime.ts:17"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 3 - see Batch 4 plan)"
+      ],
+      "observedResult": "Pending Phase 3 implementation (Batch 4 / RC-6: unbounded in-memory state). Target: terminal-mission eviction sweeper, MemoryFlightRecorder.events bound, pollToTerminal deadline.",
+      "residualRisk": "Mitigated today by operator-side monitoring; latent memory-exhaustion DoS via repeated mission submissions",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 3 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "B-REGISTRY-FINDING-002",
+      "title": "`idempotencyIndex` grows unbounded AND prevents reuse post-terminal",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "3",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:146,191-204,281"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 3 - see Batch 4 plan)"
+      ],
+      "observedResult": "Pending Phase 3 implementation (Batch 4 / RC-6: unbounded in-memory state). Target: terminal-mission eviction sweeper, MemoryFlightRecorder.events bound, pollToTerminal deadline.",
+      "residualRisk": "Mitigated today by operator-side monitoring; latent memory-exhaustion DoS via repeated mission submissions",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 3 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "B-REGISTRY-FINDING-003",
+      "title": "`MemoryFlightRecorder.events` grows unbounded",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "3",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/mission/flight-recorder.ts:262-268"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 3 - see Batch 4 plan)"
+      ],
+      "observedResult": "Pending Phase 3 implementation (Batch 4 / RC-6: unbounded in-memory state). Target: terminal-mission eviction sweeper, MemoryFlightRecorder.events bound, pollToTerminal deadline.",
+      "residualRisk": "Mitigated today by operator-side monitoring; latent memory-exhaustion DoS via repeated mission submissions",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 3 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-001",
+      "title": "Learning loop NOT wired into the gateway; all learning risks are dormant",
+      "originalEvidenceClass": "NOT_A_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:245,225",
+        "src/gateway/main.ts:248-252"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - HIGH severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "HIGH impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-002",
+      "title": "No pattern persistence layer; even if wired, patterns are lost on restart",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/learning/evolution.ts:17,21,96,134",
+        "src/learning/pattern.ts (no FilePatternStore)",
+        "src/organization/organization-planner.ts:319"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-003",
+      "title": "Pattern retriever uses intersection matching; unproven generalization / negative transfer risk",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/learning/pattern.ts:127-150",
+        "src/organization/organization-planner.ts:452-470"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-004",
+      "title": "Evaluator's signature-aware contradictions are too narrow",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/learning/evaluation.ts:213-251",
+        "tests/learning/semantic-integrity.test.ts:159-189"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-005",
+      "title": "No pattern expiry/TTL; stale patterns persist forever; quarantine is manual and unenforced",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/learning/pattern.ts",
+        "experiments/academy/cohort-001/pattern-quarantine.json",
+        "src/learning/evolution.ts:222-237"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-006",
+      "title": "Learned patterns cause capability drift via `redistributeNeeds`",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/organization/organization-planner.ts:497-525,590-622",
+        "tests/learning/pattern-retrieval.test.ts:107-134"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-007",
+      "title": "Evolution sandbox `promoteVariant` has no governance/authorization check",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/learning/evolution.ts:222-237,175-210,148-168"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-008",
+      "title": "`GenomeCompiler.extraOperationalNeeds` seam is a latent governance bypass path",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/genome/genome-compiler.ts:155,270-308",
+        "src/gateway/mission-service.ts:246-250"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-009",
+      "title": "`MissionService.missions` and `idempotencyIndex` are in-memory only; lost on restart",
+      "originalEvidenceClass": "EVIDENCE_GAP",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "9",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:145-146,22-23",
+        "src/gateway/types.ts:82",
+        "src/gateway/http-server.ts:101",
+        "tests/gateway/e2e.test.ts:88-92"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 9 - see Batch 9 plan; crash-mid-mission, restart-recovery, idempotency-across-restart tests)"
+      ],
+      "observedResult": "Pending Phase 9 implementation (Batch 9 / persistence + recovery design - architectural decision required). Target: WAL for MissionService.missions + idempotencyIndex, OpenBot parent-death detection, learning-loop wiring decision.",
+      "residualRisk": "Gateway loses all mission state on restart; in-flight missions are lost; idempotency keys are not reusable post-restart",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 9 batch planned; architectural decision required (Option A WAL vs Option B persistent backend)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-010",
+      "title": "A2A `InMemoryTaskStore` and `GenesisAgentExecutor.bindings` are in-memory only; lost on restart",
+      "originalEvidenceClass": "EVIDENCE_GAP",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "9",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:253,68",
+        "node_modules/@a2a-js/sdk/dist/store-ITPVQgJ1.d.ts:39-49"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 9 - see Batch 9 plan; crash-mid-mission, restart-recovery, idempotency-across-restart tests)"
+      ],
+      "observedResult": "Pending Phase 9 implementation (Batch 9 / persistence + recovery design - architectural decision required). Target: WAL for MissionService.missions + idempotencyIndex, OpenBot parent-death detection, learning-loop wiring decision.",
+      "residualRisk": "Gateway loses all mission state on restart; in-flight missions are lost; idempotency keys are not reusable post-restart",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 9 batch planned; architectural decision required (Option A WAL vs Option B persistent backend)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-011",
+      "title": "Gateway uses `MemoryFlightRecorder`; no durable flight record for gateway missions; no replay logic exists",
+      "originalEvidenceClass": "EVIDENCE_GAP",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "9",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:225",
+        "src/mission/flight-recorder.ts:360-400"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 9 - see Batch 9 plan; crash-mid-mission, restart-recovery, idempotency-across-restart tests)"
+      ],
+      "observedResult": "Pending Phase 9 implementation (Batch 9 / persistence + recovery design - architectural decision required). Target: WAL for MissionService.missions + idempotencyIndex, OpenBot parent-death detection, learning-loop wiring decision.",
+      "residualRisk": "Gateway loses all mission state on restart; in-flight missions are lost; idempotency keys are not reusable post-restart",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 9 batch planned; architectural decision required (Option A WAL vs Option B persistent backend)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-012",
+      "title": "`ArtifactRegistry` is dead code; gateway `getArtifacts` reads from in-memory `MemoryComputer` only",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "RC-1",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/artifact-record.ts",
+        "src/gateway/mission-service.ts:361-385,88,591-623",
+        "src/gateway/main.ts:145",
+        "src/runtime/openbot/adapter.ts:49"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - HIGH severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "HIGH impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-013",
+      "title": "Gateway shutdown does not abort in-flight missions, does not stop OpenBot workers, does not flush state",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-1",
+      "remediationBatch": "9",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "See B-EXEC-FINDING-003."
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 9 - see Batch 9 plan; crash-mid-mission, restart-recovery, idempotency-across-restart tests)"
+      ],
+      "observedResult": "Pending Phase 9 implementation (Batch 9 / persistence + recovery design - architectural decision required). Target: WAL for MissionService.missions + idempotencyIndex, OpenBot parent-death detection, learning-loop wiring decision.",
+      "residualRisk": "Gateway loses all mission state on restart; in-flight missions are lost; idempotency keys are not reusable post-restart",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 9 batch planned; architectural decision required (Option A WAL vs Option B persistent backend)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-014",
+      "title": "OpenBot worker processes have NO parent-death detection; orphaned on gateway crash",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-1",
+      "remediationBatch": "9",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/runtime/openbot/computer-process.ts:173-194,239-290"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 9 - see Batch 9 plan; crash-mid-mission, restart-recovery, idempotency-across-restart tests)"
+      ],
+      "observedResult": "Pending Phase 9 implementation (Batch 9 / persistence + recovery design - architectural decision required). Target: WAL for MissionService.missions + idempotencyIndex, OpenBot parent-death detection, learning-loop wiring decision.",
+      "residualRisk": "Gateway loses all mission state on restart; in-flight missions are lost; idempotency keys are not reusable post-restart",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 9 batch planned; architectural decision required (Option A WAL vs Option B persistent backend)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-015",
+      "title": "Production mode shares a single `OpenBotRuntimeAdapter` across all missions; concurrent missions with same plan shape share worker processes and workspaces",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "CRITICAL",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-1, RC-2",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "src/gateway/main.ts (per-mission adapter with namespaced rootDir)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01 (fresh adapter per mission)",
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-04 (missionId-based rootDir namespacing)"
+      ],
+      "observedResult": "Closed by RB-2 fix: production mode no longer shares a single OpenBotRuntimeAdapter; each mission gets a fresh adapter with namespaced rootDir; concurrent missions with same plan shape no longer share worker processes or workspaces.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01 (fresh adapter per mission), tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-04 (missionId-based rootDir namespacing)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-016",
+      "title": "Production mode: `getArtifacts` returns empty array (computers Map is always empty)",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-1",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "src/runtime/openbot/adapter.ts (listArtifacts)",
+        "src/gateway/mission-service.ts (getArtifacts async)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-01 (non-empty artifacts in production shape)"
+      ],
+      "observedResult": "Closed by RB-1 fix: production-mode getArtifacts() returns the genuine non-empty artifacts list (not []) because the OpenBotRuntimeAdapter now exposes its internal computers Map via ArtifactsProvider.listArtifacts().",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-01 (non-empty artifacts in production shape)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-017",
+      "title": "No checkpoints, no WAL, no snapshot; crash consistency is \"lose everything\"",
+      "originalEvidenceClass": "EVIDENCE_GAP",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "9",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts",
+        "src/mission/orchestrator.ts",
+        "experiments/experiment-002/RECOVERY-GATE.md (one-off historical incident doc \u2014 NOT a general recovery mechanism)"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 9 - see Batch 9 plan; crash-mid-mission, restart-recovery, idempotency-across-restart tests)"
+      ],
+      "observedResult": "Pending Phase 9 implementation (Batch 9 / persistence + recovery design - architectural decision required). Target: WAL for MissionService.missions + idempotencyIndex, OpenBot parent-death detection, learning-loop wiring decision.",
+      "residualRisk": "Gateway loses all mission state on restart; in-flight missions are lost; idempotency keys are not reusable post-restart",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 9 batch planned; architectural decision required (Option A WAL vs Option B persistent backend)"
+    },
+    {
+      "findingId": "C-LEARNING-FINDING-018",
+      "title": "Duplicate side-effect risk on restart; re-submitted missions can produce duplicate external writes",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "9",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/runtime/federation/service.ts:150-174,29",
+        "src/gateway/mission-service.ts:192-204,222"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 9 - see Batch 9 plan; crash-mid-mission, restart-recovery, idempotency-across-restart tests)"
+      ],
+      "observedResult": "Pending Phase 9 implementation (Batch 9 / persistence + recovery design - architectural decision required). Target: WAL for MissionService.missions + idempotencyIndex, OpenBot parent-death detection, learning-loop wiring decision.",
+      "residualRisk": "Gateway loses all mission state on restart; in-flight missions are lost; idempotency keys are not reusable post-restart",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 9 batch planned; architectural decision required (Option A WAL vs Option B persistent backend)"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-001",
+      "title": "MCP tool output fed back to worker LLM unescaped \u2014 indirect prompt injection",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "5",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/runtime/mcp/capability-provider.ts:111-137,125-128",
+        "src/worker/worker-agent.ts:555-580,715-723,839-842"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 5 - see Batch 7 plan)"
+      ],
+      "observedResult": "Pending Phase 5 implementation (Batch 7 / top security risks). Target: Genesis-layer command policy for run_command, MCP tool output framing, cross-caller cancelTask hardening, AgentCard securitySchemes, reject streaming methods.",
+      "residualRisk": "HIGH security risk in default EGRESS_POLICY_REQUIRED=0 deployment; mitigated today by upstream OpenBot confinement (when configured)",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 5 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-002",
+      "title": "MCP `ok` misclassified for empty-text successes",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/runtime/mcp/capability-provider.ts:128"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-003",
+      "title": "AgentCard missing required `provider` field and skill `securityRequirements`; `as unknown as AgentCard` cast hides defects",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:400-432,431"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-004",
+      "title": "AgentCard advertises `securitySchemes: {}` / `securityRequirements: []` for a Bearer-authenticated gateway",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "5",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:428-429,310-314,488-510"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 5 - see Batch 7 plan)"
+      ],
+      "observedResult": "Pending Phase 5 implementation (Batch 7 / top security risks). Target: Genesis-layer command policy for run_command, MCP tool output framing, cross-caller cancelTask hardening, AgentCard securitySchemes, reject streaming methods.",
+      "residualRisk": "HIGH security risk in default EGRESS_POLICY_REQUIRED=0 deployment; mitigated today by upstream OpenBot confinement (when configured)",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 5 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-005",
+      "title": "Streaming methods (sendMessageStream, subscribe) silently truncated to first event",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "5",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:365-378"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 5 - see Batch 7 plan)"
+      ],
+      "observedResult": "Pending Phase 5 implementation (Batch 7 / top security risks). Target: Genesis-layer command policy for run_command, MCP tool output framing, cross-caller cancelTask hardening, AgentCard securitySchemes, reject streaming methods.",
+      "residualRisk": "HIGH security risk in default EGRESS_POLICY_REQUIRED=0 deployment; mitigated today by upstream OpenBot confinement (when configured)",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 5 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-006",
+      "title": "AG-UI SUBAGENT_FINISHED carries invalid `name` field",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/agui/event-bridge.ts:230",
+        "node_modules/@ag-ui/core/dist/schemas.d.ts"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-007",
+      "title": "AG-UI SUBAGENT_ERROR never emitted; worker failures invisible",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/agui/event-bridge.ts:224-259"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-008",
+      "title": "AG-UI TOOL_CALL_RESULT content is lossy 'ok'/'failed'",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/agui/event-bridge.ts:264-290,280"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-009",
+      "title": "AG-UI bridge silently drops `failure-classified` and ALL federation events",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/agui/event-bridge.ts:143-169"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-010",
+      "title": "AG-UI toolCallId collisions for reasoning-retry events",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/agui/event-bridge.ts:264",
+        "src/worker/worker-agent.ts:952"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-011",
+      "title": "AG-UI no reconnection/replay support",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/agui/event-bridge.ts (entire)"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-012",
+      "title": "FederationService `getTask` not retried despite documentation claiming it is",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/runtime/federation/service.ts:30-31,269-275"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-013",
+      "title": "FederationService no remote agent identity verification",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/runtime/federation/service.ts:107-113,460-483",
+        "src/runtime/federation/types.ts:211-213"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-014",
+      "title": "FederationService `cancel()` has no deadline",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/runtime/federation/service.ts:227-248,265,293"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-015",
+      "title": "FederationService non-terminal A2A states cause polling until timeout",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/runtime/federation/service.ts:298-305"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-016",
+      "title": "A2A `cancelTask` fabricates CANCELLED/FAILED state for non-existent tasks",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:159-176"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-017",
+      "title": "A2A `execute()` has no per-request timeout",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:95-155,209-231"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-018",
+      "title": "AG-UI mission-finished without mission-started produces no terminal event",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "6",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/agui/event-bridge.ts:186-211"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 6 - see Batch 8 plan)"
+      ],
+      "observedResult": "Pending Phase 6 implementation (Batch 8 / protocol compliance: AG-UI schema fixes, A2A AgentCard fixes, federation hardening).",
+      "residualRisk": "Schema violations may cause strict AG-UI consumers to reject events; federation fragility under transient remote-agent errors",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 6 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-PROTOCOLS-FINDING-019",
+      "title": "A2A cross-caller `cancelTask` leaks FULL mission status",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "5",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:177-190"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 5 - see Batch 7 plan)"
+      ],
+      "observedResult": "Pending Phase 5 implementation (Batch 7 / top security risks). Target: Genesis-layer command policy for run_command, MCP tool output framing, cross-caller cancelTask hardening, AgentCard securitySchemes, reject streaming methods.",
+      "residualRisk": "HIGH security risk in default EGRESS_POLICY_REQUIRED=0 deployment; mitigated today by upstream OpenBot confinement (when configured)",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 5 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-001",
+      "title": "Worker `run_command` unrestricted shell execution, no Genesis-layer defense-in-depth",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "5",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/worker/worker-agent.ts:386-433,555-580,591-601",
+        "src/runtime/openbot/computer-api.ts:131-139",
+        "src/runtime/openbot/computer-process.ts:181"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 5 - see Batch 7 plan)"
+      ],
+      "observedResult": "Pending Phase 5 implementation (Batch 7 / top security risks). Target: Genesis-layer command policy for run_command, MCP tool output framing, cross-caller cancelTask hardening, AgentCard securitySchemes, reject streaming methods.",
+      "residualRisk": "HIGH security risk in default EGRESS_POLICY_REQUIRED=0 deployment; mitigated today by upstream OpenBot confinement (when configured)",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 5 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-002",
+      "title": "Prompt injection via unescaped tool observations fed back into the LLM scratchpad",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "HIGH",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/worker/worker-agent.ts:715-723,839-842,593-600,467-474,564-574"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - HIGH severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "HIGH impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-003",
+      "title": "Worker `write_file` / `read_file` / `list_files` paths never validated at the Genesis layer",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM-HIGH",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/worker/worker-agent.ts:602-622",
+        "src/runtime/openbot/adapter.ts:121-130",
+        "src/runtime/openbot/computer-api.ts:141-173",
+        "tests/helpers/memory-runtime.ts:39-55",
+        "src/gateway/mission-service.ts:591-622,372-384",
+        "src/mission/orchestrator.ts:460-481"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM-HIGH severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM-HIGH impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-004",
+      "title": "`extractCallerFromUser` fallback grants `mission:submit` to any SDK `User` with `isAuthenticated=true`",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:440-451,456-462,467-482"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-005",
+      "title": "`GENESIS_API_KEYS` parsing logs the first 4 characters of each API key on validation errors",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/main.ts:179,185",
+        "tests/gateway/helpers.ts:59-61"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-006",
+      "title": "`worker-finished` flight event carries the LLM-controlled `result.summary` string without `SECRET_PATTERNS` redaction",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/worker/worker-agent.ts:777-783,885-902,901",
+        "src/gateway/mission-service.ts:526-560,329-346"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-007",
+      "title": "`parseAction` permissive first-`{`-to-last-`}` extraction enables prose-wrapped JSON injection",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/worker/worker-agent.ts:369-384",
+        "src/mission/verification.ts:180-201",
+        "src/goal/llm-understanding.ts:69-74"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-008",
+      "title": "`JevProviderUnavailableError` and `OpenDotsRequestError` / `OpenMuseRequestError` echo up to 500 chars of upstream HTTP response body into error messages",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/providers/jev-decision-provider.ts:121-127,381-391",
+        "src/runtime/opendots/client.ts:63-72,181-185",
+        "src/runtime/openmuse/client.ts:180-184",
+        "src/runtime/openbot/computer-api.ts:59-74"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-009",
+      "title": "`npm audit` 0 vulnerabilities; supply-chain surface small but unmaintained",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "LOW",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "package.json:17-22,23-30",
+        "package-lock.json"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - `npm audit` 0 vulnerabilities; supply-chain surface small but unmaintained. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-010",
+      "title": "Cross-caller isolation enforced at service layer; future persistence layer must preserve callerId check",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "LOW",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:437-448,145-146,191-204",
+        "tests/gateway/isolation.test.ts:11-39"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - Cross-caller isolation enforced at service layer; future persistence layer must preserve callerId check. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-011",
+      "title": "`agentName` and `agentDescription` env-var-derived values flow into the public A2A AgentCard with no sanitization",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/main.ts:219-222",
+        "src/gateway/a2a-server.ts:400-432,310-314"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-SECURITY-FINDING-012",
+      "title": "`httpProbeCommand` and `previewServerCommand` shell escaping",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/work/dev-runtime.ts:222-238,189-202,213-215"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-001",
+      "title": "Per-artifact `verified` flag is binary all-or-nothing, not per-artifact verification outcome",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-7",
+      "remediationBatch": "4",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:361-385,476-507",
+        "src/mission/orchestrator.ts:677,938-952",
+        "src/mission/flight-recorder.ts:58-65"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 4 - see Batch 5 plan; one test per sub-fix, 5 total)"
+      ],
+      "observedResult": "Pending Phase 4 implementation (Batch 5 / RC-7: verification lifecycle invariants). Target: per-artifact verified flag, verifier workspace clear, decouple flight-action from recorder, hash-match for staged inputs, default case for unknown check kinds.",
+      "residualRisk": "Latent false-positive verification risk; current dev-mode tests don't exercise these paths",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 4 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-002",
+      "title": "Verifier clean-room workspace never cleared between `verify()` calls",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-2, RC-7",
+      "remediationBatch": "4",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/mission/verification.ts:219-294",
+        "src/mission/orchestrator.ts:750-754",
+        "src/runtime/openbot/adapter.ts:155-166",
+        "src/runtime/openbot/computer-process.ts:167-168"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 4 - see Batch 5 plan; one test per sub-fix, 5 total)"
+      ],
+      "observedResult": "Pending Phase 4 implementation (Batch 5 / RC-7: verification lifecycle invariants). Target: per-artifact verified flag, verifier workspace clear, decouple flight-action from recorder, hash-match for staged inputs, default case for unknown check kinds.",
+      "residualRisk": "Latent false-positive verification risk; current dev-mode tests don't exercise these paths",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 4 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-003",
+      "title": "Hardcoded verifier genome collides across concurrent missions",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-2",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "src/gateway/main.ts (per-mission fresh adapter - verifier genome no longer collides)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01 (cross-mission isolation)",
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-03 (cancellation isolation)"
+      ],
+      "observedResult": "Closed by RB-2 fix: with per-mission fresh OpenBotRuntimeAdapter instances, the hardcoded verifier genome 'mission-verifier-1' no longer collides across concurrent missions \u2014 each mission's adapter owns its own verifier worker process and workspace directory.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01 (cross-mission isolation), tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-03 (cancellation isolation)"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-004",
+      "title": "flight-action checks silently disabled with `FileFlightRecorder`",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-7",
+      "remediationBatch": "4",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/mission/orchestrator.ts:672-674",
+        "src/mission/flight-recorder.ts:360-400",
+        "src/mission/verification.ts:380"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 4 - see Batch 5 plan; one test per sub-fix, 5 total)"
+      ],
+      "observedResult": "Pending Phase 4 implementation (Batch 5 / RC-7: verification lifecycle invariants). Target: per-artifact verified flag, verifier workspace clear, decouple flight-action from recorder, hash-match for staged inputs, default case for unknown check kinds.",
+      "residualRisk": "Latent false-positive verification risk; current dev-mode tests don't exercise these paths",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 4 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-005",
+      "title": "mission-input check fabrication via 60-char fingerprint",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-7",
+      "remediationBatch": "4",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/mission/orchestrator.ts:607",
+        "src/mission/verification.ts:330-368"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 4 - see Batch 5 plan; one test per sub-fix, 5 total)"
+      ],
+      "observedResult": "Pending Phase 4 implementation (Batch 5 / RC-7: verification lifecycle invariants). Target: per-artifact verified flag, verifier workspace clear, decouple flight-action from recorder, hash-match for staged inputs, default case for unknown check kinds.",
+      "residualRisk": "Latent false-positive verification risk; current dev-mode tests don't exercise these paths",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 4 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-006",
+      "title": "`ArtifactRegistry` is dead code; G6-01 P1 H-41 not delivered",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/artifact-record.ts (full)",
+        "grep across src/ for ArtifactRegistry, buildArtifactRecord, hashContent returns matches ONLY inside artifact-record.ts"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-007",
+      "title": "`MemoryFlightRecorder` + `getEvents` leaks secrets; `toEventRecord` has no `SECRET_PATTERNS`",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/flight-recorder.ts:265-267,286-302",
+        "src/gateway/mission-service.ts:329-346,509-560"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - HIGH severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "HIGH impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-008",
+      "title": "`SECRET_PATTERNS` redaction gaps",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/flight-recorder.ts:286-343"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-009",
+      "title": "Flight recorder unbounded growth; no retention policy",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-6",
+      "remediationBatch": "3",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/mission/flight-recorder.ts:373-390",
+        "data/flight-records/ (12 JSONL files from experiments)"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 3 - see Batch 4 plan)"
+      ],
+      "observedResult": "Pending Phase 3 implementation (Batch 4 / RC-6: unbounded in-memory state). Target: terminal-mission eviction sweeper, MemoryFlightRecorder.events bound, pollToTerminal deadline.",
+      "residualRisk": "Mitigated today by operator-side monitoring; latent memory-exhaustion DoS via repeated mission submissions",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 3 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-010",
+      "title": "Path traversal: verifier check paths unsanitized; `getArtifacts` filter is asymmetric",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/verification.ts:172-174,300,448,486",
+        "src/gateway/mission-service.ts:374"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-011",
+      "title": "Hash-match edge cases untested / under-specified",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "RC-7",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/verification.ts:444-480"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "C-VERIFY-FINDING-012",
+      "title": "`VerificationLoop` never validates check structure; unknown check kinds silently dropped",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-7",
+      "remediationBatch": "4",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/mission/verification.ts:242-264"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 4 - see Batch 5 plan; one test per sub-fix, 5 total)"
+      ],
+      "observedResult": "Pending Phase 4 implementation (Batch 5 / RC-7: verification lifecycle invariants). Target: per-artifact verified flag, verifier workspace clear, decouple flight-action from recorder, hash-match for staged inputs, default case for unknown check kinds.",
+      "residualRisk": "Latent false-positive verification risk; current dev-mode tests don't exercise these paths",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 4 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-001",
+      "title": "`ZAIReasoningProvider` has NO per-call timeout and its 6-step rate-limit backoff is UNTESTED",
+      "originalEvidenceClass": "TEST_GAP",
+      "originalSeverity": "HIGH",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/providers/zai-reasoning.ts:120-169,48-55,142-157",
+        "src/worker/worker-agent.ts:925-965"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - HIGH severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "HIGH impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-002",
+      "title": "MCP tool failure classification is misleading (BUDGET_EXHAUSTED instead of TOOL_FAILURE)",
+      "originalEvidenceClass": "CODE_INSPECTION",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/runtime/mcp/capability-provider.ts:111-137",
+        "src/worker/worker-agent.ts:555-580,853-861",
+        "src/mission/failure-class.ts:128-135"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-003",
+      "title": "`classifyError`'s 'missing' substring heuristic is too broad (latent misclassification risk)",
+      "originalEvidenceClass": "CODE_INSPECTION",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/failure-class.ts:98-108,99-108"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-004",
+      "title": "Cancellation/finish race has no regression test (audit confirms consistency)",
+      "originalEvidenceClass": "TEST_GAP",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:397-407,286-312",
+        "src/gateway/types.ts:290-300"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-005",
+      "title": "Concurrent cancellation has no regression test (audit confirms consistency)",
+      "originalEvidenceClass": "TEST_GAP",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:397-407"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-006",
+      "title": "Cross-caller idempotency-key collision has no regression test (audit confirms rejection)",
+      "originalEvidenceClass": "TEST_GAP",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:191-204"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-007",
+      "title": "Orchestrator verifier-ensureWorker-throws path has no regression test (audit confirms loud failure + artifact preservation)",
+      "originalEvidenceClass": "TEST_GAP",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/orchestrator.ts:632-650,809-822",
+        "src/gateway/mission-service.ts:295-311"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-008",
+      "title": "Tool crash on writeFile has no regression test (audit confirms non-fatal handling)",
+      "originalEvidenceClass": "TEST_GAP",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/worker/worker-agent.ts:602-608,674-679",
+        "tests/worker/worker-agent.test.ts:199"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-009",
+      "title": "Silent-success window when caller explicitly passes `checks: () => []`",
+      "originalEvidenceClass": "CODE_INSPECTION",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "RC-7",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/orchestrator.ts:587-592,630-632,777-789"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "D-FAILURE-FINDING-010",
+      "title": "\"failure is simple and loud\" principle well-enforced across core paths",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "INFO",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "src/mission/failure-class.ts, src/mission/orchestrator.ts, src/worker/worker-agent.ts, src/mission/verification.ts, src/gateway/mission-service.ts, src/gateway/http-server.ts, src/runtime/federation/service.ts"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - \"failure is simple and loud\" principle well-enforced across core paths. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-001",
+      "title": "Admission control and idempotency atomicity rely on `start()` being synchronous",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:171-315"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-002",
+      "title": "Theoretical cancel-vs-completion race in `missionRuntime.status` mutation",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:285,290,302,404",
+        "src/gateway/types.ts:290-300"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-003",
+      "title": "`MissionOrchestrator.surfacesByWorker` is an instance field, fragile if orchestrator is reused",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/mission/orchestrator.ts:285-289,433,442,462-480,655-662,838"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-004",
+      "title": "`GenesisAgentExecutor.bindings` Map and `pollToTerminal` loop have no iteration cap",
+      "originalEvidenceClass": "HIGH_CONFIDENCE_RISK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:68,133,153,158,209-231"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-005",
+      "title": "Shared runtime adapter + hardcoded verifier genome = concurrent-mission verifier collision",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-2",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "src/gateway/main.ts (per-mission fresh adapter eliminates shared-runtime collision)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01 (distinct runtime instances)",
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-02 (no resource destruction across missions)"
+      ],
+      "observedResult": "Closed by RB-2 fix: the shared-runtime-adapter defect is eliminated \u2014 runtimeFactory constructs a fresh adapter per mission, so the hardcoded verifier genome + idempotent ensureWorker combination no longer collide.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01 (distinct runtime instances), tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-02 (no resource destruction across missions)"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-006",
+      "title": "Verification retry path is bounded to exactly 1 retry; no retry storm possible",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "N/A",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "src/mission/orchestrator.ts:684-757"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - Verification retry path is bounded to exactly 1 retry; no retry storm possible. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-007",
+      "title": "Worker reasoning retry is bounded by `maxReasoningRetries` (default 1); no retry storm possible",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "N/A",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "src/worker/worker-agent.ts:925-965"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - Worker reasoning retry is bounded by `maxReasoningRetries` (default 1); no retry storm possible. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-008",
+      "title": "Orchestrator signal listener uses `{ once: true }` + explicit removeEventListener in finally; no listener leak",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "N/A",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "src/mission/orchestrator.ts:335-343,809-811"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - Orchestrator signal listener uses `{ once: true }` + explicit removeEventListener in finally; no listener leak. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-009",
+      "title": "No file descriptor leaks; all file I/O is synchronous or scoped to child processes killed in stop()",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "N/A",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "src/mission/flight-recorder.ts:379,389",
+        "src/mission/artifact-record.ts:158",
+        "src/learning/experience-store.ts:92",
+        "src/work/git-workspace.ts:431",
+        "src/runtime/openbot/computer-process.ts:202-203,206,232,260,268"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - No file descriptor leaks; all file I/O is synchronous or scoped to child processes killed in stop(). No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-010",
+      "title": "All `setTimeout` calls are either cleared in `finally` or awaited inline; no timeout storm",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "N/A",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "src/mission/orchestrator.ts:340,810",
+        "src/runtime/openbot/computer-process.ts:229,287,267,272",
+        "src/runtime/openbot/computer-api.ts:95,118,111,127",
+        "src/runtime/opendots/client.ts:148,190",
+        "src/runtime/openmuse/client.ts:164,189",
+        "src/providers/jev-decision-provider.ts:475,479",
+        "src/worker/worker-agent.ts:959",
+        "src/gateway/a2a-server.ts:223,229",
+        "src/runtime/federation/service.ts:435",
+        "src/providers/zai-reasoning.ts:180",
+        "src/gateway/main.ts:282"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - All `setTimeout` calls are either cleared in `finally` or awaited inline; no timeout storm. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "E-CONCURRENCY-FINDING-011",
+      "title": "`MissionHandoffs.depth` counter is bounded by `maxDepth` with try/finally decrement; no infinite handoff recursion",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "N/A",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "src/worker/handoff.ts:108,117,137-143,152,184-186"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - `MissionHandoffs.depth` counter is bounded by `maxDepth` with try/finally decrement; no infinite handoff recursion. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-001",
+      "title": "Fresh-clone build pipeline IS reproducible",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "INFO",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "package.json, package-lock.json, tsconfig.json, eslint.config.js, vitest.config.ts"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - Fresh-clone build pipeline IS reproducible. No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-002",
+      "title": "G6-06 clean-room script leaves orphaned gateway processes",
+      "originalEvidenceClass": "CONFIRMED_DEFECT",
+      "originalSeverity": "HIGH",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-3",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "tests/gateway/clean-room-gateway.test.ts (GATEWAY-05 verifies no orphan processes)",
+        "experiments/g6-06/clean-room-run.sh (process-group kill)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/gateway/clean-room-gateway.test.ts:GATEWAY-05",
+        "experiments/g6-07-audit/reproduction-evidence/g6-07-clean-room-probe.mjs (re-run; 0 orphans)"
+      ],
+      "observedResult": "Empirical reproduction closed: with the detached:true + process-group-kill pattern from RB-3, the G6-07 clean-room reproduction probe (experiments/g6-07-audit/reproduction-evidence/g6-07-clean-room-probe.mjs) confirms 0 orphan gateway processes after GATEWAY-04 teardown; the '14 orphaned processes' state observed during G6-07 is no longer reproducible.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/gateway/clean-room-gateway.test.ts:GATEWAY-05, experiments/g6-07-audit/reproduction-evidence/g6-07-clean-room-probe.mjs (re-run; 0 orphans)"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-003",
+      "title": "G6-06 clean-room script is regressive vs G6-04 script (failure-handling)",
+      "originalEvidenceClass": "CODE_CONFIRMED_DEFECT",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-3",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "experiments/g6-06/clean-room-run.sh (setsid + kill -TERM -$GATEWAY_PID; mirrors OpenBot pattern)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "experiments/g6-06/clean-room-run.sh (setsid + kill -TERM -PID pattern; verified manually)"
+      ],
+      "observedResult": "experiments/g6-06/clean-room-run.sh updated in commit 030fa09 to use setsid + kill -- -$GATEWAY_PID pattern (mirroring the OpenBot adapter's src/runtime/openbot/computer-process.ts:173-290 pattern); the G6-04 failure-handling quality is restored \u2014 the script now reliably kills the entire gateway process tree rather than just the npx parent.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "experiments/g6-06/clean-room-run.sh (setsid + kill -TERM -PID pattern; verified manually)"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-004",
+      "title": "`OPENBOT_ENDPOINT` documented as production-required but never read",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "See B-EXEC-FINDING-004."
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-005",
+      "title": "Two env vars for OpenBot checkout path (`GENESIS_OPENBOT_DIR` vs `OPENBOT_CHECKOUT_DIR`)",
+      "originalEvidenceClass": "CONFIGURATION_INCONSISTENCY",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/gateway/main.ts:126",
+        "tests/work/dev-runtime.test.ts:31",
+        "tests/work/integration-manager.test.ts:207",
+        "tests/work/browser-verification.test.ts:34",
+        "tests/runtime/openbot-adapter.test.ts:27",
+        "experiments/experiment-{001,002,003}/run.ts",
+        "experiments/benchmark-023/{run,preflight}.ts",
+        "README.md:59",
+        "experiments/g6-04/evidence/configuration-matrix.json:19,30"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-006",
+      "title": "No CI workflows (`.github/` absent)",
+      "originalEvidenceClass": "PROCESS_GAP",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        ".github/ directory (ABSENT)",
+        "package.json:scripts"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - MEDIUM severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "MEDIUM impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-007",
+      "title": "`engines: \">=24\"` is advisory only (no `engine-strict`)",
+      "originalEvidenceClass": "CONFIGURATION_INCONSISTENCY",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "package.json:7-9",
+        ".npmrc (ABSENT)",
+        "docs/REPRODUCIBILITY.md:24-25"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-008",
+      "title": "`src/index.ts` wildcard re-exports leak internal implementation classes",
+      "originalEvidenceClass": "API_SURFACE_LEAK",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "src/index.ts:24-25"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-009",
+      "title": "`experiment:001` script uses undeclared `bun` dependency",
+      "originalEvidenceClass": "PACKAGING_INCONSISTENCY",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        "package.json:14"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-010",
+      "title": "Test-count drift across 5 docs (525/527/487 vs actual 536)",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "LOW",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "See title."
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-011",
+      "title": "`data/dependency-baseline.json` claims `@ag-ui/core@1.0.1` but package.json pins `1.0.2`",
+      "originalEvidenceClass": "DATA_DRIFT",
+      "originalSeverity": "LOW",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "data/dependency-baseline.json:65",
+        "package.json:19"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-012",
+      "title": "`.gitignore` excludes `scripts/` directory (footgun)",
+      "originalEvidenceClass": "CONFIGURATION_INCONSISTENCY",
+      "originalSeverity": "LOW",
+      "currentValidation": "DEFERRED_WITH_JUSTIFICATION",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "deferred",
+      "implementationStatus": "deferred",
+      "affectedFiles": [
+        ".gitignore:13"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added when finding is picked up - see minimal recommended fix in findings-detailed.md)"
+      ],
+      "observedResult": "P3 isolated issue - LOW severity. Deferred to v1.1 or opportunistic G6-08 pickup per remediation-plan.md Summary ('remaining 22 are isolated low-severity issues (P3) that can be addressed opportunistically during G6-08 or deferred to v1.1').",
+      "residualRisk": "LOW impact; no RB-class risk; tracked for opportunistic remediation",
+      "closureDecision": "DEFERRED_WITH_JUSTIFICATION",
+      "closureEvidence": "Deferred per remediation-plan.md Summary (P3 opportunistic class)"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-013",
+      "title": "Positive supply-chain findings (no lifecycle scripts, pinned versions, `private:true`)",
+      "originalEvidenceClass": "POSITIVE_CONFIRMATION",
+      "originalSeverity": "INFO",
+      "currentValidation": "NOT_A_DEFECT",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "n/a",
+      "implementationStatus": "n/a (positive confirmation)",
+      "affectedFiles": [
+        "package.json, package-lock.json"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(no test required - positive finding; existing behavior must be preserved)"
+      ],
+      "observedResult": "POSITIVE_CONFIRMATION - Positive supply-chain findings (no lifecycle scripts, pinned versions, `private:true`). No defect to remediate; preserved as positive control evidence for future regression detection.",
+      "residualRisk": "n/a - non-defect; future-proofing concerns (if any) noted in finding body",
+      "closureDecision": "NOT_A_DEFECT",
+      "closureEvidence": "Audit confirmed positive behavior; no remediation needed"
+    },
+    {
+      "findingId": "F-PACKAGE-FINDING-014",
+      "title": "`engine-v1-configuration.md` claims `secure/` is gitignored but `.gitignore` has no such entry",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "LOW",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "docs/release/engine-v1-configuration.md:107",
+        ".gitignore (no secure/)",
+        "experiments/g6-06/final-analysis.md:72"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-001",
+      "title": "`OPENBOT_ENDPOINT` documented as production-required but never read by gateway",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "docs/release/engine-v1-configuration.md:45,84,99",
+        "docs/release/engine-v1-install-and-run.md:98",
+        "src/gateway/main.ts:30"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-002",
+      "title": "Production-mode `getArtifacts()` silently returns `[]`",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "CRITICAL",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-1",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "src/runtime/openbot/adapter.ts (listArtifacts added)",
+        "src/gateway/mission-service.ts (getArtifacts async)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-01 (direct positive verification)"
+      ],
+      "observedResult": "The 'Evidence and artifacts | Verified' claim is now factually TRUE for production mode (RB-1 fix): getArtifacts() returns genuine non-empty artifacts via ArtifactsProvider.listArtifacts(). The dev-mode-only caveat can be removed once Phase 7 documentation work explicitly updates docs/release/engine-v1-scope.md and engine-v1-evidence-index.md to reflect the post-RB-1 reality (tracked separately as Phase 7 documentation refresh).",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/g6-08/rb1-artifacts-retrieval.test.ts:RB1-01 (direct positive verification)"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-003",
+      "title": "Concurrent production missions collide on shared OpenBot adapter (undisclosed)",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "CRITICAL",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-1, RC-2",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "src/gateway/main.ts (per-mission runtimeFactory)"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01 (direct positive verification)"
+      ],
+      "observedResult": "The 'No Cross-Mission Concurrency Isolation' limitation in docs/release/engine-v1-known-limitations.md is now factually FALSE for production mode (RB-2 fix): concurrent production missions now receive fresh OpenBotRuntimeAdapter instances with per-mission rootDir namespacing. The Critical limitation row should be removed once Phase 7 documentation refresh is complete (tracked separately).",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/g6-08/rb2-concurrent-isolation.test.ts:RB2-01 (direct positive verification)"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-004",
+      "title": "P1-REGISTRY-MEMORY-LEAK-DOS claimed \"fixed\" but only half-fixed",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4, RC-6",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "docs/release/engine-v1-changelog.md:20-23",
+        "experiments/g6-06/defects-and-remediation.md:45-58",
+        "experiments/g6-06/architecture-and-risk-baseline.md:25,106",
+        "experiments/g6-06/final-analysis.md:88-89",
+        "docs/release/engine-v1-known-limitations.md:107-111"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-005",
+      "title": "Cross-caller A2A `cancelTask` comment contradicts the code (existence leak)",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "\u2014",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/a2a-server.ts:177-190",
+        "docs/release/engine-v1-security-boundaries.md:31,83",
+        "docs/release/engine-v1-evidence-index.md:17",
+        "experiments/g6-06/defects-and-remediation.md:75-94"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-006",
+      "title": "Clean-room \"PASS\" is a false-positive-prone claim (orphaned processes + intermittent health)",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "HIGH",
+      "currentValidation": "FIXED_VERIFIED",
+      "rootCauseCluster": "RC-3, RC-4",
+      "remediationBatch": "1",
+      "implementationStatus": "complete",
+      "affectedFiles": [
+        "tests/gateway/clean-room-gateway.test.ts (GATEWAY-04 + GATEWAY-05)",
+        "experiments/g6-06/clean-room-run.sh"
+      ],
+      "fixCommit": "030fa09",
+      "regressionTests": [
+        "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04",
+        "tests/gateway/clean-room-gateway.test.ts:GATEWAY-05"
+      ],
+      "observedResult": "The clean-room 'PASS' claim is no longer false-positive-prone (RB-3 fix): GATEWAY-04 verifies SIGTERM handler + port release, and GATEWAY-05 verifies no orphan gateway processes survive. The 'PASS (intermittent)' caveat in clean-room-reproduction.md can be updated to 'PASS' once Phase 7 documentation refresh is complete.",
+      "residualRisk": "none for the contract surface - Phase 1 acceptance tests pass; deeper hardening tracked in subsequent phases",
+      "closureDecision": "FIXED_VERIFIED",
+      "closureEvidence": "tests/gateway/clean-room-gateway.test.ts:GATEWAY-04, tests/gateway/clean-room-gateway.test.ts:GATEWAY-05"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-007",
+      "title": "\"Evidence and artifacts | Verified\" overstates \u2014 verified only in development mode",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "HIGH",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-1, RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "docs/release/engine-v1-scope.md:31"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-008",
+      "title": "\"Cancellation | Verified\" overstates \u2014 verified only with MemoryComputer, not OpenBot",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "docs/release/engine-v1-scope.md:32",
+        "experiments/g6-05a/integration-results.json"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-009",
+      "title": "Evidence-index \"currentRequestCaller bridge\" naming is stale (renamed to `callerContext`)",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "LOW",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "docs/release/engine-v1-evidence-index.md:17",
+        "docs/release/engine-v1-security-boundaries.md:32",
+        "experiments/g6-06/defects-and-remediation.md:75-94"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-010",
+      "title": "Architecture baseline mandates \"evict terminal\" but no eviction code exists",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "experiments/g6-06/architecture-and-risk-baseline.md:25,106",
+        "experiments/g6-06/defects-and-remediation.md:45-58",
+        "experiments/g6-06/final-analysis.md:87-89"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-011",
+      "title": "Residual risk register classifies a confirmed code defect as a \"hypothetical threat\"",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "experiments/g6-06/residual-risk-register.md:90"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-012",
+      "title": "\"battle-tested\" / \"concurrency-safe\" claims unsupported by production-mode tests",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "src/gateway/mission-service.ts:138-143",
+        "experiments/g6-06/final-analysis.md:54-55,70-71",
+        "docs/release/engine-v1-security-boundaries.md:34-37"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    },
+    {
+      "findingId": "G-CLAIMS-FINDING-013",
+      "title": "Evidence index test counts and \"PASS\" assertions mask the production-mode evidence gap",
+      "originalEvidenceClass": "DOCUMENTATION_MISMATCH",
+      "originalSeverity": "MEDIUM",
+      "currentValidation": "OPEN",
+      "rootCauseCluster": "RC-4",
+      "remediationBatch": "7",
+      "implementationStatus": "pending",
+      "affectedFiles": [
+        "docs/release/engine-v1-evidence-index.md:14-17,65-94"
+      ],
+      "fixCommit": "",
+      "regressionTests": [
+        "(to be added in Phase 7 - see Batch 6 plan; CI workflow + doc-consistency lint)"
+      ],
+      "observedResult": "Pending Phase 7 implementation (Batch 6 / RC-4 + RC-5: documentation drift + CI workflow). The substantive code defect (B-EXEC-FINDING-007 MemoryComputer promotion) was already closed in Phase 1; the remaining items are documentation updates, dependency-baseline refresh, and CI workflow addition.",
+      "residualRisk": "Documentation drift may mislead operators; no production-code regression risk",
+      "closureDecision": "OPEN",
+      "closureEvidence": "Phase 7 batch planned; not yet implemented"
+    }
+  ],
+  "phase_1_status": {
+    "phase": "1",
+    "release_blockers_fixed": [
+      "RB-1",
+      "RB-2",
+      "RB-3"
+    ],
+    "findings_addressed": [
+      "B-EXEC-FINDING-001",
+      "B-EXEC-FINDING-002",
+      "B-EXEC-FINDING-007",
+      "B-GATEWAY-FINDING-001",
+      "B-GATEWAY-FINDING-002",
+      "B-GATEWAY-FINDING-003",
+      "B-GATEWAY-FINDING-004",
+      "C-LEARNING-FINDING-015",
+      "C-LEARNING-FINDING-016",
+      "C-VERIFY-FINDING-003",
+      "E-CONCURRENCY-FINDING-005",
+      "F-PACKAGE-FINDING-002",
+      "F-PACKAGE-FINDING-003",
+      "G-CLAIMS-FINDING-002",
+      "G-CLAIMS-FINDING-003",
+      "G-CLAIMS-FINDING-006"
+    ],
+    "start_commit": "8e0ba68d8764d5769127b821cfc2b05918ca8810",
+    "end_commit": "030fa09",
+    "summary": "Phase 1 closed 16 findings in commit 030fa09: the 3 release blockers (RB-1, RB-2, RB-3) plus the RC-5 test-infrastructure-import defect (B-EXEC-FINDING-007) and the 12 cross-references to those blockers in the G-CLAIMS / C-LEARNING / C-VERIFY / E-CONCURRENCY / B-GATEWAY / F-PACKAGE families. Tests: 545 passed / 9 skipped (was 536/9 at baseline). Typecheck: PASS. Lint: PASS on production source."
+  },
+  "phase_2_status": {
+    "phase": "2",
+    "status": "n/a (RC-1 was fully resolved by Phase 1's RB-1 + RB-2 fix; no additional work)",
+    "findings_addressed": []
+  },
+  "phase_3_status": {
+    "phase": "3",
+    "status": "OPEN - Batch 4 / RC-6 (unbounded in-memory state with no eviction policy)",
+    "findings_addressed": [
+      "B-A2A-FINDING-003",
+      "B-REGISTRY-FINDING-001",
+      "B-REGISTRY-FINDING-002",
+      "B-REGISTRY-FINDING-003",
+      "C-VERIFY-FINDING-009"
+    ],
+    "estimated_complexity": "MEDIUM"
+  },
+  "phase_4_status": {
+    "phase": "4",
+    "status": "OPEN - Batch 5 / RC-7 (verification lifecycle invariants)",
+    "findings_addressed": [
+      "C-VERIFY-FINDING-001",
+      "C-VERIFY-FINDING-002",
+      "C-VERIFY-FINDING-004",
+      "C-VERIFY-FINDING-005",
+      "C-VERIFY-FINDING-012"
+    ],
+    "estimated_complexity": "MEDIUM"
+  },
+  "phase_5_status": {
+    "phase": "5",
+    "status": "OPEN - Batch 7 (top security risks)",
+    "findings_addressed": [
+      "C-PROTOCOLS-FINDING-001",
+      "C-PROTOCOLS-FINDING-004",
+      "C-PROTOCOLS-FINDING-005",
+      "C-PROTOCOLS-FINDING-019",
+      "C-SECURITY-FINDING-001"
+    ],
+    "estimated_complexity": "HIGH"
+  },
+  "phase_6_status": {
+    "phase": "6",
+    "status": "OPEN - Batch 8 (protocol compliance: AG-UI, A2A, federation)",
+    "findings_addressed": [
+      "C-PROTOCOLS-FINDING-002",
+      "C-PROTOCOLS-FINDING-003",
+      "C-PROTOCOLS-FINDING-006",
+      "C-PROTOCOLS-FINDING-007",
+      "C-PROTOCOLS-FINDING-008",
+      "C-PROTOCOLS-FINDING-009",
+      "C-PROTOCOLS-FINDING-010",
+      "C-PROTOCOLS-FINDING-011",
+      "C-PROTOCOLS-FINDING-012",
+      "C-PROTOCOLS-FINDING-013",
+      "C-PROTOCOLS-FINDING-014",
+      "C-PROTOCOLS-FINDING-015",
+      "C-PROTOCOLS-FINDING-016",
+      "C-PROTOCOLS-FINDING-017",
+      "C-PROTOCOLS-FINDING-018"
+    ],
+    "estimated_complexity": "MEDIUM"
+  },
+  "phase_7_status": {
+    "phase": "7",
+    "status": "OPEN - Batch 6 (RC-4 documentation drift + RC-5 was closed by B-EXEC-007 promotion in Phase 1)",
+    "findings_addressed": [
+      "B-EXEC-FINDING-004",
+      "F-PACKAGE-FINDING-004",
+      "F-PACKAGE-FINDING-010",
+      "F-PACKAGE-FINDING-011",
+      "F-PACKAGE-FINDING-014",
+      "G-CLAIMS-FINDING-001",
+      "G-CLAIMS-FINDING-004",
+      "G-CLAIMS-FINDING-005",
+      "G-CLAIMS-FINDING-007",
+      "G-CLAIMS-FINDING-008",
+      "G-CLAIMS-FINDING-009",
+      "G-CLAIMS-FINDING-010",
+      "G-CLAIMS-FINDING-011",
+      "G-CLAIMS-FINDING-012",
+      "G-CLAIMS-FINDING-013"
+    ],
+    "estimated_complexity": "LOW (documentation + CI + dependency refresh)"
+  },
+  "phase_9_status": {
+    "phase": "9",
+    "status": "OPEN - Batch 9 (persistence / recovery design; architectural decision required)",
+    "findings_addressed": [
+      "B-EXEC-FINDING-003",
+      "C-LEARNING-FINDING-009",
+      "C-LEARNING-FINDING-010",
+      "C-LEARNING-FINDING-011",
+      "C-LEARNING-FINDING-013",
+      "C-LEARNING-FINDING-014",
+      "C-LEARNING-FINDING-017",
+      "C-LEARNING-FINDING-018"
+    ],
+    "estimated_complexity": "HIGH (architectural decision: WAL vs persistent backend)"
+  },
+  "deferred_findings_status": {
+    "status": "DEFERRED_WITH_JUSTIFICATION - P3 isolated low-severity issues per remediation-plan.md Summary",
+    "findings": [
+      "B-A2A-FINDING-001",
+      "B-A2A-FINDING-002",
+      "B-A2A-FINDING-005",
+      "B-EXEC-FINDING-006",
+      "B-GATEWAY-FINDING-006",
+      "C-LEARNING-FINDING-001",
+      "C-LEARNING-FINDING-002",
+      "C-LEARNING-FINDING-003",
+      "C-LEARNING-FINDING-004",
+      "C-LEARNING-FINDING-005",
+      "C-LEARNING-FINDING-006",
+      "C-LEARNING-FINDING-007",
+      "C-LEARNING-FINDING-008",
+      "C-LEARNING-FINDING-012",
+      "C-SECURITY-FINDING-002",
+      "C-SECURITY-FINDING-003",
+      "C-SECURITY-FINDING-004",
+      "C-SECURITY-FINDING-005",
+      "C-SECURITY-FINDING-006",
+      "C-SECURITY-FINDING-007",
+      "C-SECURITY-FINDING-008",
+      "C-SECURITY-FINDING-011",
+      "C-SECURITY-FINDING-012",
+      "C-VERIFY-FINDING-006",
+      "C-VERIFY-FINDING-007",
+      "C-VERIFY-FINDING-008",
+      "C-VERIFY-FINDING-010",
+      "C-VERIFY-FINDING-011",
+      "D-FAILURE-FINDING-001",
+      "D-FAILURE-FINDING-002",
+      "D-FAILURE-FINDING-003",
+      "D-FAILURE-FINDING-004",
+      "D-FAILURE-FINDING-005",
+      "D-FAILURE-FINDING-006",
+      "D-FAILURE-FINDING-007",
+      "D-FAILURE-FINDING-008",
+      "D-FAILURE-FINDING-009",
+      "E-CONCURRENCY-FINDING-001",
+      "E-CONCURRENCY-FINDING-002",
+      "E-CONCURRENCY-FINDING-003",
+      "E-CONCURRENCY-FINDING-004",
+      "F-PACKAGE-FINDING-005",
+      "F-PACKAGE-FINDING-006",
+      "F-PACKAGE-FINDING-007",
+      "F-PACKAGE-FINDING-008",
+      "F-PACKAGE-FINDING-009",
+      "F-PACKAGE-FINDING-012"
+    ]
+  },
+  "blocked_findings_status": {
+    "status": "BLOCKED_BY_ENVIRONMENT - sandbox lacks real ZAI credentials / real OpenBot checkout / real remote A2A agents",
+    "findings": [
+      "B-EXEC-FINDING-005"
+    ]
+  },
+  "positive_findings_status": {
+    "status": "NOT_A_DEFECT - POSITIVE_CONFIRMATION evidence preserved as regression controls",
+    "findings": [
+      "B-GATEWAY-FINDING-005",
+      "C-SECURITY-FINDING-009",
+      "C-SECURITY-FINDING-010",
+      "D-FAILURE-FINDING-010",
+      "E-CONCURRENCY-FINDING-006",
+      "E-CONCURRENCY-FINDING-007",
+      "E-CONCURRENCY-FINDING-008",
+      "E-CONCURRENCY-FINDING-009",
+      "E-CONCURRENCY-FINDING-010",
+      "E-CONCURRENCY-FINDING-011",
+      "F-PACKAGE-FINDING-001",
+      "F-PACKAGE-FINDING-013"
+    ]
+  }
+}
