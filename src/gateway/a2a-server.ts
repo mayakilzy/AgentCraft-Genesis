@@ -513,21 +513,24 @@ function buildServerCallContext(
 
 /**
  * Extract the CallerIdentity from the SDK User object.
+ *
+ * G6-09B fix for G6-09-S03 (defense-in-depth): the previous fallback granted
+ * `mission:submit` permission with 5 max active missions to ANY SDK User
+ * implementation that reported `isAuthenticated=true`. This was a confused-
+ * deputy risk — a custom SDK User extension could be granted mission:submit
+ * without going through the gateway's authentication path. The fallback now
+ * returns null (reject unknown User implementations). All legitimate users
+ * are constructed by `authenticateA2A` and are AuthenticatedGatewayUser
+ * instances, so this change has no impact on the legitimate path.
  */
 function extractCallerFromUser(user: User | undefined): CallerIdentity | null {
   if (user === undefined) return null;
   if (user instanceof AuthenticatedGatewayUser) {
     return user.caller;
   }
-  // For unknown User implementations, fall back to userName as callerId.
-  if (user.isAuthenticated) {
-    return {
-      callerId: user.userName,
-      allowedOperations: ['mission:submit'],
-      maxActiveMissions: 5,
-      maxMissionTimeoutMs: 30_000,
-    };
-  }
+  // G6-09-S03: Unknown User implementations are rejected — they must go
+  // through authenticateA2A (which constructs an AuthenticatedGatewayUser)
+  // to be authorized for mission:submit. No more permissive fallback.
   return null;
 }
 

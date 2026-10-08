@@ -257,6 +257,14 @@ function scopedReasoning(
  *   - curl ... | sh / wget ... | sh (remote code execution via pipe)
  *   - chmod 777 (world-writable — escapes workspace confinement)
  *
+ * G6-09B (Phase 6 / G6-09-S02): additional adversarial command patterns
+ * added after the G6-09 audit identified gaps in the original 7 patterns:
+ *   - nc -e /bin/sh, netcat -e /bin/sh (reverse shell)
+ *   - python -c, python3 -c (arbitrary code execution via Python -c flag)
+ *   - find / ... -delete (alternative recursive deletion via find)
+ *   - > /etc/..., > /var/..., > /usr/... (shell redirection to system dirs)
+ *   - chmod 777 /etc, /var, /usr, ... (chmod 777 on system directories)
+ *
  * Returns null if the command passes policy, or a string describing the
  * violation if it does not.
  */
@@ -291,6 +299,35 @@ function checkCommandPolicy(command: string): string | null {
   // World-writable chmod — escapes workspace confinement
   if (/\bchmod\s+777\b/.test(trimmed)) {
     return 'chmod 777 (world-writable escapes workspace confinement)';
+  }
+
+  // G6-09B fix for G6-09-S02 (defense-in-depth): additional adversarial
+  // command patterns. The original 7 patterns did NOT block reverse shells,
+  // arbitrary Python execution, alternative recursive deletion, or system
+  // file overwrites. The OpenBot adapter's egress filter remains the
+  // primary defense; these patterns are the backstop.
+  //
+  // Reverse shell via nc / netcat with -e (exec mode)
+  if (/\b(?:nc|netcat)\b.*\s-e\s+\/(?:bin|usr\/bin)\/(?:sh|bash|zsh|fish)\b/.test(trimmed)) {
+    return 'nc/netcat with -e /bin/sh (reverse shell — escapes workspace boundary)';
+  }
+  // Arbitrary Python code execution via `python -c` or `python3 -c`
+  // (a malicious LLM can exfiltrate secrets, spawn subprocesses, etc.)
+  if (/\bpython[23]?\b.*\s-c\s+/.test(trimmed)) {
+    return 'python -c (arbitrary code execution via Python -c flag)';
+  }
+  // Alternative recursive deletion: `find / -delete` (or any find ... -delete
+  // targeting root — escapes the workspace boundary)
+  if (/\bfind\s+\/(?:\s|$)/.test(trimmed) && /-delete\b/.test(trimmed)) {
+    return 'find / -delete (recursive deletion via find — escapes workspace boundary)';
+  }
+  // System file overwrite via shell redirection to /etc/, /var/, /usr/, /boot/
+  if (/>\s*\/(?:etc|var|usr|boot|root|home)\//.test(trimmed)) {
+    return 'shell redirection to system directory (overwrites system files)';
+  }
+  // chmod 777 on system directories
+  if (/\bchmod\s+777\s+\/(?:etc|var|usr|boot|root|home|tmp)\b/.test(trimmed)) {
+    return 'chmod 777 on system directory (escapes workspace confinement)';
   }
 
   return null;

@@ -172,13 +172,30 @@ export async function startComputerProcess(
 
   const child = spawn(config.bunPath ?? 'bun', ['src/index.ts'], {
     cwd: workingDir,
+    // G6-09B fix for G6-09-S01 (P1): EXPLICIT ENV ALLOWLIST instead of
+    // `...process.env`. The previous pattern leaked every gateway secret
+    // (GENESIS_API_KEYS, OPENROUTER_API_KEY, ZAI_API_KEY, ...) into every
+    // OpenBot worker process — a credential boundary breach in production
+    // mode. Workers now receive ONLY the env vars they need (port, token,
+    // workspace paths, egress policy) plus the bare minimum for the shell
+    // and Node to function (PATH, HOME, USER, SHELL). Gateway secrets are
+    // NOT propagated. `config.extraEnv` (test-only override) is still
+    // honored AFTER the allowlist, so tests can inject controlled values.
     env: {
-      ...process.env,
       PORT: String(port),
       COMPUTER_TOKEN: token,
       WORKSPACE_DIR: workspaceDir,
       PROFILES_DIR: profilesDir,
       EGRESS_POLICY_REQUIRED: '0',
+      // Bare-minimum shell/Node env — no gateway secrets propagated.
+      ...(process.env.PATH !== undefined ? { PATH: process.env.PATH } : {}),
+      ...(process.env.HOME !== undefined ? { HOME: process.env.HOME } : {}),
+      ...(process.env.USER !== undefined ? { USER: process.env.USER } : {}),
+      ...(process.env.SHELL !== undefined ? { SHELL: process.env.SHELL } : {}),
+      ...(process.env.LANG !== undefined ? { LANG: process.env.LANG } : {}),
+      ...(process.env.LC_ALL !== undefined ? { LC_ALL: process.env.LC_ALL } : {}),
+      // Test-only override (config.extraEnv) is applied last so tests
+      // can still inject controlled values for verification.
       ...config.extraEnv,
     },
     stdio: ['ignore', 'pipe', 'pipe'],

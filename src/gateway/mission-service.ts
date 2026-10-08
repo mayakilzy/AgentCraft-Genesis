@@ -357,6 +357,14 @@ export class MissionService {
     }
 
     // Safety net: call runtime.close() on each mission's runtime adapter.
+    // G6-09B fix for G6-09-001 (P1): each close() is wrapped in
+    // Promise.race with a per-runtime deadline. Without this, a hung
+    // close() would block the entire shutdown indefinitely — the
+    // gateway's outer 10s deadline was aspirational, not enforced.
+    // The per-runtime deadline is 2s by default, or the remaining time
+    // to the outer deadline if less. If the timeout wins, we record
+    // closeError='timeout after Xms' and set closed=false — the
+    // structured ShutdownResult.clean reflects the unclean state.
     const seenRuntimes = new Set<WorkerRuntime>();
     for (const [missionId, rt] of this.missions) {
       if (rt.runtime === undefined) continue;
@@ -366,9 +374,27 @@ export class MissionService {
       let closed = false;
       let closeError: string | undefined;
       if (typeof rt.runtime.close === 'function') {
+        const perRuntimeDeadline = Math.min(
+          2_000,
+          Math.max(0, deadlineMs - (Date.now() - startedAt)),
+        );
+        let timedOut = false;
         try {
-          await rt.runtime.close();
-          closed = true;
+          await Promise.race([
+            rt.runtime.close(),
+            new Promise<void>((resolve) => {
+              setTimeout(() => {
+                timedOut = true;
+                resolve();
+              }, perRuntimeDeadline);
+            }),
+          ]);
+          if (timedOut) {
+            closeError = `timeout after ${perRuntimeDeadline}ms`;
+            // closed stays false — the close() did not actually resolve
+          } else {
+            closed = true;
+          }
         } catch (e) {
           closeError = e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200);
         }
