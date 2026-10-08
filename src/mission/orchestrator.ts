@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 
 import type {
   Evidence,
@@ -197,6 +197,16 @@ const OBLIGATION_ACTION: Readonly<Record<MissionObligation['kind'], string>> = {
 const COORDINATOR_ROLE = 'Mission Coordinator';
 
 /**
+ * G6-08 (Phase 4 / C-VERIFY-FINDING-005): compute the SHA-256 hex digest of
+ * the staged input contents. Used as the expected hash for the `hash-match`
+ * check that replaces the fabricable 60-char `mission-input` `expectIncludes`
+ * fingerprint.
+ */
+function computeSha256Hex(text: string): string {
+  return createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
+/**
  * The clean-room verifier: an orchestrator-owned utility computer, granted
  * exactly the shell and file access deterministic checks need. It is not a
  * planned organization member and never reasons — the reviewer (an LLM) is
@@ -328,8 +338,26 @@ export class MissionOrchestrator {
     const startedAt = Date.now();
     const missionId = this.options.missionId ?? newMissionId();
     const recorder = this.options.recorder;
+    // G6-08 (Phase 4 / C-VERIFY-FINDING-004): maintain an in-memory FlightEvent[]
+    // ALONGSIDE the recorder so flight-action checks work regardless of
+    // recorder type (MemoryFlightRecorder OR FileFlightRecorder). Previously,
+    // flightEvents was only passed when recorder instanceof MemoryFlightRecorder
+    // — meaning flight-action checks silently failed (returned ok=false with
+    // empty events) when FileFlightRecorder was used.
+    //
+    // The in-memory log is bounded by the mission's lifetime and the
+    // MemoryFlightRecorder's maxEvents cap (when used). For FileFlightRecorder,
+    // the in-memory log here is the authoritative source for verification;
+    // the file is for durable persistence only.
+    const inMemoryFlightEvents: FlightEvent[] = [];
     const record: RecordFn = (event) => {
       recorder?.record(event);
+      // G6-08 (Phase 4 / C-VERIFY-004): capture in-memory for verification
+      // regardless of recorder type. Bound to prevent unbounded growth in
+      // extreme cases (default cap matches MemoryFlightRecorder's default).
+      if (inMemoryFlightEvents.length < 10_000) {
+        inMemoryFlightEvents.push(event);
+      }
     };
 
     const controller = new AbortController();
@@ -601,15 +629,21 @@ export class MissionOrchestrator {
         const stagedInputChecks: AcceptanceCheck[] = [];
         if (this.options.missionInputs !== undefined) {
           for (const input of this.options.missionInputs) {
-            // Use a distinctive substring from the input as the fingerprint.
-            // This proves the authoritative bytes (not a fabricated file
-            // at the same path) reached the worker's workspace.
-            const fingerprint = input.contents.slice(0, 60);
+            // G6-08 (Phase 4 / C-VERIFY-FINDING-005): use `expectHash` (full
+            // SHA-256) instead of the 60-char `expectIncludes` fingerprint.
+            // The 60-char fingerprint was fabricable — a worker could write a
+            // file at the same path with the first 60 chars matching but the
+            // rest fabricated, and the check would pass. The hash check
+            // compares the actual file bytes (read from the worker's own
+            // workspace, not the clean-room copy) against the staged input's
+            // SHA-256 hash. This proves the authoritative bytes reached the
+            // worker's workspace — not a fabricated substitute.
+            const expectedHash = computeSha256Hex(input.contents);
             stagedInputChecks.push({
               kind: 'mission-input',
               label: `mission-input:${input.path}`,
               path: input.path,
-              expectIncludes: fingerprint,
+              expectHash: expectedHash,
             });
           }
         }
@@ -669,8 +703,13 @@ export class MissionOrchestrator {
               : { missionInputComputers }),
             // PHASE 4.8D: pass flight events so flight-action checks can
             // verify that specific worker actions were actually invoked.
-            ...(recorder instanceof MemoryFlightRecorder
-              ? { flightEvents: recorder.events }
+            // G6-08 (Phase 4 / C-VERIFY-FINDING-004): use the in-memory
+            // flightEvents captured by the record() wrapper, regardless of
+            // recorder type. Previously this was conditioned on
+            // `recorder instanceof MemoryFlightRecorder`, which silently
+            // broke flight-action checks when FileFlightRecorder was used.
+            ...(inMemoryFlightEvents.length > 0
+              ? { flightEvents: inMemoryFlightEvents }
               : {}),
           });
 

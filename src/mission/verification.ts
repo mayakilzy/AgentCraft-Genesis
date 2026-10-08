@@ -57,6 +57,14 @@ export type AcceptanceCheck =
       /** The workspace-relative path the orchestrator staged the input to. */
       readonly path: string;
       readonly expectIncludes?: string;
+      /**
+       * G6-08 (Phase 4 / C-VERIFY-FINDING-005): expected SHA-256 hex digest
+       * of the staged input file's content. When provided, takes precedence
+       * over `expectIncludes` — the check compares the actual file's hash
+       * against this expected hash, which is NOT fabricable (unlike the
+       * 60-char substring fingerprint).
+       */
+      readonly expectHash?: string;
     }
   /**
    * PHASE 4.8D: flight-action check. Verifies that a specific provider-neutral
@@ -221,6 +229,18 @@ export class VerificationLoop {
     artifacts: readonly ArtifactSource[],
     evidence: readonly Evidence[] = [],
   ): Promise<VerificationResult> {
+    // G6-08 (Phase 4 / C-VERIFY-FINDING-002): clear the verifier's clean-room
+    // artifacts/ subtree BEFORE copying new artifacts. Without this, stale
+    // files from a previous verify() call (within the same mission, or across
+    // missions sharing the same verifier workspace) would persist and could
+    // cause false-positive file checks.
+    //
+    // The cleanup is bounded to the verifier's designated workspace — it
+    // cannot escape the verifier's temporary directory. We use `listFiles`
+    // + per-file `rm` rather than a broad `rm -rf` to avoid any chance of
+    // touching user-created source files outside the artifacts/ subtree.
+    await this.clearVerifierArtifacts();
+
     // Clean-room copy: read from each producer, write into the verifier.
     const copyFailures: string[] = [];
     for (const source of artifacts) {
@@ -261,6 +281,19 @@ export class VerificationLoop {
         case 'hash-match':
           outcomes.push(await this.checkHashMatch(check));
           break;
+        default: {
+          // G6-08 (Phase 4 / C-VERIFY-FINDING-012): unknown check kinds were
+          // previously silently dropped (no outcome pushed). Now we push a
+          // failing outcome with a clear detail message — unknown kinds must
+          // never silently pass.
+          const unknownKind = (check as { kind?: string }).kind ?? '<missing>';
+          outcomes.push({
+            label: `unknown-check-kind:${unknownKind}`,
+            kind: 'file' as never,  // kind is required on CheckOutcome but irrelevant for failed-unknown
+            ok: false,
+            detail: `unknown check kind: ${unknownKind}`,
+          });
+        }
       }
     }
     for (const failure of copyFailures) {
@@ -291,6 +324,55 @@ export class VerificationLoop {
       }
     }
     return result;
+  }
+
+  /**
+   * G6-08 (Phase 4 / C-VERIFY-FINDING-002): clear the verifier's clean-room
+   * artifacts subtree before each verify() call.
+   *
+   * Without this, files from a previous verify() call (within the same
+   * mission or across missions sharing the same verifier workspace)
+   * would persist and could cause false-positive `file` checks for
+   * artifacts that were no longer produced.
+   *
+   * The cleanup is BOUNDED to the verifier's workspace. We list files at
+   * the workspace root, then for each file whose path starts with
+   * `artifacts/`, attempt to remove it via the verifier's `exec('rm -f')`.
+   *
+   * We do NOT use `rm -rf` with broad patterns to avoid any chance of
+   * touching user-created source files outside the artifacts/ subtree.
+   *
+   * If the verifier's `exec` is unavailable (MemoryComputer doesn't
+   * implement deletion), we fall back to overwriting the file with empty
+   * content via `writeFile` — the file existence check would then fail
+   * correctly. (MemoryComputer is the dev/stub path; production OpenBot
+   * supports `exec` natively.)
+   */
+  private async clearVerifierArtifacts(): Promise<void> {
+    try {
+      const entries = await this.verifier.listFiles();
+      const artifactPaths = entries
+        .filter((e) => e.kind === 'file' && (e.path.startsWith('artifacts/') || e.path === 'artifacts'))
+        .map((e) => e.path);
+      for (const p of artifactPaths) {
+        try {
+          // Try `exec` first (OpenBot path — supports `rm`).
+          // Fallback: overwrite with empty content (MemoryComputer path).
+          try {
+            await this.verifier.exec(`rm -f "${p}"`, { timeoutMs: 1_000 });
+          } catch {
+            // exec not available or failed — overwrite with empty content.
+            try { await this.verifier.writeFile(p, ''); } catch { /* best-effort */ }
+          }
+        } catch {
+          // best-effort per-file — don't fail verify() because of cleanup
+        }
+      }
+    } catch {
+      // listFiles failed — workspace may be empty or inaccessible.
+      // Don't fail verify() because of cleanup; the actual checks will fail
+      // naturally if files are missing.
+    }
   }
 
   private async checkFile(
@@ -338,6 +420,32 @@ export class VerificationLoop {
     for (const source of computers) {
       try {
         const read = await source.computer.readFile(check.path);
+        // G6-08 (Phase 4 / C-VERIFY-FINDING-005): prefer hash comparison
+        // (unfabricable) over the 60-char substring fingerprint.
+        if (check.expectHash !== undefined) {
+          const actualHash =
+            read.text.length === 0
+              ? ''
+              : createHash('sha256').update(read.text, 'utf8').digest('hex');
+          if (actualHash !== check.expectHash.toLowerCase()) {
+            return {
+              label: check.label,
+              kind: 'mission-input',
+              ok: false,
+              detail:
+                `"${check.path}" was found in ${source.workerId}'s workspace but its content hash does NOT match ` +
+                `(expected=${check.expectHash.slice(0, 16)}…, actual=${actualHash.slice(0, 16)}…) — ` +
+                `possible fabrication (file exists at the right path but with different bytes).`,
+            };
+          }
+          return {
+            label: check.label,
+            kind: 'mission-input',
+            ok: true,
+            detail: `authoritative input "${check.path}" verified by hash in ${source.workerId}'s workspace (${read.bytes} bytes, sha256=${actualHash.slice(0, 16)}…)`,
+          };
+        }
+        // Fallback: substring check (legacy 60-char fingerprint path).
         if (
           check.expectIncludes !== undefined &&
           !read.text.includes(check.expectIncludes)

@@ -45,6 +45,19 @@ export class MemoryComputer implements WorkerComputer {
   }
 
   async exec(command: string) {
+    // G6-08 (Phase 4 / C-VERIFY-FINDING-002): support `rm -f <path>` so the
+    // VerificationLoop's clearVerifierArtifacts() actually deletes files
+    // (not just no-ops). Without this, stale files from a previous verify()
+    // call would persist in the in-memory workspace and cause false-positive
+    // file checks. The OpenBot adapter's real computer supports `rm` natively;
+    // this brings MemoryComputer to parity for dev-mode verification tests.
+    const rmMatch = /^rm\s+-f\s+"([^"]+)"\s*$/.exec(command)
+      ?? /^rm\s+-f\s+([^\s]+)\s*$/.exec(command);
+    if (rmMatch) {
+      const pathToDelete = rmMatch[1];
+      this.files.delete(pathToDelete);
+      return { command, exitCode: 0, stdout: '', stderr: '', timedOut: false, elapsedMs: 1 };
+    }
     const canned = this.execResults.get(command);
     return {
       command,
