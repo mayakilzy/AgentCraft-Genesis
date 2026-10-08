@@ -4,6 +4,8 @@ import { Target, Users, Activity, FileText, Wrench, BarChart3, Info } from "luci
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { EmptyState } from "@/components/genesis/EmptyState";
 import { useGenesisStore } from "@/lib/genesis/store";
+import { GoalComposer } from "@/components/genesis/GoalComposer";
+import { MissionList, MissionLookup } from "@/components/genesis/MissionList";
 import { cn } from "@/lib/utils";
 
 /**
@@ -77,13 +79,10 @@ export function InfoCard({
 }
 
 // ---------------------------------------------------------------------------
-// G7-01 PLACEHOLDER SECTIONS — minimal honest shells. Detailed implementation
-// arrives in G7-02..G7-06. Each section shows the right header + empty state
-// + explicit limitation notices (per 03_UI_UX_CONTRACT §Failure and boundary copy).
+// Work — fully implemented in G7-02 (Goal Composer + Mission List + Lookup).
 // ---------------------------------------------------------------------------
 
 export function WorkSection() {
-  const connectionState = useGenesisStore((s) => s.connectionState);
   return (
     <div className="space-y-4">
       <SectionHeader
@@ -91,45 +90,44 @@ export function WorkSection() {
         title="Work"
         description="Goal composer, submissions, mission list and outcome."
       />
-      <InfoCard title="G7-02 deliverable">
-        The Goal Composer, mission list, and submission flow are implemented in
-        G7-02. This shell verifies the navigation, connection state, and honest
-        empty surface first.
-      </InfoCard>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
         <Card>
           <CardHeader>
             <CardTitle>Goal composer</CardTitle>
             <CardDescription>
               Compose a goal, attach optional context and constraints, and submit.
+              The gateway returns a canonical mission ID after acceptance.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <EmptyState
-              state={connectionState === "disconnected" ? "disconnected" : "empty"}
-              customDescription="Goal composer arrives in G7-02."
-            />
+            <GoalComposer />
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Mission list</CardTitle>
-            <CardDescription>
-              Missions known to this browser session. The gateway has no list
-              endpoint, so this list is browser-local and not server-authoritative.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EmptyState
-              state={connectionState === "disconnected" ? "disconnected" : "empty"}
-              customDescription="No missions known yet. Submit a goal or look one up by ID."
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Mission list</CardTitle>
+              <CardDescription>
+                Missions known to this browser session. The gateway has no list
+                endpoint, so this list is browser-local and not
+                server-authoritative.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MissionList />
+            </CardContent>
+          </Card>
+          <MissionLookup />
+        </div>
       </div>
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// G7-03..G7-06 PLACEHOLDER SECTIONS — minimal honest shells. Detailed
+// implementation arrives in those groups.
+// ---------------------------------------------------------------------------
 
 export function AgentSection() {
   const connectionState = useGenesisStore((s) => s.connectionState);

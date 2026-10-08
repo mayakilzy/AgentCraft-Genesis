@@ -23,6 +23,11 @@ export default tseslint.config(
       // G6-08 deliverable evidence: markdown and JSON files documenting the
       // remediation. Not TypeScript; not lintable.
       'experiments/g6-08-remediation/**',
+      // G7 Product Experience: the web/ subdirectory is a Next.js 16 + React 19
+      // + Tailwind CSS 4 application. It has its own eslint config
+      // (eslint-config-next) incompatible with this engine's TypeScript-only
+      // tseslint config. Lint it from the Next.js project root, not here.
+      'web/**',
     ],
   },
   ...tseslint.configs.recommended,

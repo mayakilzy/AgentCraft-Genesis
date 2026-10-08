@@ -100,6 +100,41 @@ export interface GenesisUiState {
   bffReady: boolean;
   setBffReady: (v: boolean) => void;
 
+  // Goal Composer state machine. Per 03_UI_UX_CONTRACT §Work behavior contract:
+  //   idle → validating → submitting → acknowledged(id) / rejected(error) / uncertain(network failure)
+  // NEVER show success before the gateway returns 202 with missionId.
+  submissionState:
+    | "idle"
+    | "validating"
+    | "submitting"
+    | "acknowledged"
+    | "rejected"
+    | "uncertain";
+  submissionError?: string;
+  submissionErrorCode?: string;
+  lastSubmittedMissionId?: string;
+  /** Client-generated idempotency key for the in-flight submission. Used for
+   * safe retry on network failure — gateway returns same missionId if it
+   * already received the original. In-memory only on the gateway side; does
+   * not survive restart (per 04_GATEWAY_DISCOVERY §Idempotency). */
+  pendingIdempotencyKey?: string;
+  /** The goal text that the pendingIdempotencyKey corresponds to. Cleared on
+   * successful ack or explicit user reset. */
+  pendingGoalText?: string;
+  setSubmissionState: (
+    s: GenesisUiState["submissionState"],
+    extra?: Partial<
+      Pick<
+        GenesisUiState,
+        | "submissionError"
+        | "submissionErrorCode"
+        | "lastSubmittedMissionId"
+        | "pendingIdempotencyKey"
+        | "pendingGoalText"
+      >
+    >,
+  ) => void;
+
   // Mission context (active selection)
   activeMissionId?: string;
   setActiveMissionId: (id: string | undefined) => void;
@@ -124,6 +159,19 @@ export const useGenesisStore = create<GenesisUiState>((set) => ({
 
   bffReady: false,
   setBffReady: (v) => set({ bffReady: v }),
+
+  submissionState: "idle",
+  setSubmissionState: (s, extra) =>
+    set((state) => ({
+      submissionState: s,
+      submissionError: extra?.submissionError,
+      submissionErrorCode: extra?.submissionErrorCode,
+      lastSubmittedMissionId:
+        extra?.lastSubmittedMissionId ?? state.lastSubmittedMissionId,
+      pendingIdempotencyKey:
+        extra?.pendingIdempotencyKey ?? state.pendingIdempotencyKey,
+      pendingGoalText: extra?.pendingGoalText ?? state.pendingGoalText,
+    })),
 
   setActiveMissionId: (id) => set({ activeMissionId: id }),
 
