@@ -59,6 +59,11 @@ function loadExecutionMode(): ExecutionMode {
 /**
  * Build a real reasoning provider for production mode.
  * Returns null if the required credentials are missing.
+ *
+ * G6-08 (Phase 2): adds `GENESIS_REASONING_PROVIDER=stub` for controlled
+ * positive-path integration tests. The stub provider writes one
+ * deterministic artifact — it is NOT a real LLM, and is clearly labeled
+ * in startup logs.
  */
 async function buildRealReasoningProvider(): Promise<ReasoningProvider | null> {
   const provider = process.env.GENESIS_REASONING_PROVIDER;
@@ -87,6 +92,30 @@ async function buildRealReasoningProvider(): Promise<ReasoningProvider | null> {
         return new mod.ZAIReasoningProvider(opts);
       } catch (e) {
         console.error('FATAL: Failed to load ZAIReasoningProvider:', e instanceof Error ? e.message : e);
+        return null;
+      }
+    }
+    case 'stub': {
+      // G6-08 (Phase 2): controlled-stub provider for positive-path tests.
+      // NOT a real LLM — writes a fixed deterministic artifact. Clearly
+      // labeled in startup logs.
+      console.error('[genesis-gateway] ⚠️  USING CONTROLLED-STUB REASONING PROVIDER (not a real LLM)');
+      console.error('[genesis-gateway] ⚠️  This is for integration tests only. Do NOT use in real production.');
+      try {
+        const mod = await import('../providers/stub-reasoning.js') as {
+          StubReasoningProvider: new (opts?: {
+            outputPath?: string;
+            outputContent?: string;
+          }) => ReasoningProvider;
+        };
+        const outputPath = process.env.GENESIS_STUB_OUTPUT_PATH;
+        const outputContent = process.env.GENESIS_STUB_OUTPUT_CONTENT;
+        const opts: { outputPath?: string; outputContent?: string } = {};
+        if (outputPath !== undefined) opts.outputPath = outputPath;
+        if (outputContent !== undefined) opts.outputContent = outputContent;
+        return new mod.StubReasoningProvider(opts);
+      } catch (e) {
+        console.error('FATAL: Failed to load StubReasoningProvider:', e instanceof Error ? e.message : e);
         return null;
       }
     }
@@ -125,6 +154,28 @@ async function buildRealRuntimeFactory(): Promise<((ctx: { missionId: string }) 
   if (provider === 'memory') {
     console.error('FATAL: GENESIS_RUNTIME_PROVIDER=memory is not allowed in production mode.');
     return null;
+  }
+  if (provider === 'stub') {
+    // G6-08 (Phase 2): controlled-stub runtime for positive-path tests.
+    // Constructs a fresh MemoryRuntime per mission (which implements
+    // ArtifactsProvider). Clearly labeled — NOT for real production.
+    console.error('[genesis-gateway] ⚠️  USING CONTROLLED-STUB RUNTIME PROVIDER (MemoryRuntime, not real OpenBot)');
+    console.error('[genesis-gateway] ⚠️  This is for integration tests only. Do NOT use in real production.');
+    try {
+      await import('../runtime/memory-computer.js');
+    } catch (e) {
+      console.error('FATAL: Failed to load MemoryRuntime module:', e instanceof Error ? e.message : e);
+      return null;
+    }
+    const memoryRuntimeCtor = (await import('../runtime/memory-computer.js') as {
+      MemoryRuntime: new () => WorkerRuntime;
+    }).MemoryRuntime;
+    // Per-mission factory: returns a FRESH MemoryRuntime for each mission.
+    // MemoryRuntime implements ArtifactsProvider, so the gateway's
+    // getArtifacts() retrieves genuine (in-memory) artifacts.
+    return (_ctx: { missionId: string }): { runtime: WorkerRuntime } => {
+      return { runtime: new memoryRuntimeCtor() };
+    };
   }
   if (provider === 'openbot') {
     // The OpenBot adapter spawns the OpenBot process locally — it does
