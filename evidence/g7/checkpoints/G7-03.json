@@ -2,7 +2,7 @@
   "group": "G7-03",
   "status": "PASS",
   "base_sha": "423939f",
-  "completed_sha": "pending-g7-03-commit",
+  "completed_sha": "30a84f3",
   "branch": "build/group-07-product-experience",
   "worktree_clean": true,
   "implemented_features": [
@@ -120,7 +120,7 @@
   "recovery_metadata": {
     "branch": "build/group-07-product-experience",
     "base_sha": "423939f",
-    "completed_sha": "pending-g7-03-commit",
+    "completed_sha": "30a84f3",
     "recovery_prompt": "Resume AgentCraft Genesis G7 from persisted Git commits and evidence/g7/checkpoints/G7-03.json. Verify branch=build/group-07-product-experience; HEAD must equal completed_sha (or 423939f if G7-03 is not yet committed). Verify worktree clean. Reproduce: bun run lint -- --ignore-pattern agentcraft → 0 errors; npx tsx scripts/g7-02-auth-gate-unit-tests.ts → 20/20; npx tsx scripts/g7-02-auth-gate-tests.ts → 14/14; npx tsx scripts/g7-01-closure-tests.ts → 12/12; npx tsx scripts/g7-02-e2e-submission.ts → 8/8. Then continue with G7-04. Stop on inconsistent state.",
     "test_commands": [
       "bun run lint -- --ignore-pattern agentcraft",
