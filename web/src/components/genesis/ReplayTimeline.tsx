@@ -89,7 +89,7 @@ export function ReplayTimeline({ missionId, events, truncated }: ReplayTimelineP
           <Info className="size-3.5 shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <strong>Replay is limited to events you have observed.</strong>{" "}
-            The gateway's polling API returns at most 100 events per request
+            The gateway&apos;s polling API returns at most 100 events per request
             with offset hardcoded to 0. Events beyond the first 100 are not
             retrievable through the public API. This replay does NOT imply a
             complete history.

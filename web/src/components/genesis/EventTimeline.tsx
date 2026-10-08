@@ -43,6 +43,7 @@ export function EventTimeline({ missionId, snapshot, onStaleChange }: EventTimel
 
   useEffect(() => {
     // Reset state when missionId changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEvents([]);
     setLastObservedAt(undefined);
     setStale(false);
