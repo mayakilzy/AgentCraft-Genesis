@@ -305,6 +305,13 @@ export function statusFromResult(
  * A2A TaskState enum (from @a2a-js/sdk):
  *   0 UNSPECIFIED, 1 SUBMITTED, 2 WORKING, 3 COMPLETED,
  *   4 FAILED, 5 CANCELED, 6 INPUT_REQUIRED, 7 REJECTED, 8 AUTH_REQUIRED
+ *
+ * PARTIAL maps to FAILED (not COMPLETED) because PARTIAL means "a
+ * deliverable was produced but verification failed or was incomplete."
+ * Mapping to COMPLETED would mislead A2A consumers into treating
+ * unverified deliverables as verified success. The partial nature
+ * is conveyed through the task's artifact metadata when the A2A
+ * server builds the response.
  */
 export function statusToA2ATaskState(status: MissionStatus): number {
   switch (status) {
@@ -319,10 +326,9 @@ export function statusToA2ATaskState(status: MissionStatus): number {
     case 'CANCELLED':
       return 5; // CANCELED
     case 'PARTIAL':
-      // PARTIAL is a Genesis-specific concept; A2A has no direct equivalent.
-      // We map to COMPLETED (a deliverable exists) — the partial nature
-      // is conveyed through the task's artifact metadata.
-      return 3; // COMPLETED
+      // PARTIAL = deliverable produced but verification failed/incomplete.
+      // Map to FAILED to prevent false-success consumption by A2A clients.
+      return 4; // FAILED
     case 'CANCELLATION_REQUESTED':
       // Still WORKING from A2A's perspective; the cancellation is in-flight.
       return 2; // WORKING

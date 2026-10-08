@@ -65,9 +65,31 @@ interface TaskMissionBinding {
 class GenesisAgentExecutor implements AgentExecutorInterface {
   private readonly service: MissionService;
   private readonly bindings = new Map<string, TaskMissionBinding>();
+  /**
+   * The caller identity for the CURRENT request, set by the HTTP handler
+   * before dispatching to the SDK. This bridges the gap where the SDK's
+   * AgentExecutor.cancelTask() does not receive a RequestContext and
+   * therefore cannot see who is calling. Cleared after each request.
+   */
+  private currentRequestCaller: CallerIdentity | null = null;
 
   constructor(service: MissionService) {
     this.service = service;
+  }
+
+  /**
+   * Set the caller for the current request. Called by the HTTP handler
+   * BEFORE dispatching to the SDK transport handler.
+   */
+  setCurrentRequestCaller(caller: CallerIdentity): void {
+    this.currentRequestCaller = caller;
+  }
+
+  /**
+   * Clear the current request caller after the request completes.
+   */
+  clearCurrentRequestCaller(): void {
+    this.currentRequestCaller = null;
   }
 
   async execute(
@@ -140,11 +162,35 @@ class GenesisAgentExecutor implements AgentExecutorInterface {
       eventBus.publish({ kind: 'task', data: buildTask(taskId, 'CANCELLED') });
       return;
     }
-    // Signal the in-flight executor to stop polling.
+
+    // P1-A2A-CANCELTASK-NO-CALLER-AUTHZ fix: verify the requesting caller
+    // owns this task. The currentRequestCaller is set by the HTTP handler
+    // before dispatching to the SDK. If it doesn't match the binding's
+    // original callerId, reject the cancellation.
+    const requestingCaller = this.currentRequestCaller;
+    if (requestingCaller === null) {
+      // No caller context — should not happen (auth is enforced before
+      // dispatch). Fail closed: do NOT cancel.
+      eventBus.publish({ kind: 'task', data: buildTask(taskId, 'FAILED') });
+      return;
+    }
+    if (requestingCaller.callerId !== binding.callerId) {
+      // Cross-caller cancellation attempt. Return the current task state
+      // without cancelling — do not leak that the task exists to a
+      // different caller. The SDK will return whatever task state we
+      // publish here.
+      const snapshot = this.service.get(binding.missionId, {
+        callerId: binding.callerId,
+        allowedOperations: ['mission:submit'],
+        maxActiveMissions: 999,
+        maxMissionTimeoutMs: 300_000,
+      }).status;
+      eventBus.publish({ kind: 'task', data: buildTask(taskId, snapshot) });
+      return;
+    }
+
+    // Authorized cancellation — proceed.
     binding.abortController.abort();
-    // Delegate to the MissionService for the actual mission cancellation.
-    // We synthesize a CallerIdentity from the binding so the service's
-    // caller-isolation check passes.
     const caller: CallerIdentity = {
       callerId: binding.callerId,
       allowedOperations: ['mission:submit', 'mission:cancel'],
@@ -219,7 +265,7 @@ export async function startA2AServer(
 
   const server = createServer(async (req, res) => {
     try {
-      await handleA2ARequest(req, res, config, transportHandler);
+      await handleA2ARequest(req, res, config, transportHandler, executor);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       sendJson(res, 200, {
@@ -246,6 +292,7 @@ async function handleA2ARequest(
   res: ServerResponse,
   config: GatewayConfig,
   transportHandler: import('@a2a-js/sdk/server').JsonRpcTransportHandler,
+  executor: GenesisAgentExecutor,
 ): Promise<void> {
   // CORS (matches reference agent + outbound federation).
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -303,29 +350,37 @@ async function handleA2ARequest(
       parsedBody = body;
     }
 
-    const result = await transportHandler.handle(parsedBody, context);
+    // Set the current request caller on the executor BEFORE dispatching
+    // to the SDK. This bridges the gap where AgentExecutor.cancelTask()
+    // does not receive a RequestContext.
+    executor.setCurrentRequestCaller(caller);
+    try {
+      const result = await transportHandler.handle(parsedBody, context);
 
-    // The SDK returns a single JSONRPCResponse for non-streaming methods
-    // (SendMessage blocking, GetTask, CancelTask). Streaming methods
-    // (sendMessageStream, subscribe) return an AsyncGenerator — we do
-    // not support streaming in v1 (the AgentCard declares streaming:false).
-    if (isAsyncGenerator(result)) {
-      // Take the first response and discard the rest (no streaming in v1).
-      const first = await result.next();
-      if (first.done || first.value === undefined) {
-        sendJson(res, 200, {
-          jsonrpc: '2.0' as const,
-          error: { code: -32603, message: 'no response from streaming method' },
-          id: extractJsonRpcId(body),
-        });
+      // The SDK returns a single JSONRPCResponse for non-streaming methods
+      // (SendMessage blocking, GetTask, CancelTask). Streaming methods
+      // (sendMessageStream, subscribe) return an AsyncGenerator — we do
+      // not support streaming in v1 (the AgentCard declares streaming:false).
+      if (isAsyncGenerator(result)) {
+        // Take the first response and discard the rest (no streaming in v1).
+        const first = await result.next();
+        if (first.done || first.value === undefined) {
+          sendJson(res, 200, {
+            jsonrpc: '2.0' as const,
+            error: { code: -32603, message: 'no response from streaming method' },
+            id: extractJsonRpcId(body),
+          });
+          return;
+        }
+        sendJson(res, 200, first.value);
         return;
       }
-      sendJson(res, 200, first.value);
-      return;
-    }
 
-    sendJson(res, 200, result);
-    return;
+      sendJson(res, 200, result);
+      return;
+    } finally {
+      executor.clearCurrentRequestCaller();
+    }
   }
 
   res.writeHead(404, { 'Content-Type': 'text/plain' });

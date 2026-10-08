@@ -90,6 +90,10 @@ interface MissionRuntime {
   runtime?: WorkerRuntime;
   /** The promise returned by orchestrator.run() — awaited by the start() caller. */
   runPromise?: Promise<MissionResult>;
+  /** Verification result captured when the mission finishes (for per-artifact verified flag). */
+  verificationOk?: boolean;
+  /** Set of artifact paths that passed verification (in the clean-room copy). */
+  verifiedPaths?: Set<string>;
 }
 
 /**
@@ -206,8 +210,9 @@ export class MissionService {
         `caller ${caller.callerId} has reached the maximum of ${caller.maxActiveMissions} active missions`,
       );
     }
-    // Service-wide hard cap.
-    if (this.missions.size >= this.maxActiveMissionsGlobal) {
+    // Service-wide hard cap (counts only ACTIVE, non-terminal missions).
+    const globalActive = this.countActiveGlobal();
+    if (globalActive >= this.maxActiveMissionsGlobal) {
       throw new MissionAdmissionError(
         `service has reached the global maximum of ${this.maxActiveMissionsGlobal} active missions`,
       );
@@ -283,6 +288,8 @@ export class MissionService {
         missionRuntime.result = result;
         missionRuntime.finishedAt = new Date().toISOString();
         missionRuntime.status = statusFromResult(result, missionRuntime.canceled);
+        // Capture verification result from flight events for per-artifact verified flag.
+        this.captureVerificationResult(missionRuntime);
         return result;
       },
       (error) => {
@@ -341,20 +348,35 @@ export class MissionService {
   /**
    * Get the artifacts produced by a mission. Enforces caller isolation.
    * Returns content for files small enough to inline (< 64KB).
+   *
+   * Per-artifact `verified` flag: based on the actual VerificationResult
+   * captured when the mission finished. If the mission has not reached
+   * verification (e.g., still RUNNING or CANCELLED before verification),
+   * `verified` is false. If verification passed, files in the verified
+   * paths set are `verified: true`; others are `verified: false`.
+   *
+   * Verifier clean-room copies (workerId='mission-verifier-1') are excluded
+   * — they are internal verifier bookkeeping, not mission deliverables.
    */
   getArtifacts(missionId: string, caller: CallerIdentity): MissionArtifactRecord[] {
     const rt = this.requireMission(missionId, caller);
     const records: MissionArtifactRecord[] = [];
+    const verificationOk = rt.verificationOk ?? false;
+    const verifiedPaths = rt.verifiedPaths ?? new Set<string>();
     for (const [workerId, computer] of rt.computers) {
+      // Exclude the verifier's clean-room computer — it holds copies
+      // for verification purposes, not mission deliverables.
+      if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
+        continue;
+      }
       for (const [path, content] of computer.files) {
         // Path traversal protection: reject paths containing '..' or absolute paths
-        // (these never legitimately appear in MemoryComputer files, but we check defensively).
         if (path.includes('..') || path.startsWith('/')) continue;
         records.push({
           workerId,
           path,
           content: content.length <= 65_536 ? content : undefined,
-          verified: true, // VerificationLoop ran; we mark all persisted files as verified
+          verified: verificationOk && verifiedPaths.has(path),
           bytes: content.length,
         });
       }
@@ -434,6 +456,54 @@ export class MissionService {
       }
     }
     return count;
+  }
+
+  private countActiveGlobal(): number {
+    let count = 0;
+    for (const rt of this.missions.values()) {
+      if (!isTerminal(rt.status)) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Extract the verification result from the flight recorder events
+   * and store it on the mission runtime. This is used by getArtifacts()
+   * to set the per-artifact `verified` flag truthfully.
+   */
+  private captureVerificationResult(rt: MissionRuntime): void {
+    const events = rt.recorder.events as FlightEvent[];
+    const verificationEvent = events.find((e) => e.type === 'verification') as
+      | { ok: boolean; passed: number; failed: number; failures: readonly string[] }
+      | undefined;
+    if (verificationEvent !== undefined) {
+      rt.verificationOk = verificationEvent.ok;
+      // If verification passed, mark all artifact paths as verified.
+      // The verification event doesn't list which specific paths passed,
+      // but if ok=true, all checks passed. We mark every non-verifier
+      // file path as verified.
+      if (verificationEvent.ok) {
+        const paths = new Set<string>();
+        for (const [workerId, computer] of rt.computers) {
+          if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
+            continue;
+          }
+          for (const p of computer.files.keys()) {
+            paths.add(p);
+          }
+        }
+        rt.verifiedPaths = paths;
+      } else {
+        rt.verifiedPaths = new Set<string>();
+      }
+    } else {
+      // No verification event — mission may have been cancelled before
+      // verification ran. Mark as not verified.
+      rt.verificationOk = false;
+      rt.verifiedPaths = new Set<string>();
+    }
   }
 
   private toSnapshot(rt: MissionRuntime): MissionSnapshot {
