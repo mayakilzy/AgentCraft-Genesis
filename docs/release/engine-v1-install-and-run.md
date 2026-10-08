@@ -34,7 +34,7 @@ npm test             # vitest run
 Expected results:
 - typecheck: PASS (no output)
 - lint: PASS (no output)
-- tests: 527 passed, 9 skipped, 536 total
+- tests: 578 passed, 9 skipped, 587 total
 
 ## Smoke Mission
 
@@ -95,7 +95,8 @@ export GENESIS_EXECUTION_MODE=production
 export GENESIS_REASONING_PROVIDER=zai
 export ZAI_API_KEY="your-real-api-key"
 export GENESIS_RUNTIME_PROVIDER=openbot
-export OPENBOT_ENDPOINT="http://your-openbot-server:port"
+export OPENBOT_CHECKOUT_DIR="/path/to/openbot-checkout"
+export OPENBOT_ROOT_DIR="/path/to/per-worker-workspaces"
 export GENESIS_API_KEYS='{"prod-key":{"callerId":"prod-app","allowedOperations":["mission:submit"],"maxActiveMissions":10,"maxMissionTimeoutMs":120000}}'
 npx tsx src/gateway/main.ts
 ```
@@ -104,6 +105,35 @@ If any required provider is missing, the gateway refuses to start:
 ```
 FATAL: GENESIS_EXECUTION_MODE=production requires GENESIS_REASONING_PROVIDER to be set.
 ```
+
+### Controlled-Stub Providers (G6-08 Phase 2 — Test Only)
+
+For production-mode positive-path integration tests, two controlled-stub
+providers are registered in the production code path:
+
+```bash
+export GENESIS_EXECUTION_MODE=production
+export GENESIS_REASONING_PROVIDER=stub
+export GENESIS_RUNTIME_PROVIDER=stub
+export GENESIS_API_KEYS='{"test-key":{"callerId":"test","allowedOperations":["mission:submit"],"maxActiveMissions":5,"maxMissionTimeoutMs":60000}}'
+npx tsx src/gateway/main.ts
+```
+
+The gateway logs a banner:
+```
+[genesis-gateway] EXECUTION MODE: production (real providers required)
+[genesis-gateway] ⚠️  USING CONTROLLED-STUB REASONING PROVIDER (not a real LLM)
+[genesis-gateway] ⚠️  USING CONTROLLED-STUB RUNTIME PROVIDER (MemoryRuntime, not real OpenBot)
+[genesis-gateway] ⚠️  This is for integration tests only. Do NOT use in real production.
+[genesis-gateway] HTTP API listening on http://127.0.0.1:4180
+[genesis-gateway] A2A inbound listening on http://127.0.0.1:4181
+```
+
+These stubs exercise the actual Gateway → MissionService → Orchestrator
+→ Runtime → Verification → Artifact production wiring without real
+external services. They are NOT a substitute for real ZAI/OpenBot —
+see `engine-v1-known-limitations.md` for the BLOCKED_BY_ENVIRONMENT note
+on live ZAI/OpenBot execution.
 
 ## Independent Client
 

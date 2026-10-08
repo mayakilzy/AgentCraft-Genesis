@@ -1,0 +1,25 @@
+name: CI
+
+# G6-08 Phase 7 — F-PACKAGE-FINDING-006 (no CI workflows) closed.
+# Runs the same gates as the local `rc:verify` script and as the
+# G6-04 clean-room reproduction: install from lockfile, typecheck,
+# lint, run the full test suite. No external services required.
+
+on:
+  push:
+    branches: [main, build/group-06-productionization]
+  pull_request:
+    branches: [main, build/group-06-productionization]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test

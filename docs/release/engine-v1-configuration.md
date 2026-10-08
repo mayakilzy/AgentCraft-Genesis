@@ -32,7 +32,7 @@ Required when `GENESIS_EXECUTION_MODE=production`:
 
 | Variable | Description |
 |---|---|
-| `GENESIS_REASONING_PROVIDER` | `zai` (currently the only supported real provider) |
+| `GENESIS_REASONING_PROVIDER` | `zai` (real LLM) or `stub` (controlled-stub, test-only — see below) |
 | `ZAI_API_KEY` or `ZAI_SDK_PATH` | ZAI credentials (one required when provider=zai) |
 
 ### Production Mode — Runtime Provider
@@ -41,11 +41,26 @@ Required when `GENESIS_EXECUTION_MODE=production`:
 
 | Variable | Description |
 |---|---|
-| `GENESIS_RUNTIME_PROVIDER` | `openbot` (memory is NOT allowed in production) |
-| `OPENBOT_ENDPOINT` | OpenBot server URL (required when provider=openbot) |
+| `GENESIS_RUNTIME_PROVIDER` | `openbot` (real worker runtime) or `stub` (controlled-stub, test-only — see below). `memory` is NOT allowed in production. |
+| `OPENBOT_CHECKOUT_DIR` | Path to the local OpenBot git checkout (required when provider=openbot) |
+| `OPENBOT_ROOT_DIR` | Directory for per-worker workspaces (required when provider=openbot) |
 | `OPENBOT_TOKEN` | OpenBot auth token (optional) |
-| `OPENBOT_CHECKOUT_DIR` | Git checkout directory (default: /tmp/openbot-checkout) |
-| `OPENBOT_ROOT_DIR` | OpenBot root directory (default: /tmp/openbot-root) |
+
+### Controlled-Stub Providers (G6-08 Phase 2 — Test Only)
+
+For production-mode positive-path integration tests, two controlled-stub
+providers are registered in the production code path:
+
+| Variable | Value | Description |
+|---|---|---|
+| `GENESIS_REASONING_PROVIDER` | `stub` | Writes one deterministic artifact. NOT a real LLM. Clearly labeled in startup logs. |
+| `GENESIS_RUNTIME_PROVIDER` | `stub` | Constructs a fresh `MemoryRuntime` per mission (satisfies `ArtifactsProvider`). NOT real OpenBot. Clearly labeled in startup logs. |
+
+These stub providers exercise the actual Gateway → MissionService →
+Orchestrator → Runtime → Verification → Artifact production wiring
+without real external services. They exist for integration tests and
+are explicitly labeled as `⚠️ USING CONTROLLED-STUB ... PROVIDER` in
+startup logs. They are NOT a substitute for real ZAI/OpenBot.
 
 ### Optional — Agent Card
 
@@ -81,7 +96,8 @@ Required when `GENESIS_EXECUTION_MODE=production`:
 - `GENESIS_EXECUTION_MODE=production` without `GENESIS_RUNTIME_PROVIDER` → gateway refuses to start.
 - `GENESIS_RUNTIME_PROVIDER=memory` in production → gateway refuses to start.
 - Missing ZAI credentials when `GENESIS_REASONING_PROVIDER=zai` → gateway refuses to start.
-- Missing `OPENBOT_ENDPOINT` when `GENESIS_RUNTIME_PROVIDER=openbot` → gateway refuses to start.
+- Missing `OPENBOT_CHECKOUT_DIR` when `GENESIS_RUNTIME_PROVIDER=openbot` → gateway refuses to start.
+- Missing `OPENBOT_ROOT_DIR` when `GENESIS_RUNTIME_PROVIDER=openbot` → gateway refuses to start.
 
 ## Safe Example Configuration
 
@@ -96,15 +112,24 @@ export GENESIS_EXECUTION_MODE=production
 export GENESIS_REASONING_PROVIDER=zai
 export ZAI_API_KEY="your-real-api-key"
 export GENESIS_RUNTIME_PROVIDER=openbot
-export OPENBOT_ENDPOINT="http://your-openbot-server:port"
+export OPENBOT_CHECKOUT_DIR="/path/to/openbot-checkout"
+export OPENBOT_ROOT_DIR="/path/to/per-worker-workspaces"
 export GENESIS_API_KEYS='{"prod-key":{"callerId":"prod-app","allowedOperations":["mission:submit"],"maxActiveMissions":10,"maxMissionTimeoutMs":120000}}'
+npx tsx src/gateway/main.ts
+
+# Production mode with controlled-stub providers (TEST ONLY — not for real production)
+export GENESIS_EXECUTION_MODE=production
+export GENESIS_REASONING_PROVIDER=stub
+export GENESIS_RUNTIME_PROVIDER=stub
+export GENESIS_API_KEYS='{"test-key":{"callerId":"test","allowedOperations":["mission:submit"],"maxActiveMissions":5,"maxMissionTimeoutMs":60000}}'
 npx tsx src/gateway/main.ts
 ```
 
 ## Secret Hygiene
 
 - Never commit real credentials to the repository.
-- The `secure/` directory is gitignored.
+- The `.secure/` directory is gitignored (see `.gitignore`).
 - API keys are never logged (only the first 4 characters appear in demos).
 - The `GENESIS_API_KEYS` env var is read at startup and not persisted.
 - Remote Git URLs contain no tokens (verified after push).
+- Token files (`*.token`) and local env overrides (`*.env.local`) are gitignored.

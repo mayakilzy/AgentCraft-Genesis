@@ -92,6 +92,38 @@ These apply only to real OpenBot, not to the default MemoryComputer.
 Specialists run sequentially in v0.1. No parallel execution, no
 concurrent mission isolation testing.
 
+### 11a. Live ZAI/OpenBot Execution: BLOCKED_BY_ENVIRONMENT
+
+Live production-mode execution against real ZAI (LLM reasoning) and
+real OpenBot (worker runtime) is **not exercised** in the v1 release
+evidence. The sandbox in which v1 was verified does not have real
+ZAI credentials or a real OpenBot checkout, so:
+
+```
+LIVE_PRODUCTION_EXECUTION   = BLOCKED_BY_ENVIRONMENT
+LIVE_REASONING_PROVIDER     = BLOCKED_BY_ENVIRONMENT (no ZAI_API_KEY in sandbox)
+LIVE_OPENBOT_EXECUTION      = BLOCKED_BY_ENVIRONMENT (no OpenBot checkout in sandbox)
+```
+
+Controlled-stub providers (`GENESIS_REASONING_PROVIDER=stub`,
+`GENESIS_RUNTIME_PROVIDER=stub`, added in G6-08 Phase 2) exercise the
+production wiring — Gateway → MissionService → Orchestrator → Runtime
+→ Verification → Artifact — without real external services. The
+controlled-stub positive path is PASS (see `engine-v1-evidence-index.md`).
+This is **not** a substitute for live evidence; it only verifies that
+the production code path is correct end-to-end.
+
+**Impact:** Live ZAI reasoning quality, real OpenBot worker behavior,
+and real external service latency/retry semantics are NOT verified by
+v1 release evidence. Operators deploying to real production MUST run
+their own bounded live acceptance tests with real credentials before
+trusting the engine for real work.
+
+**Mitigation:** Document as release limitation. G6-08 Phase 2 added
+controlled-stub providers so the production wiring can be tested in
+CI without real credentials. Live acceptance is the operator's
+responsibility.
+
 ### 12. No Production Authentication Beyond API Keys
 
 See limitation #3. The gateway does not verify the identity of the

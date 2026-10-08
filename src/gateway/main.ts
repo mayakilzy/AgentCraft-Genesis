@@ -26,8 +26,10 @@
  *   In production mode, additionally required:
  *   GENESIS_REASONING_PROVIDER — zai | (future: openrouter, etc.)
  *   ZAI_API_KEY or ZAI_SDK_PATH — when GENESIS_REASONING_PROVIDER=zai
- *   GENESIS_RUNTIME_PROVIDER   — openbot | memory (memory only valid in development)
- *   OPENBOT_ENDPOINT           — when GENESIS_RUNTIME_PROVIDER=openbot
+ *   GENESIS_RUNTIME_PROVIDER   — openbot | memory | stub (memory only valid in development;
+ *     stub is a controlled-stub for production positive-path tests, G6-08 Phase 2)
+ *   OPENBOT_CHECKOUT_DIR       — when GENESIS_RUNTIME_PROVIDER=openbot
+ *   OPENBOT_ROOT_DIR           — when GENESIS_RUNTIME_PROVIDER=openbot
  *
  * Example GENESIS_API_KEYS:
  *   '{"test-key-1":{"callerId":"caller-a","allowedOperations":["mission:submit"],"maxActiveMissions":5,"maxMissionTimeoutMs":60000}}'
@@ -321,7 +323,7 @@ async function main(): Promise<void> {
     const runtimeFactory = await buildRealRuntimeFactory();
     if (runtimeFactory === null) {
       console.error('FATAL: Production mode requires a configured runtime provider.');
-      console.error('Set GENESIS_RUNTIME_PROVIDER and the corresponding endpoint/credential.');
+      console.error('Set GENESIS_RUNTIME_PROVIDER and the corresponding OPENBOT_CHECKOUT_DIR / OPENBOT_ROOT_DIR.');
       process.exit(1);
     }
     // In production, wire the real providers. No fallback to dev fixtures.

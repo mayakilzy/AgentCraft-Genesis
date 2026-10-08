@@ -13,8 +13,9 @@
 | Residual risk register | experiments/g6-06/residual-risk-register.md | 5 P2 + 1 P3 deferred to G6-07 | PASS |
 | Execution mode boundary | tests/gateway/execution-mode.test.ts | 2 tests (fail-closed + dev banner) | PASS |
 | Production mode fail-closed | tests/gateway/execution-mode.test.ts:production | Gateway exits 1 without providers | PASS |
-| Per-artifact verified flag | tests/gateway/http-api.test.ts:API-08 | verified based on VerificationResult | PASS |
-| Cross-caller A2A cancel | src/gateway/a2a-server.ts cancelTask | currentRequestCaller bridge | PASS |
+| Production-mode positive path | tests/g6-08/p2-production-positive-integration.test.ts | 4 tests (P2-01..P2-04) with controlled-stub providers | PASS (with controlled-stub providers, Phase 2) |
+| Per-artifact verified flag | tests/gateway/http-api.test.ts:API-08 + tests/g6-08/p4-verification-integrity.test.ts | verified based on VerificationResult (Phase 4 hardened: per-path `verifiedPaths` Set) | PASS |
+| Cross-caller A2A cancel | src/gateway/a2a-server.ts cancelTask | callerContext (AsyncLocalStorage) bridge | PASS |
 
 ## Historical Evidence (G6-04 through G6-05A-R1)
 
@@ -85,7 +86,7 @@
 | MCP | 4 | PASS |
 | AG-UI | 16 | PASS |
 | Other (mission, runtime, work) | ~235 | PASS |
-| **Total** | **527 passed / 9 skipped** | **PASS** |
+| **Total** | **578 passed / 9 skipped** | **PASS** |
 
 ## Skipped Tests (9)
 
