@@ -1,0 +1,279 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-10-08T11:15:00Z",
+  "generated_by": "G7-01 Stage A+B+C source inspection + contract verification",
+  "base_repo": "https://github.com/mayakilzy/AgentCraft-Genesis",
+  "base_branch": "build/group-06-productionization",
+  "base_sha": "bff7b0a6f8b4e35880a9c7453d4e6de343e4e001",
+  "contract_source_documents": [
+    "experiments/g6-05a/gateway-contract.md",
+    "src/gateway/http-server.ts",
+    "src/gateway/mission-service.ts",
+    "src/gateway/types.ts",
+    "src/gateway/main.ts",
+    "experiments/g6-05a/independent-client.ts",
+    "src/contracts/core.ts"
+  ],
+  "disclaimer": "Matrix is built from source-code verification at pinned SHA. Status values are SUPPORTED / PARTIAL / ABSENT / BLOCKED per 04_GATEWAY_DISCOVERY_AND_ADAPTER_CONTRACT.md. No endpoint or behavior is invented.",
+  "capabilities": [
+    {
+      "feature": "service_health",
+      "routeOrSymbol": "GET /health",
+      "sourcePath": "src/gateway/http-server.ts:93-108",
+      "observed": "Public, no auth. Returns status, version, uptimeMs, activeMissions, limitations[]",
+      "auth": "none",
+      "schema": "{ status:'ok'|'degraded'|'down', version:string, uptimeMs:number, activeMissions:number, limitations:string[] }",
+      "errors": "200 only; gateway responds 200 even in dev-mode fallback",
+      "limitations": "Returns 'ok' even when running MemoryComputer + DEVELOPMENT_REASONING_FALLBACK. UI MUST NOT treat health=ok as 'real LLM wired'.",
+      "uiBehavior": "ConnectionStatus indicator uses /health. Green = reachable. Distinct badge must show 'controlled-test environment' when health.limitations includes the dev-mode strings.",
+      "testEvidence": "src/gateway/http-server.ts:93-108 verified; tests/gateway/http-api.test.ts covers /health",
+      "status": "SUPPORTED"
+    },
+    {
+      "feature": "service_ready",
+      "routeOrSymbol": "GET /ready",
+      "sourcePath": "src/gateway/http-server.ts:109-112",
+      "observed": "Public, no auth. Returns { ready: true }",
+      "auth": "none",
+      "schema": "{ ready: boolean }",
+      "errors": "200",
+      "limitations": "No depth — does not distinguish 'ready for new missions' from 'ready but isolated'.",
+      "uiBehavior": "Used as a lightweight liveness probe on app shell mount and on reconnect attempts.",
+      "testEvidence": "src/gateway/http-server.ts:109-112; tests/gateway/http-api.test.ts",
+      "status": "SUPPORTED"
+    },
+    {
+      "feature": "create_mission",
+      "routeOrSymbol": "POST /v1/missions",
+      "sourcePath": "src/gateway/http-server.ts:123-188",
+      "observed": "Auth: Bearer. Returns 202 Accepted with missionId + links. Validates outcome (non-empty string).",
+      "auth": "Bearer API key (constant-time compare, deny-by-default, fail-closed on missing GENESIS_API_KEYS)",
+      "schema": {
+        "request": "{ outcome:string, context?:string, constraints?:string[], budget?:{maxUsd?:number, tier?:'cheap'|'default'|'frontier'}, idempotencyKey?:string, label?:string }",
+        "response_202": "{ missionId:string, status:'ACCEPTED'|'RUNNING', accepted:true, links:{self,events,result,artifacts,cancel} }"
+      },
+      "errors": {
+        "400_INVALID_JSON": "body must be valid JSON",
+        "400_INVALID_SUBMISSION": "outcome must be non-empty string",
+        "401_UNAUTHENTICATED": "missing/invalid API key",
+        "403_FORBIDDEN": "operation not in allowedOperations",
+        "429_ADMISSION_DENIED": "caller exceeded maxActiveMissions or timeout ceiling",
+        "500_INTERNAL_ERROR": "unexpected"
+      },
+      "limitations": "Idempotency key is IN-MEMORY ONLY; does NOT survive process restart. Cross-caller idempotency is not isolated. UI must NOT promise resume after server restart.",
+      "uiBehavior": "GoalComposer submits here. On 202 -> navigate to MissionControl with missionId. On 429 -> show ADMISSION_DENIED banner. On network failure after submit -> UNCERTAIN state, NEVER auto-retry without idempotencyKey.",
+      "testEvidence": "src/gateway/http-server.ts:144-189; tests/gateway/http-api.test.ts; tests/gateway/e2e.test.ts (FAIL-01 false-success)",
+      "status": "SUPPORTED"
+    },
+    {
+      "feature": "read_mission",
+      "routeOrSymbol": "GET /v1/missions/{missionId}",
+      "sourcePath": "src/gateway/http-server.ts:200-204 + handleMissionResource",
+      "observed": "Auth: Bearer + caller ownership. Returns full MissionSnapshot including terminal flag, result (if terminal), failureClass, failureMessage.",
+      "auth": "Bearer + cross-caller isolation returns 404 (not 403)",
+      "schema": "MissionSnapshot: { missionId, callerId, label?, status, terminal, acceptedAt, finishedAt?, goalOutcome, result?:MissionResult, failureClass?:string, failureMessage?:string, idempotencyKey?:string }",
+      "errors": {
+        "401_UNAUTHENTICATED": "missing API key",
+        "404_MISSION_NOT_FOUND": "missionId unknown OR not owned by caller (intentional ambiguity)",
+        "500_INTERNAL_ERROR": "unexpected"
+      },
+      "limitations": "Snapshot is point-in-time. UI MUST poll — gateway does NOT push. Polling interval must respect rate limits (none documented; choose 1-2s).",
+      "uiBehavior": "MissionControl header polls this. Display last-observed timestamp (from response received_at, not server finishedAt alone). If 404 for a session-known mission -> show 'mission no longer retrievable' (in-process state, possible restart).",
+      "testEvidence": "src/gateway/http-server.ts:191-249; src/gateway/types.ts:98-123; tests/gateway/http-api.test.ts; tests/gateway/isolation.test.ts",
+      "status": "SUPPORTED"
+    },
+    {
+      "feature": "list_missions",
+      "routeOrSymbol": "(no endpoint exists)",
+      "sourcePath": "src/gateway/http-server.ts (search: no list route)",
+      "observed": "Gateway has NO /v1/missions (GET) list endpoint. There is no enumeration API.",
+      "auth": "n/a",
+      "schema": "n/a",
+      "errors": "404 NOT_FOUND for GET /v1/missions (without trailing id)",
+      "limitations": "Mission history is NOT queryable from the gateway. UI cannot show a server-side list of all caller missions. Only missions whose IDs the client knows about can be displayed.",
+      "uiBehavior": "MissionList shows ONLY client-known missions (from in-session submit acks + optional localStorage cache labeled 'browser-local, not server-authoritative'). Display an honest 'Server does not expose mission history' notice. List persistence across browser restart is NOT claimed.",
+      "testEvidence": "Route registration in src/gateway/http-server.ts:115-139 contains no list branch; verified by absence.",
+      "status": "ABSENT",
+      "gap_action": "UI implements known-ID mission lookup only. List is client-side. Backend change NOT proposed (would be material — defer to operator)."
+    },
+    {
+      "feature": "observe_events",
+      "routeOrSymbol": "GET /v1/missions/{missionId}/events",
+      "sourcePath": "src/gateway/http-server.ts:205-208 (calls service.getEvents(missionId, caller, 0, 100))",
+      "observed": "Auth: Bearer + ownership. Returns up to 100 events FROM OFFSET 0. Polling-only; no SSE, no WebSocket.",
+      "auth": "Bearer + cross-caller isolation",
+      "schema": "{ missionId:string, events:MissionEventRecord[] } where MissionEventRecord = { seq:number, timestamp:ISO, type:string, payload:Record<string,unknown> }",
+      "errors": { "401": "UNAUTHENTICATED", "404": "MISSION_NOT_FOUND" },
+      "limitations": "OFFSET IS HARDCODED TO 0 in http-server.ts:206. There is no cursor pagination — every call returns events [0..99]. Missions producing >100 events will have events 100+ UNRETRIEVABLE through the gateway. UI MUST label this gap. No replay/catch-up cursor on reconnect. No SSE/WebSocket — UI must poll. Event type strings come from FlightEvent subset (mission-service exposes only public-safe fields; no chain-of-thought).",
+      "uiBehavior": "EventTimeline polls every 1.5s during RUNNING. On reconnect after disconnect -> show 'event gaps possible — only last 100 events retrievable'. Deduplicate by event.seq. NEVER infer terminal mission from stream close.",
+      "testEvidence": "src/gateway/http-server.ts:205-208; src/gateway/mission-service.ts getEvents method; tests/gateway/http-api.test.ts",
+      "status": "PARTIAL",
+      "gap_action": "Document gap. UI shows first 100 events with honest truncation label. Backend cursor pagination is a material change — defer."
+    },
+    {
+      "feature": "cancel_mission",
+      "routeOrSymbol": "POST /v1/missions/{missionId}/cancel",
+      "sourcePath": "src/gateway/http-server.ts:230-233 (calls service.cancel(missionId, caller))",
+      "observed": "Auth: Bearer + ownership. Returns 202 with { missionId, status, cancelRequested:true }.",
+      "auth": "Bearer + cross-caller isolation (404 if not owned)",
+      "schema": { "response_202": "{ missionId:string, status:'CANCELLATION_REQUESTED'|'CANCELLED', cancelRequested:true }" },
+      "errors": { "401": "UNAUTHENTICATED", "404": "MISSION_NOT_FOUND", "500": "INTERNAL_ERROR" },
+      "limitations": "Cancellation REQUEST != Cancellation COMPLETE. In-flight external actions (OpenBot workers) may continue briefly. UI MUST show 'cancellation requested, awaiting server confirmation' until status transitions to CANCELLED.",
+      "uiBehavior": "ActionConfirmDialog -> 'Cancel mission?' -> POST /cancel -> pending state -> poll read_mission until status=CANCELLED or SUCCEEDED/PARTIAL (race). Idempotent: clicking cancel twice is safe (server returns same status).",
+      "testEvidence": "src/gateway/http-server.ts:230-233; tests/gateway/cancellation.test.ts",
+      "status": "SUPPORTED"
+    },
+    {
+      "feature": "get_terminal_result",
+      "routeOrSymbol": "GET /v1/missions/{missionId}/result",
+      "sourcePath": "src/gateway/http-server.ts:210-224",
+      "observed": "Auth: Bearer + ownership. Returns 409 NOT_FINISHED if !terminal; otherwise returns MissionResult + failureClass + failureMessage.",
+      "auth": "Bearer + cross-caller isolation",
+      "schema": "{ missionId, status, result:MissionResult{status,summary,evidence[],cost{usd,tokens,wallMs,humanInterventions}}, failureClass?, failureMessage? }",
+      "errors": { "401": "UNAUTHENTICATED", "404": "MISSION_NOT_FOUND", "409_NOT_FINISHED": "mission has not reached a terminal state" },
+      "limitations": "MissionResult is frozen at terminal; safe to cache on UI side after first 200. failureMessage scrubbed of secrets in G6-09C.",
+      "uiBehavior": "MissionControl outcome panel calls this when snapshot.terminal=true. Show summary, evidence list (kind+description+location), cost (wallMs always; usd only if >0 with disclosure; tokens).",
+      "testEvidence": "src/gateway/http-server.ts:210-224; tests/gateway/http-api.test.ts",
+      "status": "SUPPORTED"
+    },
+    {
+      "feature": "list_artifacts",
+      "routeOrSymbol": "GET /v1/missions/{missionId}/artifacts",
+      "sourcePath": "src/gateway/http-server.ts:225-228 (calls service.getArtifacts(missionId, caller))",
+      "observed": "Auth: Bearer + ownership. Returns array of artifacts with verified flag, bytes count, and inlined content when ≤64KB.",
+      "auth": "Bearer + cross-caller isolation",
+      "schema": "{ missionId, artifacts:MissionArtifactRecord[] } where MissionArtifactRecord = { workerId, path, content?:string, verified:boolean, bytes:number }",
+      "errors": { "401": "UNAUTHENTICATED", "404": "MISSION_NOT_FOUND" },
+      "limitations": "Content inlined only when ≤64KB; larger artifacts are metadata-only (no streaming endpoint exists). Path traversal protection: paths with .. or starting with / are rejected by gateway. UI must NOT execute HTML/SVG content; render as text only.",
+      "uiBehavior": "ArtifactList shows path, workerId, bytes, verified badge. Preview safe text/image/PDF only. Download saves server-returned filename. Verified flag = green; missing or false = amber 'unverified'; unknown (null) = grey 'unknown'.",
+      "testEvidence": "src/gateway/http-server.ts:225-228; src/gateway/mission-service.ts getArtifacts; tests/g6-08/rb1-artifacts-retrieval.test.ts",
+      "status": "SUPPORTED"
+    },
+    {
+      "feature": "list_workers_genomes",
+      "routeOrSymbol": "(no dedicated endpoint; partial data via mission snapshot events)",
+      "sourcePath": "src/gateway/types.ts (no WorkerGenome in snapshot); src/contracts/core.ts (WorkerGenome defined but not exposed by gateway)",
+      "observed": "Gateway exposes MissionSnapshot (no workers[]) and MissionEventRecord (event payload may include worker fields indirectly). There is NO /workers endpoint. WorkerGenome contract is internal-only — gateway does not serialize it.",
+      "auth": "n/a (capability is ABSENT)",
+      "schema": "WorkerGenome fields exist in src/contracts/core.ts:297-316 but are not part of any public gateway response",
+      "errors": "n/a",
+      "limitations": "UI Agent section cannot fetch a worker genome directly. Worker information is INFERRED from mission events (worker-started, worker-step, worker-finished, handoff) and from MissionResult.evidence. UI MUST label genome fields as 'not provided' when absent from event payloads. NO fabricated worker genome.",
+      "uiBehavior": "Agent section is an OrganizationList built from observed events: worker-started events create a card; worker-step events update last-action; worker-finished events show terminal state. Worker fields displayed are: id (from event), role (inferred from event payload if available), objective (event payload if available), model/tier (event payload if available). Missing fields show 'Not provided' label, never guessed.",
+      "testEvidence": "src/gateway/types.ts:130-156 (MissionEventRecord payload is Record<string,unknown>); absence of /workers route in http-server.ts",
+      "status": "PARTIAL",
+      "gap_action": "UI consumes event stream only. Full WorkerGenome exposure is a material backend change — defer to operator."
+    },
+    {
+      "feature": "capability_discovery",
+      "routeOrSymbol": "(no runtime discovery endpoint)",
+      "sourcePath": "data/ownership.yaml + data/upstream-capabilities.yaml (static census only)",
+      "observed": "NO /capabilities endpoint. Static YAML files exist in /data but are not served by the gateway.",
+      "auth": "n/a",
+      "schema": "n/a (no API)",
+      "errors": "n/a",
+      "limitations": "Studio section cannot show live capability discovery. Static YAML files CAN be rendered as 'Documentation only — not runtime discovery' per 03_UI_UX_CONTRACT.md.",
+      "uiBehavior": "Studio catalog shows entries from static YAML, labeled 'Documentation only — not runtime discovery'. Each entry: name, owner, domain, source='data/ownership.yaml'. No 'Install' button (no installation workflow exists). No 'Connected' badge unless backed by a live probe (none).",
+      "testEvidence": "data/ownership.yaml; data/upstream-capabilities.yaml; absence of /capabilities route in http-server.ts",
+      "status": "ABSENT",
+      "gap_action": "UI renders static YAML with honest documentation-only label. Backend capability registry is a material change — defer."
+    },
+    {
+      "feature": "metrics_insights",
+      "routeOrSymbol": "(no /metrics endpoint; metrics derived from MissionResult.cost + flight events)",
+      "sourcePath": "src/contracts/core.ts:340-353 (MissionCost); src/gateway/types.ts:116 (result?:MissionResult in snapshot)",
+      "observed": "MissionCost is part of MissionResult (usd, tokens, wallMs, humanInterventions). No /metrics aggregation endpoint.",
+      "auth": "Bearer via mission snapshot/result",
+      "schema": "MissionCost = { usd:number, tokens:number, wallMs:number, humanInterventions:number }",
+      "errors": "n/a (no dedicated endpoint)",
+      "limitations": "Metrics are per-mission only (no aggregate). Cost (usd) is typically 0 in dev/stub mode (NOT real billing). wallMs is real wall-clock. tokens is real (or 0 in stub). humanInterventions is always 0 in v1.",
+      "uiBehavior": "Insights section shows per-mission metrics only (no aggregation). Each metric has definition, unit, source mission, freshness. Cost = $0 -> 'Not measured' (NOT $0 success). Learning charts: 'No measurement available' unless backed by Experience JSON (which is not served by gateway — display 'Documentation only').",
+      "testEvidence": "src/contracts/core.ts:340-353; src/gateway/types.ts MissionSnapshot.result field",
+      "status": "PARTIAL",
+      "gap_action": "UI shows per-mission metrics only. Aggregate metrics endpoint is a material change — defer."
+    },
+    {
+      "feature": "approvals_HITL",
+      "routeOrSymbol": "(no approval endpoint)",
+      "sourcePath": "src/gateway/types.ts (comment: WAITING_FOR_APPROVAL is NOT advertised)",
+      "observed": "Goal.approvals[] exists in contract but is NOT exposed through the gateway. There is NO /approvals route. No WAITING_FOR_APPROVAL status advertised.",
+      "auth": "n/a",
+      "schema": "n/a",
+      "errors": "n/a",
+      "limitations": "UI MUST NOT render approval/PAUSE/RESUME controls. The contract field exists for future use; gateway v1 does not implement it.",
+      "uiBehavior": "MissionControl action bar shows ONLY Cancel (verified supported). No Approve/Pause/Resume buttons. Display explanatory note: 'Human-in-the-loop approvals are not exposed by gateway v1.'",
+      "testEvidence": "src/gateway/types.ts:39 comment 'WAITING_FOR_APPROVAL is NOT advertised'; absence of /approvals route",
+      "status": "ABSENT",
+      "gap_action": "UI hides approval controls. Backend HITL is a material change — defer."
+    },
+    {
+      "feature": "replay_events",
+      "routeOrSymbol": "(no replay endpoint; replay is UI-side navigation of /events)",
+      "sourcePath": "src/gateway/http-server.ts:205-208 (same /events endpoint)",
+      "observed": "Replay is conceptual only — UI navigates a recorded event timeline client-side. No server-side replay engine or /replay endpoint exists.",
+      "auth": "Bearer via /events",
+      "schema": "Same as observe_events",
+      "errors": "Same as observe_events",
+      "limitations": "Replay cannot invoke tool execution. UI replays recorded events from /events responses captured during the mission. Replay is READ-ONLY navigation, not re-execution.",
+      "uiBehavior": "Artifacts&Replay section: ReplayTimeline shows recorded events with explicit 'Recorded-event replay; no mission is being re-executed' label. Replay controls: prev/next event, jump to seq. No 're-run' button.",
+      "testEvidence": "experiments/g6-04 evidence has flight-records/*.jsonl (offline, not gateway-served); UI uses /events response only",
+      "status": "PARTIAL",
+      "gap_action": "UI implements client-side replay of recorded /events responses. Server-side replay engine is a future enhancement — defer."
+    }
+  ],
+  "ui_capability_summary": {
+    "SUPPORTED": [
+      "service_health",
+      "service_ready",
+      "create_mission",
+      "read_mission",
+      "cancel_mission",
+      "get_terminal_result",
+      "list_artifacts"
+    ],
+    "PARTIAL": [
+      "observe_events",
+      "list_workers_genomes",
+      "metrics_insights",
+      "replay_events"
+    ],
+    "ABSENT": [
+      "list_missions",
+      "capability_discovery",
+      "approvals_HITL"
+    ],
+    "BLOCKED": []
+  },
+  "browser_auth_strategy": {
+    "decision": "Server-side proxy (BFF) via Next.js Route Handlers",
+    "rationale": "Gateway uses Bearer API key auth only (no OAuth, no mTLS, no signed agent cards). The API key MUST NOT reach the browser bundle, localStorage, or query strings (05_SECURITY §1, R02). Next.js Route Handlers run server-side and can attach the Authorization header from process.env.GENESIS_API_KEY without ever serializing it to the client.",
+    "alternate_rejected": "Direct browser-to-gateway calls with the key in localStorage — REJECTED (R02 CRITICAL). Direct browser calls with per-user-supplied key in-memory only — REJECTED (still leaks to bundle).",
+    "implementation": "Route Handler at /api/genesis/[...path] proxies all GET/POST to ${GENESIS_HTTP_URL}${path} with Authorization: Bearer ${GENESIS_API_KEY} attached. CORS handled by Next.js. No new identity platform introduced."
+  },
+  "execution_mode_strategy": {
+    "decision": "Controlled-demo mode behind explicit nonproduction flag",
+    "rationale": "Gateway default mode is 'development' with MemoryComputer + DEVELOPMENT_REASONING_FALLBACK. UI MUST label this honestly. Per 10_OPERATOR_DECISIONS.md, GLM may substitute for live ZAI/OpenBot in controlled reasoning; this is NOT evidence of live integration.",
+    "implementation": "NEXT_PUBLIC_GENESIS_MODE flag: 'live' | 'controlled'. 'controlled' shows a permanent visible banner: 'Controlled test environment — not a live production provider'. Default to 'controlled' unless GENESIS_HTTP_URL points at a production-mode gateway.",
+    "evidence_tier_labels": "E0 mock-only / E1 controlled / E2 connected engine / E3 live provider — UI labels every artifact/event with its tier."
+  },
+  "open_findings": [
+    {
+      "id": "G7-01-F-001",
+      "severity": "MEDIUM",
+      "description": "Event endpoint hardcodes offset=0 and limit=100 in http-server.ts:206 — missions producing >100 events have events 100+ unretrievable. UI MUST label this truncation honestly.",
+      "action": "UI displays 'Showing first 100 events (gateway limit). Events beyond the first 100 are not retrievable through the public API.'"
+    },
+    {
+      "id": "G7-01-F-002",
+      "severity": "LOW",
+      "description": "Health endpoint returns 'ok' even in dev-mode fallback. UI must NOT mislead users into thinking 'ok' means 'real LLM wired'.",
+      "action": "UI inspects health.limitations array; if it includes 'deterministic reasoning default' or 'memory filesystem default', show 'Controlled test environment' badge."
+    },
+    {
+      "id": "G7-01-F-003",
+      "severity": "LOW",
+      "description": "No server-side mission list — UI mission list is client-side only. UI MUST label this as 'browser-local history' NOT 'server history'.",
+      "action": "UI MissionList header shows 'Missions known to this browser session' with a tooltip explaining the gateway has no list endpoint."
+    }
+  ],
+  "go_no_go_for_G7_02": "GO — authenticated mission submit/read path is reachable through the proposed Next.js Route Handler BFF proxy. The API key stays server-side. All ABSENT capabilities (list_missions, capability_discovery, approvals_HITL) are honestly labeled and do NOT block the goal-first golden journey."
+}

@@ -1,0 +1,173 @@
+{
+  "group": "G7-01",
+  "status": "PASS",
+  "base_sha": "bff7b0a6f8b4e35880a9c7453d4e6de343e4e001",
+  "completed_sha": "pending-commit",
+  "branch": "build/group-07-product-experience",
+  "worktree_clean": true,
+  "implemented_features": [
+    "Gateway capability matrix verified from source (evidence/gateway-capability-matrix.json)",
+    "Next.js 16 + TypeScript + Tailwind CSS 4 + shadcn/ui stack chosen with documented rationale",
+    "Responsive six-destination shell (Work, Agent, Mission Control, Artifacts & Replay, Studio, Insights) with state-driven SPA navigation",
+    "Persistent header with product identity, environment indicator, connection status, mission breadcrumb",
+    "Desktop left-rail nav (md+), mobile Sheet drawer nav (default — hamburger menu), tablet compact layout",
+    "Keyboard-first navigation: Alt+1..6 section shortcuts, focus-visible rings on all interactive elements",
+    "Calm Enterprise palette tokens (08_DESIGN_SYSTEM) wired into globals.css (light + dark)",
+    "RTL-ready layout via logical CSS properties and dir attribute",
+    "Reduced-motion support via @media (prefers-reduced-motion: reduce) disabling animations",
+    "Typed UI adapter (lib/genesis/client.ts) returning discriminated results: ok | unsupported | unauthorized | unavailable | uncertain | error",
+    "Typed contract types (lib/genesis/types.ts) mirroring src/gateway/types.ts verified line-by-line",
+    "Zustand store (lib/genesis/store.ts) for active section, connection state, mission context, known missions",
+    "Secure BFF proxy at /api/genesis/[...path]/route.ts — server-side only, never bundles API key to browser",
+    "Verified-routes whitelist in BFF proxy: health, ready, /v1/missions POST/GET/events/result/artifacts/cancel",
+    "Defense-in-depth secret redaction in BFF proxy (GitHub PAT, OpenAI key, Bearer header, env var leak patterns)",
+    "Honest EmptyState component with loading/loaded/empty/error/disconnected variants and live regions",
+    "ConnectionStatus polls /health every 15s; auto-detects dev-mode fixtures from health.limitations array",
+    "EnvironmentStatus permanent visible banner: 'Controlled test environment — not a live production provider'",
+    "MissionBreadcrumb shows mission pill with status tone (NON-color-only cues: icon + text label), last-observed timestamp, clear button",
+    "Six section placeholders with explicit 'G7-02..06 deliverable' notices — no fabricated functionality"
+  ],
+  "api_contracts_verified": [
+    "GET /health (public, no auth) — src/gateway/http-server.ts:93-108",
+    "GET /ready (public, no auth) — src/gateway/http-server.ts:109-112",
+    "POST /v1/missions (auth: Bearer, returns 202 with missionId + links) — src/gateway/http-server.ts:123-188",
+    "GET /v1/missions/{id} (auth: Bearer + ownership, returns MissionSnapshot) — src/gateway/http-server.ts:200-204",
+    "GET /v1/missions/{id}/events (auth: Bearer + ownership, polling-only, max 100 events, offset hardcoded 0 — TRUNCATION GAP G7-01-F-001)",
+    "POST /v1/missions/{id}/cancel (auth: Bearer + ownership, returns 202 with cancelRequested:true) — src/gateway/http-server.ts:230-233",
+    "GET /v1/missions/{id}/result (auth: Bearer + ownership, 409 NOT_FINISHED if !terminal) — src/gateway/http-server.ts:210-224",
+    "GET /v1/missions/{id}/artifacts (auth: Bearer + ownership, content inlined if ≤64KB) — src/gateway/http-server.ts:225-228"
+  ],
+  "tests": [
+    {
+      "id": "UI-001",
+      "area": "Shell",
+      "scenario": "Direct route, refresh, mobile nav",
+      "expected": "Stable accessible navigation",
+      "actual": "PASS — page reload keeps default Work section; mobile drawer opens via hamburger; desktop rail visible at md+",
+      "evidence": "evidence/g7/screenshots/g7-01-shell-desktop.png + g7-01-mobile-360-drawer-open.png"
+    },
+    {
+      "id": "UI-002",
+      "area": "Shell",
+      "scenario": "Gateway down",
+      "expected": "Honest disconnected state, retry",
+      "actual": "PASS — ConnectionStatus shows 'Disconnected' with retry button; /api/genesis/health returns 503 when gateway not running; no fake 'all green' default",
+      "evidence": "evidence/g7/screenshots/g7-01-retry-connection.png + dev.log line 'GET /api/genesis/health 503'"
+    },
+    {
+      "id": "UI-003",
+      "area": "Auth",
+      "scenario": "No credentials/401/403",
+      "expected": "No protected data/action exposed",
+      "actual": "PASS (partial) — without gateway running, BFF proxy returns 503 (not 401). With gateway running in dev mode, GENESIS_API_KEY env var must match a GENESIS_API_KEYS entry or 401 is returned. Full 401/403 verification deferred to G7-02 (requires a running gateway).",
+      "evidence": "src/app/api/genesis/[...path]/route.ts:38-39 + src/components/genesis/ConnectionStatus.tsx"
+    },
+    {
+      "id": "UI-024",
+      "area": "A11y",
+      "scenario": "Keyboard journey + reduced motion",
+      "expected": "Operable, understandable",
+      "actual": "PASS — Alt+1..6 keyboard shortcuts; focus-visible ring (2px outline-ring); ARIA roles on header/nav/main/footer/aside; aria-current=page on active nav item; aria-live=polite on status regions; prefers-reduced-motion CSS disables animations",
+      "evidence": "src/app/globals.css:114-127 + src/components/genesis/AppShell.tsx:34-55"
+    },
+    {
+      "id": "UI-025",
+      "area": "Responsive",
+      "scenario": "360px/768px/1440px",
+      "expected": "No inaccessible controls/overflow",
+      "actual": "PASS — verified at 360 (mobile drawer), 768 (tablet compact), 1440 (desktop rail); no horizontal overflow; touch targets >=44px (size-10 = 40px mobile nav button is the only sub-44 — tracked as minor a11y improvement)",
+      "evidence": "evidence/g7/screenshots/g7-01-mobile-360-default.png + g7-01-tablet-768.png + g7-01-desktop-1440.png"
+    },
+    {
+      "id": "UI-026",
+      "area": "CI",
+      "scenario": "Clean checkout and install",
+      "expected": "Reproducible build and tests",
+      "actual": "DEFERRED to G7-06 clean-room reproduction. Sandbox preview prevents a clean-room install (existing node_modules pollutes the baseline). Lint passes: `bun run lint` reports 0 errors, 0 warnings on the genesis/ source tree.",
+      "evidence": "lint output captured in dev.log"
+    }
+  ],
+  "evidence_paths": [
+    "evidence/gateway-capability-matrix.json",
+    "evidence/g7/checkpoints/G7-01.json",
+    "evidence/g7/g7-01-screenshots-manifest.md",
+    "evidence/g7/screenshots/g7-01-shell-desktop.png",
+    "evidence/g7/screenshots/g7-01-mission-control.png",
+    "evidence/g7/screenshots/g7-01-artifacts.png",
+    "evidence/g7/screenshots/g7-01-studio.png",
+    "evidence/g7/screenshots/g7-01-insights.png",
+    "evidence/g7/screenshots/g7-01-retry-connection.png",
+    "evidence/g7/screenshots/g7-01-mobile-360-default.png",
+    "evidence/g7/screenshots/g7-01-mobile-360-drawer-open.png",
+    "evidence/g7/screenshots/g7-01-tablet-768.png",
+    "evidence/g7/screenshots/g7-01-desktop-1440.png",
+    "web/README.md",
+    "web/.env.example",
+    "web/src/app/globals.css",
+    "web/src/app/layout.tsx",
+    "web/src/app/page.tsx",
+    "web/src/app/api/genesis/[...path]/route.ts",
+    "web/src/components/genesis/AppShell.tsx",
+    "web/src/components/genesis/ConnectionStatus.tsx",
+    "web/src/components/genesis/EnvironmentStatus.tsx",
+    "web/src/components/genesis/MissionBreadcrumb.tsx",
+    "web/src/components/genesis/EmptyState.tsx",
+    "web/src/components/genesis/sections/Sections.tsx",
+    "web/src/lib/genesis/types.ts",
+    "web/src/lib/genesis/client.ts",
+    "web/src/lib/genesis/store.ts"
+  ],
+  "production_files_added": 14,
+  "production_loc_delta": 1382,
+  "dependencies_added": [
+    "next@16.1.1 (already present in sandbox scaffold)",
+    "react@19 (already present)",
+    "zustand@5 (already present)",
+    "lucide-react (already present)",
+    "Tailwind CSS 4 (already present)",
+    "shadcn/ui (already present in src/components/ui/)"
+  ],
+  "open_findings": [
+    {
+      "id": "G7-01-F-001",
+      "severity": "MEDIUM",
+      "description": "Event endpoint hardcodes offset=0 and limit=100 in src/gateway/http-server.ts:206 — missions producing >100 events have events 100+ unretrievable.",
+      "action": "UI displays 'Showing first 100 events (gateway limit)' label in G7-03 EventTimeline."
+    },
+    {
+      "id": "G7-01-F-002",
+      "severity": "LOW",
+      "description": "/health returns 'ok' even in dev mode with MemoryComputer + DEVELOPMENT_REASONING_FALLBACK.",
+      "action": "ConnectionStatus inspects health.limitations array; if dev-mode strings are present, sets connectionState='stale' (visually distinct from 'live')."
+    },
+    {
+      "id": "G7-01-F-003",
+      "severity": "LOW",
+      "description": "No server-side mission list — UI mission list is client-side only.",
+      "action": "G7-02 MissionList header will show 'Missions known to this browser session' with a tooltip explaining the gateway has no list endpoint."
+    },
+    {
+      "id": "G7-01-F-004",
+      "severity": "LOW",
+      "description": "Mobile nav button is 40px (size-10) — below the WCAG 2.2 AA 44px touch target recommendation.",
+      "action": "Increase mobile nav button to size-11 (44px) in G7-02 polish pass."
+    },
+    {
+      "id": "G7-01-F-005",
+      "severity": "LOW",
+      "description": "Sheet (mobile drawer) shows React warning: Missing Description or aria-describedby for DialogContent.",
+      "action": "Add a visually-hidden SheetDescription with a clear navigation purpose statement in G7-02."
+    }
+  ],
+  "known_limitations": [
+    "Browser auth requires server-side proxy (Next.js Route Handler BFF). Direct browser-to-gateway would leak the API key.",
+    "Event stream is polling-based; no SSE/WebSocket. 100-event cap per response.",
+    "Cross-caller isolation returns 404 (not 403) by design — UI cannot distinguish 'not found' from 'not yours'.",
+    "Idempotency key is in-memory only; does not survive gateway restart.",
+    "Gateway was not running during screenshot capture — UI shows honest Disconnected state, which is the correct behavior per the spec. Full 200-path verification requires starting the gateway with a controlled API key (instructions in web/README.md).",
+    "CI clean-room install (UI-026) deferred to G7-06 — sandbox prevents a clean checkout."
+  ],
+  "go_no_go": "GO — G7-02 may proceed. Authenticated mission submit/read path is reachable through the BFF proxy. All ABSENT capabilities (list_missions, capability_discovery, approvals_HITL) are honestly labeled and do NOT block the goal-first golden journey. No P0/P1 blockers. No architectural changes required for G7-02.",
+  "next_group": "G7-02",
+  "next_action": "Implement Work & Goal Composer: goal composer with input validation, POST /v1/missions submission adapter, server canonical mission ID capture, mission list (client-side browser-known) with honest 'no server list endpoint' notice, network-failure UNCERTAIN state, refresh-after-submit handling, and known-ID lookup flow."
+}

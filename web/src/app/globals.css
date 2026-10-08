@@ -1,0 +1,180 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Calm Enterprise palette (08_DESIGN_SYSTEM.md) — light mode (default) */
+:root {
+  --radius: 0.75rem; /* 12px cards per design system */
+  --background: #F7F9FC;   /* light background */
+  --foreground: #182433;  /* primary text */
+  --card: #FFFFFF;        /* surface */
+  --card-foreground: #182433;
+  --popover: #FFFFFF;
+  --popover-foreground: #182433;
+  --primary: #236B88;     /* accent blue/teal */
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0F4F8;   /* raised surface */
+  --secondary-foreground: #182433;
+  --muted: #F0F4F8;
+  --muted-foreground: #64748B;
+  --accent: #E6EEF4;
+  --accent-foreground: #182433;
+  --destructive: #B43D45; /* danger — reserved for confirmed errors */
+  --destructive-foreground: #FFFFFF;
+  --success: #19785B;
+  --warning: #996515;
+  --border: #DDE5ED;
+  --input: #DDE5ED;
+  --ring: #236B88;
+  --chart-1: #236B88;
+  --chart-2: #19785B;
+  --chart-3: #996515;
+  --chart-4: #B43D45;
+  --chart-5: #64748B;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #182433;
+  --sidebar-primary: #236B88;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F0F4F8;
+  --sidebar-accent-foreground: #182433;
+  --sidebar-border: #DDE5ED;
+  --sidebar-ring: #236B88;
+}
+
+/* Dark mode — kept minimal but tested (08_DESIGN_SYSTEM: optional only if cheap) */
+.dark {
+  --background: #0F1A24;
+  --foreground: #E6EEF4;
+  --card: #182433;
+  --card-foreground: #E6EEF4;
+  --popover: #182433;
+  --popover-foreground: #E6EEF4;
+  --primary: #5FA8C9;
+  --primary-foreground: #0F1A24;
+  --secondary: #243447;
+  --secondary-foreground: #E6EEF4;
+  --muted: #243447;
+  --muted-foreground: #94A8B8;
+  --accent: #2D4257;
+  --accent-foreground: #E6EEF4;
+  --destructive: #D9606A;
+  --destructive-foreground: #0F1A24;
+  --success: #4FB98C;
+  --warning: #D4A04F;
+  --border: #2D4257;
+  --input: #2D4257;
+  --ring: #5FA8C9;
+  --chart-1: #5FA8C9;
+  --chart-2: #4FB98C;
+  --chart-3: #D4A04F;
+  --chart-4: #D9606A;
+  --chart-5: #94A8B8;
+  --sidebar: #182433;
+  --sidebar-foreground: #E6EEF4;
+  --sidebar-primary: #5FA8C9;
+  --sidebar-primary-foreground: #0F1A24;
+  --sidebar-accent: #243447;
+  --sidebar-accent-foreground: #E6EEF4;
+  --sidebar-border: #2D4257;
+  --sidebar-ring: #5FA8C9;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* RTL readiness — use logical properties everywhere. */
+  [dir="rtl"] {
+    text-align: right;
+  }
+
+  /* Reduced motion support (05_SECURITY_ACCESSIBILITY §Accessibility) */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Visible focus ring for keyboard users (WCAG 2.2 AA) */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Skeleton shimmer — used by LoadingSkeleton components */
+@keyframes skeleton-shimmer {
+  0% { background-color: var(--muted); }
+  50% { background-color: var(--accent); }
+  100% { background-color: var(--muted); }
+}
+.skeleton-shimmer {
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Custom scrollbar for long lists (UI rule from fullstack-dev skill) */
+.scrollbar-clean::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-clean::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-clean::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
+}
+.scrollbar-clean::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
