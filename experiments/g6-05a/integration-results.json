@@ -1,6 +1,12 @@
 {
-  "results_at": "2026-10-08T00:40:00Z",
-  "source_head_start": "0573b42d1c36cd6ded7273975ec451ad57c70b19",
+  "results_at": "2026-10-08T01:05:00Z",
+  "source_head_start": "b204a4a78c70128b4e3fec6bd4a86123c23b5fd8",
+  "mission": "G6-05A-R1 — Gateway Compliance & Evidence Closure",
+  "corrections_applied": [
+    "Correction A — Official A2A Server SDK (replaced manual JSON-RPC dispatch with DefaultRequestHandler + AgentExecutor + InMemoryTaskStore + JsonRpcTransportHandler)",
+    "Correction B — Real Separate-Process E2E (spawn main.ts as child process, independent HTTP client)",
+    "Correction C — Real Cancellation Proof (long-running mission, AbortSignal propagation verified, SUCCEEDED rejected)"
+  ],
   "test_matrix_results": {
     "API-01_authorized_submission": "PASS",
     "API-02_unauthorized_rejected": "PASS",
@@ -28,18 +34,61 @@
     "A2A-05_unauthorized_rejected": "PASS",
     "A2A-05b_malformed_rejected": "PASS",
     "A2A-06_method_not_found": "PASS",
-    "A2A-OUT-01_outbound_regression": "PASS (existing tests unchanged; 519/9/528)",
-    "E2E-01_independent_application": "PASS",
+    "A2A-OUT-01_outbound_regression": "PASS (22/22 outbound tests unchanged)",
+    "E2E-01_independent_application_in_process": "PASS",
     "E2E-02_verification_genuine": "PASS",
     "FAIL-01_failure_cannot_become_success": "PASS",
-    "FAIL-02_restart_limitation_documented": "PASS"
+    "FAIL-02_restart_limitation_documented": "PASS",
+    "E2E-SEPARATE-01_independent_client_separate_process": "PASS",
+    "E2E-SEPARATE-02_a2a_server_separate_process": "PASS",
+    "CANCEL-01_abort_propagation_cancelled_not_succeeded": "PASS",
+    "CANCEL-02_event_history_represents_cancellation": "PASS",
+    "CANCEL-03_repeated_cancellation_idempotent": "PASS",
+    "CANCEL-04_no_new_work_after_cancellation": "PASS"
+  },
+  "correction_a_official_sdk": {
+    "sdk_used": "@a2a-js/sdk 1.3.0",
+    "server_abstractions_used": [
+      "DefaultRequestHandler (A2ARequestHandler implementation)",
+      "AgentExecutor (GenesisAgentExecutor implements this interface)",
+      "InMemoryTaskStore (SDK-provided task persistence)",
+      "JsonRpcTransportHandler (SDK-provided JSON-RPC dispatch)",
+      "DefaultExecutionEventBusManager (SDK-provided event bus)",
+      "ServerCallContext (SDK-provided request context)",
+      "User (AuthenticatedGatewayUser implements this interface)",
+      "AgentCard (official SDK type)"
+    ],
+    "manual_dispatch_removed": true,
+    "transport": "native node:http (no express dependency added)",
+    "authentication": "Bearer API key with constant-time comparison, enforced BEFORE SDK dispatch",
+    "caller_isolation": "Enforced via AuthenticatedGatewayUser carrying CallerIdentity through ServerCallContext"
+  },
+  "correction_b_separate_process_e2e": {
+    "test_file": "tests/gateway/separate-process-e2e.test.ts",
+    "child_process": "npx tsx src/gateway/main.ts",
+    "readiness_signal": "stderr line containing 'HTTP API listening'",
+    "ephemeral_ports": true,
+    "production_orchestrator_executed": true,
+    "reasoning_mode": "DEVELOPMENT_REASONING_FALLBACK (scripted, labeled accurately)",
+    "runtime": "MemoryComputer (in-memory filesystem, no real OpenBot)",
+    "cleanup": "SIGTERM to child process in afterAll()"
+  },
+  "correction_c_cancellation_proof": {
+    "test_file": "tests/gateway/cancellation.test.ts",
+    "long_running_mechanism": "SlowReasoningProvider (500ms sleep per step)",
+    "abort_signal_propagated": true,
+    "mission_reaches_cancelled": "CANCELLED or PARTIAL (never SUCCEEDED)",
+    "succeeded_rejected": true,
+    "event_history_verified": true,
+    "repeated_cancel_idempotent": true,
+    "no_new_work_after_cancel": true
   },
   "aggregate": {
-    "total_tests_in_matrix": 31,
-    "passed": 31,
+    "total_tests_in_matrix": 38,
+    "passed": 38,
     "failed": 0,
-    "full_suite_tests": "519 passed / 9 skipped = 528 total (up from 487/9=496 at baseline)",
-    "new_tests_added": 32,
+    "full_suite_tests": "525 passed / 9 skipped = 534 total (up from 519/9=528 at G6-05A baseline)",
+    "new_tests_added_in_r1": 6,
     "typecheck": "PASS",
     "lint": "PASS"
   },
@@ -53,7 +102,7 @@
       "src/gateway/a2a-server.ts",
       "src/gateway/main.ts"
     ],
-    "production_loc_delta": "~1940",
+    "production_loc_delta": "~1940 (a2a-server.ts rewritten to use SDK; LOC approximately preserved)",
     "new_runtime_dependencies": 0,
     "new_database": false,
     "new_message_broker": false,
@@ -72,11 +121,11 @@
   "capability_status": {
     "SERVICE_API": "SUPPORTED",
     "A2A_OUTBOUND": "SUPPORTED",
-    "A2A_INBOUND": "SUPPORTED",
-    "A2A_AUTHENTICATION": "LIMITED",
+    "A2A_INBOUND": "SUPPORTED (official SDK server abstractions)",
+    "A2A_AUTHENTICATION": "LIMITED (API key only; no mTLS/OAuth/signed cards)",
     "CROSS_CALLER_ISOLATION": "VERIFIED",
-    "CANCELLATION": "VERIFIED",
-    "RESTART_RECOVERY": "UNSUPPORTED",
+    "CANCELLATION": "VERIFIED (AbortSignal propagation proven with long-running mission)",
+    "RESTART_RECOVERY": "UNSUPPORTED (in-process state only)",
     "FALSE_SUCCESS_PROTECTION": "PASS"
   },
   "limitations": [

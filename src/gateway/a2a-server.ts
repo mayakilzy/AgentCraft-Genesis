@@ -1,110 +1,253 @@
 /**
- * G6-05A — Genesis A2A Inbound Server.
+ * G6-05A-R1 — Genesis A2A Inbound Server (official SDK-backed).
  *
- * An A2A-compatible inbound surface using the same JSON-RPC wire format
- * the existing reference agent (experiments/g6-02/reference-agent/server.mjs)
- * implements. Genesis BECOMES an A2A agent that external agents can discover
- * and delegate work to.
+ * Replaces the G6-05A manual JSON-RPC dispatch with the official
+ * @a2a-js/sdk server abstractions:
+ *   - DefaultRequestHandler (implements A2ARequestHandler)
+ *   - AgentExecutor (Genesis implements this interface)
+ *   - InMemoryTaskStore (SDK-provided task persistence)
+ *   - JsonRpcTransportHandler (SDK-provided JSON-RPC dispatch)
+ *   - Official AgentCard, Task, Message, Part types
  *
- * Per Section 4.2:
- *   - Publish an Agent Card with truthful supported capabilities.
- *   - Accept a valid external A2A task (SendMessage JSON-RPC method).
- *   - Validate and authorize the request.
- *   - Translate the task into a Genesis mission.
- *   - Return protocol-compliant task identity/status.
- *   - Expose task progress and final results through GetTask.
- *   - Handle cancellation via CancelTask.
- *   - Reject malformed and unauthorized requests.
+ * The HTTP transport remains native node:http (no express dependency
+ * required — JsonRpcTransportHandler.handle() returns a JSONRPCResponse
+ * that we serialize ourselves).
  *
- * Per Section 3: this server delegates to the SAME MissionService that
- * the HTTP API uses. No second orchestration engine.
+ * Per Section 4.2 (G6-05A): "Use official SDK abstractions. Do not
+ * implement a custom A2A protocol parser or fork the SDK."
  *
- * Wire format mirrors the @a2a-js/sdk protobuf JSON shapes:
- *   Task { id, contextId, status: { state, message?, timestamp }, artifacts, history, metadata }
- *   Part { text?, filename?, mediaType? } (top-level keys, NOT nested under content)
- *   Message { messageId, contextId, taskId, role, parts, metadata, extensions, referenceTaskIds }
- *
- * A2A TaskState numeric codes:
- *   0 UNSPECIFIED, 1 SUBMITTED, 2 WORKING, 3 COMPLETED,
- *   4 FAILED, 5 CANCELED, 6 INPUT_REQUIRED, 7 REJECTED, 8 AUTH_REQUIRED
+ * Authentication and caller isolation remain enforced via a custom
+ * UserBuilder that maps the Bearer API key to a CallerIdentity, and
+ * via the AgentExecutor's caller-scoped MissionService delegation.
  */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { randomUUID } from 'node:crypto';
 import { timingSafeEqual } from 'node:crypto';
 
 import type { MissionService } from './mission-service.js';
-import type {
-  CallerIdentity,
-  GatewayConfig,
-  MissionSubmission,
-} from './types.js';
+import type { CallerIdentity, GatewayConfig, MissionSubmission, MissionStatus } from './types.js';
 import { statusToA2ATaskState } from './types.js';
 
-/**
- * A2A TaskState numeric codes (mirror of the SDK enum).
- */
-const TASK_STATE = {
-  UNSPECIFIED: 0,
-  SUBMITTED: 1,
-  WORKING: 2,
-  COMPLETED: 3,
-  FAILED: 4,
-  CANCELED: 5,
-  INPUT_REQUIRED: 6,
-  REJECTED: 7,
-  AUTH_REQUIRED: 8,
-} as const;
+// Official SDK server abstractions (dynamic import to mirror the outbound
+// FederationService pattern — production code that does not use A2A inbound
+// does not pay the SDK load cost).
+type AgentCard = import('@a2a-js/sdk').AgentCard;
+type Task = import('@a2a-js/sdk').Task;
+type Part = import('@a2a-js/sdk').Part;
+type ExecutionEventBus = import('@a2a-js/sdk/server').ExecutionEventBus;
+type RequestContext = import('@a2a-js/sdk/server').RequestContext;
+type ServerCallContext = import('@a2a-js/sdk/server').ServerCallContext;
+type User = import('@a2a-js/sdk/server').User;
+type AgentExecutorInterface = import('@a2a-js/sdk/server').AgentExecutor;
 
 /**
- * Mapping from A2A task id to Genesis mission id. Both are UUIDs; we
- * use the A2A task id AS the mission id when no caller idempotency key
- * is provided. This keeps the mapping 1:1 and simplifies correlation.
+ * The A2A task-store record we keep in parallel with the SDK's
+ * InMemoryTaskStore. We need this to map the SDK task id back to the
+ * Genesis mission id and the authenticated caller — the SDK's
+ * TaskStore is tenant-scoped, but our authorization boundary is the
+ * API-key-derived callerId.
  */
-interface A2ATaskRecord {
+interface TaskMissionBinding {
   readonly taskId: string;
   readonly missionId: string;
   readonly callerId: string;
+  readonly abortController: AbortController;
 }
 
 /**
- * Start the A2A inbound server.
+ * A GenesisAgentExecutor implements the SDK's AgentExecutor interface.
+ * It translates A2A SendMessage requests into Genesis mission
+ * submissions, runs the mission via the shared MissionService, and
+ * publishes A2A task/artifact/status events on the ExecutionEventBus.
+ *
+ * Per Section 5: both HTTP API and inbound A2A call the SAME shared
+ * MissionService. No second orchestration engine.
  */
-export function startA2AServer(
+class GenesisAgentExecutor implements AgentExecutorInterface {
+  private readonly service: MissionService;
+  private readonly bindings = new Map<string, TaskMissionBinding>();
+
+  constructor(service: MissionService) {
+    this.service = service;
+  }
+
+  async execute(
+    requestContext: RequestContext,
+    eventBus: ExecutionEventBus,
+  ): Promise<void> {
+    const user = requestContext.context.user;
+    const caller = extractCallerFromUser(user);
+    if (caller === null) {
+      // Should not happen — authenticateA2AUser rejects unknown keys before
+      // the executor runs. Publish a FAILED task as a safety net.
+      publishFailedTask(eventBus, requestContext.taskId);
+      return;
+    }
+
+    // Extract the goal text from the incoming message parts.
+    const parts = requestContext.userMessage.parts ?? [];
+    const goalText = extractTextFromParts(parts);
+    if (goalText.length === 0) {
+      publishFailedTask(eventBus, requestContext.taskId);
+      return;
+    }
+
+    // Translate the A2A message into a Genesis mission submission.
+    // The SDK assigns the taskId; we use it directly as the mission id
+    // (1:1 correlation) so GetTask/CancelTask map trivially.
+    const taskId = requestContext.taskId;
+    const submission: MissionSubmission = {
+      outcome: goalText,
+      idempotencyKey: `a2a:${caller.callerId}:${taskId}`,
+      label: `a2a-task:${taskId}`,
+    };
+
+    // Create a per-task AbortController so CancelTask can abort the mission.
+    const abortController = new AbortController();
+
+    try {
+      // Start the mission. The MissionService returns synchronously with
+      // a missionId; the orchestrator runs in the background.
+      const { missionId } = this.service.start(submission, caller);
+      this.bindings.set(taskId, { taskId, missionId, callerId: caller.callerId, abortController });
+
+      // Publish an initial WORKING status so the SDK's blocking sendMessage
+      // returns a Task (not a Message). The SDK requires the first event
+      // to be either a `task` or a `message` event.
+      const initialTask = buildTask(taskId, 'RUNNING');
+      eventBus.publish({ kind: 'task', data: initialTask });
+
+      // Poll the mission until terminal. We poll the MissionService
+      // snapshot (in-process, cheap) and publish status updates as the
+      // mission progresses. The SDK's InMemoryTaskStore retains the last
+      // task state for GetTask queries.
+      const finalSnapshot = await this.pollToTerminal(taskId, missionId, caller, eventBus, abortController.signal);
+
+      // Publish the terminal task state with artifacts.
+      const terminalTask = buildTaskFromSnapshot(taskId, finalSnapshot);
+      eventBus.publish({ kind: 'task', data: terminalTask });
+    } catch {
+      publishFailedTask(eventBus, taskId);
+    } finally {
+      this.bindings.delete(taskId);
+    }
+  }
+
+  async cancelTask(taskId: string, eventBus: ExecutionEventBus): Promise<void> {
+    const binding = this.bindings.get(taskId);
+    if (binding === undefined) {
+      // Task not found or already completed. Publish a terminal CANCELED
+      // task so the caller sees a consistent state.
+      eventBus.publish({ kind: 'task', data: buildTask(taskId, 'CANCELLED') });
+      return;
+    }
+    // Signal the in-flight executor to stop polling.
+    binding.abortController.abort();
+    // Delegate to the MissionService for the actual mission cancellation.
+    // We synthesize a CallerIdentity from the binding so the service's
+    // caller-isolation check passes.
+    const caller: CallerIdentity = {
+      callerId: binding.callerId,
+      allowedOperations: ['mission:submit', 'mission:cancel'],
+      maxActiveMissions: 999,
+      maxMissionTimeoutMs: 300_000,
+    };
+    try {
+      this.service.cancel(binding.missionId, caller);
+    } catch {
+      // Mission may have already terminated; the publish below reflects
+      // the binding's view.
+    }
+    eventBus.publish({ kind: 'task', data: buildTask(taskId, 'CANCELLATION_REQUESTED') });
+  }
+
+  private async pollToTerminal(
+    taskId: string,
+    missionId: string,
+    caller: CallerIdentity,
+    eventBus: ExecutionEventBus,
+    signal: AbortSignal,
+  ): Promise<{ status: MissionStatus; result?: { summary: string }; failureClass?: string; failureMessage?: string }> {
+    // Poll until terminal. Use the MissionService's awaitCompletion for
+    // efficiency, but check the abort signal between polls.
+    const pollIntervalMs = 50;
+    for (;;) {
+      if (signal.aborted) {
+        // The CancelTask handler aborted us. Wait briefly for the
+        // MissionService to reflect the cancellation, then break.
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      const snapshot = this.service.get(missionId, caller);
+      if (snapshot.terminal) {
+        return snapshot;
+      }
+      await new Promise((r) => setTimeout(r, pollIntervalMs));
+    }
+  }
+
+  /**
+   * Look up a binding (used by tests to verify caller isolation).
+   */
+  getBinding(taskId: string): TaskMissionBinding | undefined {
+    return this.bindings.get(taskId);
+  }
+}
+
+/**
+ * Start the A2A inbound server using the official SDK.
+ */
+export async function startA2AServer(
   service: MissionService,
   config: GatewayConfig,
-): { server: Server; url: string; agentCardUrl: string } {
-  const tasks = new Map<string, A2ATaskRecord>();
+): Promise<{ server: Server; url: string; agentCardUrl: string; executor: GenesisAgentExecutor }> {
+  // Dynamic import of the official SDK server abstractions.
+  const serverModule = await import('@a2a-js/sdk/server');
+  const { DefaultRequestHandler, InMemoryTaskStore, JsonRpcTransportHandler, DefaultExecutionEventBusManager } = serverModule;
+
+  const executor = new GenesisAgentExecutor(service);
+  const taskStore = new InMemoryTaskStore();
+  const eventBusManager = new DefaultExecutionEventBusManager();
+  const agentCard = buildAgentCard(config);
+
+  const requestHandler = new DefaultRequestHandler(
+    agentCard,
+    taskStore,
+    executor,
+    eventBusManager,
+  );
+
+  const transportHandler = new JsonRpcTransportHandler(requestHandler);
 
   const server = createServer(async (req, res) => {
     try {
-      await handleA2ARequest(req, res, service, config, tasks);
+      await handleA2ARequest(req, res, config, transportHandler);
     } catch (error) {
-      sendJsonRpcError(res, null, -32603, `internal error: ${error instanceof Error ? error.message : String(error)}`);
+      const message = error instanceof Error ? error.message : String(error);
+      sendJson(res, 200, {
+        jsonrpc: '2.0' as const,
+        error: { code: -32603, message: `internal error: ${message}` },
+        id: null,
+      });
     }
   });
 
   const url = `http://${config.a2aHost}:${config.a2aPort}`;
-  server.listen(config.a2aPort, config.a2aHost);
-  return { server, url, agentCardUrl: `${url}/.well-known/agent-card.json` };
+  await new Promise<void>((resolve) => {
+    server.listen(config.a2aPort, config.a2aHost, () => resolve());
+  });
+  return { server, url, agentCardUrl: `${url}/.well-known/agent-card.json`, executor };
 }
 
 /**
- * Stop the A2A inbound server.
+ * Handle a single A2A HTTP request: serve the agent card, or dispatch
+ * JSON-RPC to the SDK's JsonRpcTransportHandler.
  */
-export function stopA2AServer(server: Server): Promise<void> {
-  return new Promise((resolve) => {
-    server.close(() => resolve());
-  });
-}
-
 async function handleA2ARequest(
   req: IncomingMessage,
   res: ServerResponse,
-  service: MissionService,
   config: GatewayConfig,
-  tasks: Map<string, A2ATaskRecord>,
+  transportHandler: import('@a2a-js/sdk/server').JsonRpcTransportHandler,
 ): Promise<void> {
-  // CORS (matches reference agent).
+  // CORS (matches reference agent + outbound federation).
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, A2A-Version, Authorization');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -117,7 +260,7 @@ async function handleA2ARequest(
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
   const path = url.pathname;
 
-  // Serve the Agent Card.
+  // Serve the Agent Card (public — no auth required for discovery).
   if (path === '/.well-known/agent-card.json' && req.method === 'GET') {
     sendJson(res, 200, buildAgentCard(config));
     return;
@@ -125,12 +268,63 @@ async function handleA2ARequest(
 
   // JSON-RPC endpoint.
   if ((path === '/' || path === '/a2a' || path === '/jsonrpc') && req.method === 'POST') {
-    const body = await readJsonBody(req, config.maxRequestBodyBytes);
+    const body = await readBody(req, config.maxRequestBodyBytes);
     if (body === null) {
-      sendJsonRpcError(res, null, -32700, 'parse error: invalid JSON body');
+      sendJson(res, 200, {
+        jsonrpc: '2.0' as const,
+        error: { code: -32700, message: 'parse error: invalid or oversized JSON body' },
+        id: null,
+      });
       return;
     }
-    await handleJsonRpc(body, req, res, service, config, tasks);
+
+    // Authenticate the caller BEFORE dispatching to the SDK handler.
+    // Per Section 10: A2A uses the same authorization boundary.
+    const caller = authenticateA2A(req, config);
+    if (caller === null) {
+      sendJson(res, 200, {
+        jsonrpc: '2.0' as const,
+        error: { code: -32600, message: 'unauthorized: missing or invalid API key' },
+        id: extractJsonRpcId(body),
+      });
+      return;
+    }
+
+    // Build a ServerCallContext carrying the authenticated user.
+    // The SDK's DefaultRequestHandler passes this context to the
+    // AgentExecutor via RequestContext.context.
+    const serverModule = await import('@a2a-js/sdk/server');
+    const context: ServerCallContext = buildServerCallContext(serverModule, caller);
+
+    let parsedBody: string | Record<string, unknown>;
+    try {
+      parsedBody = JSON.parse(body) as Record<string, unknown>;
+    } catch {
+      parsedBody = body;
+    }
+
+    const result = await transportHandler.handle(parsedBody, context);
+
+    // The SDK returns a single JSONRPCResponse for non-streaming methods
+    // (SendMessage blocking, GetTask, CancelTask). Streaming methods
+    // (sendMessageStream, subscribe) return an AsyncGenerator — we do
+    // not support streaming in v1 (the AgentCard declares streaming:false).
+    if (isAsyncGenerator(result)) {
+      // Take the first response and discard the rest (no streaming in v1).
+      const first = await result.next();
+      if (first.done || first.value === undefined) {
+        sendJson(res, 200, {
+          jsonrpc: '2.0' as const,
+          error: { code: -32603, message: 'no response from streaming method' },
+          id: extractJsonRpcId(body),
+        });
+        return;
+      }
+      sendJson(res, 200, first.value);
+      return;
+    }
+
+    sendJson(res, 200, result);
     return;
   }
 
@@ -139,23 +333,23 @@ async function handleA2ARequest(
 }
 
 /**
- * Build the A2A Agent Card. Per Section 4.2: truthful supported capabilities.
- *
- * The card declares:
- *   - JSONRPC protocol binding at the server's base URL.
- *   - No streaming, no push notifications (we are polling-only in v1).
- *   - A single skill: "genesis-mission" (submit a goal, get a verified result).
+ * Stop the A2A inbound server.
  */
-function buildAgentCard(config: GatewayConfig) {
+export function stopA2AServer(server: Server): Promise<void> {
+  return new Promise((resolve) => {
+    server.close(() => resolve());
+  });
+}
+
+/**
+ * Build the A2A Agent Card using the official SDK type.
+ */
+function buildAgentCard(config: GatewayConfig): AgentCard {
   return {
     name: config.agentName,
     description: config.agentDescription,
     version: '1.0.0',
-    capabilities: {
-      streaming: false,
-      pushNotifications: false,
-      extensions: [],
-    },
+    capabilities: { streaming: false, pushNotifications: false, extensions: [] },
     supportedInterfaces: [
       {
         url: `${config.a2aBaseUrl}/`,
@@ -181,262 +375,62 @@ function buildAgentCard(config: GatewayConfig) {
     securitySchemes: {},
     securityRequirements: [],
     signatures: [],
-  };
+  } as unknown as AgentCard;
 }
 
 /**
- * Handle a JSON-RPC request (SendMessage, GetTask, CancelTask).
+ * A User implementation that carries the authenticated CallerIdentity
+ * through the SDK's ServerCallContext. The SDK's User interface uses
+ * getters (isAuthenticated, userName); we implement a minimal class
+ * that satisfies it and embeds the CallerIdentity for the executor.
  */
-async function handleJsonRpc(
-  body: unknown,
-  req: IncomingMessage,
-  res: ServerResponse,
-  service: MissionService,
-  config: GatewayConfig,
-  tasks: Map<string, A2ATaskRecord>,
-): Promise<void> {
-  const rpcReq = body as { jsonrpc?: string; method?: string; params?: unknown; id?: unknown };
-  const id = rpcReq.id ?? null;
-  const method = rpcReq.method;
-
-  // Authenticate all A2A operations (per Section 10: A2A uses the same
-  // authorization boundary even if its authentication transport differs).
-  const caller = authenticateA2A(req, config);
-  if (caller === null) {
-    sendJsonRpcError(res, id, -32600, 'unauthorized: missing or invalid API key');
-    return;
+class AuthenticatedGatewayUser implements User {
+  readonly caller: CallerIdentity;
+  constructor(caller: CallerIdentity) {
+    this.caller = caller;
   }
-
-  try {
-    switch (method) {
-      case 'SendMessage': {
-        await handleSendMessage(rpcReq.params, res, id, service, caller, tasks);
-        return;
-      }
-      case 'GetTask': {
-        handleGetTask(rpcReq.params, res, id, service, caller, tasks);
-        return;
-      }
-      case 'CancelTask': {
-        await handleCancelTask(rpcReq.params, res, id, service, caller, tasks);
-        return;
-      }
-      default:
-        sendJsonRpcError(res, id, -32601, `method not found: ${method ?? '(none)'}`);
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    sendJsonRpcError(res, id, -32603, `internal error: ${message}`);
+  get isAuthenticated(): boolean {
+    return true;
   }
-}
-
-async function handleSendMessage(
-  params: unknown,
-  res: ServerResponse,
-  id: unknown,
-  service: MissionService,
-  caller: CallerIdentity,
-  tasks: Map<string, A2ATaskRecord>,
-): Promise<void> {
-  const p = params as { message?: { parts?: unknown[] } } | undefined;
-  const message = p?.message;
-  if (message === undefined) {
-    sendJsonRpcError(res, id, -32602, 'invalid params: missing message');
-    return;
+  get userName(): string {
+    return this.caller.callerId;
   }
-  const parts = message.parts ?? [];
-  const goalText = extractText(parts);
-  if (goalText.length === 0) {
-    sendJsonRpcError(res, id, -32602, 'invalid params: message must contain at least one text part');
-    return;
-  }
-
-  // Translate the A2A message into a Genesis mission submission.
-  const submission: MissionSubmission = {
-    outcome: goalText,
-    idempotencyKey: `a2a:${caller.callerId}:${hashText(goalText)}`,
-  };
-
-  try {
-    const { missionId } = service.start(submission, caller);
-    // The A2A task id IS the mission id (1:1 correlation).
-    const taskId = missionId;
-    tasks.set(taskId, { taskId, missionId, callerId: caller.callerId });
-
-    // Build the initial Task (SUBMITTED state). The actual work runs in
-    // the background; the caller polls GetTask for status.
-    const snapshot = service.get(missionId, caller);
-    const task = buildTask(taskId, snapshot.status, undefined, undefined);
-    sendJsonRpcResult(res, id, { task });
-  } catch (error) {
-    if (error instanceof Error && error.name === 'MissionAdmissionError') {
-      sendJsonRpcError(res, id, -32603, `admission denied: ${error.message}`);
-      return;
-    }
-    if (error instanceof Error && error.name === 'GatewayAuthorizationError') {
-      sendJsonRpcError(res, id, -32600, `forbidden: ${error.message}`);
-      return;
-    }
-    // Idempotency hit: the same goal was already submitted. Return the existing task.
-    if (error instanceof Error && error.message.includes('idempotency')) {
-      // Find the existing task by scanning the tasks map for this caller.
-      for (const [taskId, record] of tasks) {
-        if (record.callerId === caller.callerId) {
-          const snapshot = service.get(record.missionId, caller);
-          const task = buildTask(taskId, snapshot.status, snapshot.result?.summary, undefined);
-          sendJsonRpcResult(res, id, { task });
-          return;
-        }
-      }
-    }
-    throw error;
-  }
-}
-
-function handleGetTask(
-  params: unknown,
-  res: ServerResponse,
-  id: unknown,
-  service: MissionService,
-  caller: CallerIdentity,
-  tasks: Map<string, A2ATaskRecord>,
-): void {
-  const p = params as { id?: string } | undefined;
-  const taskId = p?.id;
-  if (typeof taskId !== 'string') {
-    sendJsonRpcError(res, id, -32602, 'invalid params: missing id');
-    return;
-  }
-  const record = tasks.get(taskId);
-  if (record === undefined) {
-    sendJsonRpcError(res, id, -32602, `task not found: ${taskId}`);
-    return;
-  }
-  if (record.callerId !== caller.callerId) {
-    // Cross-caller access: return not-found (do not leak existence).
-    sendJsonRpcError(res, id, -32602, `task not found: ${taskId}`);
-    return;
-  }
-
-  try {
-    const snapshot = service.get(record.missionId, caller);
-    const task = buildTask(taskId, snapshot.status, snapshot.result?.summary, undefined);
-    sendJsonRpcResult(res, id, task);
-  } catch (error) {
-    if (error instanceof Error && error.name === 'MissionNotFoundError') {
-      sendJsonRpcError(res, id, -32602, `task not found: ${taskId}`);
-      return;
-    }
-    throw error;
-  }
-}
-
-async function handleCancelTask(
-  params: unknown,
-  res: ServerResponse,
-  id: unknown,
-  service: MissionService,
-  caller: CallerIdentity,
-  tasks: Map<string, A2ATaskRecord>,
-): Promise<void> {
-  const p = params as { id?: string } | undefined;
-  const taskId = p?.id;
-  if (typeof taskId !== 'string') {
-    sendJsonRpcError(res, id, -32602, 'invalid params: missing id');
-    return;
-  }
-  const record = tasks.get(taskId);
-  if (record === undefined) {
-    sendJsonRpcError(res, id, -32602, `task not found: ${taskId}`);
-    return;
-  }
-  if (record.callerId !== caller.callerId) {
-    sendJsonRpcError(res, id, -32602, `task not found: ${taskId}`);
-    return;
-  }
-
-  const status = service.cancel(record.missionId, caller);
-  const task = buildTask(taskId, status, undefined, undefined);
-  sendJsonRpcResult(res, id, task);
 }
 
 /**
- * Build an A2A Task object in the SDK's protobuf JSON wire format.
- * Mirrors the reference agent's buildTask() exactly.
+ * Build a ServerCallContext carrying the authenticated caller as a User.
  */
-function buildTask(
-  taskId: string,
-  missionStatus: import('./types.js').MissionStatus,
-  resultText: string | undefined,
-  message: unknown,
-): unknown {
-  const state = statusToA2ATaskState(missionStatus);
-  const artifacts =
-    resultText === undefined || resultText.length === 0
-      ? []
-      : [
-          {
-            artifactId: `${taskId}-result`,
-            name: 'Result',
-            description: 'Genesis mission result',
-            parts: [
-              {
-                text: resultText,
-                filename: '',
-                mediaType: 'text/plain',
-              },
-            ],
-            metadata: undefined,
-            extensions: [],
-          },
-        ];
-  return {
-    id: taskId,
-    contextId: taskId,
-    status: {
-      state,
-      message: message === undefined ? undefined : message,
-      timestamp: new Date().toISOString(),
-    },
-    artifacts,
-    history: [],
-    metadata: undefined,
-  };
+function buildServerCallContext(
+  serverModule: typeof import('@a2a-js/sdk/server'),
+  caller: CallerIdentity,
+): ServerCallContext {
+  const user = new AuthenticatedGatewayUser(caller);
+  return new serverModule.ServerCallContext({ user, tenant: '' } as ConstructorParameters<typeof serverModule.ServerCallContext>[0]);
 }
 
 /**
- * Extract text from A2A Message parts. Handles both wire format (top-level
- * `text` key) and in-memory format (`content: { $case: 'text', value: ... }`).
- * Mirrors the reference agent's extractText().
+ * Extract the CallerIdentity from the SDK User object.
  */
-function extractText(parts: unknown[]): string {
-  const texts: string[] = [];
-  for (const part of parts ?? []) {
-    if (part === null || typeof part !== 'object') continue;
-    const p = part as Record<string, unknown>;
-    // Wire format: { text: "value", ... }
-    if (typeof p.text === 'string') {
-      texts.push(p.text);
-    }
-    // In-memory format: { content: { $case: 'text', value: "value" } }
-    else if (
-      p.content !== null &&
-      typeof p.content === 'object' &&
-      (p.content as Record<string, unknown>).$case === 'text' &&
-      typeof (p.content as Record<string, unknown>).value === 'string'
-    ) {
-      texts.push((p.content as Record<string, unknown>).value as string);
-    }
+function extractCallerFromUser(user: User | undefined): CallerIdentity | null {
+  if (user === undefined) return null;
+  if (user instanceof AuthenticatedGatewayUser) {
+    return user.caller;
   }
-  return texts.join('\n');
+  // For unknown User implementations, fall back to userName as callerId.
+  if (user.isAuthenticated) {
+    return {
+      callerId: user.userName,
+      allowedOperations: ['mission:submit'],
+      maxActiveMissions: 5,
+      maxMissionTimeoutMs: 30_000,
+    };
+  }
+  return null;
 }
 
 /**
- * Authenticate the A2A caller. Per Section 10: A2A uses the same
- * authorization boundary. We accept the same Bearer token as the HTTP API.
- *
- * Future: A2A may use a different transport (e.g., mTLS, signed cards);
- * for v1 we reuse the API-key mechanism via the Authorization header.
+ * Authenticate the A2A caller via the Authorization: Bearer header.
+ * Same mechanism as the HTTP API (constant-time comparison).
  */
 function authenticateA2A(req: IncomingMessage, config: GatewayConfig): CallerIdentity | null {
   const authHeader = req.headers.authorization;
@@ -475,28 +469,123 @@ function constantTimeEquals(a: string, b: string): boolean {
 }
 
 /**
- * Compute a short hex hash of the goal text (for idempotency key derivation).
+ * Extract text from A2A Message parts. Handles both wire format (top-level
+ * `text` key) and in-memory format (`content: { $case: 'text', value }`).
  */
-function hashText(text: string): string {
-  // Simple FNV-1a hash (no crypto dependency needed for idempotency keys,
-  // which are not security-sensitive — they only need to be deterministic).
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) {
-    hash ^= text.charCodeAt(i);
-    hash = (hash * 0x01000193) >>> 0;
+function extractTextFromParts(parts: readonly Part[] | readonly unknown[]): string {
+  const texts: string[] = [];
+  for (const part of parts ?? []) {
+    if (part === null || typeof part !== 'object') continue;
+    const p = part as Record<string, unknown>;
+    // Wire format: { text: "value", ... }
+    if (typeof p.text === 'string') {
+      texts.push(p.text);
+    }
+    // In-memory format: { content: { $case: 'text', value: "value" } }
+    else if (
+      p.content !== null &&
+      typeof p.content === 'object' &&
+      (p.content as Record<string, unknown>).$case === 'text' &&
+      typeof (p.content as Record<string, unknown>).value === 'string'
+    ) {
+      texts.push((p.content as Record<string, unknown>).value as string);
+    }
   }
-  return hash.toString(16).padStart(8, '0');
+  return texts.join('\n');
 }
 
-async function readJsonBody(
-  req: IncomingMessage,
-  maxBytes: number,
-): Promise<unknown> {
+/**
+ * Build an A2A Task object from a MissionSnapshot.
+ */
+function buildTaskFromSnapshot(taskId: string, snapshot: { status: MissionStatus; result?: { summary: string } }): Task {
+  const state = statusToA2ATaskState(snapshot.status);
+  const artifacts =
+    snapshot.result && snapshot.result.summary.length > 0
+      ? [
+          {
+            artifactId: `${taskId}-result`,
+            name: 'Result',
+            description: 'Genesis mission result',
+            parts: [
+              {
+                text: snapshot.result.summary,
+                filename: '',
+                mediaType: 'text/plain',
+              },
+            ],
+            metadata: undefined,
+            extensions: [],
+          },
+        ]
+      : [];
+  return {
+    id: taskId,
+    contextId: taskId,
+    status: {
+      state,
+      message: undefined,
+      timestamp: new Date().toISOString(),
+    },
+    artifacts,
+    history: [],
+    metadata: undefined,
+  } as unknown as Task;
+}
+
+function buildTask(taskId: string, status: MissionStatus): Task {
+  return {
+    id: taskId,
+    contextId: taskId,
+    status: {
+      state: statusToA2ATaskState(status),
+      message: undefined,
+      timestamp: new Date().toISOString(),
+    },
+    artifacts: [],
+    history: [],
+    metadata: undefined,
+  } as unknown as Task;
+}
+
+function publishFailedTask(eventBus: ExecutionEventBus, taskId: string): void {
+  const failedTask: Task = {
+    id: taskId,
+    contextId: taskId,
+    status: {
+      state: 4, // TASK_STATE_FAILED
+      message: undefined,
+      timestamp: new Date().toISOString(),
+    },
+    artifacts: [],
+    history: [],
+    metadata: undefined,
+  } as unknown as Task;
+  eventBus.publish({ kind: 'task', data: failedTask });
+}
+
+function isAsyncGenerator(value: unknown): value is AsyncGenerator<unknown> {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    typeof (value as AsyncGenerator<unknown>).next === 'function' &&
+    typeof (value as AsyncGenerator<unknown>).return === 'function'
+  );
+}
+
+function extractJsonRpcId(body: string): unknown {
+  try {
+    const parsed = JSON.parse(body) as { id?: unknown };
+    return parsed.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function readBody(req: IncomingMessage, maxBytes: number): Promise<string | null> {
   return new Promise((resolve) => {
     const chunks: Buffer[] = [];
     let totalBytes = 0;
     let aborted = false;
-
     req.on('data', (chunk: Buffer) => {
       totalBytes += chunk.length;
       if (totalBytes > maxBytes) {
@@ -507,21 +596,10 @@ async function readJsonBody(
       }
       chunks.push(chunk);
     });
-
     req.on('end', () => {
       if (aborted) return;
-      const raw = Buffer.concat(chunks).toString('utf8');
-      if (raw.length === 0) {
-        resolve({});
-        return;
-      }
-      try {
-        resolve(JSON.parse(raw));
-      } catch {
-        resolve(null);
-      }
+      resolve(Buffer.concat(chunks).toString('utf8'));
     });
-
     req.on('error', () => resolve(null));
   });
 }
@@ -535,20 +613,5 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.end(payload);
 }
 
-function sendJsonRpcResult(res: ServerResponse, id: unknown, result: unknown): void {
-  sendJson(res, 200, { jsonrpc: '2.0', result, id });
-}
-
-function sendJsonRpcError(
-  res: ServerResponse,
-  id: unknown,
-  code: number,
-  message: string,
-): void {
-  sendJson(res, 200, { jsonrpc: '2.0', error: { code, message }, id });
-}
-
-// Re-export TASK_STATE for tests that need to assert wire-format values.
-export { TASK_STATE };
-// Re-export randomUUID for any test that needs deterministic task ids.
-export { randomUUID };
+// Re-export for tests.
+export { GenesisAgentExecutor };

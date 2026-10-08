@@ -38,10 +38,13 @@ The G6-05A reconnaissance inspected 20 source files plus the
 ### Architecture Decisions
 
 1. **Native `node:http`** (no express, no new runtime dependencies).
-   The reference agent (`experiments/g6-02/reference-agent/server.mjs`)
-   proved that ~150 lines of `node:http` + JSON-RPC dispatch is
-   sufficient for A2A. G6-05A follows the same pattern. This honors
-   `NEW_RUNTIME_DEPENDENCIES = 0`.
+   The A2A inbound server uses the official `@a2a-js/sdk` server
+   abstractions (`DefaultRequestHandler`, `AgentExecutor`,
+   `InMemoryTaskStore`, `JsonRpcTransportHandler`) mounted on native
+   `node:http`. The SDK's `JsonRpcTransportHandler.handle()` returns
+   a `JSONRPCResponse` that we serialize ourselves — no express
+   dependency required. This honors `NEW_RUNTIME_DEPENDENCIES = 0`
+   AND `Section 4.2: "Use official SDK abstractions."`
 
 2. **One MissionService, two transports.** Both HTTP API and A2A
    inbound call the same `MissionService.start()`, `get()`, `cancel()`
@@ -99,12 +102,15 @@ The gateway reuses:
 | `tests/gateway/helpers.ts` | (setup) | Shared test fixtures + http/a2a helpers |
 | `tests/gateway/http-api.test.ts` | 17 | API-01..API-12 + health/ready |
 | `tests/gateway/isolation.test.ts` | 4 | ISO-01..ISO-04 cross-caller isolation |
-| `tests/gateway/a2a-inbound.test.ts` | 7 | A2A-01..A2A-06 inbound A2A |
+| `tests/gateway/a2a-inbound.test.ts` | 7 | A2A-01..A2A-06 inbound A2A (official SDK server) |
 | `tests/gateway/e2e.test.ts` | 4 | E2E-01..E2E-02 + FAIL-01..FAIL-02 |
-| **Total new tests** | **32** | |
+| `tests/gateway/separate-process-e2e.test.ts` | 2 | Separate-process E2E (spawns main.ts) |
+| `tests/gateway/cancellation.test.ts` | 4 | CANCEL-01..CANCEL-04 (AbortSignal propagation proof) |
+| **Total gateway tests** | **38** | |
 
-Full test suite: 519 passed / 9 skipped (528 total) — up from 487/9 (496)
-at the G6-05 baseline.
+Full test suite: 525 passed / 9 skipped (534 total) — up from 519/9 (528)
+at the G6-05A baseline. The 6 new R1 tests are additive; no existing
+test was modified or removed.
 
 ## Known Limitations
 

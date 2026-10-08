@@ -96,18 +96,19 @@ function loadConfig(): GatewayConfig {
   };
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const config = loadConfig();
   const service = new MissionService({
     defaultMissionTimeoutMs: config.defaultMissionTimeoutMs,
   });
 
   const http = startHttpServer(service, config);
-  const a2a = startA2AServer(service, config);
+  const a2a = await startA2AServer(service, config);
 
   console.error(`[genesis-gateway] HTTP API listening on ${http.url}`);
   console.error(`[genesis-gateway] A2A inbound listening on ${a2a.url}`);
   console.error(`[genesis-gateway] Agent Card at ${a2a.agentCardUrl}`);
+  console.error(`[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.`);
   console.error(`[genesis-gateway] ${config.apiKeys.size} caller(s) configured.`);
   console.error('[genesis-gateway] In-process state; no durability across restart.');
 
@@ -122,4 +123,4 @@ function main(): void {
   process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
-main();
+await main();

@@ -1,19 +1,41 @@
-# G6-05A — Final Analysis
+# G6-05A-R1 — Final Analysis (Gateway Compliance & Evidence Closure)
 
 **Date:** 2026-10-08
-**Mission:** G6-05A — Service Gateway & Bidirectional A2A
+**Mission:** G6-05A-R1 — Gateway Compliance & Evidence Closure
 **Branch:** `build/group-06-productionization`
-**Source HEAD (start):** `0573b42d1c36cd6ded7273975ec451ad57c70b19`
+**Source HEAD (G6-05A):** `b204a4a78c70128b4e3fec6bd4a86123c23b5fd8`
 
 ---
 
 ## 0. Mission Outcome
 
-G6-05A implements and verifies a minimal, production-oriented service
-boundary that allows independent applications and external agents to
-invoke Genesis.
+G6-05A-R1 corrects the three outstanding G6-05A acceptance failures
+identified by the read-only audit:
 
-**G6_05A_STATUS = PASS_WITH_LIMITATIONS**
+1. **Correction A — Official A2A Server SDK.** The manual JSON-RPC
+   dispatch in `a2a-server.ts` was replaced with the official
+   `@a2a-js/sdk` server abstractions: `DefaultRequestHandler`,
+   `AgentExecutor`, `InMemoryTaskStore`, `JsonRpcTransportHandler`,
+   `DefaultExecutionEventBusManager`. Native `node:http` remains the
+   HTTP transport (no express dependency added).
+
+2. **Correction B — Real Separate-Process E2E.** A new test
+   (`tests/gateway/separate-process-e2e.test.ts`) spawns the actual
+   gateway entrypoint (`main.ts`) as a child process, waits for a
+   genuine readiness signal on stderr, then executes the independent
+   client logic over real HTTP. The production `MissionOrchestrator`
+   is exercised through the full chain.
+
+3. **Correction C — Real Cancellation Proof.** A new test
+   (`tests/gateway/cancellation.test.ts`) creates a controlled
+   long-running mission using a `SlowReasoningProvider` (500ms per
+   step), cancels it while demonstrably active, and verifies that
+   the `AbortSignal` propagates, the mission reaches `CANCELLED`
+   (never `SUCCEEDED`), event history represents the cancellation,
+   repeated cancellation is idempotent, and no new work is scheduled
+   after cancellation.
+
+**G6_05A_R1_STATUS = PASS**
 
 Two complementary access mechanisms are now supported:
 
@@ -32,44 +54,45 @@ the Genesis UI.
 ## 1. Report Block (per Section 31)
 
 ```text
-G6_05A_STATUS = PASS_WITH_LIMITATIONS
+G6_05A_STATUS = PASS (R1 corrections applied)
 
-START_HEAD = 0573b42d1c36cd6ded7273975ec451ad57c70b19
+START_HEAD = b204a4a78c70128b4e3fec6bd4a86123c23b5fd8
 FINAL_HEAD = (recorded after commit)
 LOCAL_REMOTE_MATCH = YES (after push)
 WORKTREE = CLEAN
 
-BASELINE_TESTS = 487 passed / 9 skipped = 496 total
-FINAL_TESTS = 519 passed / 9 skipped = 528 total
+BASELINE_TESTS = 487 passed / 9 skipped = 496 total (G6-05 baseline)
+G6_05A_TESTS = 519 passed / 9 skipped = 528 total (G6-05A baseline)
+FINAL_TESTS = 525 passed / 9 skipped = 534 total (G6-05A-R1)
 TYPECHECK = PASS
 LINT = PASS
 
 SERVICE_API_STATUS = SUPPORTED
-A2A_INBOUND_STATUS = SUPPORTED
+A2A_INBOUND_STATUS = SUPPORTED (official @a2a-js/sdk server abstractions)
 A2A_OUTBOUND_STATUS = SUPPORTED (unchanged — existing FederationService)
 
 SHARED_MISSION_SERVICE = YES (one MissionService, two transports)
 
-INDEPENDENT_CLIENT_E2E = PASS
-INDEPENDENT_A2A_CLIENT = PASS
+INDEPENDENT_CLIENT_E2E = PASS (separate process via child_process.spawn)
+INDEPENDENT_A2A_CLIENT = PASS (official SDK server abstractions)
 
 AUTHENTICATION = PASS
 AUTHORIZATION = PASS
 CROSS_CALLER_ISOLATION = PASS
-CANCELLATION_PROPAGATION = PASS (via AbortController; in-flight external actions may not stop)
+CANCELLATION_PROPAGATION = PASS (AbortSignal propagation proven with long-running mission)
 ARTIFACT_RETRIEVAL = PASS
 EVENT_RETRIEVAL = PASS
 FALSE_SUCCESS_PROTECTION = PASS
 RESOURCE_LIMIT_ENFORCEMENT = PASS (per-caller maxActiveMissions + global cap)
 RESTART_RECOVERY = UNSUPPORTED (in-process state only)
 
-NEW_PRODUCTION_FILES = 5
-PRODUCTION_LOC_DELTA = ~1940
+NEW_PRODUCTION_FILES = 5 (unchanged from G6-05A)
+PRODUCTION_LOC_DELTA = ~1940 (a2a-server.ts rewritten to use SDK)
 NEW_RUNTIME_DEPENDENCIES = 0
 NEW_PRODUCTION_MODULES = 1 (src/gateway/)
 
 SECURITY_LIMITATIONS = API-key only; no mTLS/OAuth/signed cards; single-process
-DURABILITY_LIMITATIONS = in-process state; no restart recovery; no persisted mission registry
+DURABILITY_LIMITATIONS = in-process state; no restart recovery
 INTEROPERABILITY_LIMITATIONS = A2A v1.0 JSON-RPC only; no streaming; no push notifications
 
 EVIDENCE_PACKAGE_PATH = experiments/g6-05a/
