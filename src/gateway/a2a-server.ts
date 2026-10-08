@@ -156,36 +156,35 @@ class GenesisAgentExecutor implements AgentExecutorInterface {
 
   async cancelTask(taskId: string, eventBus: ExecutionEventBus): Promise<void> {
     const binding = this.bindings.get(taskId);
+    // G6-08 (Phase 5 / C-PROTOCOLS-FINDING-019): cross-caller cancelTask must
+    // NOT leak the task's existence or current status. Previously, the code
+    // called `service.get(binding.missionId, ...)` to fetch the actual status
+    // and published it back to the requesting caller — leaking the task's
+    // state to a different caller.
+    //
+    // Now: for ANY case where the caller does not own the task (or the task
+    // doesn't exist), we publish a JSON-RPC error and return. We do NOT
+    // distinguish "not found" from "not authorized" — both look identical to
+    // the requesting caller.
+    const requestingCaller = this.callerContext.getStore();
+
     if (binding === undefined) {
-      // Task not found or already completed. Publish a terminal CANCELED
-      // task so the caller sees a consistent state.
-      eventBus.publish({ kind: 'task', data: buildTask(taskId, 'CANCELLED') });
+      // Task not found or already completed. Per the audit's recommendation,
+      // do NOT publish CANCELLED/FAILED — that would leak state. Return
+      // silently (the SDK will publish a JSON-RPC error to the caller).
       return;
     }
 
-    // P1-A2A-CANCELTASK-NO-CALLER-AUTHZ fix: verify the requesting caller
-    // owns this task. The caller is carried via AsyncLocalStorage (request-
-    // scoped, concurrency-safe). If it doesn't match the binding's original
-    // callerId, reject the cancellation.
-    const requestingCaller = this.callerContext.getStore();
     if (requestingCaller === undefined) {
       // No caller context — should not happen (auth is enforced before
-      // dispatch). Fail closed: do NOT cancel.
-      eventBus.publish({ kind: 'task', data: buildTask(taskId, 'FAILED') });
+      // dispatch). Fail closed: do NOT cancel, do NOT leak state.
       return;
     }
+
     if (requestingCaller.callerId !== binding.callerId) {
-      // Cross-caller cancellation attempt. Return the current task state
-      // without cancelling — do not leak that the task exists to a
-      // different caller. The SDK will return whatever task state we
-      // publish here.
-      const snapshot = this.service.get(binding.missionId, {
-        callerId: binding.callerId,
-        allowedOperations: ['mission:submit'],
-        maxActiveMissions: 999,
-        maxMissionTimeoutMs: 300_000,
-      }).status;
-      eventBus.publish({ kind: 'task', data: buildTask(taskId, snapshot) });
+      // Cross-caller cancellation attempt. Return WITHOUT publishing any
+      // task state — do not leak that the task exists. The SDK's caller
+      // will see a JSON-RPC error response.
       return;
     }
 
@@ -384,18 +383,32 @@ async function handleA2ARequest(
     // (SendMessage blocking, GetTask, CancelTask). Streaming methods
     // (sendMessageStream, subscribe) return an AsyncGenerator — we do
     // not support streaming in v1 (the AgentCard declares streaming:false).
+    //
+    // G6-08 (Phase 5 / C-PROTOCOLS-FINDING-005): previously, when a streaming
+    // method was called, we took the first event and discarded the rest —
+    // giving the client a misleading partial response that looked like a
+    // complete result. Now we explicitly REJECT streaming methods with a
+    // JSON-RPC error so the client knows to use the non-streaming variant.
     if (isAsyncGenerator(result)) {
-      // Take the first response and discard the rest (no streaming in v1).
-      const first = await result.next();
-      if (first.done || first.value === undefined) {
-        sendJson(res, 200, {
-          jsonrpc: '2.0' as const,
-          error: { code: -32603, message: 'no response from streaming method' },
-          id: extractJsonRpcId(body),
-        });
-        return;
+      // Consume the generator to completion (best-effort cleanup) so it
+      // doesn't leave dangling promises. Then send the error.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _ of result) {
+          // discard all events
+          break;  // one iteration is enough — we just want to drain
+        }
+      } catch {
+        // best-effort — the error response is the same regardless
       }
-      sendJson(res, 200, first.value);
+      sendJson(res, 200, {
+        jsonrpc: '2.0' as const,
+        error: {
+          code: -32601,  // method not found
+          message: 'streaming methods (sendMessageStream, subscribe) are not supported; use sendMessage instead',
+        },
+        id: extractJsonRpcId(body),
+      });
       return;
     }
 
@@ -418,8 +431,13 @@ export function stopA2AServer(server: Server): Promise<void> {
 
 /**
  * Build the A2A Agent Card using the official SDK type.
+ *
+ * G6-08 (Phase 5 / C-PROTOCOLS-FINDING-004): declare the API-key security
+ * scheme so consumers (and the A2A SDK's authentication negotiation) know
+ * the gateway requires a Bearer token. Previously, `securitySchemes: {}`
+ * advertised an unauthenticated gateway despite the bearer-token check.
  */
-function buildAgentCard(config: GatewayConfig): AgentCard {
+export function buildAgentCard(config: GatewayConfig): AgentCard {
   return {
     name: config.agentName,
     description: config.agentDescription,
@@ -447,8 +465,18 @@ function buildAgentCard(config: GatewayConfig): AgentCard {
     ],
     defaultInputModes: ['text/plain'],
     defaultOutputModes: ['text/plain'],
-    securitySchemes: {},
-    securityRequirements: [],
+    // G6-08 (Phase 5 / C-PROTOCOLS-FINDING-004): declare the API-key security
+    // scheme so consumers know the gateway requires a Bearer token.
+    securitySchemes: {
+      'gateway-api-key': {
+        type: 'apiKey',
+        location: 'header',
+        name: 'Authorization',
+      } as unknown as AgentCard['securitySchemes'][string],
+    },
+    securityRequirements: [
+      { schemes: { 'gateway-api-key': {} } } as unknown as AgentCard['securityRequirements'][number],
+    ],
     signatures: [],
   } as unknown as AgentCard;
 }
