@@ -644,6 +644,9 @@ export class MissionService {
       this.defaultMissionTimeoutMs,
       caller.maxMissionTimeoutMs,
     );
+    const reasoningInstance = this.reasoningFactory
+      ? this.reasoningFactory()
+      : this.buildDefaultReasoning();
     const orchestrator = new MissionOrchestrator({
       goalCompiler: new GoalCompiler(),
       planner: new OrganizationPlanner(),
@@ -653,12 +656,25 @@ export class MissionService {
           new CognitiveRouter(new RuleDecisionProvider()).selectTier(selection),
       }),
       runtime,
-      reasoning: this.reasoningFactory
-        ? this.reasoningFactory()
-        : this.buildDefaultReasoning(),
+      reasoning: reasoningInstance,
       recorder,
       missionId,
-      costSource: () => ({ usd: 0, tokens: 0 }),
+      // G7-11C: read actual token usage from the provider if it exposes a
+      // usage() method (ZAIReasoningProvider does). This is an OPTIONAL
+      // capability — the frozen ReasoningProvider contract does NOT require
+      // it. Providers without usage() report zeros (backward compatible).
+      // USD pricing is UNKNOWN for ZAI (included usage, no separate billing);
+      // we report tokens truthfully and leave usd at 0.
+      costSource: () => {
+        const maybeUsage = reasoningInstance as ReasoningProvider & {
+          usage?: () => { totalTokens?: number; promptTokens?: number; completionTokens?: number };
+        };
+        if (typeof maybeUsage.usage === 'function') {
+          const u = maybeUsage.usage();
+          return { usd: 0, tokens: u.totalTokens ?? 0 };
+        }
+        return { usd: 0, tokens: 0 };
+      },
       maxWorkerSteps: 5,
       missionTimeoutMs: timeoutMs,
       signal: controller.signal,

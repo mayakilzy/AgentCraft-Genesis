@@ -7,6 +7,8 @@ import type {
   WorkerSurfaces,
 } from '../computer.js';
 import { ComputerApiClient } from './computer-api.js';
+import { readdir, readFile, stat } from 'node:fs/promises';
+import { join } from 'node:path';
 import {
   isOpenBotBotId,
   resetComputerProcess,
@@ -205,10 +207,13 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
    */
   async listArtifacts(): Promise<readonly ArtifactSnapshot[]> {
     if (this.closed) {
-      // Closed adapter has no live workers — return empty rather than throw,
-      // because the gateway's getArtifacts() is called after the mission
-      // terminates and the orchestrator's finally{} has retired workers.
-      return [];
+      // G7-11C fix: closed adapter has no live worker processes, but the
+      // workspace directories persist on disk (stopWorker retires the process
+      // but does NOT delete the workspace — only reset() does). Read artifacts
+      // directly from the filesystem so getArtifacts() works after mission
+      // termination. This is the production path: the orchestrator's finally{}
+      // retires workers before the gateway's getArtifacts() is called.
+      return this.listArtifactsFromDisk();
     }
     const out: ArtifactSnapshot[] = [];
     for (const [botId, computer] of this.computers) {
@@ -235,6 +240,56 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
         }
       } catch {
         // Worker's computer process may have exited — skip this worker.
+      }
+    }
+    out.sort((a, b) =>
+      a.workerId === b.workerId
+        ? a.path < b.path ? -1 : a.path > b.path ? 1 : 0
+        : a.workerId < b.workerId ? -1 : 1,
+    );
+    return out;
+  }
+
+  /**
+   * G7-11C: Read artifacts from the filesystem when the adapter is closed.
+   *
+   * After mission termination, the orchestrator's finally{} calls stopWorker()
+   * which retires the computer process but does NOT delete the workspace
+   * directory. The workspace persists on disk at `running.workspaceDir`. This
+   * method scans those directories directly, applying the same path-traversal
+   * and size protections as the live path.
+   *
+   * This is NOT a new storage subsystem — it reads the same workspace
+   * directories the live path uses, just without requiring a running process.
+   */
+  private async listArtifactsFromDisk(): Promise<readonly ArtifactSnapshot[]> {
+    const out: ArtifactSnapshot[] = [];
+    for (const [botId, worker] of this.workers) {
+      if (isVerifierWorkerId(botId)) continue;
+      if (worker.computer === null) continue;
+      const workspaceDir = worker.computer.workspaceDir;
+      try {
+        const entries = await readdir(workspaceDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (!entry.isFile()) continue;
+          const path = entry.name;
+          // Path traversal protection (defense-in-depth).
+          if (path.includes('..') || path.startsWith('/')) continue;
+          const fullPath = join(workspaceDir, path);
+          try {
+            const stats = await stat(fullPath);
+            const bytes = stats.size;
+            let content: string | undefined;
+            if (bytes <= ARTIFACT_INLINE_LIMIT) {
+              content = await readFile(fullPath, 'utf8');
+            }
+            out.push({ workerId: botId, path, bytes, content });
+          } catch {
+            // File vanished between readdir and stat — skip.
+          }
+        }
+      } catch {
+        // Workspace directory may not exist or be unreadable — skip.
       }
     }
     out.sort((a, b) =>
