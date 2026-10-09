@@ -71,6 +71,9 @@ const VERIFIED_PATTERNS: readonly { re: RegExp; methods: readonly string[] }[] =
   { re: /^\/v1\/projects\/[^/]+\/conversations$/, methods: ["POST"] },
   { re: /^\/v1\/projects\/[^/]+\/missions$/, methods: ["POST"] },
   { re: /^\/v1\/projects\/[^/]+\/artifacts$/, methods: ["POST"] },
+  // G7-14: Plugin routes (read-only inventory of configured MCP servers).
+  { re: /^\/v1\/plugins$/, methods: ["GET"] },
+  { re: /^\/v1\/plugins\/[^/]+$/, methods: ["GET"] },
 ];
 
 const ALLOWED_METHODS = new Set(["GET", "POST", "PATCH", "PUT"]);

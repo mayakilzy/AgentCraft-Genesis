@@ -30,6 +30,8 @@ import type {
   MissionSnapshot,
   MissionSubmission,
   MissionSubmissionAck,
+  PluginListResult,
+  PluginSummary,
   ProjectBrief,
   ProjectListResult,
   ProjectOverview,
@@ -844,6 +846,25 @@ export const genesisApi = {
         message: e instanceof Error ? e.message : String(e),
         receivedAt: new Date().toISOString(),
       };
+    }
+  },
+  /** GET /v1/plugins — list configured MCP servers (read-only). */
+  async listPlugins(signal?: AbortSignal): Promise<AdapterResult<PluginListResult>> {
+    try {
+      const { status, body } = await fetchGenesis("/v1/plugins", { signal });
+      return toResult<PluginListResult>(status, body, 200, "ok");
+    } catch (e) {
+      return { kind: "unavailable", message: e instanceof Error ? e.message : String(e), receivedAt: new Date().toISOString() };
+    }
+  },
+
+  /** GET /v1/plugins/{name} — get detail for one server. */
+  async getPlugin(name: string, signal?: AbortSignal): Promise<AdapterResult<PluginSummary>> {
+    try {
+      const { status, body } = await fetchGenesis(`/v1/plugins/${encodeURIComponent(name)}`, { signal });
+      return toResult<PluginSummary>(status, body, 200, "ok");
+    } catch (e) {
+      return { kind: "unavailable", message: e instanceof Error ? e.message : String(e), receivedAt: new Date().toISOString() };
     }
   },
 } as const;

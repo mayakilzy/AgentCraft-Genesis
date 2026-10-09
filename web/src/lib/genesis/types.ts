@@ -460,3 +460,23 @@ export interface MissionCancelAck {
   readonly status: MissionStatus;
   readonly cancelRequested: true;
 }
+
+// ---------------------------------------------------------------------------
+// Plugins (G7-14)
+// ---------------------------------------------------------------------------
+
+export type PluginTransportKind = "stdio" | "http";
+export type PluginStatus = "CONFIGURED" | "AVAILABLE" | "RUNTIME_VERIFIED" | "UNAVAILABLE";
+
+export interface PluginSummary {
+  readonly name: string;
+  readonly transportKind: PluginTransportKind;
+  readonly grants: readonly string[];
+  readonly satisfies: readonly string[];
+  readonly description?: string;
+  readonly status: PluginStatus;
+}
+
+export interface PluginListResult {
+  readonly plugins: readonly PluginSummary[];
+}

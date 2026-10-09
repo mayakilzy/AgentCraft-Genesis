@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import type { PluginSummary } from "@/lib/genesis/types";
 
 interface CapabilityCardData {
   key: string;
@@ -94,6 +95,7 @@ const STATUS_META: Record<
  */
 export function StudioCatalog() {
   const [catalog, setCatalog] = useState<CatalogResponse | null>(null);
+  const [plugins, setPlugins] = useState<readonly PluginSummary[]>([]);
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [search, setSearch] = useState("");
@@ -110,20 +112,26 @@ export function StudioCatalog() {
       if (cancelled) return;
       setState("loading");
       try {
-        const res = await fetch("/api/studio/catalog", {
-          method: "GET",
-          credentials: "include",
-          signal: controller.signal,
-        });
+        // G7-14: Also fetch configured MCP servers from the Gateway via BFF.
+        const [catRes, plugRes] = await Promise.all([
+          fetch("/api/studio/catalog", { method: "GET", credentials: "include", signal: controller.signal }),
+          fetch("/api/genesis/v1/plugins", { method: "GET", credentials: "include", signal: controller.signal }),
+        ]);
         if (cancelled) return;
-        if (res.ok) {
-          const data = (await res.json()) as CatalogResponse;
+        if (catRes.ok) {
+          const data = (await catRes.json()) as CatalogResponse;
           setCatalog(data);
-          setState("loaded");
         } else {
           setState("error");
-          setErrorMsg(`Failed to load catalog (status ${res.status}).`);
+          setErrorMsg(`Failed to load catalog (status ${catRes.status}).`);
+          return;
         }
+        // Plugins are optional — failure here does NOT block the catalog.
+        if (plugRes.ok) {
+          const plugData = (await plugRes.json()) as { plugins: PluginSummary[] };
+          setPlugins(plugData.plugins ?? []);
+        }
+        setState("loaded");
       } catch (e) {
         if (cancelled) return;
         setState("error");
@@ -353,6 +361,28 @@ export function StudioCatalog() {
           ))}
         </div>
       )}
+
+      {/* G7-14: Configured MCP Servers — honest status, no secrets exposed */}
+      {plugins.length > 0 && (
+        <div className="mt-6 space-y-2">
+          <div className="flex items-center gap-2">
+            <Package className="size-4 text-primary" aria-hidden="true" />
+            <h2 className="text-sm font-semibold">Configured MCP Servers</h2>
+            <Badge variant="secondary" className="text-[10px]">{plugins.length}</Badge>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            MCP servers configured by the operator. Status <strong>CONFIGURED</strong> means
+            the configuration was validated at gateway startup. <strong>AVAILABLE</strong> means
+            a recent reachability check succeeded. <strong>RUNTIME_VERIFIED</strong> requires
+            actual tool invocation evidence. No command, args, env, or URL is shown.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {plugins.map((p) => (
+              <PluginCard key={p.name} plugin={p} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -467,6 +497,50 @@ function Field({
       >
         {value}
       </span>
+    </div>
+  );
+}
+
+// G7-14: PluginCard — shows configured MCP servers with honest status.
+// No sensitive fields (command, args, env, url) are displayed — the
+// Gateway API already strips them before returning.
+function PluginCard({ plugin }: { plugin: PluginSummary }) {
+  const statusIcon =
+    plugin.status === "RUNTIME_VERIFIED" ? CheckCircle2 :
+    plugin.status === "AVAILABLE" ? CheckCircle2 :
+    plugin.status === "UNAVAILABLE" ? ShieldOff :
+    FileText; // CONFIGURED
+  const statusTone =
+    plugin.status === "RUNTIME_VERIFIED" ? "bg-success/15 text-success border-success/30" :
+    plugin.status === "AVAILABLE" ? "bg-primary/10 text-primary border-primary/30" :
+    plugin.status === "UNAVAILABLE" ? "bg-destructive/10 text-destructive border-destructive/30" :
+    "bg-muted text-muted-foreground border-border"; // CONFIGURED
+  const Icon = statusIcon;
+  return (
+    <div className="rounded-md border border-border bg-card p-3 space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-xs font-medium truncate" title={plugin.name}>{plugin.name}</h3>
+          <p className="text-[10px] text-muted-foreground font-mono">{plugin.transportKind}</p>
+        </div>
+        <Badge className={cn("text-[10px] shrink-0 border", statusTone)}>
+          <Icon className="size-3" aria-hidden="true" />
+          {plugin.status}
+        </Badge>
+      </div>
+      {plugin.description && (
+        <p className="text-[10px] text-muted-foreground">{plugin.description}</p>
+      )}
+      <div className="flex flex-wrap gap-1">
+        {plugin.grants.map((g) => (
+          <span key={g} className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">{g}</span>
+        ))}
+      </div>
+      {plugin.satisfies.length > 0 && (
+        <p className="text-[10px] text-muted-foreground">
+          Satisfies: {plugin.satisfies.join(", ")}
+        </p>
+      )}
     </div>
   );
 }
