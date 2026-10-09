@@ -18,6 +18,7 @@ import type { MissionSnapshot } from "./types";
 
 export type Section =
   | "home"
+  | "projects"
   | "work"
   | "agent"
   | "mission-control"
@@ -37,6 +38,12 @@ export const SECTIONS: readonly {
     label: "Home",
     description: "Conversational workspace — describe goals, authorize execution, review results.",
     icon: "MessageSquare",
+  },
+  {
+    id: "projects",
+    label: "Projects",
+    description: "Durable project workspaces — organize conversations, missions, artifacts over time.",
+    icon: "FolderKanban",
   },
   {
     id: "work",
@@ -150,6 +157,13 @@ export interface GenesisUiState {
   activeConversationId?: string;
   setActiveConversationId: (id: string | undefined) => void;
 
+  // G7-13: Project context (active selection). When set, the UI is "inside" a
+  // project: HomeSection shows project-scoped conversations; ProjectsSection
+  // shows the project overview + Brief editor. Switching to a different project
+  // does NOT leak data from the previous one — components re-fetch on change.
+  activeProjectId?: string;
+  setActiveProjectId: (id: string | undefined) => void;
+
   // Known missions (browser-local only — no server list endpoint exists)
   knownMissions: Record<string, KnownMission>;
   upsertKnownMission: (m: KnownMission) => void;
@@ -189,6 +203,10 @@ export const useGenesisStore = create<GenesisUiState>((set) => ({
   // G7-12: Conversation context
   activeConversationId: undefined,
   setActiveConversationId: (id) => set({ activeConversationId: id }),
+
+  // G7-13: Project context
+  activeProjectId: undefined,
+  setActiveProjectId: (id) => set({ activeProjectId: id }),
 
   knownMissions: {},
   upsertKnownMission: (m) =>

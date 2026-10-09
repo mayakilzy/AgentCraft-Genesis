@@ -5,6 +5,7 @@ import { Loader2, Target } from "lucide-react";
 import { AppShell } from "@/components/genesis/AppShell";
 import { AuthGate } from "@/components/genesis/AuthGate";
 import { EnvironmentBanner } from "@/components/genesis/EnvironmentStatus";
+import { ProjectsSection } from "@/components/genesis/ProjectsSection";
 import {
   AgentSection,
   ArtifactsSection,
@@ -103,6 +104,7 @@ export function GenesisApp() {
     <AppShell>
       <EnvironmentBanner />
       {activeSection === "home" && <HomeSection />}
+      {activeSection === "projects" && <ProjectsSection />}
       {activeSection === "work" && <WorkSection />}
       {activeSection === "agent" && <AgentSection />}
       {activeSection === "mission-control" && <MissionControlSection />}

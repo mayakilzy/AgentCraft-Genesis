@@ -181,6 +181,154 @@ export interface MissionArtifactRecord {
 }
 
 // ---------------------------------------------------------------------------
+// Projects (G7-13 — src/project/project-store.ts)
+// ---------------------------------------------------------------------------
+
+export type ProjectStatus = "active" | "archived";
+export type BriefProvenance = "USER_APPROVED" | "SOURCE_VERIFIED" | "DRAFT";
+
+export interface BriefEntry {
+  readonly id: string;
+  readonly text: string;
+  readonly provenance: BriefProvenance;
+  readonly source?: string;
+  readonly approvedAt?: string;
+}
+
+export interface ProjectBrief {
+  readonly revision: number;
+  readonly objective: string;
+  readonly requirements: readonly string[];
+  readonly constraints: readonly string[];
+  readonly approvedDecisions: readonly BriefEntry[];
+  readonly completedMilestones: readonly BriefEntry[];
+  readonly nextSteps: readonly string[];
+}
+
+export interface ConversationLink {
+  readonly conversationId: string;
+  readonly linkedAt: string;
+  readonly idempotencyKey?: string;
+}
+
+export interface MissionLink {
+  readonly missionId: string;
+  readonly linkedAt: string;
+  readonly verifiedAt: string;
+  readonly idempotencyKey?: string;
+}
+
+export interface ArtifactRef {
+  readonly missionId: string;
+  readonly path: string;
+  readonly workerId?: string;
+  readonly linkedAt: string;
+  readonly verifiedAt: string;
+  readonly idempotencyKey?: string;
+}
+
+export interface ProjectRecord {
+  readonly schemaVersion: 1;
+  readonly projectId: string;
+  readonly ownerId: string;
+  readonly name: string;
+  readonly description: string;
+  readonly status: ProjectStatus;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly brief: ProjectBrief;
+  readonly conversationLinks: readonly ConversationLink[];
+  readonly missionLinks: readonly MissionLink[];
+  readonly artifactRefs: readonly ArtifactRef[];
+  readonly createIdempotencyKey?: string;
+  readonly links?: {
+    readonly self: string;
+    readonly brief: string;
+    readonly overview: string;
+  };
+}
+
+export interface ProjectSummary {
+  readonly projectId: string;
+  readonly name: string;
+  readonly description: string;
+  readonly status: ProjectStatus;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly conversationCount: number;
+  readonly missionCount: number;
+  readonly artifactCount: number;
+  readonly briefRevision: number;
+}
+
+export interface ProjectListResult {
+  readonly projects: readonly ProjectSummary[];
+  readonly nextCursor: string | null;
+}
+
+export interface BriefUpdateInput {
+  readonly revision: number;
+  readonly objective?: string;
+  readonly requirements?: readonly string[];
+  readonly constraints?: readonly string[];
+  readonly approvedDecisions?: readonly BriefEntry[];
+  readonly completedMilestones?: readonly BriefEntry[];
+  readonly nextSteps?: readonly string[];
+}
+
+// ---------------------------------------------------------------------------
+// Project Overview (derived server-side from authoritative sources)
+// ---------------------------------------------------------------------------
+
+export interface ProjectOverviewConversation {
+  readonly conversationId: string;
+  readonly linkedAt: string;
+  readonly available: boolean;
+  readonly title?: string;
+  readonly updatedAt?: string;
+  readonly messageCount?: number;
+}
+
+export interface ProjectOverviewMission {
+  readonly missionId: string;
+  readonly linkedAt: string;
+  readonly verifiedAt: string;
+  readonly availability: "live" | "unavailable";
+  readonly status?: string;
+  readonly terminal?: boolean;
+  readonly acceptedAt?: string;
+  readonly finishedAt?: string;
+}
+
+export interface ProjectOverviewArtifact {
+  readonly missionId: string;
+  readonly path: string;
+  readonly workerId?: string;
+  readonly linkedAt: string;
+  readonly verifiedAt: string;
+  readonly availability: "available" | "missing" | "unavailable";
+  readonly verified?: boolean;
+  readonly bytes?: number;
+}
+
+export interface ProjectOverview {
+  readonly project: {
+    readonly projectId: string;
+    readonly ownerId: string;
+    readonly name: string;
+    readonly description: string;
+    readonly status: ProjectStatus;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+  };
+  readonly brief: ProjectBrief;
+  readonly conversations: readonly ProjectOverviewConversation[];
+  readonly missions: readonly ProjectOverviewMission[];
+  readonly artifacts: readonly ProjectOverviewArtifact[];
+  readonly latestActivityAt: string;
+}
+
+// ---------------------------------------------------------------------------
 // Mission submission (src/gateway/types.ts:69-90 + http-server.ts:310-344)
 // ---------------------------------------------------------------------------
 
@@ -238,7 +386,21 @@ export type GatewayErrorCode =
   | "INVALID_SUBMISSION"
   | "INVALID_LIMIT"
   | "INTERNAL_ERROR"
-  | "NOT_FOUND";
+  | "NOT_FOUND"
+  | "INVALID_PROJECT"
+  | "PROJECT_NOT_FOUND"
+  | "BRIEF_REVISION_CONFLICT"
+  | "IDEMPOTENCY_CONFLICT"
+  | "CONVERSATION_ALREADY_LINKED"
+  | "OWNER_ID_NOT_ALLOWED"
+  | "INVALID_REVISION"
+  | "INVALID_STATUS"
+  | "INVALID_CONVERSATION_ID"
+  | "INVALID_MISSION_ID"
+  | "INVALID_ARTIFACT_PATH"
+  | "ARTIFACT_NOT_FOUND"
+  | "CONVERSATION_NOT_FOUND"
+  | "METHOD_NOT_ALLOWED";
 
 export interface GatewayErrorBody {
   readonly error: {

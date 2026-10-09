@@ -60,6 +60,7 @@ const POLL_INTERVAL_MS = 3000;
 export function HomeSection() {
   const activeConversationId = useGenesisStore((s) => s.activeConversationId);
   const setActiveConversationId = useGenesisStore((s) => s.setActiveConversationId);
+  const activeProjectId = useGenesisStore((s) => s.activeProjectId);
 
   const [conversations, setConversations] = useState<readonly ConversationSummary[]>([]);
   const [loadingConvos, setLoadingConvos] = useState(true);
@@ -79,10 +80,36 @@ export function HomeSection() {
   const handleNewConversation = async () => {
     const res = await genesisApi.createConversation({ title: "New Conversation" });
     if (res.kind === "ok" && res.data) {
-      setActiveConversationId(res.data.conversationId);
+      const conversationId = res.data.conversationId;
+      // G7-13: if a project context is active, link the new conversation to it.
+      // If the link fails, the conversation is still created and usable — we
+      // surface the failure honestly so the user can retry linking from the
+      // Projects section.
+      if (activeProjectId !== undefined) {
+        const linkRes = await genesisApi.linkConversation(activeProjectId, conversationId);
+        if (linkRes.kind !== "ok") {
+          // Don't fail the whole create — the conversation exists. Surface a
+          // non-blocking warning via console; the user can retry from the
+          // Projects detail view.
+          console.warn(
+            `[genesis-home] Conversation ${conversationId} was created but linking to project ${activeProjectId} failed:`,
+            linkRes.message,
+          );
+        }
+      }
+      setActiveConversationId(conversationId);
       void fetchConversations();
     }
   };
+
+  // G7-13: when a project context is active, show a small banner so the user
+  // knows new conversations will be linked to that project.
+  const projectBanner = activeProjectId !== undefined ? (
+    <div className="rounded-md border border-blue-500/30 bg-blue-500/10 p-2 text-xs text-blue-700 dark:text-blue-300">
+      New conversations you create here will be linked to the active project.
+      Manage the project from the Projects section.
+    </div>
+  ) : null;
 
   if (!activeConversationId) {
     return (
@@ -94,7 +121,8 @@ export function HomeSection() {
           onSelect={setActiveConversationId}
           onNew={handleNewConversation}
         />
-        <div className="flex items-center justify-center rounded-lg border border-dashed border-border">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border p-4">
+          {projectBanner}
           <div className="text-center space-y-2 p-8">
             <MessageSquare className="size-8 mx-auto text-muted-foreground" aria-hidden="true" />
             <p className="text-sm font-medium">No conversation selected</p>
@@ -120,7 +148,10 @@ export function HomeSection() {
         onSelect={setActiveConversationId}
         onNew={handleNewConversation}
       />
-      <MainConversation conversationId={activeConversationId} onConversationsChanged={fetchConversations} />
+      <div className="flex flex-col gap-2">
+        {projectBanner}
+        <MainConversation conversationId={activeConversationId} onConversationsChanged={fetchConversations} />
+      </div>
       <MissionWorkspace conversationId={activeConversationId} />
     </div>
   );

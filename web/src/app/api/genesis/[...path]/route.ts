@@ -63,9 +63,17 @@ const VERIFIED_PATTERNS: readonly { re: RegExp; methods: readonly string[] }[] =
   { re: /^\/v1\/conversations\/[^/]+$/, methods: ["GET", "PATCH"] },
   { re: /^\/v1\/conversations\/[^/]+\/messages$/, methods: ["GET", "POST"] },
   { re: /^\/v1\/conversations\/[^/]+\/missions$/, methods: ["POST"] },
+  // G7-13: Project routes.
+  { re: /^\/v1\/projects$/, methods: ["GET", "POST"] },
+  { re: /^\/v1\/projects\/[^/]+$/, methods: ["GET", "PATCH"] },
+  { re: /^\/v1\/projects\/[^/]+\/brief$/, methods: ["GET", "PUT"] },
+  { re: /^\/v1\/projects\/[^/]+\/overview$/, methods: ["GET"] },
+  { re: /^\/v1\/projects\/[^/]+\/conversations$/, methods: ["POST"] },
+  { re: /^\/v1\/projects\/[^/]+\/missions$/, methods: ["POST"] },
+  { re: /^\/v1\/projects\/[^/]+\/artifacts$/, methods: ["POST"] },
 ];
 
-const ALLOWED_METHODS = new Set(["GET", "POST", "PATCH"]);
+const ALLOWED_METHODS = new Set(["GET", "POST", "PATCH", "PUT"]);
 
 interface VerifiedMatch {
   pattern: string;
@@ -202,6 +210,14 @@ export async function PATCH(
   return proxy(req, ctx);
 }
 
+// G7-13: PUT handler for Project Brief updates (revision-controlled).
+export async function PUT(
+  req: NextRequest,
+  ctx: { params: Promise<{ path?: string[] }> },
+) {
+  return proxy(req, ctx);
+}
+
 // No OPTIONS handler — same-origin UI doesn't need preflight. Cross-origin
 // callers will be blocked by the browser's same-origin policy AND the
 // SameSite=Strict cookie (no cookie sent on cross-origin fetch).
@@ -331,9 +347,9 @@ async function proxy(
     );
   }
 
-  // 7. Read body for POST/PATCH.
+  // 7. Read body for POST/PATCH/PUT.
   let body: BodyInit | undefined;
-  if (req.method === "POST" || req.method === "PATCH") {
+  if (req.method === "POST" || req.method === "PATCH" || req.method === "PUT") {
     try {
       body = await req.text();
     } catch {

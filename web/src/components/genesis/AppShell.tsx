@@ -6,6 +6,7 @@ import {
   Activity,
   BarChart3,
   FileText,
+  FolderKanban,
   Menu,
   Target,
   Users,
@@ -33,6 +34,7 @@ const ICON_MAP: Record<string, typeof Target> = {
   FileText,
   Wrench,
   BarChart3,
+  FolderKanban,
 };
 
 interface NavListProps {
@@ -91,10 +93,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const setActiveSection = useGenesisStore((s) => s.setActiveSection);
   const sheetOpenRef = useRef(false);
 
-  // Keyboard shortcut: Alt+1..6 to jump between sections (WCAG-friendly).
+  // Keyboard shortcut: Alt+1..8 to jump between sections (WCAG-friendly).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.altKey && /^Digit[1-6]$/.test(e.key)) {
+      if (e.altKey && /^Digit[1-8]$/.test(e.key)) {
         const idx = parseInt(e.key.slice(-1), 10) - 1;
         const target = SECTIONS[idx];
         if (target) {

@@ -16,6 +16,7 @@
 
 import type {
   AdapterResult,
+  BriefUpdateInput,
   ConversationListResult,
   ConversationRecord,
   GatewayErrorBody,
@@ -29,6 +30,11 @@ import type {
   MissionSnapshot,
   MissionSubmission,
   MissionSubmissionAck,
+  ProjectBrief,
+  ProjectListResult,
+  ProjectOverview,
+  ProjectRecord,
+  ProjectStatus,
 } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -48,7 +54,7 @@ export type ConnectionState =
 // ---------------------------------------------------------------------------
 
 interface FetchOptions {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PATCH" | "PUT";
   body?: unknown;
   signal?: AbortSignal;
   timeoutMs?: number;
@@ -591,4 +597,253 @@ export const genesisApi = {
    * UI hides approval controls.
    */
   requestApproval: undefined as never,
+
+  // -------------------------------------------------------------------------
+  // G7-13 — Project API methods.
+  // All methods require BFF cookie auth + caller ownership (enforced server-side).
+  // The ownerId is NEVER sent by the client; the server derives it from the
+  // authenticated BFF cookie → CallerIdentity.
+  // -------------------------------------------------------------------------
+
+  /** POST /v1/projects — create a project. */
+  async createProject(
+    opts: {
+      name?: string;
+      description?: string;
+      idempotencyKey?: string;
+      brief?: {
+        objective?: string;
+        requirements?: string[];
+        constraints?: string[];
+        nextSteps?: string[];
+      };
+    },
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ProjectRecord>> {
+    try {
+      const { status, body } = await fetchGenesis("/v1/projects", {
+        method: "POST",
+        body: opts,
+        signal,
+      });
+      return toResult<ProjectRecord>(status, body, 201, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** GET /v1/projects — list the caller's projects. */
+  async listProjects(
+    opts: { limit?: number; cursor?: string | null } = {},
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ProjectListResult>> {
+    try {
+      const params = new URLSearchParams();
+      if (opts.limit !== undefined) params.set("limit", String(opts.limit));
+      if (opts.cursor) params.set("cursor", opts.cursor);
+      const query = params.toString();
+      const path = query ? `/v1/projects?${query}` : "/v1/projects";
+      const { status, body } = await fetchGenesis(path, { signal });
+      return toResult<ProjectListResult>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** GET /v1/projects/{id} — get project metadata. */
+  async getProject(
+    projectId: string,
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ProjectRecord>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/projects/${encodeURIComponent(projectId)}`,
+        { signal },
+      );
+      return toResult<ProjectRecord>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** PATCH /v1/projects/{id} — update name/description/status. */
+  async updateProject(
+    projectId: string,
+    update: { name?: string; description?: string; status?: ProjectStatus },
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ProjectRecord>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/projects/${encodeURIComponent(projectId)}`,
+        { method: "PATCH", body: update, signal },
+      );
+      return toResult<ProjectRecord>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** GET /v1/projects/{id}/brief — read the Project Brief. */
+  async getBrief(
+    projectId: string,
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<{ projectId: string; brief: ProjectBrief }>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/projects/${encodeURIComponent(projectId)}/brief`,
+        { signal },
+      );
+      return toResult<{ projectId: string; brief: ProjectBrief }>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /**
+   * PUT /v1/projects/{id}/brief — update the Project Brief.
+   * Revision-controlled: the caller must submit the revision they last read.
+   * Returns 409 BRIEF_REVISION_CONFLICT if the revision is stale.
+   */
+  async updateBrief(
+    projectId: string,
+    update: BriefUpdateInput,
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<{ projectId: string; brief: ProjectBrief }>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/projects/${encodeURIComponent(projectId)}/brief`,
+        { method: "PUT", body: update, signal },
+      );
+      if (status === 200) {
+        return {
+          kind: "ok",
+          data: body as { projectId: string; brief: ProjectBrief },
+          status,
+          receivedAt: new Date().toISOString(),
+        };
+      }
+      // 409 — revision conflict: surface a typed conflict result so the UI
+      // can re-fetch and reapply, not just a generic error.
+      if (status === 409) {
+        return {
+          kind: "error",
+          status,
+          code: "BRIEF_REVISION_CONFLICT",
+          message: (body as GatewayErrorBody | null)?.error?.message ?? "brief revision is stale",
+          raw: body,
+          receivedAt: new Date().toISOString(),
+        };
+      }
+      return toResult<{ projectId: string; brief: ProjectBrief }>(status, body, -1, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** GET /v1/projects/{id}/overview — derived overview from authoritative sources. */
+  async getProjectOverview(
+    projectId: string,
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ProjectOverview>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/projects/${encodeURIComponent(projectId)}/overview`,
+        { signal },
+      );
+      return toResult<ProjectOverview>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** POST /v1/projects/{id}/conversations — link a conversation (after server-side ownership verification). */
+  async linkConversation(
+    projectId: string,
+    conversationId: string,
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ProjectRecord>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/projects/${encodeURIComponent(projectId)}/conversations`,
+        { method: "POST", body: { conversationId }, signal },
+      );
+      return toResult<ProjectRecord>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** POST /v1/projects/{id}/missions — link a mission (after server-side ownership verification). */
+  async linkMissionToProject(
+    projectId: string,
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ProjectRecord>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/projects/${encodeURIComponent(projectId)}/missions`,
+        { method: "POST", body: { missionId }, signal },
+      );
+      return toResult<ProjectRecord>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** POST /v1/projects/{id}/artifacts — link an artifact reference (after server-side verification). */
+  async linkArtifactToProject(
+    projectId: string,
+    ref: { missionId: string; path: string; workerId?: string },
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ProjectRecord>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/projects/${encodeURIComponent(projectId)}/artifacts`,
+        { method: "POST", body: ref, signal },
+      );
+      return toResult<ProjectRecord>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
 } as const;
