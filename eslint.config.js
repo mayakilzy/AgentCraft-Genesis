@@ -61,6 +61,13 @@ export default tseslint.config(
       // prior testing — it only killed the npx parent, leaving the actual
       // gateway running on the port).
       'scripts/g7-13f-browser-restart.cjs',
+      // G7-14H: browser acceptance script for the Studio MCP catalog.
+      // Same CommonJS pattern (require for Playwright + node:child_process
+      // spawn) for the same reason: HTTP/browser-based test tooling, NOT
+      // engine source. Verifies authentication, MCP server visibility,
+      // truthful CONFIGURED status, and absence of sentinel secret values
+      // (command/args/env/cwd/url) in API responses and rendered DOM.
+      'scripts/g7-14h-browser-acceptance.cjs',
     ],
   },
   ...tseslint.configs.recommended,

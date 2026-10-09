@@ -187,10 +187,19 @@ afterAll(() => {
 });
 
 describe('G7-14G G1 — Real MCP mission integration', () => {
-  it('authorized worker invokes a real MCP tool through the production path', async () => {
-    // Submit a mission with a goal that triggers 'diagnostic' domain → 'data-analysis' need.
+  it('authorized worker invokes a real MCP tool and writes the verified artifact through the production path', async () => {
+    // Outcome text MUST trigger BOTH:
+    //   - 'data-analysis' need → satisfied by mcp:analyze (and openbot:shell-execution)
+    //   - 'document-authoring' need → satisfied by openbot:workspace-files
+    // Without the document-authoring signal, the compiled genome would lack
+    // the `openbot:workspace-files` grant and `write_file` would be refused
+    // at the WorkerAgent grant-check (NOT at computer-null). See the G7-14
+    // independent diagnostic report for the full root-cause analysis.
     const { missionId, status } = service.start(
-      { outcome: 'Analyze the dataset and compute statistics from the numbers.' },
+      {
+        outcome:
+          'Analyze the dataset and write a report summarizing the computed statistics.',
+      },
       CALLER,
     );
     expect(['ACCEPTED', 'RUNNING']).toContain(status);
@@ -199,13 +208,11 @@ describe('G7-14G G1 — Real MCP mission integration', () => {
     const snapshot = await service.awaitCompletion(missionId, CALLER);
     expect(snapshot.terminal).toBe(true);
 
-    // H1 STATUS: The call_tool action succeeds (ok:true in flight events) —
-    // proving the MCP tool invocation works through the real production path.
-    // The mission status is FAILED because write_file is refused (computer
-    // surface null in this test configuration — root cause under investigation).
-    // Per spec: "Do not accept FAILED as a successful mission" — H1 is PARTIAL.
-    //
-    // The key evidence: call_tool ok:true proves the full chain works:
+    // H1 acceptance: the mission MUST succeed end-to-end through the real
+    // production path. Per spec: "Do not accept FAILED as a successful mission."
+    expect(snapshot.status).toBe('SUCCEEDED');
+
+    // Verify the call_tool action succeeded through the real production path:
     //   MissionService → Orchestrator → WorkerAgent → LazyCompositeMcpProvider
     //   → MCP server subprocess → tool result returned.
     const events = service.getEvents(missionId, CALLER, 0, 100);
@@ -215,6 +222,23 @@ describe('G7-14G G1 — Real MCP mission integration', () => {
     expect(callToolEvents.length).toBeGreaterThan(0);
     const successfulCalls = callToolEvents.filter((e) => e.payload.ok === true);
     expect(successfulCalls.length).toBeGreaterThan(0);
+
+    // Verify write_file succeeded (genome has openbot:workspace-files grant
+    // because the outcome triggers document-authoring).
+    const writeFileEvents = events.filter(
+      (e) => e.type === 'worker-step' && e.payload.action === 'write_file',
+    );
+    expect(writeFileEvents.length).toBeGreaterThan(0);
+    const successfulWrites = writeFileEvents.filter((e) => e.payload.ok === true);
+    expect(successfulWrites.length).toBeGreaterThan(0);
+
+    // Verify the artifact is registered and verified (the clean-room
+    // verification loop confirmed the file exists at output.md).
+    const artifacts = await service.getArtifacts(missionId, CALLER);
+    const outputArtifact = artifacts.find((a) => a.path === 'output.md');
+    expect(outputArtifact).toBeDefined();
+    expect(outputArtifact!.bytes).toBeGreaterThan(0);
+    expect(outputArtifact!.verified).toBe(true);
   }, 30_000); // 30s timeout for the MCP server subprocess.
 
   it('unauthorized tool invocation is rejected by the grant check', async () => {

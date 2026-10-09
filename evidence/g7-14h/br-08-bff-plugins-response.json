@@ -1,0 +1,16 @@
+{
+  "plugins": [
+    {
+      "name": "g7-14h-sentinel-server",
+      "transportKind": "stdio",
+      "grants": [
+        "mcp:sentinel-analyze"
+      ],
+      "satisfies": [
+        "sentinel-data-analysis-9f3a7c2d"
+      ],
+      "description": "Sentinel MCP server for G7-14H browser acceptance — no real invocation expected",
+      "status": "CONFIGURED"
+    }
+  ]
+}

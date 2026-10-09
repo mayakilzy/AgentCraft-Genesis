@@ -1,0 +1,64 @@
+{
+  "results": {
+    "BR-01": {
+      "status": "PASS",
+      "detail": "gateway up (health + plugins with sentinel server), web up",
+      "timestamp": "2026-10-09T22:31:33.576Z"
+    },
+    "BR-02": {
+      "status": "PASS",
+      "detail": "logged in; Home nav visible",
+      "timestamp": "2026-10-09T22:31:41.260Z"
+    },
+    "BR-03": {
+      "status": "PASS",
+      "detail": "Studio Catalog rendered (documentation notice visible)",
+      "timestamp": "2026-10-09T22:31:43.916Z"
+    },
+    "BR-04": {
+      "status": "PASS",
+      "detail": "\"Configured MCP Servers\" section rendered",
+      "timestamp": "2026-10-09T22:31:43.925Z"
+    },
+    "BR-04b": {
+      "status": "PASS",
+      "detail": "sentinel server \"g7-14h-sentinel-server\" rendered",
+      "timestamp": "2026-10-09T22:31:43.932Z"
+    },
+    "BR-05": {
+      "status": "PASS",
+      "detail": "status badge \"CONFIGURED\" rendered (truthful — no fabrication)",
+      "timestamp": "2026-10-09T22:31:43.937Z"
+    },
+    "BR-05b": {
+      "status": "PASS",
+      "detail": "no fabricated statuses on the MCP server card (AVAILABLE/RUNTIME_VERIFIED/UNAVAILABLE absent from card scope)",
+      "timestamp": "2026-10-09T22:31:43.941Z"
+    },
+    "BR-06": {
+      "status": "PASS",
+      "detail": "grant \"mcp:sentinel-analyze\" rendered",
+      "timestamp": "2026-10-09T22:31:43.949Z"
+    },
+    "BR-07": {
+      "status": "PASS",
+      "detail": "all sentinel secret values ABSENT from rendered DOM",
+      "timestamp": "2026-10-09T22:31:43.956Z"
+    },
+    "BR-08": {
+      "status": "PASS",
+      "detail": "BFF /api/genesis/v1/plugins: sentinel secrets ABSENT; public fields (name, grants, status=CONFIGURED) present",
+      "timestamp": "2026-10-09T22:31:44.496Z"
+    },
+    "BR-09": {
+      "status": "PASS",
+      "detail": "no unexpected console errors during Studio render (1 total messages; 1 expected pre-login 401s filtered)",
+      "timestamp": "2026-10-09T22:31:44.496Z"
+    },
+    "BR-10": {
+      "status": "PASS",
+      "detail": "browser closed cleanly",
+      "timestamp": "2026-10-09T22:31:44.527Z"
+    }
+  }
+}
