@@ -43,6 +43,7 @@ import { startHttpServer } from './http-server.js';
 import { startA2AServer } from './a2a-server.js';
 import { FileConversationStore } from '../conversation/conversation-store.js';
 import { FileProjectStore } from '../project/project-store.js';
+import { loadMcpConfig, McpConfigError, McpConfigNotFoundError } from '../plugins/mcp-config.js';
 import type { CallerIdentity, GatewayConfig } from './types.js';
 import type { ReasoningProvider } from '../contracts/core.js';
 import type { WorkerRuntime } from '../runtime/computer.js';
@@ -359,7 +360,27 @@ async function main(): Promise<void> {
   // mission is no longer present (gateway restarted).
   const projectStore = new FileProjectStore();
 
-  const http = startHttpServer(service, config, conversationStore, projectStore);
+  // G7-14: MCP server config. Fail-closed if env var set but file missing/malformed.
+  let mcpServers: readonly import('../plugins/mcp-config.js').McpServerConfig[] = [];
+  try {
+    const mcpConfig = loadMcpConfig();
+    if (mcpConfig !== null) {
+      mcpServers = mcpConfig.servers;
+      console.error(`[genesis-gateway] MCP config: ${mcpServers.length} server(s) from ${mcpConfig.sourcePath}`);
+      for (const s of mcpServers) {
+        console.error(`[genesis-gateway]   MCP: "${s.name}" (${s.transport.kind}) grants: ${s.grants.join(', ')}`);
+      }
+    } else {
+      console.error('[genesis-gateway] No MCP config (GENESIS_MCP_SERVERS_CONFIG not set).');
+    }
+  } catch (e) {
+    if (e instanceof McpConfigNotFoundError || e instanceof McpConfigError) {
+      console.error(`FATAL: ${e.message}`); process.exit(1);
+    }
+    throw e;
+  }
+
+  const http = startHttpServer(service, config, conversationStore, projectStore, mcpServers);
   const a2a = await startA2AServer(service, config);
 
   console.error(`[genesis-gateway] HTTP API listening on ${http.url}`);

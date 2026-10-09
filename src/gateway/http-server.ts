@@ -31,7 +31,9 @@ import type { MissionService } from './mission-service.js';
 import { FileConversationStore } from '../conversation/conversation-store.js';
 import { handleConversationRoute } from './conversation-routes.js';
 import { handleProjectRoute } from './project-routes.js';
+import { handlePluginRoute } from './plugin-routes.js';
 import type { FileProjectStore } from '../project/project-store.js';
+import type { McpServerConfig } from '../plugins/mcp-config.js';
 import type {
   CallerIdentity,
   GatewayErrorBody,
@@ -53,10 +55,11 @@ export function startHttpServer(
   config: GatewayConfig,
   conversationStore?: FileConversationStore,
   projectStore?: FileProjectStore,
+  mcpServers?: readonly McpServerConfig[],
 ): { server: Server; url: string } {
   const server = createServer(async (req, res) => {
     try {
-      await handleRequest(req, res, service, config, conversationStore, projectStore);
+      await handleRequest(req, res, service, config, conversationStore, projectStore, mcpServers);
     } catch (error) {
       sendError(res, 500, 'INTERNAL_ERROR', `internal error: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -84,6 +87,7 @@ async function handleRequest(
   config: GatewayConfig,
   conversationStore?: FileConversationStore,
   projectStore?: FileProjectStore,
+  mcpServers?: readonly McpServerConfig[],
 ): Promise<void> {
   // CORS (harmless for localhost; useful for browser-based dashboards).
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -177,6 +181,20 @@ async function handleRequest(
       return;
     }
     const handled = await handleProjectRoute(req, res, { projectStore, conversationStore: conversationStore!, missionService: service }, caller, path);
+    if (!handled) {
+      sendError(res, 404, 'NOT_FOUND', `route not found: ${req.method} ${path}`);
+    }
+    return;
+  }
+
+  // G7-14: Plugin routes (read-only inventory). Auth required.
+  if (path.startsWith('/v1/plugins') && mcpServers !== undefined) {
+    const caller = authenticate(req, config);
+    if (caller === null) {
+      sendError(res, 401, 'UNAUTHENTICATED', 'missing or invalid API key');
+      return;
+    }
+    const handled = await handlePluginRoute(req, res, { mcpServers }, path);
     if (!handled) {
       sendError(res, 404, 'NOT_FOUND', `route not found: ${req.method} ${path}`);
     }
