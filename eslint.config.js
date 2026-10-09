@@ -48,6 +48,12 @@ export default tseslint.config(
       // as the other excluded scripts: HTTP/browser-based test tooling, NOT
       // engine source.
       'scripts/g7-13d-browser-full.cjs',
+      // G7-13E: final browser recovery script — same CommonJS pattern (require
+      // for Playwright + node:child_process spawn) for the same reason. The
+      // root-cause investigation in G7-13E corrected a script bug in G7-13D
+      // (was looking for button[type="submit"] but AuthGate uses type="button"
+      // with onClick); the env-limitation assumption was wrong.
+      'scripts/g7-13e-browser-final.cjs',
     ],
   },
   ...tseslint.configs.recommended,

@@ -1,0 +1,157 @@
+[
+  {
+    "url": "/",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/health",
+    "status": 401,
+    "method": "GET"
+  },
+  {
+    "url": "/api/auth/login",
+    "status": 200,
+    "method": "POST"
+  },
+  {
+    "url": "/api/genesis/health",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/?_rsc=5CB68i4pnAekjehf",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/conversations?limit=20",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/?_rsc=8nTjltbQWvg6NcbE",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/health",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/health",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/conversations?limit=20",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/?_rsc=5CB68i4pnAekjehf",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/?_rsc=8nTjltbQWvg6NcbE",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/projects?limit=50",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/projects",
+    "status": 201,
+    "method": "POST"
+  },
+  {
+    "url": "/api/genesis/v1/projects?limit=50",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/projects/fae68178-2506-46df-a713-9feb7861f73c/overview",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/projects/fae68178-2506-46df-a713-9feb7861f73c",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/health",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/health",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/conversations?limit=20",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/?_rsc=5CB68i4pnAekjehf",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/?_rsc=8nTjltbQWvg6NcbE",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/projects?limit=50",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/projects/fae68178-2506-46df-a713-9feb7861f73c/overview",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/projects/fae68178-2506-46df-a713-9feb7861f73c",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/projects/fae68178-2506-46df-a713-9feb7861f73c/brief",
+    "status": 200,
+    "method": "PUT"
+  },
+  {
+    "url": "/api/genesis/v1/projects/fae68178-2506-46df-a713-9feb7861f73c/overview",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/projects/fae68178-2506-46df-a713-9feb7861f73c",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "url": "/api/genesis/v1/conversations?limit=20",
+    "status": 200,
+    "method": "GET"
+  }
+]

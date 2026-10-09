@@ -1,0 +1,99 @@
+{
+  "results": {
+    "BR-19-01": {
+      "status": "PASS",
+      "detail": "gateway + web up (production build)",
+      "timestamp": "2026-10-09T06:26:54.289Z"
+    },
+    "DIAG-cookies-after-load": {
+      "status": "INFO",
+      "detail": "0 cookies after initial load: []",
+      "timestamp": "2026-10-09T06:26:57.855Z"
+    },
+    "DIAG-cookie-state": {
+      "status": "PASS",
+      "detail": "genesis_bff: domain=127.0.0.1 path=/ secure=false sameSite=Lax httpOnly=true",
+      "timestamp": "2026-10-09T06:27:04.125Z"
+    },
+    "PR-19-NAV": {
+      "status": "PASS",
+      "detail": "2 nav button(s) visible after auth",
+      "timestamp": "2026-10-09T06:27:04.143Z"
+    },
+    "PR-19-02": {
+      "status": "PASS",
+      "detail": "Projects section rendered with create form",
+      "timestamp": "2026-10-09T06:27:05.775Z"
+    },
+    "PR-19-03": {
+      "status": "PASS",
+      "detail": "project created via UI; detail view rendered",
+      "timestamp": "2026-10-09T06:27:08.480Z"
+    },
+    "PR-19-04": {
+      "status": "PASS",
+      "detail": "project reappeared after browser refresh",
+      "timestamp": "2026-10-09T06:27:12.159Z"
+    },
+    "PR-19-05": {
+      "status": "PASS",
+      "detail": "project detail view rendered with Brief editor",
+      "timestamp": "2026-10-09T06:27:14.279Z"
+    },
+    "PR-20-01": {
+      "status": "PASS",
+      "detail": "Project Brief card visible",
+      "timestamp": "2026-10-09T06:27:14.281Z"
+    },
+    "PR-20-02": {
+      "status": "PASS",
+      "detail": "Brief save submitted; revision counter shows 1",
+      "timestamp": "2026-10-09T06:27:16.997Z"
+    },
+    "PR-20-03": {
+      "status": "PASS",
+      "detail": "Brief revision incremented to 1",
+      "timestamp": "2026-10-09T06:27:16.997Z"
+    },
+    "PR-20-04": {
+      "status": "PASS",
+      "detail": "Home section rendered with active-project banner",
+      "timestamp": "2026-10-09T06:27:22.180Z"
+    },
+    "BR-12": {
+      "status": "PARTIAL",
+      "detail": "1 application console error(s): Failed to load resource: the server responded with a status of 401 (Unauthorized",
+      "timestamp": "2026-10-09T06:27:22.181Z"
+    },
+    "AP-01": {
+      "status": "PASS",
+      "detail": "login via /api/auth/login (status 200)",
+      "timestamp": "2026-10-09T06:27:22.197Z"
+    },
+    "AP-02": {
+      "status": "PASS",
+      "detail": "created project 8723fca2… via BFF",
+      "timestamp": "2026-10-09T06:27:22.206Z"
+    },
+    "AP-03": {
+      "status": "PASS",
+      "detail": "project appears in list (2 projects)",
+      "timestamp": "2026-10-09T06:27:22.212Z"
+    },
+    "AP-04": {
+      "status": "PASS",
+      "detail": "get project metadata OK",
+      "timestamp": "2026-10-09T06:27:22.218Z"
+    },
+    "AP-05": {
+      "status": "PASS",
+      "detail": "Brief updated; revision is now 1",
+      "timestamp": "2026-10-09T06:27:22.226Z"
+    },
+    "AP-06": {
+      "status": "PASS",
+      "detail": "project + Brief survived (durable)",
+      "timestamp": "2026-10-09T06:27:22.233Z"
+    }
+  }
+}
