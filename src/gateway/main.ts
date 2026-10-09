@@ -313,54 +313,8 @@ async function main(): Promise<void> {
   const mode = loadExecutionMode();
   const config = loadConfig();
 
-  // Build the MissionService with execution-mode-appropriate providers.
-  let service: MissionService;
-
-  if (mode === 'production') {
-    console.error('[genesis-gateway] EXECUTION MODE: production (real providers required)');
-    const reasoning = await buildRealReasoningProvider();
-    if (reasoning === null) {
-      console.error('FATAL: Production mode requires a configured reasoning provider.');
-      console.error('Set GENESIS_REASONING_PROVIDER and the corresponding credential environment variable.');
-      process.exit(1);
-    }
-    const runtimeFactory = await buildRealRuntimeFactory();
-    if (runtimeFactory === null) {
-      console.error('FATAL: Production mode requires a configured runtime provider.');
-      console.error('Set GENESIS_RUNTIME_PROVIDER and the corresponding OPENBOT_CHECKOUT_DIR / OPENBOT_ROOT_DIR.');
-      process.exit(1);
-    }
-    // In production, wire the real providers. No fallback to dev fixtures.
-    // G6-08 (RB-2): runtimeFactory constructs a FRESH adapter per mission
-    // (no shared adapter, no shared workers, no shared workspace directories).
-    service = new MissionService({
-      defaultMissionTimeoutMs: config.defaultMissionTimeoutMs,
-      runtimeFactory: runtimeFactory,
-      reasoningFactory: () => reasoning,
-    });
-  } else {
-    // Development mode: use dev fixtures, but log a loud banner.
-    console.error('[genesis-gateway] EXECUTION MODE: development');
-    console.error('[genesis-gateway] ⚠️  USING DEVELOPMENT FIXTURES: MemoryComputer + DEVELOPMENT_REASONING_FALLBACK');
-    console.error('[genesis-gateway] ⚠️  This is NOT real AI execution. Do NOT use in production.');
-    service = new MissionService({
-      defaultMissionTimeoutMs: config.defaultMissionTimeoutMs,
-    });
-  }
-
-  // G7-12: durable conversation store (JSONL on disk). Survives gateway restart.
-  // Mission execution state remains in-process (RESTART_RECOVERY = UNSUPPORTED);
-  // only conversation metadata + messages + missionId references are durable.
-  const conversationStore = new FileConversationStore();
-
-  // G7-13: durable project store (atomic JSON per project). Survives gateway
-  // restart. Conversation/mission/artifact references are durable as IDs +
-  // verification timestamps; live state for missions/artifacts is fetched
-  // from the in-process MissionService and shown as "unavailable" when the
-  // mission is no longer present (gateway restarted).
-  const projectStore = new FileProjectStore();
-
   // G7-14: MCP server config. Fail-closed if env var set but file missing/malformed.
+  // Loaded BEFORE the MissionService construction so mcpServers can be passed.
   let mcpServers: readonly import('../plugins/mcp-config.js').McpServerConfig[] = [];
   try {
     const mcpConfig = loadMcpConfig();
@@ -379,6 +333,42 @@ async function main(): Promise<void> {
     }
     throw e;
   }
+
+  // Build the MissionService with execution-mode-appropriate providers.
+  let service: MissionService;
+
+  if (mode === 'production') {
+    console.error('[genesis-gateway] EXECUTION MODE: production (real providers required)');
+    const reasoning = await buildRealReasoningProvider();
+    if (reasoning === null) {
+      console.error('FATAL: Production mode requires a configured reasoning provider.');
+      console.error('Set GENESIS_REASONING_PROVIDER and the corresponding credential environment variable.');
+      process.exit(1);
+    }
+    const runtimeFactory = await buildRealRuntimeFactory();
+    if (runtimeFactory === null) {
+      console.error('FATAL: Production mode requires a configured runtime provider.');
+      console.error('Set GENESIS_RUNTIME_PROVIDER and the corresponding OPENBOT_CHECKOUT_DIR / OPENBOT_ROOT_DIR.');
+      process.exit(1);
+    }
+    service = new MissionService({
+      defaultMissionTimeoutMs: config.defaultMissionTimeoutMs,
+      runtimeFactory: runtimeFactory,
+      reasoningFactory: () => reasoning,
+      mcpServers,
+    });
+  } else {
+    console.error('[genesis-gateway] EXECUTION MODE: development');
+    console.error('[genesis-gateway] ⚠️  USING DEVELOPMENT FIXTURES: MemoryComputer + DEVELOPMENT_REASONING_FALLBACK');
+    console.error('[genesis-gateway] ⚠️  This is NOT real AI execution. Do NOT use in production.');
+    service = new MissionService({
+      defaultMissionTimeoutMs: config.defaultMissionTimeoutMs,
+      mcpServers,
+    });
+  }
+
+  const conversationStore = new FileConversationStore();
+  const projectStore = new FileProjectStore();
 
   const http = startHttpServer(service, config, conversationStore, projectStore, mcpServers);
   const a2a = await startA2AServer(service, config);

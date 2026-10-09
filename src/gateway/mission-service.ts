@@ -37,6 +37,9 @@ import {
 import { classifyError } from '../mission/failure-class.js';
 import { MemoryFlightRecorder, type FlightEvent } from '../mission/flight-recorder.js';
 import { MissionOrchestrator } from '../mission/orchestrator.js';
+import type { McpServerConfig } from '../plugins/mcp-config.js';
+import { LazyCompositeMcpProvider } from '../plugins/mcp-activation.js';
+import type { McpCapabilityProvider } from '../runtime/mcp/capability-provider.js';
 
 /**
  * G6-09C fix for C-053 (P2, defense-in-depth): scrub common secret patterns
@@ -204,6 +207,13 @@ export interface MissionServiceOptions {
    * (e.g., ZAIReasoningProvider) — but the gateway itself is provider-neutral.
    */
   readonly reasoningFactory?: () => ReasoningProvider;
+  /**
+   * G7-14: MCP server configurations. When provided, each mission gets a
+   * LazyCompositeMcpProvider that connects servers on demand (only when
+   * a worker whose genome grants `mcp:<tool>` actually invokes the tool).
+   * The provider is closed after mission completion/failure/cancellation.
+   */
+  readonly mcpServers?: readonly McpServerConfig[];
   /** Path to ownership.yaml (default: data/ownership.yaml relative to repo root). */
   readonly ownershipPath?: string;
   /** Default mission timeout (ms) when caller does not specify. */
@@ -292,6 +302,7 @@ export class MissionService {
   private readonly idempotencyIndex = new Map<string, string>(); // key → missionId
   private readonly runtimeFactory: MissionServiceOptions['runtimeFactory'];
   private readonly reasoningFactory: MissionServiceOptions['reasoningFactory'];
+  private readonly mcpServers: readonly McpServerConfig[];
   private readonly ownership: OwnershipRegistry;
   private readonly defaultMissionTimeoutMs: number;
   private readonly maxActiveMissionsGlobal: number;
@@ -308,6 +319,7 @@ export class MissionService {
   constructor(options: MissionServiceOptions = {}) {
     this.runtimeFactory = options.runtimeFactory;
     this.reasoningFactory = options.reasoningFactory;
+    this.mcpServers = options.mcpServers ?? [];
     this.ownership = loadOwnership(options.ownershipPath ?? 'data/ownership.yaml');
     this.defaultMissionTimeoutMs = options.defaultMissionTimeoutMs ?? DEFAULT_MISSION_TIMEOUT_MS;
     this.maxActiveMissionsGlobal = options.maxActiveMissionsGlobal ?? DEFAULT_MAX_ACTIVE_GLOBAL;
@@ -647,6 +659,16 @@ export class MissionService {
     const reasoningInstance = this.reasoningFactory
       ? this.reasoningFactory()
       : this.buildDefaultReasoning();
+
+    // G7-14: Create a lazy MCP provider if MCP servers are configured.
+    // The provider connects servers on demand (only when a worker whose
+    // genome grants mcp:<tool> actually invokes the tool). Closed after
+    // mission completion/failure/cancellation in the promise handlers below.
+    const mcpProvider: McpCapabilityProvider | null =
+      this.mcpServers.length > 0
+        ? new LazyCompositeMcpProvider(this.mcpServers)
+        : null;
+
     const orchestrator = new MissionOrchestrator({
       goalCompiler: new GoalCompiler(),
       planner: new OrganizationPlanner(),
@@ -679,6 +701,11 @@ export class MissionService {
       missionTimeoutMs: timeoutMs,
       signal: controller.signal,
       checks: (ctx) => this.buildChecks(ctx, missionRuntime.acceptanceCriteria),
+      // G7-14: pass the lazy MCP provider to the orchestrator. The
+      // orchestrator passes it to each WorkerAgent. The worker's genome
+      // grants (mcp:<tool>) determine which tools it can invoke. The
+      // lazy provider connects servers on first invokeTool call.
+      ...(mcpProvider !== null ? { mcp: mcpProvider } : {}),
     });
 
     // 8. Register the mission BEFORE starting (so cancel() can race).
@@ -710,35 +737,34 @@ export class MissionService {
         missionRuntime.result = result;
         missionRuntime.finishedAt = new Date().toISOString();
         missionRuntime.status = statusFromResult(result, missionRuntime.canceled);
-        // Capture verification result from flight events for per-artifact verified flag.
-        // G6-08 (RB-1): this is now async — it may call runtime.listArtifacts()
-        // to enumerate actual worker workspace files (production OpenBot path).
-        // Awaiting here means any subsequent awaitCompletion() / getArtifacts()
-        // call sees a fully-populated verifiedPaths set.
         try {
           await this.captureVerificationResult(missionRuntime);
         } catch {
-          // Capture failure must not mask the mission result itself.
           missionRuntime.verificationOk = false;
           missionRuntime.verifiedPaths = new Set<string>();
+        }
+        // G7-14: close the MCP provider (cleanup after success/failure/cancellation).
+        if (mcpProvider !== null) {
+          try { await mcpProvider.close(); } catch { /* best-effort */ }
         }
         return result;
       },
       (error) => {
-        // The orchestrator threw (not a normal mission failure — that's
-        // a MissionResult.status='failure'). This is an infrastructure error.
         const failureClass = classifyError(error);
         missionRuntime.failureClass = failureClass;
         missionRuntime.failureMessage = scrubSecrets(error instanceof Error ? error.message : String(error), 300);
         missionRuntime.finishedAt = new Date().toISOString();
         missionRuntime.status = missionRuntime.canceled ? 'CANCELLED' : 'FAILED';
-        // Synthesize a failure MissionResult for callers.
         missionRuntime.result = {
           status: 'failure',
           summary: `infrastructure error: ${missionRuntime.failureMessage}`,
           evidence: [],
           cost: { usd: 0, tokens: 0, wallMs: 0, humanInterventions: 0 },
         };
+        // G7-14: close the MCP provider even on infrastructure error.
+        if (mcpProvider !== null) {
+          mcpProvider.close().catch(() => { /* best-effort */ });
+        }
         return missionRuntime.result;
       },
     );
