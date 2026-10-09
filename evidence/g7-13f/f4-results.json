@@ -1,0 +1,74 @@
+{
+  "results": {
+    "F4-01": {
+      "status": "PASS",
+      "detail": "gateway + web up (initial)",
+      "timestamp": "2026-10-09T14:32:29.233Z"
+    },
+    "F4-02": {
+      "status": "PASS",
+      "detail": "logged in; Projects nav visible",
+      "timestamp": "2026-10-09T14:32:37.863Z"
+    },
+    "F4-03": {
+      "status": "PASS",
+      "detail": "project created; detail view rendered",
+      "timestamp": "2026-10-09T14:32:42.070Z"
+    },
+    "F4-04": {
+      "status": "PASS",
+      "detail": "Home section shows active-project banner",
+      "timestamp": "2026-10-09T14:32:44.179Z"
+    },
+    "F4-05": {
+      "status": "PASS",
+      "detail": "conversation created + mission authorized",
+      "timestamp": "2026-10-09T14:32:52.967Z"
+    },
+    "F4-05b": {
+      "status": "PASS",
+      "detail": "mission b29caaa6… linked to project",
+      "timestamp": "2026-10-09T14:32:52.996Z"
+    },
+    "F4-06": {
+      "status": "PASS",
+      "detail": "gateway stopped (simulated restart, port released)",
+      "timestamp": "2026-10-09T14:32:53.016Z"
+    },
+    "F4-07": {
+      "status": "PASS",
+      "detail": "restarted gateway up",
+      "timestamp": "2026-10-09T14:32:54.029Z"
+    },
+    "F4-08": {
+      "status": "PASS",
+      "detail": "project survived Gateway restart",
+      "timestamp": "2026-10-09T14:32:58.746Z"
+    },
+    "F4-09": {
+      "status": "PASS",
+      "detail": "project detail view rendered after restart",
+      "timestamp": "2026-10-09T14:33:00.877Z"
+    },
+    "F4-10": {
+      "status": "PASS",
+      "detail": "mission state shown as UNAVAILABLE (not fabricated) after restart",
+      "timestamp": "2026-10-09T14:33:00.883Z"
+    },
+    "AP-R-01": {
+      "status": "PASS",
+      "detail": "project survives in BFF list (1 projects)",
+      "timestamp": "2026-10-09T14:33:00.891Z"
+    },
+    "AP-R-02": {
+      "status": "PASS",
+      "detail": "overview shows 1 mission(s) all UNAVAILABLE (no fabrication)",
+      "timestamp": "2026-10-09T14:33:00.903Z"
+    },
+    "AP-R-03": {
+      "status": "PASS",
+      "detail": "overview shows 1 conversation(s) all available",
+      "timestamp": "2026-10-09T14:33:00.903Z"
+    }
+  }
+}

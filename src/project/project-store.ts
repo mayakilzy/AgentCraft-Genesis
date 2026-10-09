@@ -28,8 +28,45 @@
  *     `verifiedAt` timestamp. Path is taken from the mission's actual
  *     artifact list (never caller-supplied directly without verification).
  *
- * Concurrency: optimistic revision on Brief updates; idempotency keys on
- * create/link operations. Single-process model — no cross-process locking.
+ * Concurrency (G7-13F Finding 3 — single-process model):
+ *   - All store methods are SYNCHRONOUS (writeFileSync, readdirSync,
+ *     readFileSync, renameSync). Once a method starts, it runs to
+ *     completion without yielding the Node.js event loop.
+ *   - Two concurrent requests (Promise.all on two async wrappers around
+ *     sync methods) with the same idempotency key produce exactly one
+ *     project; two concurrent linkConversation calls with the same
+ *     conversationId to two different projects produce exactly one
+ *     success + one ConversationAlreadyLinkedError.
+ *   - This guarantee holds within a single Node.js process. It does NOT
+ *     extend to multi-process deployments — there is no cross-process
+ *     locking, no advisory file locks, no shared mutex. Operators
+ *     deploying multiple Gateway processes must add external coordination.
+ *
+ * Durability (G7-13F Finding 5 — atomic vs crash/power-loss):
+ *   - **Atomic file replacement**: `writeFileSync(tmpPath, payload)` followed
+ *     by `renameSync(tmpPath, finalPath)` is atomic at the POSIX filesystem
+ *     level. A concurrent reader sees either the previous valid file or the
+ *     new valid file — never a partially-written file.
+ *   - **Temporary-file behavior**: the temp file uses a unique name
+ *     (`.tmp.<projectId>.<pid>.<timestamp>.project.json`) so concurrent
+ *     writes within the same process do not collide. On write failure
+ *     (e.g., disk full), the temp file is cleaned up; the previous valid
+ *     file is preserved untouched.
+ *   - **Crash / power-loss durability**: NOT claimed. The write path does
+ *     NOT call `fsync()`. If the OS crashes (power loss) before flushing
+ *     its page cache to disk, recent writes may be lost. The temp-file +
+ *     rename pattern protects against partial writes VISIBLE to
+ *     concurrent readers, but it does NOT protect against data loss when
+ *     the OS page cache is unwritten to disk at power-loss time.
+ *     Operators requiring power-loss durability must add `fsync()` in a
+ *     follow-up — but that has a significant performance cost and is out
+ *     of scope for the current single-process model. No new persistence
+ *     infrastructure is introduced.
+ *   - **Corrupt record preservation (G7-13F Finding 2)**: a corrupt project
+ *     file (malformed JSON, unsupported schemaVersion, missing required
+ *     fields) is NEVER silently replaced with an empty project.
+ *     `readProject` throws `ProjectCorruptError`; the original bytes
+ *     remain on disk for manual recovery.
  */
 import { createHash, randomUUID } from 'node:crypto';
 import {
@@ -197,6 +234,30 @@ export class ProjectNotFoundError extends Error {
   }
 }
 
+/**
+ * G7-13F (Finding 2): a project file EXISTS on disk but is corrupt
+ * (malformed JSON, unsupported schemaVersion, missing required fields,
+ * or malformed nested fields). The original bytes are preserved on disk
+ * for manual recovery — the store NEVER silently replaces a corrupt
+ * file with an empty project.
+ *
+ * The route handler maps this to 404 PROJECT_NOT_FOUND to avoid leaking
+ * existence across callers (a corrupt file owned by caller B is
+ * indistinguishable from a missing file from caller A's perspective).
+ * The store logs to stderr so the legitimate operator can investigate
+ * via the safe diagnostic path (filesystem inspection of the preserved
+ * file) without exposing other owners' data.
+ */
+export class ProjectCorruptError extends Error {
+  /** The original bytes — preserved for diagnostics, never returned to clients. */
+  readonly originalBytes: string;
+  constructor(projectId: string, message: string, originalBytes: string) {
+    super(`project corrupt: ${projectId} — ${message}`);
+    this.name = 'ProjectCorruptError';
+    this.originalBytes = originalBytes;
+  }
+}
+
 export class ProjectOwnershipError extends Error {
   constructor(projectId: string) {
     super(`project not owned by caller: ${projectId}`);
@@ -356,14 +417,29 @@ export class FileProjectStore {
   }
 
   getProject(projectId: string, ownerId: string): ProjectRecord {
-    const record = this.readProject(projectId);
-    if (record === undefined) {
-      throw new ProjectNotFoundError(projectId);
+    try {
+      const record = this.readProject(projectId);
+      if (record === undefined) {
+        throw new ProjectNotFoundError(projectId);
+      }
+      if (record.ownerId !== ownerId) {
+        throw new ProjectOwnershipError(projectId);
+      }
+      return record;
+    } catch (e) {
+      if (e instanceof ProjectCorruptError) {
+        // G7-13F (Finding 2): log to stderr for operator investigation
+        // via the safe diagnostic path. The route handler will map this
+        // to 404 PROJECT_NOT_FOUND to avoid leaking existence across
+        // callers — a corrupt file owned by caller B is indistinguishable
+        // from a missing file from caller A's perspective. The original
+        // bytes are preserved on disk for manual recovery.
+        console.error(
+          `[project-store] corrupt project file: ${projectId} — ${e.message}. Original bytes preserved on disk for manual recovery.`,
+        );
+      }
+      throw e;
     }
-    if (record.ownerId !== ownerId) {
-      throw new ProjectOwnershipError(projectId);
-    }
-    return record;
   }
 
   listProjects(
@@ -377,7 +453,9 @@ export class FileProjectStore {
     const files = readdirSync(this.dir).filter((f) => f.endsWith('.project.json'));
     for (const file of files) {
       const projectId = file.replace('.project.json', '');
-      const record = this.readProject(projectId);
+      // G7-13F (F2): scanning functions use readProjectOrLog to skip
+      // corrupt files instead of crashing the whole scan.
+      const record = this.readProjectOrLog(projectId);
       if (record === undefined || record.ownerId !== ownerId) continue;
       summaries.push({
         projectId: record.projectId,
@@ -793,7 +871,8 @@ export class FileProjectStore {
     const files = readdirSync(this.dir).filter((f) => f.endsWith('.project.json'));
     for (const file of files) {
       const projectId = file.replace('.project.json', '');
-      const record = this.readProject(projectId);
+      // G7-13F (F2): skip corrupt files instead of crashing the scan.
+      const record = this.readProjectOrLog(projectId);
       if (record === undefined) continue;
       if (record.ownerId !== ownerId) continue;
       if (record.createIdempotencyKey === idempotencyKey) return record;
@@ -813,7 +892,8 @@ export class FileProjectStore {
     const files = readdirSync(this.dir).filter((f) => f.endsWith('.project.json'));
     for (const file of files) {
       const projectId = file.replace('.project.json', '');
-      const record = this.readProject(projectId);
+      // G7-13F (F2): skip corrupt files instead of crashing the scan.
+      const record = this.readProjectOrLog(projectId);
       if (record === undefined) continue;
       if (record.ownerId !== ownerId) continue;
       if (record.conversationLinks.some((l) => l.conversationId === conversationId)) {
@@ -1002,48 +1082,92 @@ export class FileProjectStore {
   }
 
   /**
-   * Read a project file. Returns undefined if the file does not exist or is
-   * corrupt (never silently replaces with an empty project).
+   * Read a project file.
    *
-   * Corrupt-detection policy: if the JSON parse fails OR the schemaVersion
-   * is unsupported, we return undefined and the caller surfaces a
-   * ProjectNotFoundError (NOT a silent overwrite). The actual project file
-   * remains on disk for manual recovery.
+   * G7-13F (Finding 2): distinguishes three cases:
+   *   1. File does not exist → returns `undefined` (caller surfaces
+   *      ProjectNotFoundError).
+   *   2. File exists but is corrupt (malformed JSON, unsupported
+   *      schemaVersion, missing required fields, malformed nested fields)
+   *      → throws `ProjectCorruptError`. The original bytes are preserved
+   *      on disk for manual recovery. The caller (route handler) maps
+   *      this to 404 PROJECT_NOT_FOUND to avoid leaking existence across
+   *      callers; the store logs to stderr for operator investigation.
+   *   3. File exists and is valid → returns the parsed record.
+   *
+   * The corrupt file is NEVER silently replaced with an empty project.
+   * The original bytes are accessible via `ProjectCorruptError.originalBytes`
+   * for diagnostics (never returned to clients).
    */
   private readProject(projectId: string): ProjectRecord | undefined {
     if (!isSafeIdSegment(projectId)) return undefined;
     const path = this.projectPath(projectId);
     if (!existsSync(path)) return undefined;
+    const raw = readFileSync(path, 'utf8');
+    let parsed: ProjectRecord;
     try {
-      const raw = readFileSync(path, 'utf8');
-      const parsed = JSON.parse(raw) as ProjectRecord;
-      if (parsed.schemaVersion !== PROJECT_SCHEMA_VERSION) {
-        // Unsupported schema version — refuse to load but DO NOT delete.
-        // The file is preserved for manual migration/recovery.
+      parsed = JSON.parse(raw) as ProjectRecord;
+    } catch (e) {
+      throw new ProjectCorruptError(
+        projectId,
+        `JSON parse failed: ${e instanceof Error ? e.message : String(e)}`,
+        raw,
+      );
+    }
+    if (parsed.schemaVersion !== PROJECT_SCHEMA_VERSION) {
+      // Unsupported schema version — refuse to load. The file is preserved
+      // for manual migration/recovery.
+      throw new ProjectCorruptError(
+        projectId,
+        `unsupported schemaVersion: ${parsed.schemaVersion}`,
+        raw,
+      );
+    }
+    // Defensive: ensure all required fields exist + nested structures are
+    // valid. If any field is missing or malformed, surface a
+    // ProjectCorruptError rather than risk a downstream TypeError that
+    // could write a corrupt record.
+    if (
+      typeof parsed.projectId !== 'string' ||
+      typeof parsed.ownerId !== 'string' ||
+      typeof parsed.name !== 'string' ||
+      typeof parsed.description !== 'string' ||
+      (parsed.status !== 'active' && parsed.status !== 'archived') ||
+      typeof parsed.createdAt !== 'string' ||
+      typeof parsed.updatedAt !== 'string' ||
+      typeof parsed.brief !== 'object' ||
+      parsed.brief === null ||
+      !Array.isArray(parsed.conversationLinks) ||
+      !Array.isArray(parsed.missionLinks) ||
+      !Array.isArray(parsed.artifactRefs)
+    ) {
+      throw new ProjectCorruptError(
+        projectId,
+        'one or more required fields are missing or have wrong types',
+        raw,
+      );
+    }
+    return parsed;
+  }
+
+  /**
+   * Read a project, but on corrupt-record errors, log to stderr and return
+   * undefined (so iteration can continue past corrupt files). Used by
+   * scanning functions (listProjects, findProjectByCreateKey,
+   * findProjectByConversation). The original bytes are preserved on disk
+   * — the store never silently replaces a corrupt file.
+   */
+  private readProjectOrLog(projectId: string): ProjectRecord | undefined {
+    try {
+      return this.readProject(projectId);
+    } catch (e) {
+      if (e instanceof ProjectCorruptError) {
+        console.error(
+          `[project-store] corrupt project file: ${projectId} — ${e.message}. Original bytes preserved on disk for manual recovery.`,
+        );
         return undefined;
       }
-      // Defensive: ensure all required fields exist. If the file is partially
-      // corrupt (missing fields), treat as not-found rather than risk a
-      // downstream TypeError that could write a corrupt record.
-      if (
-        typeof parsed.projectId !== 'string' ||
-        typeof parsed.ownerId !== 'string' ||
-        typeof parsed.name !== 'string' ||
-        typeof parsed.description !== 'string' ||
-        (parsed.status !== 'active' && parsed.status !== 'archived') ||
-        typeof parsed.createdAt !== 'string' ||
-        typeof parsed.updatedAt !== 'string' ||
-        typeof parsed.brief !== 'object' ||
-        parsed.brief === null ||
-        !Array.isArray(parsed.conversationLinks) ||
-        !Array.isArray(parsed.missionLinks) ||
-        !Array.isArray(parsed.artifactRefs)
-      ) {
-        return undefined;
-      }
-      return parsed;
-    } catch {
-      return undefined;
+      throw e;
     }
   }
 }

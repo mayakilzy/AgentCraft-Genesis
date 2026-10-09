@@ -32,6 +32,7 @@ import {
   ProjectNotFoundError,
   ProjectOwnershipError,
   ProjectValidationError,
+  ProjectCorruptError,
   BriefRevisionConflictError,
   IdempotencyConflictError,
   ConversationAlreadyLinkedError,
@@ -397,13 +398,19 @@ async function handleProjectResource(
     if (Array.isArray(obj.nextSteps)) {
       update.nextSteps = obj.nextSteps.filter((r): r is string => typeof r === 'string');
     }
-    if (Array.isArray(obj.approvedDecisions)) {
-      update.approvedDecisions = filterBriefEntries(obj.approvedDecisions);
-    }
-    if (Array.isArray(obj.completedMilestones)) {
-      update.completedMilestones = filterBriefEntries(obj.completedMilestones);
-    }
+    // G7-13F (Finding 1): the Brief entry filter is async (verifies
+    // SOURCE_VERIFIED mission references via MissionService). It can throw
+    // ProjectValidationError (e.g., mission not owned by caller, fake
+    // reference, impersonation attempt). Wrap the whole update flow in a
+    // try/catch so these validation errors return 400 (NOT 500 from the
+    // outer handleRequest catch-all).
     try {
+      if (Array.isArray(obj.approvedDecisions)) {
+        update.approvedDecisions = await filterBriefEntries(obj.approvedDecisions, deps, caller);
+      }
+      if (Array.isArray(obj.completedMilestones)) {
+        update.completedMilestones = await filterBriefEntries(obj.completedMilestones, deps, caller);
+      }
       const record = deps.projectStore.updateBrief(projectId, caller.callerId, update);
       sendJson(res, 200, { projectId, brief: record.brief });
     } catch (e) {
@@ -645,7 +652,46 @@ function withLinks(record: ProjectRecord): ProjectRecord & {
   };
 }
 
-function filterBriefEntries(arr: readonly unknown[]): BriefEntry[] {
+/**
+ * G7-13F (Finding 1): filter + sanitize Brief entries before they reach the
+ * store. The store layer validates structural invariants (non-empty source
+ * for USER_APPROVED/SOURCE_VERIFIED, etc.); the gateway layer enforces
+ * caller-bound provenance:
+ *
+ *   - USER_APPROVED: the client CANNOT supply a `source` or `approvedAt`.
+ *     The server overwrites them with `caller:<callerId>` + the current
+ *     ISO timestamp. This prevents an API caller from impersonating another
+ *     approving identity (e.g., claiming "operator:bob" approved something
+ *     Bob didn't actually approve).
+ *
+ *   - SOURCE_VERIFIED: the client CANNOT supply an arbitrary `source`. The
+ *     source MUST be in the format `mission:<missionId>`, AND the mission
+ *     must exist in the in-process MissionService registry under this
+ *     caller's identity. If the mission doesn't exist or is owned by
+ *     another caller, the entry is REJECTED (the source reference cannot
+ *     be verified). The server overwrites `approvedAt` with the current
+ *     ISO timestamp.
+ *
+ *   - DRAFT: the client may supply text only. Any client-supplied
+ *     `source` or `approvedAt` is stripped — drafts are proposals, not
+ *     approved decisions; they have no provenance. A draft can never be
+ *     silently promoted to USER_APPROVED without an explicit
+ *     `provenance: USER_APPROVED` field in a subsequent updateBrief call
+ *     (which the gateway will then bind to the caller).
+ *
+ * This is the gateway-layer enforcement; the store layer is agnostic to the
+ * calling layer's auth context. Tests at the store level (where the
+ * caller identity is a plain string) still pass — they directly test the
+ * store, not the gateway binding.
+ *
+ * Returns the sanitized entries. Throws ProjectValidationError if any
+ * SOURCE_VERIFIED entry's mission reference cannot be verified.
+ */
+async function filterBriefEntries(
+  arr: readonly unknown[],
+  deps: ProjectRouteDeps,
+  caller: CallerIdentity,
+): Promise<BriefEntry[]> {
   const out: BriefEntry[] = [];
   for (const item of arr) {
     if (item === null || typeof item !== 'object') continue;
@@ -659,20 +705,67 @@ function filterBriefEntries(arr: readonly unknown[]): BriefEntry[] {
     ) {
       continue;
     }
-    const entry: {
-      id: string;
-      text: string;
-      provenance: BriefProvenance;
-      source?: string;
-      approvedAt?: string;
-    } = {
+    const provenance = e.provenance as BriefProvenance;
+    const now = new Date().toISOString();
+
+    if (provenance === 'USER_APPROVED') {
+      // Strip client-supplied source + approvedAt. The server binds the
+      // source to the authenticated caller — clients cannot impersonate
+      // another approving identity.
+      out.push({
+        id: e.id,
+        text: e.text,
+        provenance: 'USER_APPROVED',
+        source: `caller:${caller.callerId}`,
+        approvedAt: now,
+      });
+      continue;
+    }
+
+    if (provenance === 'SOURCE_VERIFIED') {
+      // The source MUST be a mission reference and the mission MUST exist
+      // for this caller. Reject any other format.
+      const clientSource = typeof e.source === 'string' ? e.source : '';
+      const missionRefMatch = /^mission:(.+)$/.exec(clientSource);
+      if (missionRefMatch === null) {
+        throw new ProjectValidationError(
+          `SOURCE_VERIFIED entry ${e.id} requires source in format "mission:<missionId>" (got: "${clientSource}")`,
+        );
+      }
+      const missionId = missionRefMatch[1];
+      // Verify the mission exists AND is owned by this caller. If the
+      // mission is unavailable (gateway restarted) OR owned by another
+      // caller, MissionService.get throws MissionNotFoundError.
+      try {
+        deps.missionService.get(missionId, caller);
+      } catch (err) {
+        if (err instanceof MissionNotFoundError) {
+          throw new ProjectValidationError(
+            `SOURCE_VERIFIED entry ${e.id} mission reference "${missionId}" not found or not owned by caller — cannot establish provenance`,
+          );
+        }
+        throw err;
+      }
+      out.push({
+        id: e.id,
+        text: e.text,
+        provenance: 'SOURCE_VERIFIED',
+        source: `mission:${missionId}`,
+        approvedAt: now,
+      });
+      continue;
+    }
+
+    // DRAFT — strip any client-supplied source/approvedAt. Drafts are
+    // proposals without provenance; they can never be silently promoted
+    // to USER_APPROVED without an explicit subsequent updateBrief call
+    // carrying provenance: USER_APPROVED (which the gateway will then
+    // bind to the caller).
+    out.push({
       id: e.id,
       text: e.text,
-      provenance: e.provenance as BriefProvenance,
-    };
-    if (typeof e.source === 'string') entry.source = e.source;
-    if (typeof e.approvedAt === 'string') entry.approvedAt = e.approvedAt;
-    out.push(entry);
+      provenance: 'DRAFT',
+    });
   }
   return out;
 }
@@ -681,6 +774,15 @@ function handleProjectStoreError(res: ServerResponse, e: unknown): void {
   if (e instanceof ProjectNotFoundError || e instanceof ProjectOwnershipError) {
     // 404 (not 403) to avoid leaking existence — same pattern as missions + conversations.
     sendError(res, 404, 'PROJECT_NOT_FOUND', e.message);
+  } else if (e instanceof ProjectCorruptError) {
+    // G7-13F (Finding 2): corrupt project file → 404 (not 500) to avoid
+    // leaking existence across callers. The store already logged to stderr
+    // for operator investigation via the safe diagnostic path. The original
+    // bytes are preserved on disk — the store NEVER silently replaces a
+    // corrupt file. The error message returned to the client is generic
+    // ("project not found") to avoid leaking that the file exists but is
+    // corrupt (which would leak cross-caller existence).
+    sendError(res, 404, 'PROJECT_NOT_FOUND', 'project not found');
   } else if (e instanceof ProjectValidationError) {
     sendError(res, 400, 'INVALID_PROJECT', e.message);
   } else if (e instanceof IdempotencyConflictError) {

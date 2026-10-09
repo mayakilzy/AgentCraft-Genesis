@@ -236,16 +236,27 @@ describe('G7-13 Gateway — Brief lifecycle (revision conflict, provenance valid
     expect((update2.body as { brief: { revision: number; objective: string } }).brief.objective).toBe('v2 objective');
   });
 
-  it('rejects USER_APPROVED entries without source', async () => {
+  // G7-13F (Finding 1): the gateway now BINDS USER_APPROVED source to the
+  // authenticated callerId — so a USER_APPROVED entry WITHOUT source is
+  // accepted (the server fills in `caller:<callerId>`). The old test
+  // expected 400 because the store layer validation required a source;
+  // the gateway now satisfies that requirement on the caller's behalf.
+  // See "F1 — Brief provenance trust" describe block for the new negative
+  // tests (impersonation, fake mission refs, etc.).
+  it('USER_APPROVED entry without source: gateway binds source to callerId', async () => {
     const created = await httpCall('POST', '/v1/projects', { name: 'Brief provenance' }, 'key-a');
     const projectId = (created.body as ProjectResponse).projectId;
     const r = await httpCall('PUT', `/v1/projects/${projectId}/brief`, {
       revision: 0,
       approvedDecisions: [
-        { id: 'd1', text: 'no approver', provenance: 'USER_APPROVED' },
+        { id: 'd1', text: 'no approver supplied by client', provenance: 'USER_APPROVED' },
       ],
     }, 'key-a');
-    expect(r.status).toBe(400);
+    expect(r.status).toBe(200);
+    // Verify the server bound the source.
+    const briefRes = await httpCall('GET', `/v1/projects/${projectId}/brief`, null, 'key-a');
+    const body = briefRes.body as { brief: { approvedDecisions: { source: string }[] } };
+    expect(body.brief.approvedDecisions[0].source).toBe('caller:caller-a');
   });
 
   it('rejects missing revision field', async () => {
@@ -800,5 +811,220 @@ describe('G7-13 Gateway — PR-18 backward compatibility (legacy conversations)'
       content: 'PR-18 backward-compat message',
     }, 'key-a');
     expect(msg.status).toBe(201);
+  });
+});
+
+// ===========================================================================
+// G7-13F (Finding 1) — Brief provenance trust (gateway layer).
+// API callers cannot falsely establish SOURCE_VERIFIED or impersonate
+// another approving identity. USER_APPROVED entries are bound to the
+// authenticated caller's callerId; SOURCE_VERIFIED entries must reference
+// a mission that exists for the caller.
+// ===========================================================================
+
+describe('G7-13F (F1) — Brief provenance trust (gateway layer)', () => {
+  // Note: re-using the shared `service`, `httpUrl`, `httpCall`, `key-a`
+  // from the file scope — these are already set up in beforeAll.
+
+  it('USER_APPROVED entry: server binds source to callerId (ignores client-supplied source)', async () => {
+    const project = await httpCall('POST', '/v1/projects', { name: 'F1-impersonation' }, 'key-a');
+    const projectId = (project.body as ProjectResponse).projectId;
+
+    // Client tries to impersonate "operator:bob" — the server must override
+    // the source with "caller:caller-a" (the actual authenticated callerId).
+    const r = await httpCall('PUT', `/v1/projects/${projectId}/brief`, {
+      revision: 0,
+      approvedDecisions: [
+        {
+          id: 'dec-evil',
+          text: 'approved by bob (impersonation attempt)',
+          provenance: 'USER_APPROVED',
+          source: 'operator:bob',     // malicious — should be ignored
+          approvedAt: '1970-01-01T00:00:00.000Z',  // malicious — should be ignored
+        },
+      ],
+    }, 'key-a');
+    expect(r.status).toBe(200);
+
+    // Verify the server bound the source to the authenticated callerId.
+    const briefRes = await httpCall('GET', `/v1/projects/${projectId}/brief`, null, 'key-a');
+    const body = briefRes.body as { brief: { approvedDecisions: { source: string; approvedAt: string }[] } };
+    expect(body.brief.approvedDecisions).toHaveLength(1);
+    expect(body.brief.approvedDecisions[0].source).toBe('caller:caller-a');
+    expect(body.brief.approvedDecisions[0].approvedAt).not.toBe('1970-01-01T00:00:00.000Z');
+  });
+
+  it('USER_APPROVED entry without source: server still binds to callerId', async () => {
+    const project = await httpCall('POST', '/v1/projects', { name: 'F1-no-source' }, 'key-a');
+    const projectId = (project.body as ProjectResponse).projectId;
+    const r = await httpCall('PUT', `/v1/projects/${projectId}/brief`, {
+      revision: 0,
+      approvedDecisions: [
+        { id: 'dec-ok', text: 'approved by no-one-in-particular', provenance: 'USER_APPROVED' },
+      ],
+    }, 'key-a');
+    expect(r.status).toBe(200);
+    const briefRes = await httpCall('GET', `/v1/projects/${projectId}/brief`, null, 'key-a');
+    const body = briefRes.body as { brief: { approvedDecisions: { source: string }[] } };
+    expect(body.brief.approvedDecisions[0].source).toBe('caller:caller-a');
+  });
+
+  it('SOURCE_VERIFIED entry: rejects a non-mission source format', async () => {
+    const project = await httpCall('POST', '/v1/projects', { name: 'F1-bad-source-format' }, 'key-a');
+    const projectId = (project.body as ProjectResponse).projectId;
+    const r = await httpCall('PUT', `/v1/projects/${projectId}/brief`, {
+      revision: 0,
+      completedMilestones: [
+        { id: 'm1', text: 'verified by some random URL', provenance: 'SOURCE_VERIFIED', source: 'https://example.com/something' },
+      ],
+    }, 'key-a');
+    expect(r.status).toBe(400);
+    expect((r.body as { error: { code: string; message: string } }).error.code).toBe('INVALID_PROJECT');
+    expect((r.body as { error: { message: string } }).error.message).toContain('mission:<missionId>');
+  });
+
+  it('SOURCE_VERIFIED entry: rejects a non-existent mission reference', async () => {
+    const project = await httpCall('POST', '/v1/projects', { name: 'F1-fake-mission' }, 'key-a');
+    const projectId = (project.body as ProjectResponse).projectId;
+    const r = await httpCall('PUT', `/v1/projects/${projectId}/brief`, {
+      revision: 0,
+      completedMilestones: [
+        { id: 'm1', text: 'verified by a fake mission', provenance: 'SOURCE_VERIFIED', source: 'mission:fake-mission-id-not-real' },
+      ],
+    }, 'key-a');
+    expect(r.status).toBe(400);
+    expect((r.body as { error: { code: string } }).error.code).toBe('INVALID_PROJECT');
+    expect((r.body as { error: { message: string } }).error.message).toContain('not found or not owned by caller');
+  });
+
+  it('SOURCE_VERIFIED entry: rejects a mission owned by another caller', async () => {
+    // Caller A submits + completes a mission.
+    const submit = await httpCall('POST', '/v1/missions', { outcome: SIMPLE_GOAL }, 'key-a');
+    const missionId = (submit.body as { missionId: string }).missionId;
+    await service.awaitCompletion(missionId, CALLER_A);
+
+    // Caller B tries to use A's mission as a SOURCE_VERIFIED reference.
+    const bProject = await httpCall('POST', '/v1/projects', { name: 'F1-cross-caller-mission' }, 'key-b');
+    const bProjectId = (bProject.body as ProjectResponse).projectId;
+    const r = await httpCall('PUT', `/v1/projects/${bProjectId}/brief`, {
+      revision: 0,
+      completedMilestones: [
+        { id: 'm1', text: 'verified by A\'s mission', provenance: 'SOURCE_VERIFIED', source: `mission:${missionId}` },
+      ],
+    }, 'key-b');
+    expect(r.status).toBe(400);
+    expect((r.body as { error: { message: string } }).error.message).toContain('not found or not owned by caller');
+  });
+
+  it('SOURCE_VERIFIED entry: accepts a real mission owned by the caller', async () => {
+    // Caller A submits + completes a mission.
+    const submit = await httpCall('POST', '/v1/missions', { outcome: SIMPLE_GOAL }, 'key-a');
+    const missionId = (submit.body as { missionId: string }).missionId;
+    await service.awaitCompletion(missionId, CALLER_A);
+
+    const project = await httpCall('POST', '/v1/projects', { name: 'F1-real-mission' }, 'key-a');
+    const projectId = (project.body as ProjectResponse).projectId;
+    const r = await httpCall('PUT', `/v1/projects/${projectId}/brief`, {
+      revision: 0,
+      completedMilestones: [
+        { id: 'm1', text: 'verified by a real mission', provenance: 'SOURCE_VERIFIED', source: `mission:${missionId}` },
+      ],
+    }, 'key-a');
+    expect(r.status).toBe(200);
+    const briefRes = await httpCall('GET', `/v1/projects/${projectId}/brief`, null, 'key-a');
+    const body = briefRes.body as { brief: { completedMilestones: { source: string; provenance: string }[] } };
+    expect(body.brief.completedMilestones).toHaveLength(1);
+    expect(body.brief.completedMilestones[0].source).toBe(`mission:${missionId}`);
+    expect(body.brief.completedMilestones[0].provenance).toBe('SOURCE_VERIFIED');
+  });
+
+  it('DRAFT entry: strips client-supplied source/approvedAt (no silent promotion)', async () => {
+    const project = await httpCall('POST', '/v1/projects', { name: 'F1-draft-strip' }, 'key-a');
+    const projectId = (project.body as ProjectResponse).projectId;
+    const r = await httpCall('PUT', `/v1/projects/${projectId}/brief`, {
+      revision: 0,
+      approvedDecisions: [
+        {
+          id: 'd1',
+          text: 'a draft decision (not yet approved)',
+          provenance: 'DRAFT',
+          source: 'should-be-stripped',
+          approvedAt: '1970-01-01T00:00:00.000Z',
+        },
+      ],
+    }, 'key-a');
+    expect(r.status).toBe(200);
+    const briefRes = await httpCall('GET', `/v1/projects/${projectId}/brief`, null, 'key-a');
+    const body = briefRes.body as { brief: { approvedDecisions: { source?: string; approvedAt?: string; provenance: string }[] } };
+    expect(body.brief.approvedDecisions).toHaveLength(1);
+    expect(body.brief.approvedDecisions[0].provenance).toBe('DRAFT');
+    expect(body.brief.approvedDecisions[0].source).toBeUndefined();
+    expect(body.brief.approvedDecisions[0].approvedAt).toBeUndefined();
+  });
+});
+
+// ===========================================================================
+// G7-13F (Finding 2) — Corrupt project recovery (gateway layer).
+// Cross-caller access to a corrupt project returns 404 (not 500) to avoid
+// leaking existence. The corrupt file is preserved on disk.
+// ===========================================================================
+
+describe('G7-13F (F2) — Corrupt project recovery (gateway layer)', () => {
+  it('returns 404 (not 500) when a project file is corrupt', async () => {
+    // Caller A creates a project, then we corrupt the file.
+    const project = await httpCall('POST', '/v1/projects', { name: 'F2-corrupt' }, 'key-a');
+    const projectId = (project.body as ProjectResponse).projectId;
+    const { writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const projectPath = join(projectDir, `${projectId}.project.json`);
+    writeFileSync(projectPath, 'garbage', 'utf8');
+
+    // Caller A gets 404 (not 500) — the route handler maps ProjectCorruptError → 404.
+    const r = await httpCall('GET', `/v1/projects/${projectId}`, null, 'key-a');
+    expect(r.status).toBe(404);
+    expect((r.body as { error: { code: string } }).error.code).toBe('PROJECT_NOT_FOUND');
+
+    // Caller B also gets 404 (no leak that the file exists for A).
+    const rB = await httpCall('GET', `/v1/projects/${projectId}`, null, 'key-b');
+    expect(rB.status).toBe(404);
+    expect((rB.body as { error: { code: string } }).error.code).toBe('PROJECT_NOT_FOUND');
+  });
+
+  it('brief GET returns 404 when project is corrupt', async () => {
+    const project = await httpCall('POST', '/v1/projects', { name: 'F2-corrupt-brief' }, 'key-a');
+    const projectId = (project.body as ProjectResponse).projectId;
+    const { writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    writeFileSync(join(projectDir, `${projectId}.project.json`), 'garbage', 'utf8');
+
+    const r = await httpCall('GET', `/v1/projects/${projectId}/brief`, null, 'key-a');
+    expect(r.status).toBe(404);
+  });
+
+  it('overview GET returns 404 when project is corrupt', async () => {
+    const project = await httpCall('POST', '/v1/projects', { name: 'F2-corrupt-overview' }, 'key-a');
+    const projectId = (project.body as ProjectResponse).projectId;
+    const { writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    writeFileSync(join(projectDir, `${projectId}.project.json`), 'garbage', 'utf8');
+
+    const r = await httpCall('GET', `/v1/projects/${projectId}/overview`, null, 'key-a');
+    expect(r.status).toBe(404);
+  });
+
+  it('list projects still works when one project is corrupt (scan skips it)', async () => {
+    const valid = await httpCall('POST', '/v1/projects', { name: 'F2-list-valid' }, 'key-a');
+    const corrupt = await httpCall('POST', '/v1/projects', { name: 'F2-list-corrupt' }, 'key-a');
+    const { writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    writeFileSync(join(projectDir, `${(corrupt.body as ProjectResponse).projectId}.project.json`), 'garbage', 'utf8');
+
+    const r = await httpCall('GET', '/v1/projects', null, 'key-a');
+    expect(r.status).toBe(200);
+    const body = r.body as { projects: { name: string }[] };
+    expect(body.projects.some((p) => p.name === 'F2-list-valid')).toBe(true);
+    expect(body.projects.some((p) => p.name === 'F2-list-corrupt')).toBe(false);
+    // Silence unused-var lint — `valid` is the project we expect to remain.
+    void valid;
   });
 });

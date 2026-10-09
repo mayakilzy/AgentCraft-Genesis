@@ -54,6 +54,13 @@ export default tseslint.config(
       // (was looking for button[type="submit"] but AuthGate uses type="button"
       // with onClick); the env-limitation assumption was wrong.
       'scripts/g7-13e-browser-final.cjs',
+      // G7-13F: browser restart evidence script — same CommonJS pattern (require
+      // for Playwright + node:child_process spawn). Spawns the gateway via
+      // `npx tsx`, uses pkill -f to fully tear down the npx → tsx → node
+      // process tree between restarts (SIGKILL alone was insufficient in
+      // prior testing — it only killed the npx parent, leaving the actual
+      // gateway running on the port).
+      'scripts/g7-13f-browser-restart.cjs',
     ],
   },
   ...tseslint.configs.recommended,

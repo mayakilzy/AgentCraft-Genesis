@@ -15,6 +15,7 @@ import {
   ProjectNotFoundError,
   ProjectOwnershipError,
   ProjectValidationError,
+  ProjectCorruptError,
   BriefRevisionConflictError,
   IdempotencyConflictError,
   ConversationAlreadyLinkedError,
@@ -440,9 +441,11 @@ describe('G7-13 FileProjectStore — PR-17 Preserve valid state after simulated 
     const projectPath = join(ctx.dir, `${project.projectId}.project.json`);
     writeFileSync(projectPath, '{"schemaVersion":99,"projectId":"garbage"}', 'utf8');
 
-    // The store refuses to load the corrupt record (unsupported schemaVersion)
-    // AND does NOT silently replace it with an empty project.
-    expect(() => ctx.store.getProject(project.projectId, OWNER_A)).toThrow(ProjectNotFoundError);
+    // G7-13F (Finding 2): the store now distinguishes corrupt projects from
+    // missing ones. A corrupt file (unsupported schemaVersion) throws
+    // ProjectCorruptError — the file is preserved on disk for manual
+    // recovery, never silently replaced.
+    expect(() => ctx.store.getProject(project.projectId, OWNER_A)).toThrow(ProjectCorruptError);
     // The corrupt file remains on disk for manual recovery.
     expect(existsSync(projectPath)).toBe(true);
 
@@ -459,7 +462,10 @@ describe('G7-13 FileProjectStore — PR-17 Preserve valid state after simulated 
     const corrupt = JSON.stringify({ schemaVersion: 1, projectId: project.projectId });
     writeFileSync(path, corrupt, 'utf8');
 
-    expect(() => ctx.store.getProject(project.projectId, OWNER_A)).toThrow(ProjectNotFoundError);
+    // G7-13F: missing required fields now throw ProjectCorruptError (was
+    // ProjectNotFoundError in G7-13A — the hardening pass sharpens the
+    // distinction so corrupt files are not silently treated as missing).
+    expect(() => ctx.store.getProject(project.projectId, OWNER_A)).toThrow(ProjectCorruptError);
     // File remains for manual recovery.
     expect(existsSync(path)).toBe(true);
   });
@@ -626,5 +632,278 @@ describe('G7-13 FileProjectStore — path safety (defense-in-depth)', () => {
     expect(() =>
       ctx.store.linkConversation(project.projectId, OWNER_A, '../escape'),
     ).toThrow(ProjectValidationError);
+  });
+});
+
+// ===========================================================================
+// G7-13F (Finding 2) — Corrupt project recovery (store layer).
+// Distinguish missing projects from corrupt/unsupported records. Preserve
+// original bytes. Validate nested record structures. Avoid cross-owner
+// information disclosure. Ensure a safe diagnostic path for the operator.
+// ===========================================================================
+
+describe('G7-13F (F2) — Corrupt project recovery (store layer)', () => {
+  let ctx: { store: FileProjectStore; dir: string };
+
+  beforeEach(() => {
+    ctx = freshStore();
+  });
+  afterEach(() => {
+    rmSync(ctx.dir, { recursive: true, force: true });
+  });
+
+  it('throws ProjectCorruptError on malformed JSON (and preserves the file)', () => {
+    const project = ctx.store.createProject(OWNER_A, { name: 'before-corruption' });
+    const projectPath = join(ctx.dir, `${project.projectId}.project.json`);
+    const corruptBytes = '{not valid json';
+    writeFileSync(projectPath, corruptBytes, 'utf8');
+
+    // getProject throws ProjectCorruptError (not ProjectNotFoundError).
+    expect(() => ctx.store.getProject(project.projectId, OWNER_A)).toThrow(ProjectCorruptError);
+    // The corrupt file is preserved on disk for manual recovery.
+    expect(existsSync(projectPath)).toBe(true);
+    // Original bytes are recoverable for operator diagnostics.
+    expect(readFileSync(projectPath, 'utf8')).toBe(corruptBytes);
+  });
+
+  it('throws ProjectCorruptError on unsupported schemaVersion (and preserves the file)', () => {
+    const project = ctx.store.createProject(OWNER_A, { name: 'before-schema-bump' });
+    const projectPath = join(ctx.dir, `${project.projectId}.project.json`);
+    // Write a record with schemaVersion 99 (unsupported).
+    const corruptRecord = JSON.parse(readFileSync(projectPath, 'utf8'));
+    corruptRecord.schemaVersion = 99;
+    const corruptBytes = JSON.stringify(corruptRecord, null, 2);
+    writeFileSync(projectPath, corruptBytes, 'utf8');
+
+    expect(() => ctx.store.getProject(project.projectId, OWNER_A)).toThrow(ProjectCorruptError);
+    // File preserved.
+    expect(existsSync(projectPath)).toBe(true);
+    expect(readFileSync(projectPath, 'utf8')).toBe(corruptBytes);
+  });
+
+  it('throws ProjectCorruptError on missing required fields (e.g., brief is null)', () => {
+    const project = ctx.store.createProject(OWNER_A, { name: 'before-missing-brief' });
+    const projectPath = join(ctx.dir, `${project.projectId}.project.json`);
+    const corruptRecord = JSON.parse(readFileSync(projectPath, 'utf8'));
+    corruptRecord.brief = null;
+    const corruptBytes = JSON.stringify(corruptRecord, null, 2);
+    writeFileSync(projectPath, corruptBytes, 'utf8');
+
+    expect(() => ctx.store.getProject(project.projectId, OWNER_A)).toThrow(ProjectCorruptError);
+    expect(existsSync(projectPath)).toBe(true);
+  });
+
+  it('throws ProjectCorruptError when conversationLinks is a string instead of array', () => {
+    const project = ctx.store.createProject(OWNER_A, { name: 'before-malformed-links' });
+    const projectPath = join(ctx.dir, `${project.projectId}.project.json`);
+    const corruptRecord = JSON.parse(readFileSync(projectPath, 'utf8'));
+    corruptRecord.conversationLinks = 'not-an-array';
+    writeFileSync(projectPath, JSON.stringify(corruptRecord, null, 2), 'utf8');
+
+    expect(() => ctx.store.getProject(project.projectId, OWNER_A)).toThrow(ProjectCorruptError);
+    expect(existsSync(projectPath)).toBe(true);
+  });
+
+  it('throws ProjectCorruptError when missionLinks is missing entirely', () => {
+    const project = ctx.store.createProject(OWNER_A, { name: 'before-missing-missionLinks' });
+    const projectPath = join(ctx.dir, `${project.projectId}.project.json`);
+    const corruptRecord = JSON.parse(readFileSync(projectPath, 'utf8'));
+    delete corruptRecord.missionLinks;
+    writeFileSync(projectPath, JSON.stringify(corruptRecord, null, 2), 'utf8');
+
+    expect(() => ctx.store.getProject(project.projectId, OWNER_A)).toThrow(ProjectCorruptError);
+    expect(existsSync(projectPath)).toBe(true);
+  });
+
+  it('distinguishes missing project (ProjectNotFoundError) from corrupt (ProjectCorruptError)', () => {
+    // Missing file → ProjectNotFoundError.
+    expect(() => ctx.store.getProject('does-not-exist-uuid', OWNER_A)).toThrow(ProjectNotFoundError);
+    // Corrupt file → ProjectCorruptError.
+    const project = ctx.store.createProject(OWNER_A, { name: 'before-corrupt-vs-missing' });
+    writeFileSync(join(ctx.dir, `${project.projectId}.project.json`), 'garbage', 'utf8');
+    let caught: unknown;
+    try {
+      ctx.store.getProject(project.projectId, OWNER_A);
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(ProjectCorruptError);
+    expect(caught).not.toBeInstanceOf(ProjectNotFoundError);
+  });
+
+  it('cross-caller access to corrupt project does not leak existence', () => {
+    // Owner A's project file becomes corrupt.
+    const project = ctx.store.createProject(OWNER_A, { name: 'cross-caller-corrupt' });
+    writeFileSync(join(ctx.dir, `${project.projectId}.project.json`), 'garbage', 'utf8');
+
+    // Owner B tries to access it — gets ProjectCorruptError (NOT
+    // ProjectOwnershipError, which would leak that the file exists for A).
+    // Since the file is corrupt, the store can't even determine ownership.
+    expect(() => ctx.store.getProject(project.projectId, OWNER_B)).toThrow(ProjectCorruptError);
+  });
+
+  it('ProjectCorruptError.originalBytes preserves the original file content for diagnostics', () => {
+    const project = ctx.store.createProject(OWNER_A, { name: 'original-bytes-test' });
+    const projectPath = join(ctx.dir, `${project.projectId}.project.json`);
+    const corruptBytes = '{"schemaVersion":1,"projectId":"broken"}';
+    writeFileSync(projectPath, corruptBytes, 'utf8');
+
+    let caught: unknown;
+    try {
+      ctx.store.getProject(project.projectId, OWNER_A);
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(ProjectCorruptError);
+    expect((caught as ProjectCorruptError).originalBytes).toBe(corruptBytes);
+  });
+
+  it('listProjects skips corrupt files (does not crash the scan)', () => {
+    const valid1 = ctx.store.createProject(OWNER_A, { name: 'valid-1' });
+    const valid2 = ctx.store.createProject(OWNER_A, { name: 'valid-2' });
+    // Corrupt valid2's file.
+    writeFileSync(join(ctx.dir, `${valid2.projectId}.project.json`), 'garbage', 'utf8');
+
+    // listProjects should skip the corrupt file and return valid-1.
+    const list = ctx.store.listProjects(OWNER_A);
+    expect(list.projects).toHaveLength(1);
+    expect(list.projects[0].name).toBe('valid-1');
+    // The corrupt file is preserved.
+    expect(existsSync(join(ctx.dir, `${valid2.projectId}.project.json`))).toBe(true);
+    // Silence unused-var lint — valid1 is the project we expect to remain.
+    void valid1;
+  });
+
+  it('findProjectByConversation skips corrupt files (does not crash the scan)', () => {
+    const valid1 = ctx.store.createProject(OWNER_A, { name: 'valid-1' });
+    ctx.store.linkConversation(valid1.projectId, OWNER_A, 'conv-shared');
+    const valid2 = ctx.store.createProject(OWNER_A, { name: 'valid-2' });
+    // Corrupt valid2's file. findProjectByConversation should still find valid1.
+    writeFileSync(join(ctx.dir, `${valid2.projectId}.project.json`), 'garbage', 'utf8');
+
+    const found = ctx.store.findProjectByConversation(OWNER_A, 'conv-shared');
+    expect(found).toBeDefined();
+    expect(found?.projectId).toBe(valid1.projectId);
+  });
+
+  it('findProjectByCreateKey skips corrupt files (does not crash the scan)', () => {
+    // Create two projects with idempotency keys; corrupt one.
+    const valid1 = ctx.store.createProject(OWNER_A, {
+      name: 'valid-1', idempotencyKey: 'shared-key-X',
+    });
+    const valid2 = ctx.store.createProject(OWNER_A, { name: 'valid-2' });
+    writeFileSync(join(ctx.dir, `${valid2.projectId}.project.json`), 'garbage', 'utf8');
+
+    // Retry the create with the same idempotency key AND same payload —
+    // the store should find valid1 (skip the corrupt valid2 file) and
+    // return it (idempotent no-op). Different payload would be a
+    // conflict, but same payload + same key = idempotent retry.
+    const found = ctx.store.createProject(OWNER_A, {
+      name: 'valid-1', idempotencyKey: 'shared-key-X',
+    });
+    expect(found.projectId).toBe(valid1.projectId);
+  });
+});
+
+// ===========================================================================
+// G7-13F (Finding 3) — Concurrent idempotency and uniqueness.
+// Within the documented single-process model (Node.js single-threaded event
+// loop, all store methods synchronous), two concurrent createProject calls
+// with the same idempotency key produce exactly one project, and two
+// concurrent linkConversation calls to two different projects with the same
+// conversationId produce exactly one success + one rejection. These tests
+// verify the single-process guarantee using Promise.all — the operations
+// execute sequentially within the same event-loop tick because they are
+// synchronous, but Promise.all documents the intent and guards against
+// future async refactors that would break the guarantee.
+//
+// Per spec: "Do not claim cross-process safety." No cross-process
+// infrastructure is introduced.
+// ===========================================================================
+
+describe('G7-13F (F3) — Concurrent idempotency and uniqueness (single-process)', () => {
+  let ctx: { store: FileProjectStore; dir: string };
+
+  beforeEach(() => {
+    ctx = freshStore();
+  });
+  afterEach(() => {
+    rmSync(ctx.dir, { recursive: true, force: true });
+  });
+
+  it('two concurrent createProject with same idempotency key → one project, same ID', async () => {
+    const payload = { name: 'F3 concurrent create', idempotencyKey: 'f3-concurrent-create-1' };
+    // Promise.all on two async wrappers around the synchronous createProject.
+    // The operations execute sequentially within the event loop, but the
+    // test documents that two "simultaneous" requests with the same key
+    // produce exactly one project.
+    const [r1, r2] = await Promise.all([
+      Promise.resolve().then(() => ctx.store.createProject(OWNER_A, payload)),
+      Promise.resolve().then(() => ctx.store.createProject(OWNER_A, payload)),
+    ]);
+    expect(r1.projectId).toBe(r2.projectId);
+    expect(ctx.store.listProjects(OWNER_A).projects).toHaveLength(1);
+  });
+
+  it('two concurrent linkConversation to two different projects → one succeeds, one throws', async () => {
+    const p1 = ctx.store.createProject(OWNER_A, { name: 'F3-P1' });
+    const p2 = ctx.store.createProject(OWNER_A, { name: 'F3-P2' });
+
+    const results = await Promise.allSettled([
+      Promise.resolve().then(() =>
+        ctx.store.linkConversation(p1.projectId, OWNER_A, 'conv-f3-shared'),
+      ),
+      Promise.resolve().then(() =>
+        ctx.store.linkConversation(p2.projectId, OWNER_A, 'conv-f3-shared'),
+      ),
+    ]);
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected');
+
+    // Exactly one succeeded; the other threw ConversationAlreadyLinkedError.
+    expect(fulfilled.length).toBe(1);
+    expect(rejected.length).toBe(1);
+    if (rejected[0].status === 'rejected') {
+      expect(rejected[0].reason).toBeInstanceOf(ConversationAlreadyLinkedError);
+    }
+
+    // The conversation is linked to exactly one project (the winner).
+    const p1Has = ctx.store.getProject(p1.projectId, OWNER_A).conversationLinks.some(
+      (l) => l.conversationId === 'conv-f3-shared',
+    );
+    const p2Has = ctx.store.getProject(p2.projectId, OWNER_A).conversationLinks.some(
+      (l) => l.conversationId === 'conv-f3-shared',
+    );
+    expect(p1Has || p2Has).toBe(true);
+    expect(p1Has && p2Has).toBe(false);
+  });
+
+  it('two concurrent linkMission with same idempotency key → one mission link, both return same project', async () => {
+    const p = ctx.store.createProject(OWNER_A, { name: 'F3-mission' });
+    const [r1, r2] = await Promise.all([
+      Promise.resolve().then(() =>
+        ctx.store.linkMission(p.projectId, OWNER_A, 'mission-f3-shared', { idempotencyKey: 'f3-lm-1' }),
+      ),
+      Promise.resolve().then(() =>
+        ctx.store.linkMission(p.projectId, OWNER_A, 'mission-f3-shared', { idempotencyKey: 'f3-lm-1' }),
+      ),
+    ]);
+    expect(r1.missionLinks).toHaveLength(1);
+    expect(r2.missionLinks).toHaveLength(1);
+    expect(r1.missionLinks[0].missionId).toBe('mission-f3-shared');
+  });
+
+  it('two concurrent createProject with DIFFERENT idempotency keys → two projects', async () => {
+    const [r1, r2] = await Promise.all([
+      Promise.resolve().then(() =>
+        ctx.store.createProject(OWNER_A, { name: 'F3-A', idempotencyKey: 'f3-key-a' }),
+      ),
+      Promise.resolve().then(() =>
+        ctx.store.createProject(OWNER_A, { name: 'F3-B', idempotencyKey: 'f3-key-b' }),
+      ),
+    ]);
+    expect(r1.projectId).not.toBe(r2.projectId);
+    expect(ctx.store.listProjects(OWNER_A).projects).toHaveLength(2);
   });
 });
