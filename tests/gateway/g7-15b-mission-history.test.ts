@@ -204,7 +204,15 @@ describe('G7-15B — Durable Mission History', () => {
     service1.close();
 
     // Phase 2: "restart". The fresh service's recoverHistory() should find
-    // the ACCEPTED record and rewrite it to FAILED (RUNTIME_FAILURE).
+    // the ACCEPTED record and rewrite it to OUTCOME_UNCONFIRMED.
+    //
+    // G7-15B-H1: the recovery must NOT claim the mission FAILED. The last
+    // durable record is non-terminal, which means the mission MAY have
+    // completed successfully before the process stopped (the terminal write
+    // may have failed) OR may have been genuinely interrupted. Without a
+    // heartbeat mechanism, we CANNOT distinguish these cases. The truthful
+    // representation is OUTCOME_UNCONFIRMED — terminal (the mission is no
+    // longer active) but carrying NO claim of success or failure.
     const store2 = new FileMissionHistoryStore({ dir: historyDir });
     const service2 = new MissionService({
       defaultMissionTimeoutMs: 60_000,
@@ -212,14 +220,13 @@ describe('G7-15B — Durable Mission History', () => {
       reasoningFactory: () => makeSuccessReasoning() as never,
     });
     const recovered = service2.get(missionId, CALLER);
-    // The mission must NOT be RUNNING — it must be FAILED (interrupted).
-    expect(recovered.status).toBe('FAILED');
+    // The mission must NOT be RUNNING — it must be OUTCOME_UNCONFIRMED.
+    expect(recovered.status).toBe('OUTCOME_UNCONFIRMED');
     expect(recovered.terminal).toBe(true);
-    expect(recovered.failureClass).toBe('RUNTIME_FAILURE');
-    expect(recovered.failureMessage).toContain('interrupted');
-    expect(recovered.result?.status).toBe('failure');
-    // Never invent success — the result summary must reflect failure.
-    expect(recovered.result?.summary).toContain('interrupted');
+    expect(recovered.failureClass).toBe('OUTCOME_UNCONFIRMED');
+    expect(recovered.failureMessage).toContain('could not be confirmed');
+    // Never invent success — the result must be undefined (no fabricated MissionResult).
+    expect(recovered.result).toBeUndefined();
     service2.close();
   }, 15_000);
 

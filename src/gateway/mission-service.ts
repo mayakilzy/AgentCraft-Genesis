@@ -179,6 +179,16 @@ interface MissionRuntime {
   verificationOk?: boolean;
   /** Set of artifact paths that passed verification (in the clean-room copy). */
   verifiedPaths?: Set<string>;
+  /**
+   * G7-15B-H1: true when the terminal history write FAILED. The in-process
+   * mission result is still the real outcome (SUCCEEDED/FAILED/etc.), but the
+   * durable record does NOT confirm it. On restart, the stale non-terminal
+   * record will be recovered as OUTCOME_UNCONFIRMED (not as a confirmed
+   * failure). The caller can observe this flag via the snapshot's
+   * `failureMessage` (which is appended with a persistence-warning note when
+   * this flag is set) — the in-process result is NOT changed.
+   */
+  persistenceFailed?: boolean;
 }
 
 /**
@@ -1313,6 +1323,17 @@ export class MissionService {
   }
 
   private toSnapshot(rt: MissionRuntime): MissionSnapshot {
+    // G7-15B-H1: if the terminal persistence write failed, append a truthful
+    // note to the failureMessage so the caller can observe that the durable
+    // record does NOT confirm the in-process result. The in-process status
+    // is still the real outcome (SUCCEEDED/FAILED/etc.) — we do NOT change
+    // it. The note is appended (not replacing) so the original failure
+    // message (if any) is preserved.
+    let failureMessage = rt.failureMessage;
+    if (rt.persistenceFailed === true) {
+      const note = ' [persistence warning: the durable history record does not confirm this outcome; on restart, this mission will be recovered as OUTCOME_UNCONFIRMED]';
+      failureMessage = failureMessage !== undefined ? failureMessage + note : note;
+    }
     return {
       missionId: rt.missionId,
       callerId: rt.callerId,
@@ -1324,7 +1345,7 @@ export class MissionService {
       goalOutcome: rt.goalOutcome,
       result: rt.result,
       failureClass: rt.failureClass,
-      failureMessage: rt.failureMessage,
+      failureMessage,
       idempotencyKey: rt.idempotencyKey,
     };
   }
@@ -1335,22 +1356,29 @@ export class MissionService {
 
   /**
    * G7-15B: load all persisted history records at construction time and
-   * recover interrupted missions truthfully.
+   * recover non-terminal records truthfully.
    *
-   * Recovery semantics (B2):
+   * Recovery semantics (G7-15B-H1):
    *   - Records with a terminal status (SUCCEEDED / FAILED / PARTIAL /
-   *     CANCELLED) are loaded as-is — they truthfully represent the
-   *     mission's outcome.
+   *     CANCELLED / OUTCOME_UNCONFIRMED) are loaded as-is — they truthfully
+   *     represent the mission's durable outcome.
    *   - Records with a non-terminal status (ACCEPTED / RUNNING /
-   *     CANCELLATION_REQUESTED) represent missions that were in-flight
-   *     when the previous process died. They are rewritten to FAILED with
-   *     failureClass='RUNTIME_FAILURE' and a truthful failureMessage. The
-   *     rewrite is persisted (atomic) so subsequent restarts see the FAILED
-   *     state, not the pre-crash RUNNING state.
+   *     CANCELLATION_REQUESTED) represent missions whose last durable write
+   *     happened before the mission reached a confirmed terminal state. The
+   *     mission MAY have completed successfully before the process stopped
+   *     (if the terminal write failed) OR may have been genuinely interrupted
+   *     (if the process crashed mid-execution). Without a separate heartbeat
+   *     mechanism, we CANNOT distinguish these two cases. The truthful
+   *     representation is OUTCOME_UNCONFIRMED — NOT FAILED. We do NOT claim
+   *     the mission failed when the only established fact is that the final
+   *     outcome cannot be recovered.
    *
    * Never invent success: the recovery path does NOT fabricate artifacts,
-   * verification, or a MissionResult.status='success'. The recovered
-   * MissionResult is always `status: 'failure'` with empty evidence.
+   * verification, or a MissionResult. The OUTCOME_UNCONFIRMED record carries
+   * no resultStatus, no resultSummary, no artifacts — the outcome is unknown.
+   *
+   * The rewrite is persisted (atomic) so subsequent restarts see
+   * OUTCOME_UNCONFIRMED, not the pre-crash non-terminal status.
    */
   private recoverHistory(): void {
     if (this.historyStore === null) return;
@@ -1371,28 +1399,28 @@ export class MissionService {
         // Terminal record — load as-is.
         this.historyIndex.set(missionId, record);
       } else {
-        // Interrupted mission — recover as FAILED (truthful, never invent success).
+        // G7-15B-H1: non-terminal record — the mission's outcome could NOT
+        // be confirmed. We do NOT claim the mission failed (it may have
+        // completed successfully before the process stopped). Represent as
+        // OUTCOME_UNCONFIRMED — a terminal status that truthfully
+        // communicates "outcome unknown" without claiming success or failure.
         const recovered: MissionHistoryRecord = {
           schemaVersion: MISSION_HISTORY_SCHEMA_VERSION,
           missionId: record.missionId,
           callerId: record.callerId,
           ...(record.label !== undefined ? { label: record.label } : {}),
           ...(record.idempotencyKey !== undefined ? { idempotencyKey: record.idempotencyKey } : {}),
-          status: 'FAILED',
+          status: 'OUTCOME_UNCONFIRMED',
           acceptedAt: record.acceptedAt,
           finishedAt: new Date().toISOString(),
           goalOutcome: record.goalOutcome,
-          resultSummary: 'mission interrupted by gateway restart',
-          resultStatus: 'failure',
-          costUsd: 0,
-          costTokens: 0,
-          costWallMs: 0,
-          costHumanInterventions: 0,
-          failureClass: 'RUNTIME_FAILURE',
-          failureMessage: 'mission interrupted by gateway restart',
+          // NO resultStatus / resultSummary / cost — the outcome is unknown;
+          // we do NOT fabricate a MissionResult.
+          failureClass: 'OUTCOME_UNCONFIRMED',
+          failureMessage: 'mission outcome could not be confirmed after restart; the last durable record was non-terminal',
           recoveredFromInterruption: true,
         };
-        // Persist the recovery so subsequent restarts see FAILED.
+        // Persist the recovery so subsequent restarts see OUTCOME_UNCONFIRMED.
         try {
           this.historyStore.write(recovered);
         } catch (err) {
@@ -1468,11 +1496,27 @@ export class MissionService {
         ...(artifacts.length > 0 ? { artifacts } : {}),
       };
       this.historyStore.write(record);
+      // G7-15B-H1: the write succeeded — the record is durably confirmed.
+      // Add it to the in-memory historyIndex so subsequent get() calls
+      // (after the in-process registry evicts the mission) return the
+      // confirmed terminal snapshot.
       this.historyIndex.set(rt.missionId, record);
     } catch (err) {
-      // Best-effort: a history-write failure does NOT affect the mission result.
+      // G7-15B-H1: the terminal write FAILED. We must NOT silently present
+      // the in-process result as durably confirmed. Mark the runtime so the
+      // snapshot reflects the persistence failure — the in-process result
+      // is still the real outcome (SUCCEEDED/FAILED/etc.), but the caller
+      // can observe that the durable record does NOT confirm it.
+      //
+      // We do NOT add a false terminal record to historyIndex. The stale
+      // non-terminal record (from the initial write in start()) remains on
+      // disk. On restart, recoverHistory() will see the non-terminal record
+      // and recover it as OUTCOME_UNCONFIRMED (not as a confirmed failure).
+      // This is the truthful behavior: we do NOT know the mission failed;
+      // we only know the durable record does not confirm the outcome.
+      rt.persistenceFailed = true;
       console.error(
-        `[mission-service] WARN: failed to persist terminal history for ${rt.missionId}: ${err instanceof Error ? err.message : String(err)}`,
+        `[mission-service] WARN: failed to persist terminal history for ${rt.missionId}: ${err instanceof Error ? err.message : String(err)}. The in-process result is still returned to the caller, but the durable record does NOT confirm it. On restart, this mission will be recovered as OUTCOME_UNCONFIRMED.`,
       );
     }
   }
@@ -1481,9 +1525,15 @@ export class MissionService {
    * G7-15B: build a MissionSnapshot from a recovered/persisted history record.
    * The `result` field is reconstructed from the persisted `resultSummary` +
    * `resultStatus` + `cost` fields — the full evidence array is NOT persisted.
+   *
+   * G7-15B-H1: for OUTCOME_UNCONFIRMED records, the `result` field is
+   * `undefined` — we do NOT fabricate a MissionResult. The `failureClass`
+   * and `failureMessage` carry the truthful "outcome unknown" message.
    */
   private historyRecordToSnapshot(record: MissionHistoryRecord): MissionSnapshot {
     const status = record.status as MissionStatus;
+    // G7-15B-H1: OUTCOME_UNCONFIRMED records have no resultStatus — the
+    // outcome is unknown; we do NOT fabricate a MissionResult.
     const result = record.resultStatus !== undefined ? {
       status: record.resultStatus,
       summary: record.resultSummary ?? '',

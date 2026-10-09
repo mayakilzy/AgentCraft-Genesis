@@ -35,6 +35,16 @@ import type {
  *   PARTIAL              — orchestrator returned MissionResult.status='partial' (deliverable produced, verification incomplete).
  *   CANCELLATION_REQUESTED — cancel() called; AbortController signaled; orchestrator may still be unwinding.
  *   CANCELLED            — orchestrator returned after cancellation; no deliverable.
+ *   OUTCOME_UNCONFIRMED  — G7-15B-H1: the mission's terminal outcome could NOT be
+ *                          confirmed after a gateway restart. The last durable
+ *                          record was non-terminal (ACCEPTED/RUNNING/CANCELLATION_REQUESTED),
+ *                          which means the mission MAY have completed successfully
+ *                          before the process stopped — but the terminal write
+ *                          either failed or never happened. This status does NOT
+ *                          claim success, failure, partial, or cancellation; it
+ *                          truthfully communicates "outcome unknown." It is
+ *                          terminal (the mission is no longer active) but carries
+ *                          no MissionResult (the result is not durably confirmed).
  *
  * WAITING_FOR_APPROVAL is NOT advertised (no human-approval hook is wired through the gateway in v1).
  */
@@ -45,17 +55,23 @@ export type MissionStatus =
   | 'FAILED'
   | 'PARTIAL'
   | 'CANCELLATION_REQUESTED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'OUTCOME_UNCONFIRMED';
 
 /**
  * The terminal states. After a mission reaches one of these, its status
  * is immutable.
+ *
+ * G7-15B-H1: OUTCOME_UNCONFIRMED is terminal — the mission is no longer
+ * active (the process that was executing it is gone), but its outcome
+ * is not durably confirmed.
  */
 export const TERMINAL_STATES: readonly MissionStatus[] = [
   'SUCCEEDED',
   'FAILED',
   'PARTIAL',
   'CANCELLED',
+  'OUTCOME_UNCONFIRMED',
 ];
 
 export function isTerminal(status: MissionStatus): boolean {
@@ -410,6 +426,15 @@ export function statusToA2ATaskState(status: MissionStatus): number {
     case 'CANCELLATION_REQUESTED':
       // Still WORKING from A2A's perspective; the cancellation is in-flight.
       return 2; // WORKING
+    case 'OUTCOME_UNCONFIRMED':
+      // G7-15B-H1: the mission's terminal outcome could not be confirmed
+      // after a gateway restart. A2A has no "unknown" TaskState; the closest
+      // truthful mapping is FAILED (NOT COMPLETED — we must NOT mislead A2A
+      // consumers into treating an unconfirmed outcome as success). The
+      // A2A response body carries the failureMessage which explicitly states
+      // the outcome is unconfirmed, so consumers can distinguish a confirmed
+      // failure from an unconfirmed outcome.
+      return 4; // FAILED
     default:
       return 0; // UNSPECIFIED
   }

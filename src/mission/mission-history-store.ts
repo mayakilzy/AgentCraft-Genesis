@@ -139,7 +139,8 @@ export type MissionHistoryStatus =
   | 'FAILED'
   | 'PARTIAL'
   | 'CANCELLATION_REQUESTED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'OUTCOME_UNCONFIRMED';
 
 // ---------------------------------------------------------------------------
 // Errors

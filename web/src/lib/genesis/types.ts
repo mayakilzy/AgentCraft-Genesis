@@ -27,13 +27,15 @@ export type MissionStatus =
   | "FAILED"
   | "PARTIAL"
   | "CANCELLATION_REQUESTED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "OUTCOME_UNCONFIRMED";
 
 export const TERMINAL_STATES: readonly MissionStatus[] = [
   "SUCCEEDED",
   "FAILED",
   "PARTIAL",
   "CANCELLED",
+  "OUTCOME_UNCONFIRMED",
 ];
 
 export function isTerminalStatus(status: MissionStatus): boolean {
