@@ -186,7 +186,7 @@ LINT = PASS (0 errors engine + 0 errors web; 4 pre-existing web warnings unchang
 FROZEN_CONTRACTS = UNCHANGED (0 diff lines vs 010bf3e and vs 86de847)
 BROWSER_ACCEPTANCE = PASS (F4-01..F4-10 rendered-browser + AP-R-01..AP-R-03 API-level kept separate)
 
-FINAL_LOCAL_HEAD = (set after commit)
+FINAL_LOCAL_HEAD = f6a8e43dd63425e6ddef0596c362a2df0d3f8d23
 FINAL_REMOTE_HEAD = (set after push)
 HEAD_MATCH = (verified after push)
 REMOTE_EVIDENCE = (verified after push)
