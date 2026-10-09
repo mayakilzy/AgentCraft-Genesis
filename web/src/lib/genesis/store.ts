@@ -17,6 +17,7 @@ import type { ConnectionState } from "./client";
 import type { MissionSnapshot } from "./types";
 
 export type Section =
+  | "home"
   | "work"
   | "agent"
   | "mission-control"
@@ -31,6 +32,12 @@ export const SECTIONS: readonly {
   /** Lucide icon name — resolved in component to keep this file side-effect-free. */
   icon: string;
 }[] = [
+  {
+    id: "home",
+    label: "Home",
+    description: "Conversational workspace — describe goals, authorize execution, review results.",
+    icon: "MessageSquare",
+  },
   {
     id: "work",
     label: "Work",
@@ -139,6 +146,10 @@ export interface GenesisUiState {
   activeMissionId?: string;
   setActiveMissionId: (id: string | undefined) => void;
 
+  // G7-12: Conversation context (active selection)
+  activeConversationId?: string;
+  setActiveConversationId: (id: string | undefined) => void;
+
   // Known missions (browser-local only — no server list endpoint exists)
   knownMissions: Record<string, KnownMission>;
   upsertKnownMission: (m: KnownMission) => void;
@@ -150,7 +161,7 @@ export interface GenesisUiState {
 }
 
 export const useGenesisStore = create<GenesisUiState>((set) => ({
-  activeSection: "work",
+  activeSection: "home",
   setActiveSection: (s) => set({ activeSection: s }),
 
   connectionState: "connecting",
@@ -174,6 +185,10 @@ export const useGenesisStore = create<GenesisUiState>((set) => ({
     })),
 
   setActiveMissionId: (id) => set({ activeMissionId: id }),
+
+  // G7-12: Conversation context
+  activeConversationId: undefined,
+  setActiveConversationId: (id) => set({ activeConversationId: id }),
 
   knownMissions: {},
   upsertKnownMission: (m) =>

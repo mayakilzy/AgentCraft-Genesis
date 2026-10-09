@@ -16,8 +16,12 @@
 
 import type {
   AdapterResult,
+  ConversationListResult,
+  ConversationRecord,
   GatewayErrorBody,
   HealthResponse,
+  MessageListResult,
+  MessageRecord,
   MissionArtifactRecord,
   MissionCancelAck,
   MissionEventRecord,
@@ -377,6 +381,141 @@ export const genesisApi = {
         { method: "POST", signal },
       );
       return toResult<MissionCancelAck>(status, body, 202, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /**
+   * G7-12 — Conversation API methods.
+   * All methods require BFF cookie auth + caller ownership (enforced server-side).
+   */
+
+  /** POST /v1/conversations — create a conversation. */
+  async createConversation(
+    opts: { title?: string; firstMessage?: string },
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ConversationRecord>> {
+    try {
+      const { status, body } = await fetchGenesis("/v1/conversations", {
+        method: "POST",
+        body: opts,
+        signal,
+      });
+      return toResult<ConversationRecord>(status, body, 201, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** GET /v1/conversations — list caller's conversations. */
+  async listConversations(
+    opts: { limit?: number; cursor?: string | null } = {},
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ConversationListResult>> {
+    try {
+      const params = new URLSearchParams();
+      if (opts.limit !== undefined) params.set("limit", String(opts.limit));
+      if (opts.cursor) params.set("cursor", opts.cursor);
+      const query = params.toString();
+      const path = query ? `/v1/conversations?${query}` : "/v1/conversations";
+      const { status, body } = await fetchGenesis(path, { signal });
+      return toResult<ConversationListResult>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** GET /v1/conversations/{id} — get conversation metadata. */
+  async getConversation(
+    conversationId: string,
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ConversationRecord>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/conversations/${encodeURIComponent(conversationId)}`,
+        { signal },
+      );
+      return toResult<ConversationRecord>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** POST /v1/conversations/{id}/messages — append a message. */
+  async appendMessage(
+    conversationId: string,
+    msg: { role: "user" | "assistant"; content: string; missionId?: string; idempotencyKey?: string },
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<MessageRecord>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/conversations/${encodeURIComponent(conversationId)}/messages`,
+        { method: "POST", body: msg, signal },
+      );
+      return toResult<MessageRecord>(status, body, 201, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** GET /v1/conversations/{id}/messages — paginated messages. */
+  async getMessages(
+    conversationId: string,
+    opts: { limit?: number; cursor?: string | null } = {},
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<MessageListResult>> {
+    try {
+      const params = new URLSearchParams();
+      if (opts.limit !== undefined) params.set("limit", String(opts.limit));
+      if (opts.cursor) params.set("cursor", opts.cursor);
+      const query = params.toString();
+      const path = query
+        ? `/v1/conversations/${encodeURIComponent(conversationId)}/messages?${query}`
+        : `/v1/conversations/${encodeURIComponent(conversationId)}/messages`;
+      const { status, body } = await fetchGenesis(path, { signal });
+      return toResult<MessageListResult>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /** POST /v1/conversations/{id}/missions — link a mission to the conversation. */
+  async linkMission(
+    conversationId: string,
+    missionId: string,
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<ConversationRecord>> {
+    try {
+      const { status, body } = await fetchGenesis(
+        `/v1/conversations/${encodeURIComponent(conversationId)}/missions`,
+        { method: "POST", body: { missionId }, signal },
+      );
+      return toResult<ConversationRecord>(status, body, 200, "ok");
     } catch (e) {
       return {
         kind: "unavailable",

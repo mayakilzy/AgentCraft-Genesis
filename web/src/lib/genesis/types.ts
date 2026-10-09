@@ -95,6 +95,52 @@ export interface MissionEventRecord {
 }
 
 // ---------------------------------------------------------------------------
+// Conversations (G7-12 — src/conversation/conversation-store.ts)
+// ---------------------------------------------------------------------------
+
+export interface ConversationRecord {
+  readonly conversationId: string;
+  readonly callerId: string;
+  readonly title: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly status: "active" | "archived";
+  readonly missionIds: readonly string[];
+}
+
+export interface MessageRecord {
+  readonly messageId: string;
+  readonly conversationId: string;
+  readonly seq: number;
+  readonly role: "user" | "assistant";
+  readonly content: string;
+  readonly createdAt: string;
+  readonly missionId?: string;
+  readonly idempotencyKey?: string;
+}
+
+export interface ConversationSummary {
+  readonly conversationId: string;
+  readonly title: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly status: "active" | "archived";
+  readonly missionIds: readonly string[];
+  readonly messageCount: number;
+  readonly lastMessagePreview?: string;
+}
+
+export interface ConversationListResult {
+  readonly conversations: readonly ConversationSummary[];
+  readonly nextCursor: string | null;
+}
+
+export interface MessageListResult {
+  readonly messages: readonly MessageRecord[];
+  readonly nextCursor: string | null;
+}
+
+// ---------------------------------------------------------------------------
 // Mission list (G7-10 — src/gateway/types.ts:141-186)
 // ---------------------------------------------------------------------------
 

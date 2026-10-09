@@ -58,9 +58,14 @@ const VERIFIED_PATTERNS: readonly { re: RegExp; methods: readonly string[] }[] =
   { re: /^\/v1\/missions\/[^/]+\/result$/, methods: ["GET"] },
   { re: /^\/v1\/missions\/[^/]+\/artifacts$/, methods: ["GET"] },
   { re: /^\/v1\/missions\/[^/]+\/cancel$/, methods: ["POST"] },
+  // G7-12: Conversation routes.
+  { re: /^\/v1\/conversations$/, methods: ["GET", "POST"] },
+  { re: /^\/v1\/conversations\/[^/]+$/, methods: ["GET", "PATCH"] },
+  { re: /^\/v1\/conversations\/[^/]+\/messages$/, methods: ["GET", "POST"] },
+  { re: /^\/v1\/conversations\/[^/]+\/missions$/, methods: ["POST"] },
 ];
 
-const ALLOWED_METHODS = new Set(["GET", "POST"]);
+const ALLOWED_METHODS = new Set(["GET", "POST", "PATCH"]);
 
 interface VerifiedMatch {
   pattern: string;
@@ -183,6 +188,14 @@ export async function GET(
 }
 
 export async function POST(
+  req: NextRequest,
+  ctx: { params: Promise<{ path?: string[] }> },
+) {
+  return proxy(req, ctx);
+}
+
+// G7-12: PATCH handler for conversation title updates.
+export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ path?: string[] }> },
 ) {
@@ -318,9 +331,9 @@ async function proxy(
     );
   }
 
-  // 7. Read body for POST only.
+  // 7. Read body for POST/PATCH.
   let body: BodyInit | undefined;
-  if (req.method === "POST") {
+  if (req.method === "POST" || req.method === "PATCH") {
     try {
       body = await req.text();
     } catch {

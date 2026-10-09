@@ -13,6 +13,7 @@ import {
   StudioSection,
   WorkSection,
 } from "@/components/genesis/sections/Sections";
+import { HomeSection } from "@/components/genesis/HomeSection";
 import { useGenesisStore } from "@/lib/genesis/store";
 
 /**
@@ -101,6 +102,7 @@ export function GenesisApp() {
   return (
     <AppShell>
       <EnvironmentBanner />
+      {activeSection === "home" && <HomeSection />}
       {activeSection === "work" && <WorkSection />}
       {activeSection === "agent" && <AgentSection />}
       {activeSection === "mission-control" && <MissionControlSection />}

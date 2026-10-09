@@ -28,6 +28,8 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { timingSafeEqual } from 'node:crypto';
 
 import type { MissionService } from './mission-service.js';
+import { FileConversationStore } from '../conversation/conversation-store.js';
+import { handleConversationRoute } from './conversation-routes.js';
 import type {
   CallerIdentity,
   GatewayErrorBody,
@@ -47,10 +49,11 @@ import {
 export function startHttpServer(
   service: MissionService,
   config: GatewayConfig,
+  conversationStore?: FileConversationStore,
 ): { server: Server; url: string } {
   const server = createServer(async (req, res) => {
     try {
-      await handleRequest(req, res, service, config);
+      await handleRequest(req, res, service, config, conversationStore);
     } catch (error) {
       sendError(res, 500, 'INTERNAL_ERROR', `internal error: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -76,6 +79,7 @@ async function handleRequest(
   res: ServerResponse,
   service: MissionService,
   config: GatewayConfig,
+  conversationStore?: FileConversationStore,
 ): Promise<void> {
   // CORS (harmless for localhost; useful for browser-based dashboards).
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -144,6 +148,20 @@ async function handleRequest(
     }
 
     sendError(res, 404, 'NOT_FOUND', `route not found: ${req.method} ${path}`);
+    return;
+  }
+
+  // G7-12: Conversation routes require authentication + caller ownership.
+  if (path.startsWith('/v1/conversations') && conversationStore !== undefined) {
+    const caller = authenticate(req, config);
+    if (caller === null) {
+      sendError(res, 401, 'UNAUTHENTICATED', 'missing or invalid API key');
+      return;
+    }
+    const handled = await handleConversationRoute(req, res, conversationStore, caller, path);
+    if (!handled) {
+      sendError(res, 404, 'NOT_FOUND', `route not found: ${req.method} ${path}`);
+    }
     return;
   }
 
