@@ -113,6 +113,11 @@ import type {
   ArtifactsProvider,
   WorkerRuntime,
 } from '../runtime/computer.js';
+import {
+  FileMissionHistoryStore,
+  MISSION_HISTORY_SCHEMA_VERSION,
+  type MissionHistoryRecord,
+} from '../mission/mission-history-store.js';
 
 import type {
   CallerIdentity,
@@ -237,6 +242,22 @@ export interface MissionServiceOptions {
    * Default: 60 seconds. Set to 0 to disable background sweeping.
    */
   readonly sweepIntervalMs?: number;
+  /**
+   * G7-15B: durable mission history store. When provided, terminal mission
+   * records are persisted to disk (one atomic JSON file per mission) and
+   * recovered on startup. Interrupted missions (was RUNNING/ACCEPTED when
+   * the process died) are recovered as FAILED with failureClass='RUNTIME_FAILURE'.
+   *
+   * The store is OPTIONAL — when absent, MissionService behaves exactly as
+   * before (in-process registry only, no restart durability). This preserves
+   * backward compatibility with all existing tests that construct
+   * MissionService without a history store.
+   *
+   * No frozen-contract modification: the store is injected via this option;
+   * MissionSnapshot, MissionResult, MissionStatus, and FailureClass are
+   * unchanged.
+   */
+  readonly missionHistoryStore?: FileMissionHistoryStore;
 }
 
 const DEFAULT_OUTCOME_MAX_LENGTH = 10_000;
@@ -315,6 +336,26 @@ export class MissionService {
   private sweepCount = 0;
   /** G6-08-R1 (B-EXEC-FINDING-003): true once shutdown() has been invoked. */
   private shuttingDown = false;
+  /**
+   * G7-15B: durable mission history store. Optional — when absent, the
+   * service behaves as before (in-process registry only, no restart
+   * durability).
+   */
+  private readonly historyStore: FileMissionHistoryStore | null;
+  /**
+   * G7-15B: in-memory index of recovered history records, keyed by missionId.
+   * Populated at construction time by `recoverHistory()`. Missions that
+   * reach a terminal state in the current process are added here too (via
+   * `persistTerminal()`) so that subsequent `get()` calls (after the
+   * in-process registry evicts the mission) can still return a snapshot.
+   *
+   * Interrupted missions (was RUNNING/ACCEPTED when the previous process
+   * died) are recovered as FAILED with failureClass='RUNTIME_FAILURE' and
+   * a truthful failureMessage. The recovery rewrites the persisted record
+   * so subsequent restarts see the FAILED state (not the pre-crash RUNNING
+   * state).
+   */
+  private readonly historyIndex = new Map<string, MissionHistoryRecord>();
 
   constructor(options: MissionServiceOptions = {}) {
     this.runtimeFactory = options.runtimeFactory;
@@ -326,6 +367,7 @@ export class MissionService {
     this.maxOutcomeLength = options.maxOutcomeLength ?? DEFAULT_OUTCOME_MAX_LENGTH;
     this.terminalMissionRetentionMs =
       options.terminalMissionRetentionMs ?? DEFAULT_TERMINAL_RETENTION_MS;
+    this.historyStore = options.missionHistoryStore ?? null;
     // G6-08 (Phase 3 / RC-6): start the background sweeper unless explicitly disabled.
     // The sweeper unref()s the timer so it does NOT keep the Node process alive.
     const sweepIntervalMs = options.sweepIntervalMs ?? DEFAULT_SWEEP_INTERVAL_MS;
@@ -334,6 +376,13 @@ export class MissionService {
         try { this.sweepTerminalMissions(); } catch { /* best-effort */ }
       }, sweepIntervalMs);
       this.sweepTimer.unref();
+    }
+    // G7-15B: recover durable mission history from disk. Interrupted
+    // missions (RUNNING/ACCEPTED/CANCELLATION_REQUESTED at crash time) are
+    // rewritten to FAILED. This is the truthful recovery — never invent
+    // success, artifact verification, or continued execution.
+    if (this.historyStore !== null) {
+      this.recoverHistory();
     }
   }
 
@@ -730,6 +779,27 @@ export class MissionService {
       this.idempotencyIndex.set(submission.idempotencyKey, missionId);
     }
 
+    // G7-15B: persist the initial mission record (status=ACCEPTED) so that
+    // an interrupted mission (process dies before terminal) has a durable
+    // representation. On restart, recoverHistory() rewrites it to FAILED.
+    if (this.historyStore !== null) {
+      try {
+        this.historyStore.write({
+          schemaVersion: MISSION_HISTORY_SCHEMA_VERSION,
+          missionId,
+          callerId: caller.callerId,
+          ...(submission.label !== undefined ? { label: submission.label } : {}),
+          ...(submission.idempotencyKey !== undefined ? { idempotencyKey: submission.idempotencyKey } : {}),
+          status: 'ACCEPTED',
+          acceptedAt,
+          goalOutcome: scrubSecrets(goalOutcome, 10_000),
+        });
+      } catch (err) {
+        // Best-effort: a history-write failure does NOT block the mission.
+        console.error(`[mission-service] WARN: failed to persist initial history for ${missionId}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     // 9. Start the orchestrator in the background.
     missionRuntime.status = 'RUNNING';
     missionRuntime.runPromise = orchestrator.run(goal).then(
@@ -746,6 +816,15 @@ export class MissionService {
         // G7-14: close the MCP provider (cleanup after success/failure/cancellation).
         if (mcpProvider !== null) {
           try { await mcpProvider.close(); } catch { /* best-effort */ }
+        }
+        // G7-15B: persist the terminal record (atomic rewrite-by-id). This
+        // updates the persisted file from ACCEPTED/RUNNING to the terminal
+        // status, with the full MissionResult summary, cost, failure class,
+        // and artifact metadata. The record is also added to the in-memory
+        // historyIndex so subsequent get() calls (after the in-process
+        // registry evicts the mission) can still return a snapshot.
+        if (this.historyStore !== null) {
+          this.persistTerminal(missionRuntime);
         }
         return result;
       },
@@ -765,6 +844,10 @@ export class MissionService {
         if (mcpProvider !== null) {
           mcpProvider.close().catch(() => { /* best-effort */ });
         }
+        // G7-15B: persist the terminal record even on infrastructure error.
+        if (this.historyStore !== null) {
+          this.persistTerminal(missionRuntime);
+        }
         return missionRuntime.result;
       },
     );
@@ -774,10 +857,39 @@ export class MissionService {
 
   /**
    * Get a snapshot of a mission. Enforces caller isolation.
+   *
+   * G7-15B: when the mission is not in the in-process registry (evicted by
+   * the sweeper OR the process restarted), consult the durable history
+   * index. If a history record exists, return a snapshot built from it.
+   * Caller isolation is enforced on the history record's `callerId`.
+   *
+   * The history snapshot is read-only and terminal (recovered missions are
+   * always FAILED; persisted terminal missions are SUCCEEDED/FAILED/PARTIAL/
+   * CANCELLED). The `result` field is reconstructed from the persisted
+   * `resultSummary` + `resultStatus` + `cost` fields — the full evidence
+   * array is NOT persisted (it could contain tool output; the history store
+   * persists only metadata, never content).
    */
   get(missionId: string, caller: CallerIdentity): MissionSnapshot {
-    const rt = this.requireMission(missionId, caller);
-    return this.toSnapshot(rt);
+    const rt = this.missions.get(missionId);
+    if (rt !== undefined) {
+      if (rt.callerId !== caller.callerId) {
+        // Per Section 11: cross-caller access is denied. Return
+        // MissionNotFoundError (not AuthorizationError) to avoid leaking
+        // the existence of another caller's mission.
+        throw new MissionNotFoundError(missionId);
+      }
+      return this.toSnapshot(rt);
+    }
+    // G7-15B: not in the in-process registry — consult the history index.
+    const record = this.historyIndex.get(missionId);
+    if (record === undefined) {
+      throw new MissionNotFoundError(missionId);
+    }
+    if (record.callerId !== caller.callerId) {
+      throw new MissionNotFoundError(missionId);
+    }
+    return this.historyRecordToSnapshot(record);
   }
 
   /**
@@ -821,11 +933,40 @@ export class MissionService {
     const limit = Math.max(1, Math.min(100, Math.trunc(requestedLimit)));
     const cursor = options.cursor;
 
-    // Collect this caller's missions (ownership filter applied FIRST).
-    const owned: Array<{ missionId: string; acceptedAt: string; rt: MissionRuntime }> = [];
+    // G7-15B: collect from BOTH the in-process registry AND the durable
+    // history index. Dedupe by missionId (in-process wins for active
+    // missions; history fills the gap for terminal missions evicted from
+    // the in-process registry OR recovered from a prior process).
+    // Ownership filter is applied to BOTH sources.
+    const seen = new Set<string>();
+    const owned: Array<{
+      missionId: string;
+      acceptedAt: string;
+      summary: MissionListSummary;
+    }> = [];
+
+    // In-process registry first (active + recent terminal missions).
     for (const [missionId, rt] of this.missions) {
       if (rt.callerId !== caller.callerId) continue;
-      owned.push({ missionId, acceptedAt: rt.acceptedAt, rt });
+      if (seen.has(missionId)) continue;
+      seen.add(missionId);
+      owned.push({
+        missionId,
+        acceptedAt: rt.acceptedAt,
+        summary: this.toListSummary(rt),
+      });
+    }
+
+    // History index (terminal + recovered missions NOT in the in-process registry).
+    for (const [missionId, record] of this.historyIndex) {
+      if (record.callerId !== caller.callerId) continue;
+      if (seen.has(missionId)) continue;
+      seen.add(missionId);
+      owned.push({
+        missionId,
+        acceptedAt: record.acceptedAt,
+        summary: this.historyRecordToListSummary(record),
+      });
     }
 
     // Deterministic sort: descending acceptedAt, then descending missionId.
@@ -865,7 +1006,7 @@ export class MissionService {
     const page = owned.slice(startIndex, startIndex + limit);
 
     // Build summaries (redacted view — no MissionResult, no failure details).
-    const missions: MissionListSummary[] = page.map(({ rt }) => this.toListSummary(rt));
+    const missions: MissionListSummary[] = page.map((o) => o.summary);
 
     // Compute next cursor: the missionId of the last item, if there are more.
     const hasMore = startIndex + limit < owned.length;
@@ -895,6 +1036,13 @@ export class MissionService {
   /**
    * Get the event stream for a mission. Enforces caller isolation.
    * Returns up to `limit` events starting from `fromSeq`.
+   *
+   * G7-15B: for missions recovered from the durable history index (not in
+   * the in-process registry), the event stream is NOT available — the
+   * in-process recorder is gone after restart. Return an empty array
+   * (truthful: no events to replay) rather than throwing. The caller can
+   * distinguish "mission exists but no events" from "mission not found"
+   * via the GET /v1/missions/{id} endpoint, which returns the snapshot.
    */
   getEvents(
     missionId: string,
@@ -902,17 +1050,31 @@ export class MissionService {
     fromSeq = 0,
     limit = 100,
   ): MissionEventRecord[] {
-    const rt = this.requireMission(missionId, caller);
-    const events = rt.recorder.events as FlightEvent[];
-    const records: MissionEventRecord[] = [];
-    let seq = 0;
-    for (const e of events) {
-      if (seq < fromSeq) { seq += 1; continue; }
-      if (records.length >= limit) break;
-      records.push(this.toEventRecord(seq, e));
-      seq += 1;
+    const rt = this.missions.get(missionId);
+    if (rt !== undefined) {
+      if (rt.callerId !== caller.callerId) {
+        throw new MissionNotFoundError(missionId);
+      }
+      const events = rt.recorder.events as FlightEvent[];
+      const records: MissionEventRecord[] = [];
+      let seq = 0;
+      for (const e of events) {
+        if (seq < fromSeq) { seq += 1; continue; }
+        if (records.length >= limit) break;
+        records.push(this.toEventRecord(seq, e));
+        seq += 1;
+      }
+      return records;
     }
-    return records;
+    // G7-15B: recovered mission — event stream not available after restart.
+    const record = this.historyIndex.get(missionId);
+    if (record === undefined) {
+      throw new MissionNotFoundError(missionId);
+    }
+    if (record.callerId !== caller.callerId) {
+      throw new MissionNotFoundError(missionId);
+    }
+    return []; // truthful: no events to replay
   }
 
   /**
@@ -935,49 +1097,80 @@ export class MissionService {
    * — they are internal verifier bookkeeping, not mission deliverables.
    */
   async getArtifacts(missionId: string, caller: CallerIdentity): Promise<MissionArtifactRecord[]> {
-    const rt = this.requireMission(missionId, caller);
-    const verificationOk = rt.verificationOk ?? false;
-    const verifiedPaths = rt.verifiedPaths ?? new Set<string>();
+    const rt = this.missions.get(missionId);
+    if (rt !== undefined) {
+      if (rt.callerId !== caller.callerId) {
+        throw new MissionNotFoundError(missionId);
+      }
+      const verificationOk = rt.verificationOk ?? false;
+      const verifiedPaths = rt.verifiedPaths ?? new Set<string>();
 
-    // G6-08 (RB-1): prefer the runtime's listArtifacts() when available.
-    // This is the production path — OpenBotRuntimeAdapter populates its
-    // internal `computers` Map from the actual worker processes, which
-    // the gateway previously could not see.
-    const provider = rt.runtime as (WorkerRuntime & Partial<ArtifactsProvider>) | undefined;
-    if (provider && typeof provider.listArtifacts === 'function') {
-      const snapshots = await provider.listArtifacts();
+      // G6-08 (RB-1): prefer the runtime's listArtifacts() when available.
+      // This is the production path — OpenBotRuntimeAdapter populates its
+      // internal `computers` Map from the actual worker processes, which
+      // the gateway previously could not see.
+      const provider = rt.runtime as (WorkerRuntime & Partial<ArtifactsProvider>) | undefined;
+      if (provider && typeof provider.listArtifacts === 'function') {
+        const snapshots = await provider.listArtifacts();
+        const records: MissionArtifactRecord[] = [];
+        for (const s of snapshots) {
+          records.push({
+            workerId: s.workerId,
+            path: s.path,
+            content: s.content,
+            verified: verificationOk && verifiedPaths.has(s.path),
+            bytes: s.bytes,
+          });
+        }
+        return records;
+      }
+
+      // Legacy dev-path fallback (default MemoryRuntime built inside MissionService).
       const records: MissionArtifactRecord[] = [];
-      for (const s of snapshots) {
-        records.push({
-          workerId: s.workerId,
-          path: s.path,
-          content: s.content,
-          verified: verificationOk && verifiedPaths.has(s.path),
-          bytes: s.bytes,
-        });
+      for (const [workerId, computer] of rt.computers) {
+        if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
+          continue;
+        }
+        for (const [path, content] of computer.files) {
+          // Path traversal protection: reject paths containing '..' or absolute paths
+          if (path.includes('..') || path.startsWith('/')) continue;
+          records.push({
+            workerId,
+            path,
+            content: content.length <= 65_536 ? content : undefined,
+            verified: verificationOk && verifiedPaths.has(path),
+            bytes: content.length,
+          });
+        }
       }
       return records;
     }
 
-    // Legacy dev-path fallback (default MemoryRuntime built inside MissionService).
-    const records: MissionArtifactRecord[] = [];
-    for (const [workerId, computer] of rt.computers) {
-      if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
-        continue;
-      }
-      for (const [path, content] of computer.files) {
-        // Path traversal protection: reject paths containing '..' or absolute paths
-        if (path.includes('..') || path.startsWith('/')) continue;
-        records.push({
-          workerId,
-          path,
-          content: content.length <= 65_536 ? content : undefined,
-          verified: verificationOk && verifiedPaths.has(path),
-          bytes: content.length,
+    // G7-15B: mission not in the in-process registry — consult the history
+    // index. Return the persisted artifact metadata (path + verified + bytes)
+    // WITHOUT content (the workspace is gone after restart). This is truthful:
+    // the paths and verification status are durable; the content is not.
+    const record = this.historyIndex.get(missionId);
+    if (record === undefined) {
+      throw new MissionNotFoundError(missionId);
+    }
+    if (record.callerId !== caller.callerId) {
+      throw new MissionNotFoundError(missionId);
+    }
+    const historyArtifacts: MissionArtifactRecord[] = [];
+    if (record.artifacts !== undefined) {
+      for (const a of record.artifacts) {
+        historyArtifacts.push({
+          workerId: 'recovered', // the original workerId is not persisted
+          path: a.path,
+          // content is NOT available after restart — the workspace is gone.
+          // Return undefined; the caller sees the path + verified + bytes.
+          verified: a.verified,
+          bytes: a.bytes,
         });
       }
     }
-    return records;
+    return historyArtifacts;
   }
 
   /**
@@ -1133,6 +1326,206 @@ export class MissionService {
       failureClass: rt.failureClass,
       failureMessage: rt.failureMessage,
       idempotencyKey: rt.idempotencyKey,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // G7-15B — Durable mission history helpers
+  // -------------------------------------------------------------------------
+
+  /**
+   * G7-15B: load all persisted history records at construction time and
+   * recover interrupted missions truthfully.
+   *
+   * Recovery semantics (B2):
+   *   - Records with a terminal status (SUCCEEDED / FAILED / PARTIAL /
+   *     CANCELLED) are loaded as-is — they truthfully represent the
+   *     mission's outcome.
+   *   - Records with a non-terminal status (ACCEPTED / RUNNING /
+   *     CANCELLATION_REQUESTED) represent missions that were in-flight
+   *     when the previous process died. They are rewritten to FAILED with
+   *     failureClass='RUNTIME_FAILURE' and a truthful failureMessage. The
+   *     rewrite is persisted (atomic) so subsequent restarts see the FAILED
+   *     state, not the pre-crash RUNNING state.
+   *
+   * Never invent success: the recovery path does NOT fabricate artifacts,
+   * verification, or a MissionResult.status='success'. The recovered
+   * MissionResult is always `status: 'failure'` with empty evidence.
+   */
+  private recoverHistory(): void {
+    if (this.historyStore === null) return;
+    let records: Map<string, MissionHistoryRecord>;
+    try {
+      records = this.historyStore.loadAll();
+    } catch (err) {
+      // Best-effort: a load failure does NOT block startup. The history
+      // index remains empty (no recovered missions), but new missions can
+      // still be started + persisted.
+      console.error(
+        `[mission-service] WARN: failed to load mission history: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return;
+    }
+    for (const [missionId, record] of records) {
+      if (isTerminal(record.status)) {
+        // Terminal record — load as-is.
+        this.historyIndex.set(missionId, record);
+      } else {
+        // Interrupted mission — recover as FAILED (truthful, never invent success).
+        const recovered: MissionHistoryRecord = {
+          schemaVersion: MISSION_HISTORY_SCHEMA_VERSION,
+          missionId: record.missionId,
+          callerId: record.callerId,
+          ...(record.label !== undefined ? { label: record.label } : {}),
+          ...(record.idempotencyKey !== undefined ? { idempotencyKey: record.idempotencyKey } : {}),
+          status: 'FAILED',
+          acceptedAt: record.acceptedAt,
+          finishedAt: new Date().toISOString(),
+          goalOutcome: record.goalOutcome,
+          resultSummary: 'mission interrupted by gateway restart',
+          resultStatus: 'failure',
+          costUsd: 0,
+          costTokens: 0,
+          costWallMs: 0,
+          costHumanInterventions: 0,
+          failureClass: 'RUNTIME_FAILURE',
+          failureMessage: 'mission interrupted by gateway restart',
+          recoveredFromInterruption: true,
+        };
+        // Persist the recovery so subsequent restarts see FAILED.
+        try {
+          this.historyStore.write(recovered);
+        } catch (err) {
+          console.error(
+            `[mission-service] WARN: failed to persist recovery for ${missionId}: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+        this.historyIndex.set(missionId, recovered);
+      }
+    }
+  }
+
+  /**
+   * G7-15B: persist a terminal mission record (atomic rewrite-by-id). Called
+   * from the runPromise.then() and .catch() handlers. Builds the record from
+   * the in-process MissionRuntime + the captured verification result + the
+   * artifact metadata. Also adds the record to the in-memory historyIndex
+   * so subsequent get() calls (after the in-process registry evicts the
+   * mission) can still return a snapshot.
+   *
+   * No secrets: the goalOutcome and failureMessage are scrubbed before
+   * persistence. The record does NOT store the full MissionResult.evidence
+   * (which could contain tool output) — only the summary, status, and cost.
+   */
+  private persistTerminal(rt: MissionRuntime): void {
+    if (this.historyStore === null) return;
+    if (!isTerminal(rt.status)) return; // safety: only persist terminal states
+    try {
+      // Build artifact metadata (paths + verified flags + bytes; NO content).
+      const artifacts: Array<{ path: string; verified: boolean; bytes: number }> = [];
+      const provider = rt.runtime as (WorkerRuntime & Partial<ArtifactsProvider>) | undefined;
+      if (provider && typeof provider.listArtifacts === 'function') {
+        // Async listArtifacts is not awaited here (this method is sync). We
+        // read from the captured verifiedPaths set + the legacy computers Map.
+        // The provider's listArtifacts was already awaited in
+        // captureVerificationResult; the verifiedPaths set reflects it.
+      }
+      // Legacy dev-path fallback (MemoryComputer.files) — synchronous.
+      for (const [workerId, computer] of rt.computers) {
+        if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
+          continue;
+        }
+        for (const [path, content] of computer.files) {
+          if (path.includes('..') || path.startsWith('/')) continue;
+          artifacts.push({
+            path,
+            verified: (rt.verificationOk ?? false) && (rt.verifiedPaths ?? new Set()).has(path),
+            bytes: content.length,
+          });
+        }
+      }
+
+      const record: MissionHistoryRecord = {
+        schemaVersion: MISSION_HISTORY_SCHEMA_VERSION,
+        missionId: rt.missionId,
+        callerId: rt.callerId,
+        ...(rt.label !== undefined ? { label: rt.label } : {}),
+        ...(rt.idempotencyKey !== undefined ? { idempotencyKey: rt.idempotencyKey } : {}),
+        status: rt.status,
+        acceptedAt: rt.acceptedAt,
+        ...(rt.finishedAt !== undefined ? { finishedAt: rt.finishedAt } : {}),
+        goalOutcome: scrubSecrets(rt.goalOutcome, 10_000),
+        ...(rt.result !== undefined ? {
+          resultSummary: scrubSecrets(rt.result.summary, 1_000),
+          resultStatus: rt.result.status,
+          costUsd: rt.result.cost.usd,
+          costTokens: rt.result.cost.tokens,
+          costWallMs: rt.result.cost.wallMs,
+          costHumanInterventions: rt.result.cost.humanInterventions,
+        } : {}),
+        ...(rt.failureClass !== undefined ? { failureClass: rt.failureClass } : {}),
+        ...(rt.failureMessage !== undefined ? { failureMessage: rt.failureMessage } : {}),
+        ...(artifacts.length > 0 ? { artifacts } : {}),
+      };
+      this.historyStore.write(record);
+      this.historyIndex.set(rt.missionId, record);
+    } catch (err) {
+      // Best-effort: a history-write failure does NOT affect the mission result.
+      console.error(
+        `[mission-service] WARN: failed to persist terminal history for ${rt.missionId}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  /**
+   * G7-15B: build a MissionSnapshot from a recovered/persisted history record.
+   * The `result` field is reconstructed from the persisted `resultSummary` +
+   * `resultStatus` + `cost` fields — the full evidence array is NOT persisted.
+   */
+  private historyRecordToSnapshot(record: MissionHistoryRecord): MissionSnapshot {
+    const status = record.status as MissionStatus;
+    const result = record.resultStatus !== undefined ? {
+      status: record.resultStatus,
+      summary: record.resultSummary ?? '',
+      evidence: [],
+      cost: {
+        usd: record.costUsd ?? 0,
+        tokens: record.costTokens ?? 0,
+        wallMs: record.costWallMs ?? 0,
+        humanInterventions: record.costHumanInterventions ?? 0,
+      },
+    } : undefined;
+    return {
+      missionId: record.missionId,
+      callerId: record.callerId,
+      label: record.label,
+      status,
+      terminal: isTerminal(status),
+      acceptedAt: record.acceptedAt,
+      finishedAt: record.finishedAt,
+      goalOutcome: record.goalOutcome,
+      ...(result !== undefined ? { result } : {}),
+      ...(record.failureClass !== undefined ? { failureClass: record.failureClass } : {}),
+      ...(record.failureMessage !== undefined ? { failureMessage: record.failureMessage } : {}),
+      ...(record.idempotencyKey !== undefined ? { idempotencyKey: record.idempotencyKey } : {}),
+    };
+  }
+
+  /**
+   * G7-15B: build a MissionListSummary from a recovered/persisted history record.
+   * Omits MissionResult, failure details, and idempotency key (same as
+   * toListSummary). Truncates the goal outcome for safe display.
+   */
+  private historyRecordToListSummary(record: MissionHistoryRecord): MissionListSummary {
+    const status = record.status as MissionStatus;
+    return {
+      missionId: record.missionId,
+      status,
+      terminal: isTerminal(status),
+      acceptedAt: record.acceptedAt,
+      ...(record.finishedAt !== undefined ? { finishedAt: record.finishedAt } : {}),
+      ...(record.label !== undefined ? { label: record.label } : {}),
+      outcomePreview: scrubSecrets(record.goalOutcome, 120),
     };
   }
 

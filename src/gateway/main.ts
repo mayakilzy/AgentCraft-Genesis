@@ -43,6 +43,7 @@ import { startHttpServer } from './http-server.js';
 import { startA2AServer } from './a2a-server.js';
 import { FileConversationStore } from '../conversation/conversation-store.js';
 import { FileProjectStore } from '../project/project-store.js';
+import { FileMissionHistoryStore } from '../mission/mission-history-store.js';
 import { loadMcpConfig, McpConfigError, McpConfigNotFoundError } from '../plugins/mcp-config.js';
 import type { CallerIdentity, GatewayConfig } from './types.js';
 import type { ReasoningProvider } from '../contracts/core.js';
@@ -337,6 +338,12 @@ async function main(): Promise<void> {
   // Build the MissionService with execution-mode-appropriate providers.
   let service: MissionService;
 
+  // G7-15B: durable mission history store. Shared across both execution
+  // modes — terminal mission records persist across restarts in both
+  // development and production. The store is created BEFORE the
+  // MissionService so the constructor can recover interrupted missions.
+  const missionHistoryStore = new FileMissionHistoryStore();
+
   if (mode === 'production') {
     console.error('[genesis-gateway] EXECUTION MODE: production (real providers required)');
     const reasoning = await buildRealReasoningProvider();
@@ -356,6 +363,7 @@ async function main(): Promise<void> {
       runtimeFactory: runtimeFactory,
       reasoningFactory: () => reasoning,
       mcpServers,
+      missionHistoryStore,
     });
   } else {
     console.error('[genesis-gateway] EXECUTION MODE: development');
@@ -364,6 +372,7 @@ async function main(): Promise<void> {
     service = new MissionService({
       defaultMissionTimeoutMs: config.defaultMissionTimeoutMs,
       mcpServers,
+      missionHistoryStore,
     });
   }
 

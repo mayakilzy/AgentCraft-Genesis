@@ -27,3 +27,6 @@ data/conversations/
 
 # G7-13: Project runtime data (atomic JSON persistence)
 data/projects/
+
+# G7-15B: Mission history runtime data (atomic JSON persistence per mission)
+data/missions/
