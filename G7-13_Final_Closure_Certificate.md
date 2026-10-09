@@ -32,7 +32,7 @@ Per spec: "Do not mark the mission PASS unless every mandatory acceptance gate i
 | G7-12 baseline | `build/g7-12-persistent-conversational-home` | `86de84756aa730cf8d01125770a078bea1d4801c` |
 | G7-13A+B (Store + Gateway) | `build/g7-13-durable-projects-repository` | `f37bddd` |
 | G7-13C (Web integration) | `build/g7-13-durable-projects-repository` | `83c4836` |
-| G7-13D (Acceptance + reports) | `build/g7-13-durable-projects-repository` | (this commit) |
+| G7-13D (Acceptance + reports) | `build/g7-13-durable-projects-repository` | `b779fb1185b40ec01f0e6e31e3621f5a49964e37` |
 
 **Commit ancestry:** G7-12D (`86de847`) → G7-13A+B (`f37bddd`) → G7-13C (`83c4836`) → G7-13D (this commit). Linear, no divergence from the G7-12 baseline.
 
@@ -215,7 +215,7 @@ STATUS = PARTIAL
 
 STARTING_COMMIT = 86de84756aa730cf8d01125770a078bea1d4801c
 DEVELOPMENT_BRANCH = build/g7-13-durable-projects-repository
-FINAL_LOCAL_HEAD = (set after this commit)
+FINAL_LOCAL_HEAD = b779fb1185b40ec01f0e6e31e3621f5a49964e37
 REMOTE_PUSH = NOT_AUTHORIZED
 
 CHECKPOINT_A_STORE = PASS
