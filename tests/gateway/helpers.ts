@@ -20,6 +20,7 @@ import type { AddressInfo } from 'node:net';
 import { MissionService } from '../../src/gateway/mission-service.js';
 import { startHttpServer, stopHttpServer } from '../../src/gateway/http-server.js';
 import { startA2AServer, stopA2AServer } from '../../src/gateway/a2a-server.js';
+import { FileConversationStore } from '../../src/conversation/conversation-store.js';
 import type { CallerIdentity, GatewayConfig } from '../../src/gateway/types.js';
 
 // --- Test caller identities ---
@@ -175,7 +176,10 @@ beforeAll(async () => {
   const port2 = await getFreePort();
   const config = buildConfig(port1, port2);
   service = new MissionService({ defaultMissionTimeoutMs: 10_000 });
-  const http = startHttpServer(service, config);
+  // G7-12C: use a temp directory for the conversation store so tests can
+  // exercise conversation routes alongside mission routes.
+  const conversationStore = new FileConversationStore({ dir: `/tmp/genesis-test-conversations-${Date.now()}` });
+  const http = startHttpServer(service, config, conversationStore);
   const a2a = await startA2AServer(service, config);
   httpServer = http.server;
   a2aServer = a2a.server;

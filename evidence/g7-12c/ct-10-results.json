@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-10-09T03:38:44.076Z",
+  "results": {
+    "CT-10A": {
+      "status": "PASS",
+      "detail": "Application accessible. BFF login successful, cookie issued.",
+      "timestamp": "2026-10-09T03:38:35.471Z"
+    },
+    "CT-10B": {
+      "status": "PASS",
+      "detail": "Conversation created via BFF. ID: e68382e8...",
+      "timestamp": "2026-10-09T03:38:36.138Z"
+    },
+    "CT-10C": {
+      "status": "PASS",
+      "detail": "2 messages sent. Seq: 0, 1",
+      "timestamp": "2026-10-09T03:38:36.241Z"
+    },
+    "CT-10D": {
+      "status": "PASS",
+      "detail": "After refresh: 2 messages restored from server",
+      "timestamp": "2026-10-09T03:38:36.264Z"
+    },
+    "CT-10E": {
+      "status": "PASS",
+      "detail": "Conversation list: 2 conversations accessible",
+      "timestamp": "2026-10-09T03:38:36.282Z"
+    },
+    "CT-10F": {
+      "status": "PASS",
+      "detail": "Mission authorized: 748d30aa... linked to conversation",
+      "timestamp": "2026-10-09T03:38:36.338Z"
+    },
+    "CT-10G": {
+      "status": "PASS",
+      "detail": "Mission status visible: SUCCEEDED, terminal: true",
+      "timestamp": "2026-10-09T03:38:39.397Z"
+    },
+    "CT-10H": {
+      "status": "PASS",
+      "detail": "Artifacts accessible: 1 artifacts via BFF",
+      "timestamp": "2026-10-09T03:38:39.424Z"
+    },
+    "CT-10I": {
+      "status": "PASS",
+      "detail": "Cost: tokens=0, USD: UNKNOWN. USD=0 shown as UNKNOWN, not confirmed free.",
+      "timestamp": "2026-10-09T03:38:39.450Z"
+    },
+    "CT-10J": {
+      "status": "PASS",
+      "detail": "Error handling: invalid limit→400, nonexistent→404",
+      "timestamp": "2026-10-09T03:38:39.470Z"
+    },
+    "CT-10-BROWSER": {
+      "status": "PARTIAL",
+      "detail": "Browser UI: Conversations nav=0, New button=0. Screenshots saved.",
+      "timestamp": "2026-10-09T03:38:44.017Z"
+    }
+  }
+}

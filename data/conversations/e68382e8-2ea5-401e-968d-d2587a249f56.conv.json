@@ -1,0 +1,11 @@
+{
+  "conversationId": "e68382e8-2ea5-401e-968d-d2587a249f56",
+  "callerId": "g7-12c-caller",
+  "title": "CT-10 Browser Test",
+  "createdAt": "2026-10-09T03:38:36.132Z",
+  "updatedAt": "2026-10-09T03:38:36.334Z",
+  "status": "active",
+  "missionIds": [
+    "748d30aa-86b1-4867-9ddd-37f58334eb9a"
+  ]
+}

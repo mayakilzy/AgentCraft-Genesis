@@ -272,15 +272,26 @@ function MainConversation({
     }
     const missionId = submitRes.data.missionId;
 
-    // Link the mission to the conversation.
-    await genesisApi.linkMission(conversationId, missionId);
+    // G7-12C: Link the mission to the conversation. If this fails, the mission
+    // is NOT orphaned — we append a message with the missionId so the user can
+    // recover it. The mission is already executing in the Gateway.
+    const linkRes = await genesisApi.linkMission(conversationId, missionId);
 
-    // Append an assistant message documenting the authorization.
+    // Append an assistant message documenting the authorization + missionId.
+    // This ensures the missionId is always recoverable from the conversation
+    // history, even if the link call failed.
+    const linkNote = linkRes.kind === "ok"
+      ? "The mission is now linked to this conversation."
+      : `WARNING: Could not link mission to conversation (${linkRes.message ?? "unknown error"}). The mission IS executing — save this Mission ID to track it manually.`;
     await genesisApi.appendMessage(conversationId, {
       role: "assistant",
-      content: `Mission authorized and submitted.\n\nMission ID: ${missionId}\n\nThe mission is now executing. Follow its progress in the Mission Workspace panel.`,
+      content: `Mission authorized and submitted.\n\nMission ID: ${missionId}\n\n${linkNote}\n\nFollow progress in the Mission Workspace panel.`,
       missionId,
     });
+
+    if (linkRes.kind !== "ok") {
+      setError(`Mission ${missionId} was submitted but linking failed. The mission IS running. Mission ID: ${missionId}`);
+    }
 
     void fetchMessages();
     onConversationsChanged();
