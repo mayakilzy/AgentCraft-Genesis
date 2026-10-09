@@ -1,0 +1,49 @@
+{
+  "results": {
+    "A3-00": {
+      "status": "PASS",
+      "detail": "gateway + web up (production mode, PIN=g7-15a-s…)",
+      "timestamp": "2026-10-09T23:14:05.488Z"
+    },
+    "A3-01": {
+      "status": "PASS",
+      "detail": "valid PIN → 200 + genesis_bff cookie (status=200)",
+      "timestamp": "2026-10-09T23:14:05.524Z"
+    },
+    "A3-02": {
+      "status": "PASS",
+      "detail": "5 × 401 then 429 (failed401=5)",
+      "timestamp": "2026-10-09T23:14:05.801Z"
+    },
+    "A3-03": {
+      "status": "PASS",
+      "detail": "forged forwarding headers → still 429 (limiter ignores them)",
+      "timestamp": "2026-10-09T23:14:05.805Z"
+    },
+    "A3-03b": {
+      "status": "PASS",
+      "detail": "trusted proxy header X-Real-IP → separate bucket (5×401 then 429 for that IP; default bucket still 401)",
+      "timestamp": "2026-10-09T23:14:06.638Z"
+    },
+    "A3-04": {
+      "status": "PASS",
+      "detail": "no 'dev-local-pin' or 'devModeHint' in rendered HTML or bundled JS",
+      "timestamp": "2026-10-09T23:14:06.735Z"
+    },
+    "A3-05": {
+      "status": "PASS",
+      "detail": "authenticated BFF /api/genesis/v1/plugins → 200 (0 plugins)",
+      "timestamp": "2026-10-09T23:14:06.761Z"
+    },
+    "A3-05b": {
+      "status": "PASS",
+      "detail": "unauthenticated BFF → 401 (existing auth boundary intact)",
+      "timestamp": "2026-10-09T23:14:06.764Z"
+    },
+    "A3-06": {
+      "status": "PASS",
+      "detail": "correct PIN while over limit → 429 (limiter short-circuits before PIN compare; no timing side-channel). Recovery path: wait for window expiry, then the next successful login clears the bucket.",
+      "timestamp": "2026-10-09T23:14:07.594Z"
+    }
+  }
+}

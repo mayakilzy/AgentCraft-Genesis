@@ -9,8 +9,6 @@ import { Label } from "@/components/ui/label";
 interface AuthGateProps {
   /** Called when the operator successfully authenticates. */
   onAuthenticated: () => void;
-  /** Optional: the dev PIN hint to display when in controlled mode. */
-  devModeHint?: boolean;
 }
 
 /**
@@ -24,17 +22,26 @@ interface AuthGateProps {
  *   - The PIN is the SOLE trust boundary. Anyone with the PIN can mint a BFF
  *     session. Suitable for controlled environments with operator-only
  *     network access.
- *   - In dev mode, the default PIN is 'dev-local-pin' (when
- *     GENESIS_OPERATOR_PIN is unset). In production, GENESIS_OPERATOR_PIN
- *     MUST be set or the server returns 503 BFF_PIN_NOT_CONFIGURED (mapped
- *     to 401 here to avoid leaking server state).
  *   - The PIN is constant-time compared server-side. We do not reveal
  *     whether the failure was "wrong PIN" or "server misconfigured".
+ *   - G7-15A: a server-side rate limiter bounds online PIN brute-force
+ *     (5 failed attempts per 60s per key). The limiter key does NOT trust
+ *     client-supplied forwarding headers by default. See
+ *     `web/src/lib/auth/rate-limit.ts` for the trust model.
+ *
+ * G7-15A reconciliation (G7-08D): the `devModeHint` prop and the
+ * `dev-local-pin` placeholder/hint block were removed. The dev-mode PIN
+ * default (`dev-local-pin`) is a SERVER-SIDE convenience implemented in
+ * `getOperatorPin()` — it is never surfaced to the client. This is the
+ * "remove inappropriate development hints from production AuthGate" item:
+ * the AuthGate renders identically in dev and production, with a generic
+ * "Operator PIN" placeholder. The server-side dev PIN default is unchanged
+ * (it is not a secret and not exposed through the UI).
  *
  * Single-operator model: not multi-user isolation. All sessions share the
  * gateway's callerId via GENESIS_API_KEY.
  */
-export function AuthGate({ onAuthenticated, devModeHint }: AuthGateProps) {
+export function AuthGate({ onAuthenticated }: AuthGateProps) {
   const [pin, setPin] = useState("");
   const [state, setState] = useState<
     "idle" | "loading" | "error" | "unavailable"
@@ -60,10 +67,11 @@ export function AuthGate({ onAuthenticated, devModeHint }: AuthGateProps) {
         onAuthenticated();
         return;
       }
-      // 401 INVALID_PIN, 400 MISSING_PIN/INVALID_JSON, 503 BFF_PIN_NOT_CONFIGURED.
-      // We deliberately do NOT distinguish 401 from 503 to avoid leaking that
-      // the server is misconfigured. Both surface as a generic "Invalid PIN"
-      // error. The 503 case is handled by surfacing a distinct message.
+      // 401 INVALID_PIN, 400 MISSING_PIN/INVALID_JSON, 429 TOO_MANY_ATTEMPTS,
+      // 503 BFF_PIN_NOT_CONFIGURED. We deliberately do NOT distinguish 401
+      // from 503 to avoid leaking that the server is misconfigured. Both
+      // surface as a generic "Invalid PIN" error. The 503 case is handled
+      // by surfacing a distinct message.
       if (res.status === 400) {
         let body: { error?: { code?: string; message?: string } } = {};
         try {
@@ -76,6 +84,12 @@ export function AuthGate({ onAuthenticated, devModeHint }: AuthGateProps) {
       } else if (res.status === 401) {
         setState("error");
         setError("Invalid PIN. Try again.");
+      } else if (res.status === 429) {
+        // G7-15A: rate-limited. Surface a distinct message so the operator
+        // knows to wait — but do NOT leak how many attempts remain (that
+        // would let an attacker calibrate their flood rate).
+        setState("error");
+        setError("Too many failed attempts. Wait a minute and try again.");
       } else if (res.status === 503) {
         setState("unavailable");
         setError(
@@ -122,7 +136,7 @@ export function AuthGate({ onAuthenticated, devModeHint }: AuthGateProps) {
             }}
             disabled={state === "loading"}
             autoComplete="off"
-            placeholder={devModeHint ? "dev-local-pin" : "Operator PIN"}
+            placeholder="Operator PIN"
             aria-invalid={state === "error" ? "true" : undefined}
             aria-describedby={error ? "pin-error" : undefined}
             className="font-mono"
@@ -179,16 +193,6 @@ export function AuthGate({ onAuthenticated, devModeHint }: AuthGateProps) {
           no multi-user isolation; all sessions share the gateway&apos;s
           callerId.
         </p>
-
-        {devModeHint && (
-          <p className="text-[11px] text-warning text-center border border-warning/30 bg-warning/5 rounded p-2">
-            <strong>Controlled environment:</strong> the default dev PIN is{" "}
-            <code className="font-mono">dev-local-pin</code> (when
-            GENESIS_OPERATOR_PIN is unset). Set
-            <code className="font-mono">GENESIS_OPERATOR_PIN</code> for any
-            non-local deployment.
-          </p>
-        )}
       </div>
     </div>
   );

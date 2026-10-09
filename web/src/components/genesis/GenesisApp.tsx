@@ -91,7 +91,6 @@ export function GenesisApp() {
   if (authState === "unauthenticated") {
     return (
       <AuthGate
-        devModeHint={true}
         onAuthenticated={() => {
           setAuthState("authenticated");
           setBffReady(true);

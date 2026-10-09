@@ -68,6 +68,11 @@ export default tseslint.config(
       // truthful CONFIGURED status, and absence of sentinel secret values
       // (command/args/env/cwd/url) in API responses and rendered DOM.
       'scripts/g7-14h-browser-acceptance.cjs',
+      // G7-15A: auth security integration tests. Same CommonJS pattern
+      // (require for node:child_process spawn + fetch). Spawns the gateway
+      // + Next.js BFF in production mode and exercises the PIN login +
+      // rate-limit path over HTTP. NOT engine source.
+      'scripts/g7-15a-auth-security-tests.cjs',
     ],
   },
   ...tseslint.configs.recommended,
