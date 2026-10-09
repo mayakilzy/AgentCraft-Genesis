@@ -24,3 +24,6 @@ scripts/
 
 # G7-12: Conversation runtime data (JSONL persistence)
 data/conversations/
+
+# G7-13: Project runtime data (atomic JSON persistence)
+data/projects/
