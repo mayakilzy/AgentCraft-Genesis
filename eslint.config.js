@@ -42,6 +42,12 @@ export default tseslint.config(
       'scripts/g7-04-artifacts-e2e-tests.ts',
       'scripts/g7-04-artifacts-unit-tests.ts',
       'scripts/g7-05-studio-unit-tests.ts',
+      // G7-13D: browser acceptance script. Uses CommonJS require() for
+      // Playwright (which has no ESM entry in the version pinned in the
+      // environment) and node:child_process spawn APIs. Same scope rationale
+      // as the other excluded scripts: HTTP/browser-based test tooling, NOT
+      // engine source.
+      'scripts/g7-13d-browser-full.cjs',
     ],
   },
   ...tseslint.configs.recommended,
