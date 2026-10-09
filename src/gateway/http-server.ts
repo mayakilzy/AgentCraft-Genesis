@@ -30,6 +30,8 @@ import { timingSafeEqual } from 'node:crypto';
 import type { MissionService } from './mission-service.js';
 import { FileConversationStore } from '../conversation/conversation-store.js';
 import { handleConversationRoute } from './conversation-routes.js';
+import { handleProjectRoute } from './project-routes.js';
+import type { FileProjectStore } from '../project/project-store.js';
 import type {
   CallerIdentity,
   GatewayErrorBody,
@@ -50,10 +52,11 @@ export function startHttpServer(
   service: MissionService,
   config: GatewayConfig,
   conversationStore?: FileConversationStore,
+  projectStore?: FileProjectStore,
 ): { server: Server; url: string } {
   const server = createServer(async (req, res) => {
     try {
-      await handleRequest(req, res, service, config, conversationStore);
+      await handleRequest(req, res, service, config, conversationStore, projectStore);
     } catch (error) {
       sendError(res, 500, 'INTERNAL_ERROR', `internal error: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -80,11 +83,12 @@ async function handleRequest(
   service: MissionService,
   config: GatewayConfig,
   conversationStore?: FileConversationStore,
+  projectStore?: FileProjectStore,
 ): Promise<void> {
   // CORS (harmless for localhost; useful for browser-based dashboards).
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, OPTIONS');
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
@@ -159,6 +163,20 @@ async function handleRequest(
       return;
     }
     const handled = await handleConversationRoute(req, res, conversationStore, caller, path);
+    if (!handled) {
+      sendError(res, 404, 'NOT_FOUND', `route not found: ${req.method} ${path}`);
+    }
+    return;
+  }
+
+  // G7-13: Project routes require authentication + caller ownership.
+  if (path.startsWith('/v1/projects') && projectStore !== undefined) {
+    const caller = authenticate(req, config);
+    if (caller === null) {
+      sendError(res, 401, 'UNAUTHENTICATED', 'missing or invalid API key');
+      return;
+    }
+    const handled = await handleProjectRoute(req, res, { projectStore, conversationStore: conversationStore!, missionService: service }, caller, path);
     if (!handled) {
       sendError(res, 404, 'NOT_FOUND', `route not found: ${req.method} ${path}`);
     }

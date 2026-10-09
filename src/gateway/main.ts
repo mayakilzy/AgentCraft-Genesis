@@ -42,6 +42,7 @@ import { MissionService } from './mission-service.js';
 import { startHttpServer } from './http-server.js';
 import { startA2AServer } from './a2a-server.js';
 import { FileConversationStore } from '../conversation/conversation-store.js';
+import { FileProjectStore } from '../project/project-store.js';
 import type { CallerIdentity, GatewayConfig } from './types.js';
 import type { ReasoningProvider } from '../contracts/core.js';
 import type { WorkerRuntime } from '../runtime/computer.js';
@@ -351,7 +352,14 @@ async function main(): Promise<void> {
   // only conversation metadata + messages + missionId references are durable.
   const conversationStore = new FileConversationStore();
 
-  const http = startHttpServer(service, config, conversationStore);
+  // G7-13: durable project store (atomic JSON per project). Survives gateway
+  // restart. Conversation/mission/artifact references are durable as IDs +
+  // verification timestamps; live state for missions/artifacts is fetched
+  // from the in-process MissionService and shown as "unavailable" when the
+  // mission is no longer present (gateway restarted).
+  const projectStore = new FileProjectStore();
+
+  const http = startHttpServer(service, config, conversationStore, projectStore);
   const a2a = await startA2AServer(service, config);
 
   console.error(`[genesis-gateway] HTTP API listening on ${http.url}`);
@@ -362,6 +370,7 @@ async function main(): Promise<void> {
   console.error(`[genesis-gateway] Execution mode: ${mode}`);
   console.error('[genesis-gateway] In-process mission state; no durability across restart.');
   console.error('[genesis-gateway] Conversations are durable (JSONL on disk).');
+  console.error('[genesis-gateway] Projects are durable (atomic JSON on disk).');
 
   // G6-08-R1 (B-EXEC-FINDING-003): graceful shutdown of active missions and
   // their owned OpenBot workers. The handler is idempotent (guarded by a
