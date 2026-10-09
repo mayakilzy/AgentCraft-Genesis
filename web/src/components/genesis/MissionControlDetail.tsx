@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, AlertTriangle } from "lucide-react";
+import { Activity, AlertTriangle, Info } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -51,6 +51,8 @@ export function MissionControlDetail({ missionId }: { missionId: string }) {
   const abortRef = useRef<AbortController | null>(null);
   const upsertKnownMission = useGenesisStore((s) => s.upsertKnownMission);
   const knownMissions = useGenesisStore((s) => s.knownMissions);
+  const genesisMode = useGenesisStore((s) => s.genesisMode);
+  const isControlled = genesisMode !== "live";
 
   // Poll the mission snapshot. Stop when terminal.
   useEffect(() => {
@@ -280,6 +282,45 @@ export function MissionControlDetail({ missionId }: { missionId: string }) {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* G7-10 A1/A2: Truthfulness disclosure — distinguish execution success,
+          artifact verification, and goal satisfaction. */}
+      {snapshot?.terminal && (
+        <div
+          role="note"
+          className={cn(
+            "rounded-md border p-2.5 text-[11px] flex items-start gap-2",
+            isControlled
+              ? "border-warning/30 bg-warning/5 text-warning"
+              : "border-info/30 bg-info/5 text-info",
+          )}
+        >
+          <Info className="size-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+          <div className="space-y-1">
+            <p className="font-semibold">Verification semantics</p>
+            <p>
+              <strong>Execution status:</strong>{" "}
+              {snapshot.result?.status ?? snapshot.status} — whether the
+              execution workflow completed.
+            </p>
+            <p>
+              <strong>Artifact verification:</strong>{" "}
+              {snapshot.result?.evidence.some((e) => e.kind.includes("verif") || e.kind.includes("artifact"))
+                ? "checks ran on produced artifacts (see Evidence above)"
+                : "no verification evidence recorded for this mission"}
+              . The gateway&apos;s <code className="font-mono">VerificationResult.ok</code>{" "}
+              checks artifact existence/integrity — not goal alignment.
+            </p>
+            <p>
+              <strong>Goal satisfaction:</strong>{" "}
+              <span className="font-semibold">NOT MEASURED</span>
+              {isControlled
+                ? " — Controlled Demo: execution completed, but satisfaction of the user's requested outcome has not been verified. Generated artifacts may be simulated."
+                : " — acceptance criteria wiring is deferred to a future phase (see G7-10 design document)."}
+            </p>
+          </div>
+        </div>
       )}
 
       {/* Approval controls NOT shown — gateway v1 doesn't expose them */}

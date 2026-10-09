@@ -49,7 +49,10 @@ const UPSTREAM_TIMEOUT_MS =
 const VERIFIED_PATTERNS: readonly { re: RegExp; methods: readonly string[] }[] = [
   { re: /^\/health$/, methods: ["GET"] },
   { re: /^\/ready$/, methods: ["GET"] },
-  { re: /^\/v1\/missions$/, methods: ["POST"] },
+  // G7-10: GET /v1/missions (list) added alongside POST /v1/missions (submit).
+  // The BFF path-safety layer (isSafeSegment + URL construction) is unchanged;
+  // only the method allowlist for this exact path is extended.
+  { re: /^\/v1\/missions$/, methods: ["GET", "POST"] },
   { re: /^\/v1\/missions\/[^/]+$/, methods: ["GET"] },
   { re: /^\/v1\/missions\/[^/]+\/events$/, methods: ["GET"] },
   { re: /^\/v1\/missions\/[^/]+\/result$/, methods: ["GET"] },

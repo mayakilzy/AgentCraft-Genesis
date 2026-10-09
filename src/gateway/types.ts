@@ -139,6 +139,53 @@ export interface MissionEventRecord {
 }
 
 /**
+ * A compact mission summary returned by GET /v1/missions (list endpoint).
+ *
+ * This is a REDACTED view of {@link MissionSnapshot} suitable for listing:
+ * it omits the full MissionResult, failure details, and idempotency key.
+ * It contains only fields supported by existing authoritative state —
+ * no invented timestamps or metadata.
+ *
+ * G7-10: the list endpoint is server-authoritative (reads the in-process
+ * MissionService registry) but NOT restart-durable. Terminal missions are
+ * evicted by sweepTerminalMissions() after the retention window.
+ */
+export interface MissionListSummary {
+  /** Stable mission identifier (UUID). */
+  readonly missionId: string;
+  /** Current lifecycle status. */
+  readonly status: MissionStatus;
+  /** Whether the mission has reached a terminal state. */
+  readonly terminal: boolean;
+  /** ISO timestamp when the mission was accepted (authoritative — set at start()). */
+  readonly acceptedAt: string;
+  /** ISO timestamp when the mission reached a terminal state, if it has. */
+  readonly finishedAt?: string;
+  /** Caller-supplied label, if any (for caller correlation only). */
+  readonly label?: string;
+  /** Safe outcome summary (truncated; scrubbed of secrets). */
+  readonly outcomePreview: string;
+}
+
+/**
+ * The result of GET /v1/missions (list endpoint). Cursor-based pagination.
+ *
+ * The cursor is the missionId of the last item in the current page. The
+ * next page starts immediately AFTER that missionId in the deterministic
+ * sort order (descending acceptedAt, then descending missionId as tiebreaker).
+ *
+ * If nextCursor is null, there are no more pages. If a cursor is invalid
+ * or points to an evicted mission, the endpoint returns an empty page
+ * (NOT an error) — the caller can restart pagination from the beginning.
+ */
+export interface MissionListResult {
+  /** Mission summaries for this page, filtered to the caller's ownership. */
+  readonly missions: readonly MissionListSummary[];
+  /** Cursor for the next page, or null if this is the last page. */
+  readonly nextCursor: string | null;
+}
+
+/**
  * An artifact descriptor returned by GET /v1/missions/{id}/artifacts.
  * Resolves to actual produced content (not a placeholder).
  */

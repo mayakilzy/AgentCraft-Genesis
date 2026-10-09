@@ -5,6 +5,7 @@
  * Uses native node:http (no express, no new runtime dependencies).
  *
  * Routes:
+ *   GET    /v1/missions                    — list caller's missions (G7-10, auth + ownership)
  *   POST   /v1/missions                    — submit a mission (auth required)
  *   GET    /v1/missions/{missionId}         — get mission snapshot (auth + ownership)
  *   GET    /v1/missions/{missionId}/events  — get event stream (auth + ownership)
@@ -119,7 +120,15 @@ async function handleRequest(
       return;
     }
 
-    // POST /v1/missions
+    // GET /v1/missions — list caller's missions (G7-10).
+    // MUST be matched BEFORE the {missionId} regex, because /v1/missions
+    // (no trailing segment) would otherwise fall through to 404.
+    if (path === '/v1/missions' && req.method === 'GET') {
+      await handleList(req, res, service, caller);
+      return;
+    }
+
+    // POST /v1/missions — submit a new mission.
     if (path === '/v1/missions' && req.method === 'POST') {
       await handleSubmit(req, res, service, config, caller);
       return;
@@ -139,6 +148,61 @@ async function handleRequest(
   }
 
   sendError(res, 404, 'NOT_FOUND', `route not found: ${req.method} ${path}`);
+}
+
+/**
+ * G7-10 — Handle GET /v1/missions (list caller's missions).
+ *
+ * Query parameters:
+ *   limit  — page size (1-100, default 10). Invalid (NaN, <1, >100) → 400.
+ *   cursor — opaque pagination cursor (missionId of the last item on the
+ *            previous page). If the cursor mission was evicted, returns an
+ *            empty page so the caller can restart.
+ *
+ * Returns 200 with { missions: [...], nextCursor: string | null }.
+ * The missions array is filtered to the caller's ownership — a caller
+ * cannot enumerate another caller's missions.
+ */
+async function handleList(
+  req: IncomingMessage,
+  res: ServerResponse,
+  service: MissionService,
+  caller: CallerIdentity,
+): Promise<void> {
+  // Parse query parameters from the URL.
+  const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+  const limitParam = url.searchParams.get('limit');
+  const cursor = url.searchParams.get('cursor') ?? undefined;
+
+  // Validate limit if provided.
+  let limit: number | undefined;
+  if (limitParam !== null) {
+    const parsed = Number.parseInt(limitParam, 10);
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > 100) {
+      sendError(
+        res,
+        400,
+        'INVALID_LIMIT',
+        `limit must be an integer between 1 and 100 (got: ${limitParam})`,
+      );
+      return;
+    }
+    limit = parsed;
+  }
+
+  // Cursor is opaque — no validation beyond type (string). An evicted or
+  // invalid cursor returns an empty page (handled by MissionService.listMissions).
+  try {
+    const result = service.listMissions(caller, { limit, cursor });
+    sendJson(res, 200, result);
+  } catch (error) {
+    sendError(
+      res,
+      500,
+      'INTERNAL_ERROR',
+      `list failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 async function handleSubmit(

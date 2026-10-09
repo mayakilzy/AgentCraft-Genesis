@@ -21,6 +21,7 @@ import type {
   MissionArtifactRecord,
   MissionCancelAck,
   MissionEventRecord,
+  MissionListResult,
   MissionSnapshot,
   MissionSubmission,
   MissionSubmissionAck,
@@ -386,6 +387,45 @@ export const genesisApi = {
   },
 
   /**
+   * GET /v1/missions — list the caller's missions (G7-10).
+   *
+   * Server-authoritative listing of the in-process mission registry, filtered
+   * to the caller's ownership. NOT restart-durable — terminal missions are
+   * evicted after the retention window (default 5 min), and the entire
+   * registry is lost on process restart.
+   *
+   * Pagination is cursor-based: pass nextCursor from the previous response
+   * to fetch the next page. Pass undefined/null cursor for the first page.
+   *
+   * Source: src/gateway/http-server.ts handleList() + MissionService.listMissions().
+   *
+   * @param opts.limit - page size (1-100, default 10)
+   * @param opts.cursor - pagination cursor (missionId from previous page)
+   * @param signal - abort signal
+   * @returns discriminated result; ok.data is MissionListResult
+   */
+  async listMissions(
+    opts: { limit?: number; cursor?: string | null } = {},
+    signal?: AbortSignal,
+  ): Promise<AdapterResult<MissionListResult>> {
+    try {
+      const params = new URLSearchParams();
+      if (opts.limit !== undefined) params.set("limit", String(opts.limit));
+      if (opts.cursor) params.set("cursor", opts.cursor);
+      const query = params.toString();
+      const path = query ? `/v1/missions?${query}` : "/v1/missions";
+      const { status, body } = await fetchGenesis(path, { signal });
+      return toResult<MissionListResult>(status, body, 200, "ok");
+    } catch (e) {
+      return {
+        kind: "unavailable",
+        message: e instanceof Error ? e.message : String(e),
+        receivedAt: new Date().toISOString(),
+      };
+    }
+  },
+
+  /**
    * listMissions — ABSENT in the gateway (verified by source inspection).
    * Per 04_GATEWAY_DISCOVERY, square-bracket operations are not synthesized.
    * UI MissionList is client-side only (browser-known missions).
@@ -394,7 +434,9 @@ export const genesisApi = {
    * system: any caller attempting `genesisApi.listMissions(...)` will get
    * a compile error because `undefined` is not callable.
    */
-  listMissions: undefined as never,
+  // listMissions is now implemented above (G7-10). This placeholder is kept
+  // for historical reference; the real implementation supersedes it.
+  // listMissions: undefined as never,
   /**
    * listWorkers / getOrganization — ABSENT (no /workers endpoint).
    * Worker info is inferred from event payloads only (PARTIAL).

@@ -118,6 +118,8 @@ import type {
   MissionStatus,
   MissionArtifactRecord,
   MissionEventRecord,
+  MissionListSummary,
+  MissionListResult,
 } from './types.js';
 import {
   GatewayAuthorizationError,
@@ -726,6 +728,118 @@ export class MissionService {
   get(missionId: string, caller: CallerIdentity): MissionSnapshot {
     const rt = this.requireMission(missionId, caller);
     return this.toSnapshot(rt);
+  }
+
+  /**
+   * G7-10 — List missions owned by the authenticated caller.
+   *
+   * Server-authoritative listing of the in-process mission registry, filtered
+   * to the caller's ownership boundary. NOT restart-durable: terminal missions
+   * are evicted by sweepTerminalMissions() after the retention window, and the
+   * entire registry is lost on process restart.
+   *
+   * Pagination: cursor-based. The cursor is the missionId of the last item in
+   * the current page. The next page starts immediately after that missionId in
+   * the deterministic sort order (descending acceptedAt, then descending
+   * missionId as a stable tiebreaker). This is robust against the sweeper
+   * evicting terminal missions between requests: the cursor is a position
+   * marker, not a reference to a live mission — if the cursor mission was
+   * evicted, pagination simply resumes from the next position.
+   *
+   * Ownership: a caller sees ONLY their own missions. Cross-caller isolation
+   * is enforced by filtering on rt.callerId === caller.callerId BEFORE
+   * building summaries. A caller cannot enumerate or infer the existence of
+   * another caller's missions.
+   *
+   * Authorization: if the caller lacks 'mission:read' (or any operations
+   * constraint), the list is still filtered to their own missions. The
+   * allowedOperations check is intentionally NOT applied here (it is applied
+   * at submission time); listing one's own missions is a read-only
+   * observability operation that does not require an explicit operation grant
+   * beyond authentication.
+   *
+   * @param caller - authenticated caller identity (ownership filter)
+   * @param options - pagination options
+   * @returns filtered, paginated mission summaries
+   */
+  listMissions(
+    caller: CallerIdentity,
+    options: { readonly limit?: number; readonly cursor?: string } = {},
+  ): MissionListResult {
+    // Bounded page size. Default 10, hard cap 100, floor 1.
+    const requestedLimit = options.limit ?? 10;
+    const limit = Math.max(1, Math.min(100, Math.trunc(requestedLimit)));
+    const cursor = options.cursor;
+
+    // Collect this caller's missions (ownership filter applied FIRST).
+    const owned: Array<{ missionId: string; acceptedAt: string; rt: MissionRuntime }> = [];
+    for (const [missionId, rt] of this.missions) {
+      if (rt.callerId !== caller.callerId) continue;
+      owned.push({ missionId, acceptedAt: rt.acceptedAt, rt });
+    }
+
+    // Deterministic sort: descending acceptedAt, then descending missionId.
+    // acceptedAt is an ISO string set by start() — lexicographic descending
+    // sorts newest-first. missionId (UUID) is the stable tiebreaker.
+    owned.sort((a, b) => {
+      if (a.acceptedAt !== b.acceptedAt) {
+        return a.acceptedAt > b.acceptedAt ? -1 : 1;
+      }
+      return a.missionId > b.missionId ? -1 : a.missionId < b.missionId ? 1 : 0;
+    });
+
+    // Find the starting position based on the cursor.
+    // The cursor is the missionId of the last item on the PREVIOUS page.
+    // We start AFTER that missionId. If the cursor mission was evicted
+    // (no longer in the registry), we scan for the first mission that sorts
+    // strictly before it — that's where the next page begins.
+    let startIndex = 0;
+    if (cursor !== undefined && cursor.length > 0) {
+      // Find the cursor's position in the sorted list.
+      const cursorIdx = owned.findIndex((o) => o.missionId === cursor);
+      if (cursorIdx >= 0) {
+        startIndex = cursorIdx + 1;
+      } else {
+        // Cursor mission was evicted (or invalid). We don't have the cursor
+        // mission's acceptedAt (it's no longer in the registry), so we cannot
+        // determine the exact resume position in the (acceptedAt-desc,
+        // missionId-desc) sort order. Safest deterministic fallback: return
+        // an empty page with nextCursor=null. The caller restarts pagination
+        // from the beginning. This avoids inventing a position or returning
+        // duplicate records.
+        return { missions: [], nextCursor: null };
+      }
+    }
+
+    // Slice the page.
+    const page = owned.slice(startIndex, startIndex + limit);
+
+    // Build summaries (redacted view — no MissionResult, no failure details).
+    const missions: MissionListSummary[] = page.map(({ rt }) => this.toListSummary(rt));
+
+    // Compute next cursor: the missionId of the last item, if there are more.
+    const hasMore = startIndex + limit < owned.length;
+    const nextCursor = hasMore && page.length > 0 ? page[page.length - 1].missionId : null;
+
+    return { missions, nextCursor };
+  }
+
+  /**
+   * Build a redacted {@link MissionListSummary} from an internal MissionRuntime.
+   * Omits MissionResult, failure details, and idempotency key. Truncates and
+   * scrubs the goal outcome for safe display.
+   */
+  private toListSummary(rt: MissionRuntime): MissionListSummary {
+    const outcomePreview = scrubSecrets(rt.goalOutcome, 120);
+    return {
+      missionId: rt.missionId,
+      status: rt.status,
+      terminal: isTerminal(rt.status),
+      acceptedAt: rt.acceptedAt,
+      ...(rt.finishedAt !== undefined ? { finishedAt: rt.finishedAt } : {}),
+      ...(rt.label !== undefined ? { label: rt.label } : {}),
+      outcomePreview,
+    };
   }
 
   /**

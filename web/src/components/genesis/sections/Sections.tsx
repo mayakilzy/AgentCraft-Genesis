@@ -119,9 +119,9 @@ export function WorkSection() {
             <CardHeader>
               <CardTitle>Mission list</CardTitle>
               <CardDescription>
-                Missions known to this browser session. The gateway has no list
-                endpoint, so this list is browser-local and not
-                server-authoritative.
+                Server-authoritative listing from the gateway&apos;s in-process
+                registry. Completed missions are evicted after a retention
+                window, and the list is not preserved across gateway restarts.
               </CardDescription>
             </CardHeader>
             <CardContent>

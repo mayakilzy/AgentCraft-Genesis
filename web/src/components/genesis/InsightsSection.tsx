@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { genesisApi } from "@/lib/genesis/client";
 import { useGenesisStore } from "@/lib/genesis/store";
 import type { MissionEventRecord, MissionSnapshot } from "@/lib/genesis/types";
+import { extractWorkers } from "@/lib/genesis/events";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -97,7 +98,15 @@ const METRIC_META: Record<string, MetricMeta> = {
     kind: "DERIVED",
     unit: "count",
     description:
-      "Number of workers in the organization plan. Source: derived from plan-created event payload. Bounded by 100-event cap.",
+      "Number of distinct workers observed across plan-created, genomes-compiled, and worker lifecycle events. Source: derived from GET /v1/missions/{id}/events via the shared extractWorkers() utility (same as Mission Control and Agent). Bounded by 100-event cap.",
+  },
+  goalSatisfaction: {
+    label: "Goal satisfaction",
+    icon: CheckCircle2,
+    kind: "NOT_AVAILABLE",
+    unit: "",
+    description:
+      "Whether the produced output fulfills the user's approved acceptance criteria. NOT MEASURED in v1 — the gateway's VerificationResult checks artifact existence/integrity, not goal alignment. Distinguished from execution status and artifact verification.",
   },
   eventCount: {
     label: "Event count",
@@ -283,7 +292,7 @@ export function InsightsSection() {
           />
           <MetricRow
             meta={METRIC_META.workerCount}
-            value={deriveWorkerCount(events)}
+            value={Object.keys(extractWorkers(events)).length}
             display={(v) => `${v}`}
             isTerminal={isTerminal}
           />
@@ -298,6 +307,14 @@ export function InsightsSection() {
             value={deriveVerificationOk(events)}
             display={(v) => (v === null ? "Not observed" : v ? "Passed" : "Failed")}
             isTerminal={isTerminal}
+          />
+          <MetricRow
+            meta={METRIC_META.goalSatisfaction}
+            value={undefined}
+            display={() => "NOT MEASURED"}
+            isTerminal={isTerminal}
+            overrideKind="NOT_AVAILABLE"
+            note={isControlled ? "Controlled demo — goal alignment is not evaluated" : "Acceptance criteria wiring is deferred (G7-11+)"}
           />
 
           {lastObserved && (
@@ -332,17 +349,6 @@ export function InsightsSection() {
       </Card>
     </div>
   );
-}
-
-/**
- * Derive the worker count from the plan-created event payload.
- * Returns 0 if no plan-created event observed.
- */
-function deriveWorkerCount(events: readonly MissionEventRecord[]): number {
-  const planCreated = events.find((e) => e.type === "plan-created");
-  if (!planCreated) return 0;
-  const workers = planCreated.payload.workers;
-  return Array.isArray(workers) ? workers.length : 0;
 }
 
 /**

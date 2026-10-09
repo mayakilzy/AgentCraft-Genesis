@@ -95,6 +95,34 @@ export interface MissionEventRecord {
 }
 
 // ---------------------------------------------------------------------------
+// Mission list (G7-10 — src/gateway/types.ts:141-186)
+// ---------------------------------------------------------------------------
+
+/**
+ * Compact mission summary returned by GET /v1/missions (list endpoint).
+ * Redacted view of MissionSnapshot — omits MissionResult, failure details,
+ * idempotency key. Contains only fields supported by authoritative state.
+ */
+export interface MissionListSummary {
+  readonly missionId: string;
+  readonly status: MissionStatus;
+  readonly terminal: boolean;
+  readonly acceptedAt: string;
+  readonly finishedAt?: string;
+  readonly label?: string;
+  readonly outcomePreview: string;
+}
+
+/**
+ * Result of GET /v1/missions (list endpoint). Cursor-based pagination.
+ * nextCursor is the missionId of the last item; null means no more pages.
+ */
+export interface MissionListResult {
+  readonly missions: readonly MissionListSummary[];
+  readonly nextCursor: string | null;
+}
+
+// ---------------------------------------------------------------------------
 // Mission artifact (src/gateway/types.ts:145-156)
 // ---------------------------------------------------------------------------
 
@@ -146,6 +174,7 @@ export type GatewayErrorCode =
   | "NOT_FINISHED"
   | "INVALID_JSON"
   | "INVALID_SUBMISSION"
+  | "INVALID_LIMIT"
   | "INTERNAL_ERROR"
   | "NOT_FOUND";
 
