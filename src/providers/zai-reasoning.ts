@@ -33,6 +33,22 @@ export interface ZAIReasoningOptions {
   readonly retryBackoffMs?: readonly number[];
   /** Environment passed to ZAI.create (rarely needed). */
   readonly createEnv?: Record<string, string>;
+  /**
+   * G7-11 (FM-02): per-call timeout in milliseconds. When set, each
+   * `chat.completions.create()` call is wrapped in an AbortSignal.timeout()
+   * so a single hung provider call cannot consume the entire mission budget.
+   * Default: undefined (no per-call timeout; relies on missionTimeoutMs).
+   */
+  readonly callTimeoutMs?: number;
+  /**
+   * G7-11 (FM-12): cumulative token budget ceiling across ALL calls to this
+   * provider instance. When set, the provider checks `totalTokens` before
+   * each call; if the ceiling is exceeded, it throws a BudgetExceededError
+   * (which the orchestrator maps to mission FAILED via existing error handling).
+   * This is the enforceable spending bound — USD pricing is not available
+   * from the SDK, so tokens are the directly measurable proxy.
+   */
+  readonly maxTotalTokens?: number;
 }
 
 export interface ReasoningUsage {
@@ -54,6 +70,22 @@ export const DEFAULT_RETRY_BACKOFF_MS: readonly number[] = [
   180_000,
 ];
 
+/**
+ * G7-11 (FM-12): error thrown when the cumulative token budget is exceeded.
+ * The orchestrator's existing error handling maps this to mission FAILED
+ * with a scrubbed failureMessage — no false success.
+ */
+export class BudgetExceededError extends Error {
+  readonly tokensUsed: number;
+  readonly tokenCeiling: number;
+  constructor(tokensUsed: number, tokenCeiling: number) {
+    super(`reasoning budget exceeded: ${tokensUsed} tokens used, ceiling is ${tokenCeiling}`);
+    this.name = 'BudgetExceededError';
+    this.tokensUsed = tokensUsed;
+    this.tokenCeiling = tokenCeiling;
+  }
+}
+
 interface ZAIClient {
   chat: {
     completions: {
@@ -74,6 +106,8 @@ export class ZAIReasoningProvider implements ReasoningProvider {
 
   private readonly sdkPath: string | undefined;
   private readonly backoff: readonly number[];
+  private readonly callTimeoutMs: number | undefined;
+  private readonly maxTotalTokens: number | undefined;
   private client: ZAIClient | undefined;
   private calls = 0;
   private failures = 0;
@@ -86,6 +120,8 @@ export class ZAIReasoningProvider implements ReasoningProvider {
     this.sdkPath =
       options.sdkPath ?? process.env.ZAI_SDK_PATH ?? 'z-ai-web-dev-sdk';
     this.backoff = options.retryBackoffMs ?? DEFAULT_RETRY_BACKOFF_MS;
+    this.callTimeoutMs = options.callTimeoutMs;
+    this.maxTotalTokens = options.maxTotalTokens;
   }
 
   /** Real spend telemetry for MissionCost and experiment reports. */
@@ -118,6 +154,12 @@ export class ZAIReasoningProvider implements ReasoningProvider {
   }
 
   async reason(input: ReasoningInput): Promise<ReasoningOutput> {
+    // G7-11 (FM-12): pre-call budget check. If the cumulative token count
+    // has already reached the ceiling, refuse the call BEFORE consuming any
+    // provider resources. This is the enforceable spending bound.
+    if (this.maxTotalTokens !== undefined && this.totalTokens >= this.maxTotalTokens) {
+      throw new BudgetExceededError(this.totalTokens, this.maxTotalTokens);
+    }
     this.calls += 1;
     const maxAttempts = this.backoff.length + 1;
     let lastError: unknown;
@@ -125,6 +167,8 @@ export class ZAIReasoningProvider implements ReasoningProvider {
       try {
         return await this.attemptReason(input);
       } catch (error) {
+        // Budget exceeded is not retryable — rethrow immediately.
+        if (error instanceof BudgetExceededError) throw error;
         lastError = error;
         const rateLimited = isRateLimitError(error);
         if (!rateLimited || attempt === maxAttempts) {
@@ -143,7 +187,10 @@ export class ZAIReasoningProvider implements ReasoningProvider {
     input: ReasoningInput,
   ): Promise<ReasoningOutput> {
     const zai = await this.loadClient();
-    const completion = await zai.chat.completions.create({
+    // G7-11 (FM-02): per-call timeout. Wrap the SDK call in a timeout so a
+    // single hung call cannot consume the entire mission budget. The
+    // AbortSignal.timeout() is available in Node 18+ / Node 24 (our target).
+    const requestParams: Record<string, unknown> = {
       messages: [
         {
           role: 'assistant',
@@ -154,12 +201,22 @@ export class ZAIReasoningProvider implements ReasoningProvider {
         { role: 'user', content: input.prompt },
       ],
       thinking: { type: input.tier === 'frontier' ? 'enabled' : 'disabled' },
-    });
+    };
+    if (this.callTimeoutMs !== undefined) {
+      requestParams.signal = AbortSignal.timeout(this.callTimeoutMs);
+    }
+    const completion = await zai.chat.completions.create(requestParams);
     const usage = completion.usage;
     if (usage !== undefined) {
       this.promptTokens += usage.prompt_tokens ?? 0;
       this.completionTokens += usage.completion_tokens ?? 0;
       this.totalTokens += usage.total_tokens ?? 0;
+    }
+    // G7-11 (FM-12): post-call budget check. If THIS call pushed us over the
+    // ceiling, throw immediately — the caller sees a budget-exceeded error
+    // and no further calls are made.
+    if (this.maxTotalTokens !== undefined && this.totalTokens > this.maxTotalTokens) {
+      throw new BudgetExceededError(this.totalTokens, this.maxTotalTokens);
     }
     const text = completion.choices?.[0]?.message?.content ?? '';
     if (text.trim().length === 0) {

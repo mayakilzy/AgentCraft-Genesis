@@ -120,6 +120,7 @@ import type {
   MissionEventRecord,
   MissionListSummary,
   MissionListResult,
+  AcceptanceCheckInput,
 } from './types.js';
 import {
   GatewayAuthorizationError,
@@ -148,6 +149,11 @@ interface MissionRuntime {
   readonly controller: AbortController;
   readonly recorder: MemoryFlightRecorder;
   readonly goalOutcome: string;
+  /**
+   * G7-11 (FM-07/FM-08): caller-supplied acceptance criteria. Stored on the
+   * runtime so buildChecks() can merge them with the structural floor.
+   */
+  readonly acceptanceCriteria?: readonly AcceptanceCheckInput[];
   /**
    * Computers per worker — captured so the gateway can read artifacts after completion.
    *
@@ -656,7 +662,7 @@ export class MissionService {
       maxWorkerSteps: 5,
       missionTimeoutMs: timeoutMs,
       signal: controller.signal,
-      checks: (ctx) => this.buildChecks(ctx),
+      checks: (ctx) => this.buildChecks(ctx, missionRuntime.acceptanceCriteria),
     });
 
     // 8. Register the mission BEFORE starting (so cancel() can race).
@@ -671,6 +677,8 @@ export class MissionService {
       controller,
       recorder,
       goalOutcome,
+      // G7-11: store caller-supplied acceptance criteria for buildChecks().
+      acceptanceCriteria: submission.acceptanceCriteria,
       computers,
       runtime,
     };
@@ -1122,12 +1130,14 @@ export class MissionService {
     };
   }
 
-  private buildChecks(context: {
-    artifacts: ReadonlyArray<ArtifactSource>;
-  }): readonly AcceptanceCheck[] {
-    // Default verification: every produced artifact must exist in the
-    // clean-room copy. Real missions inject richer checks via the
-    // orchestrator's `checks` option; the gateway uses the structural floor.
+  private buildChecks(
+    context: {
+      artifacts: ReadonlyArray<ArtifactSource>;
+    },
+    callerCriteria?: readonly AcceptanceCheckInput[],
+  ): readonly AcceptanceCheck[] {
+    // Structural floor: every produced artifact must exist in the clean-room
+    // copy. This is the baseline verification that always applies.
     const checks: AcceptanceCheck[] = [];
     for (const source of context.artifacts) {
       for (const p of source.paths) {
@@ -1138,10 +1148,41 @@ export class MissionService {
         });
       }
     }
+
+    // G7-11 (FM-07/FM-08): merge caller-supplied acceptance criteria.
+    // These are goal-satisfaction checks (exact filename, required content,
+    // hash match) that go beyond the structural floor. They are evaluated
+    // by the existing VerificationLoop — no new verification engine.
+    if (callerCriteria !== undefined) {
+      for (const c of callerCriteria) {
+        if (c.kind === 'file') {
+          checks.push({
+            kind: 'file',
+            label: c.label,
+            path: c.path,
+            ...(c.expectIncludes !== undefined ? { expectIncludes: c.expectIncludes } : {}),
+          });
+        } else if (c.kind === 'content-in-artifacts') {
+          checks.push({
+            kind: 'content-in-artifacts',
+            label: c.label,
+            expectIncludes: c.expectIncludes,
+          });
+        } else if (c.kind === 'hash-match') {
+          checks.push({
+            kind: 'hash-match',
+            label: c.label,
+            path: c.path,
+            expectHash: c.expectHash,
+          });
+        }
+      }
+    }
+
     if (checks.length === 0) {
-      // No artifacts produced — the mission must have at least one
-      // deliverable to be considered successful. Add a check that
-      // will fail honestly (no file at the expected path).
+      // No artifacts produced AND no caller criteria — the mission must have
+      // at least one deliverable to be considered successful. Add a check
+      // that will fail honestly (no file at the expected path).
       checks.push({
         kind: 'file',
         label: 'at least one artifact was produced',

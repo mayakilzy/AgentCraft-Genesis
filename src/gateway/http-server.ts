@@ -386,6 +386,7 @@ function parseSubmission(body: unknown): MissionSubmission | null {
     budget?: { maxUsd?: number; tier?: 'cheap' | 'default' | 'frontier' };
     idempotencyKey?: string;
     label?: string;
+    acceptanceCriteria?: import('./types.js').AcceptanceCheckInput[];
   } = { outcome };
   if (typeof obj.context === 'string') submission.context = obj.context;
   if (Array.isArray(obj.constraints)) {
@@ -404,6 +405,31 @@ function parseSubmission(body: unknown): MissionSubmission | null {
   }
   if (typeof obj.idempotencyKey === 'string') submission.idempotencyKey = obj.idempotencyKey;
   if (typeof obj.label === 'string') submission.label = obj.label;
+  // G7-11 (FM-07/FM-08): parse caller-supplied acceptance criteria.
+  if (Array.isArray(obj.acceptanceCriteria)) {
+    const criteria: import('./types.js').AcceptanceCheckInput[] = [];
+    for (const raw of obj.acceptanceCriteria) {
+      if (raw === null || typeof raw !== 'object') continue;
+      const c = raw as Record<string, unknown>;
+      const kind = c.kind;
+      const label = typeof c.label === 'string' ? c.label : '';
+      if (kind === 'file' && typeof c.path === 'string') {
+        const entry: { kind: 'file'; label: string; path: string; expectIncludes?: string } = {
+          kind: 'file', label, path: c.path,
+        };
+        if (typeof c.expectIncludes === 'string') entry.expectIncludes = c.expectIncludes;
+        criteria.push(entry);
+      } else if (kind === 'content-in-artifacts' && typeof c.expectIncludes === 'string') {
+        criteria.push({ kind: 'content-in-artifacts', label, expectIncludes: c.expectIncludes });
+      } else if (kind === 'hash-match' && typeof c.path === 'string' && typeof c.expectHash === 'string') {
+        criteria.push({ kind: 'hash-match', label, path: c.path, expectHash: c.expectHash });
+      }
+      // Unknown kinds are silently skipped — the structural floor still applies.
+    }
+    if (criteria.length > 0) {
+      submission.acceptanceCriteria = criteria;
+    }
+  }
   return submission;
 }
 

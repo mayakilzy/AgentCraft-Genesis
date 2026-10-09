@@ -148,7 +148,23 @@ export interface MissionSubmission {
   };
   readonly idempotencyKey?: string;
   readonly label?: string;
+  /**
+   * G7-11: caller-supplied acceptance criteria for goal-satisfaction verification.
+   * When provided, the gateway's VerificationLoop evaluates these checks against
+   * the actual produced artifacts. A missing criterion is NOT interpreted as
+   * success — the structural floor (file existence) always applies.
+   */
+  readonly acceptanceCriteria?: readonly AcceptanceCheckInput[];
 }
+
+/**
+ * G7-11: caller-supplied acceptance criteria (transport-facing shape).
+ * Mirrors the engine's AcceptanceCheck union subset supported by the gateway.
+ */
+export type AcceptanceCheckInput =
+  | { readonly kind: "file"; readonly label: string; readonly path: string; readonly expectIncludes?: string }
+  | { readonly kind: "content-in-artifacts"; readonly label: string; readonly expectIncludes: string }
+  | { readonly kind: "hash-match"; readonly label: string; readonly path: string; readonly expectHash: string };
 
 // ---------------------------------------------------------------------------
 // Health response (src/gateway/types.ts:257-263 + http-server.ts:93-108)

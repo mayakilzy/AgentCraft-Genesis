@@ -87,7 +87,38 @@ export interface MissionSubmission {
    * used by Genesis for routing or authorization.
    */
   readonly label?: string;
+  /**
+   * G7-11 (FM-07/FM-08): caller-supplied acceptance criteria. When provided,
+   * these checks are MERGED with the structural floor (file-existence checks)
+   * and evaluated by the existing VerificationLoop. This is the mechanism for
+   * goal-satisfaction verification: the caller specifies what the mission must
+   * produce (exact filename, required content, hash match), and the verifier
+   * rejects incorrect artifacts.
+   *
+   * This field is on the TRANSPORT type (MissionSubmission), NOT on the frozen
+   * Goal contract. It flows through MissionService.buildChecks() to the
+   * orchestrator's existing `checks` seam — no frozen contract modification.
+   *
+   * A missing acceptance criterion is NOT interpreted as success: the structural
+   * floor (at least one artifact must exist) always applies. If a caller wants
+   * stronger verification, they must supply explicit criteria here.
+   */
+  readonly acceptanceCriteria?: readonly AcceptanceCheckInput[];
 }
+
+/**
+ * G7-11: caller-supplied acceptance criteria (transport-facing shape).
+ *
+ * This mirrors the engine's `AcceptanceCheck` union but is defined on the
+ * transport type to avoid importing the verification module into the gateway
+ * types module (and to keep the frozen `AcceptanceCheck` union untouched).
+ * `MissionService.buildChecks()` converts these to engine `AcceptanceCheck`
+ * instances.
+ */
+export type AcceptanceCheckInput =
+  | { readonly kind: 'file'; readonly label: string; readonly path: string; readonly expectIncludes?: string }
+  | { readonly kind: 'content-in-artifacts'; readonly label: string; readonly expectIncludes: string }
+  | { readonly kind: 'hash-match'; readonly label: string; readonly path: string; readonly expectHash: string };
 
 /**
  * A snapshot of a mission at a point in time. Returned by GET /v1/missions/{id}
