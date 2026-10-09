@@ -21,3 +21,6 @@ experiments/experiment-001/.computers/
 experiments/*/.runs/
 .vitest/
 scripts/
+
+# G7-12: Conversation runtime data (JSONL persistence)
+data/conversations/
