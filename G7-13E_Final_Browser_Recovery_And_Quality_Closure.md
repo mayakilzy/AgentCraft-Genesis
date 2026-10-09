@@ -248,7 +248,7 @@ PR_20 = PASS
 BROWSER_ROOT_CAUSE = Test script bug, NOT environment limitation. The G7-13D script searched for `button[type="submit"]`, but AuthGate's submit button uses `type="button"` with `onClick={() => void login()}`. The PIN was filled into the input but the "Authenticate" button was never clicked, so POST /api/auth/login was never called, so the genesis_bff cookie was never issued, so the AuthGate's session check returned 401 forever. The "HMR WebSocket environment limitation" hypothesis was wrong. Correction: (1) match the button by accessible name (`/Authenticate/i`), (2) fall back to pressing Enter on the input (the form has an onKeyDown handler), (3) use production build (`next build` + `npm run start`) to eliminate HMR WebSocket noise, (4) align BFF + Gateway API keys, (5) set GENESIS_BFF_SECRET + GENESIS_OPERATOR_PIN + GENESIS_COOKIE_SECURE=false for local HTTP.
 CODE_SIZE_REVIEW = Healthy ratio (54% source / 23% tests / 21% docs / 2% other). No duplicate abstractions, no oversized tests, no accidental files. Largest file is src/project/project-store.ts at 1049 lines — necessary for atomic writes + revision-controlled Brief + idempotency + ownership verification + corrupt-file preservation + 3 relationship link types. No refactor of functioning code solely to reduce line count.
 FULL_REGRESSION = 756 passed, 9 skipped, 0 failed (80 files); engine typecheck PASS; web typecheck PASS; engine lint PASS (0 errors); web lint PASS (0 errors, 4 pre-existing warnings in MissionBreadcrumb.tsx unchanged by G7-13); frozen contracts UNCHANGED (0 diff lines vs 86de847); secrets NONE; new dependencies NONE.
-FINAL_LOCAL_HEAD = (set after this commit)
+FINAL_LOCAL_HEAD = 899097a3c93908029c3434c85000a3f2b28b6330
 READY_FOR_REMOTE_REVIEW = YES
 ```
 
