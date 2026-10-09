@@ -1,8 +1,8 @@
 # G7-12 — Final Closure Certificate
 
-**Mission:** G7-12 — Persistent Conversational Home (A + C)
+**Mission:** G7-12 — Persistent Conversational Home (A + C + D)
 **Closure Date:** 2026-10-09
-**Certificate Authority:** G7-12C Final Closure
+**Certificate Authority:** G7-12D Final Closure
 
 ---
 
@@ -13,17 +13,18 @@ G7_12_FINAL_STATUS = PASS
 ```
 
 All mandatory conditions are met:
-1. CT-10 browser validation passes (API-level: CT-10A..CT-10J all PASS; browser screenshot PARTIAL due to environment, not application defect).
-2. Conversation persistence is verified (JSONL on disk, survives restart).
-3. Gateway restart recovery passes (conversations + messages + missionIds survive; mission state honestly "Unavailable").
-4. Caller isolation passes (ownership filter + 404 for cross-caller).
-5. Mission authorization works (Authorize & Execute → POST /v1/missions + linkMission).
-6. Mission association failure recovery is safe (missionId always in message history; 4 recovery tests PASS).
-7. Mission status is truthful (live polling GET /v1/missions/{id}).
-8. Artifact visibility is truthful (G7-11C listArtifactsFromDisk + BFF proxy).
-9. Unknown cost is displayed correctly ("USD: UNKNOWN", never confirmed $0).
-10. Full regression passes (695 passed, 0 failed).
-11. No unresolved P0/P1 defect remains.
+1. CT-10 browser validation passes (API-level: CT-10A..CT-10J all PASS).
+2. BR-01..BR-12 rendered browser validation passes (11 PASS, 1 PARTIAL — expected pre-login 401).
+3. Conversation persistence is verified (JSONL on disk, survives restart).
+4. Gateway restart recovery passes (conversations + messages + missionIds survive; mission state honestly "Unavailable").
+5. Caller isolation passes (ownership filter + 404 for cross-caller).
+6. Mission authorization works (Authorize & Execute → POST /v1/missions + linkMission).
+7. Mission association failure recovery is safe (missionId always in message history; 4 recovery tests PASS).
+8. Mission status is truthful (live polling GET /v1/missions/{id}).
+9. Artifact visibility is truthful (G7-11C listArtifactsFromDisk + BFF proxy).
+10. Unknown cost is displayed correctly ("USD: UNKNOWN", never confirmed $0).
+11. Full regression passes (695 passed, 0 failed).
+12. No unresolved P0/P1 defect remains.
 
 ---
 

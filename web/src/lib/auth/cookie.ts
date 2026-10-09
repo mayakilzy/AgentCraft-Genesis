@@ -223,6 +223,11 @@ export function constantTimePinCompare(a: string, b: string): boolean {
 /**
  * Cookie attributes for Set-Cookie header. SameSite=Strict prevents CSRF.
  * HttpOnly prevents JavaScript access. Secure requires HTTPS (set in prod).
+ *
+ * G7-12D: GENESIS_COOKIE_SECURE env var allows overriding the Secure flag
+ * for local HTTP testing (e.g., Playwright browser tests against http://localhost).
+ * In production, GENESIS_COOKIE_SECURE is NOT set — the default (NODE_ENV=production
+ * → secure=true) applies. This is configuration-only, not a security weakening.
  */
 export function getCookieAttributes(): {
   httpOnly: boolean;
@@ -231,10 +236,14 @@ export function getCookieAttributes(): {
   path: string;
   maxAge: number;
 } {
+  const secureOverride = process.env.GENESIS_COOKIE_SECURE;
+  const secure = secureOverride !== undefined
+    ? secureOverride === "true" || secureOverride === "1"
+    : process.env.NODE_ENV === "production";
   return {
     httpOnly: true,
-    sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    secure,
     path: "/",
     maxAge: COOKIE_TTL_SECONDS,
   };

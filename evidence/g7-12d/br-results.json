@@ -1,0 +1,112 @@
+{
+  "results": {
+    "BR-01": {
+      "status": "PASS",
+      "detail": "Page loaded. Status: 200, title: \"AgentCraft Genesis — G7 Product Experience\"",
+      "timestamp": "2026-10-09T04:26:26.407Z"
+    },
+    "BR-02": {
+      "status": "PASS",
+      "detail": "Auth completed. Nav elements: 3. Home visible.",
+      "timestamp": "2026-10-09T04:26:30.985Z"
+    },
+    "BR-03": {
+      "status": "PASS",
+      "detail": "Conversation created. Items: 1",
+      "timestamp": "2026-10-09T04:26:33.116Z"
+    },
+    "BR-04": {
+      "status": "PASS",
+      "detail": "Message sent. Bubbles: 1",
+      "timestamp": "2026-10-09T04:26:35.257Z"
+    },
+    "BR-05": {
+      "status": "PASS",
+      "detail": "After refresh: 1 conversations",
+      "timestamp": "2026-10-09T04:26:41.392Z"
+    },
+    "BR-06": {
+      "status": "PASS",
+      "detail": "Navigated between 2 conversations",
+      "timestamp": "2026-10-09T04:26:44.656Z"
+    },
+    "BR-07": {
+      "status": "PASS",
+      "detail": "Mission authorized. Refs: 1, cards: 2",
+      "timestamp": "2026-10-09T04:26:52.273Z"
+    },
+    "BR-08": {
+      "status": "PASS",
+      "detail": "Status: 1, keywords: 2",
+      "timestamp": "2026-10-09T04:26:55.349Z"
+    },
+    "BR-09": {
+      "status": "PASS",
+      "detail": "Result visible: true",
+      "timestamp": "2026-10-09T04:26:55.412Z"
+    },
+    "BR-10": {
+      "status": "PASS",
+      "detail": "UNKNOWN: true, cost: true",
+      "timestamp": "2026-10-09T04:26:55.476Z"
+    },
+    "BR-11": {
+      "status": "PASS",
+      "detail": "Send disabled on empty: true",
+      "timestamp": "2026-10-09T04:26:55.486Z"
+    },
+    "BR-12": {
+      "status": "PARTIAL",
+      "detail": "1 total, 1 app errors",
+      "timestamp": "2026-10-09T04:26:55.486Z"
+    }
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "networkLog": [
+    "401 http://127.0.0.1:3000/api/genesis/health",
+    "200 http://127.0.0.1:3000/api/auth/login",
+    "200 http://127.0.0.1:3000/api/genesis/health",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations?limit=20",
+    "201 http://127.0.0.1:3000/api/genesis/v1/conversations",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations?limit=20",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/f915d12d-516e-44b4-b9f8-fa43a",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/f915d12d-516e-44b4-b9f8-fa43a",
+    "201 http://127.0.0.1:3000/api/genesis/v1/conversations/f915d12d-516e-44b4-b9f8-fa43a",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/f915d12d-516e-44b4-b9f8-fa43a",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations?limit=20",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/f915d12d-516e-44b4-b9f8-fa43a",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/f915d12d-516e-44b4-b9f8-fa43a",
+    "200 http://127.0.0.1:3000/api/genesis/health",
+    "200 http://127.0.0.1:3000/api/genesis/health",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations?limit=20",
+    "201 http://127.0.0.1:3000/api/genesis/v1/conversations",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations?limit=20",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/f915d12d-516e-44b4-b9f8-fa43a",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/f915d12d-516e-44b4-b9f8-fa43a",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "201 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations?limit=20",
+    "202 http://127.0.0.1:3000/api/genesis/v1/missions",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "201 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations?limit=20",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/missions/7cb19a85-77c2-4a87-a67c-bfa6053024",
+    "200 http://127.0.0.1:3000/api/genesis/health",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/missions/7cb19a85-77c2-4a87-a67c-bfa6053024",
+    "200 http://127.0.0.1:3000/api/genesis/v1/missions/7cb19a85-77c2-4a87-a67c-bfa6053024",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/conversations/9412f9b9-8ed0-4957-9efc-093d3",
+    "200 http://127.0.0.1:3000/api/genesis/v1/missions/7cb19a85-77c2-4a87-a67c-bfa6053024"
+  ]
+}
