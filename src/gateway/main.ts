@@ -296,7 +296,7 @@ function loadConfig(): GatewayConfig {
     a2aHost,
     a2aPort,
     a2aBaseUrl,
-    defaultMissionTimeoutMs: 60_000,
+    defaultMissionTimeoutMs: 180_000,
     maxRequestBodyBytes: 1_000_000,
     maxEventsPerResponse: 100,
     agentName: process.env.GENESIS_AGENT_NAME ?? 'AgentCraft Genesis Gateway',

@@ -1153,15 +1153,41 @@ export class MissionService {
     // These are goal-satisfaction checks (exact filename, required content,
     // hash match) that go beyond the structural floor. They are evaluated
     // by the existing VerificationLoop — no new verification engine.
+    //
+    // G7-11B fix: caller-supplied `file` and `hash-match` checks use a
+    // workspace-relative path (e.g., 'genesis_demo.md'), but the verification
+    // clean-room copy stores artifacts under 'artifacts/<workerId>/<path>'.
+    // We expand each caller `file`/`hash-match` check into one check per
+    // artifact source that produced a matching path. This lets the caller
+    // specify the logical filename without knowing the internal clean-room
+    // layout. If no source produced the path, the check is emitted as-is
+    // (it will fail honestly — file not found).
     if (callerCriteria !== undefined) {
       for (const c of callerCriteria) {
         if (c.kind === 'file') {
-          checks.push({
-            kind: 'file',
-            label: c.label,
-            path: c.path,
-            ...(c.expectIncludes !== undefined ? { expectIncludes: c.expectIncludes } : {}),
-          });
+          // Find artifact sources that produced this path.
+          const matchingSources = context.artifacts.filter((s) =>
+            s.paths.some((p) => p === c.path),
+          );
+          if (matchingSources.length > 0) {
+            // Emit one check per matching source (clean-room path).
+            for (const source of matchingSources) {
+              checks.push({
+                kind: 'file',
+                label: c.label,
+                path: cleanRoomPath(source, c.path),
+                ...(c.expectIncludes !== undefined ? { expectIncludes: c.expectIncludes } : {}),
+              });
+            }
+          } else {
+            // No source produced this path — emit as-is; it will fail honestly.
+            checks.push({
+              kind: 'file',
+              label: c.label,
+              path: c.path,
+              ...(c.expectIncludes !== undefined ? { expectIncludes: c.expectIncludes } : {}),
+            });
+          }
         } else if (c.kind === 'content-in-artifacts') {
           checks.push({
             kind: 'content-in-artifacts',
@@ -1169,12 +1195,27 @@ export class MissionService {
             expectIncludes: c.expectIncludes,
           });
         } else if (c.kind === 'hash-match') {
-          checks.push({
-            kind: 'hash-match',
-            label: c.label,
-            path: c.path,
-            expectHash: c.expectHash,
-          });
+          // Same expansion as `file` — find matching sources.
+          const matchingSources = context.artifacts.filter((s) =>
+            s.paths.some((p) => p === c.path),
+          );
+          if (matchingSources.length > 0) {
+            for (const source of matchingSources) {
+              checks.push({
+                kind: 'hash-match',
+                label: c.label,
+                path: cleanRoomPath(source, c.path),
+                expectHash: c.expectHash,
+              });
+            }
+          } else {
+            checks.push({
+              kind: 'hash-match',
+              label: c.label,
+              path: c.path,
+              expectHash: c.expectHash,
+            });
+          }
         }
       }
     }

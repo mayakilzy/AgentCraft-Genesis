@@ -56,7 +56,7 @@ export interface ComputerProcessConfig {
   readonly workspaceOf?: (botId: string) => string;
   /** Bun executable (default: `bun`). */
   readonly bunPath?: string;
-  /** Startup budget (default 20s). */
+  /** Startup budget (default 30s). */
   readonly startTimeoutMs?: number;
   /** Extra environment for the computer process. */
   readonly extraEnv?: Readonly<Record<string, string>>;
@@ -187,6 +187,12 @@ export async function startComputerProcess(
       WORKSPACE_DIR: workspaceDir,
       PROFILES_DIR: profilesDir,
       EGRESS_POLICY_REQUIRED: '0',
+      // G7-11B fix: propagate the botId so the computer process knows which
+      // bot identity to assume. Without this, the computer defaults to
+      // "shared" (agent-computer/src/index.ts:282), which can cause profile
+      // mismatches during ensureWorker. The botId is NOT a secret — it is
+      // the genome identity id, already known to the runtime.
+      COMPUTER_BOT_ID: botId,
       // Bare-minimum shell/Node env — no gateway secrets propagated.
       ...(process.env.PATH !== undefined ? { PATH: process.env.PATH } : {}),
       ...(process.env.HOME !== undefined ? { HOME: process.env.HOME } : {}),
@@ -226,7 +232,7 @@ export async function startComputerProcess(
   const baseUrl = `http://127.0.0.1:${port}`;
   const probe = new ComputerApiClient({ baseUrl, token, botId });
 
-  const deadline = Date.now() + (config.startTimeoutMs ?? 20_000);
+  const deadline = Date.now() + (config.startTimeoutMs ?? 30_000);
   let healthy = false;
   while (Date.now() < deadline) {
     if ((await Promise.race([exited, Promise.resolve(-1)])) !== -1) {
@@ -249,7 +255,7 @@ export async function startComputerProcess(
     child.kill('SIGKILL');
     throw new ComputerProcessError(
       `agent-computer for "${botId}" did not become healthy within ` +
-        `${config.startTimeoutMs ?? 20_000}ms:\n${tail}`,
+        `${config.startTimeoutMs ?? 30_000}ms:\n${tail}`,
     );
   }
 

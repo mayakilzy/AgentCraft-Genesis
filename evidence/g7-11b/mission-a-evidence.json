@@ -1,0 +1,19 @@
+{
+  "providerIdentity": "zai (z-ai-web-dev-sdk v0.0.18, /etc/.z-ai-config)",
+  "runtimeAdapter": "OpenBotRuntimeAdapter (CopilotKit/OpenBot agent-computer, bun)",
+  "executionMode": "production",
+  "missionId": "9a3c518b-6bb0-4fa1-8cf8-b52baea08f31",
+  "startedAt": "2026-10-09T01:25:54.494Z",
+  "estimatedCostUsd": 0,
+  "budgetLimits": "maxTotalTokens=20000 (enforced via ZAIReasoningProvider); missionTimeoutMs=180000",
+  "acceptanceResults": [],
+  "errors": [
+    "genesis_demo.md NOT found in artifacts"
+  ],
+  "recoveryAttempts": [],
+  "finishedAt": "2026-10-09T01:26:17.320Z",
+  "executionStatus": "FAILED",
+  "providerCalls": 0,
+  "artifactIntegrity": "FAILED",
+  "goalSatisfaction": "NOT_SATISFIED"
+}
