@@ -88,6 +88,12 @@ export default tseslint.config(
       'scripts/g7-17-pilot.cjs',
       // G7-17R: autonomous repair script. Same CommonJS pattern.
       'scripts/g7-17r-repair.cjs',
+      // G7-17S: first full success script. Same CommonJS pattern.
+      'scripts/g7-17s-success.cjs',
+      // Generated application artifacts in evidence directories — not engine source.
+      'evidence/g7-17/**',
+      'evidence/g7-17r/**',
+      'evidence/g7-17s/**',
     ],
   },
   ...tseslint.configs.recommended,

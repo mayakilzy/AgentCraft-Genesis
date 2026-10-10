@@ -1,0 +1,22 @@
+{
+  "name": "municipal-service-request-tracker",
+  "version": "0.1.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "node --test test.js"
+  },
+  "bin": {
+    "municipal-tracker": "app.js"
+  },
+  "keywords": [
+    "municipal",
+    "service",
+    "request",
+    "tracker"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "": ""
+  }
+}

@@ -1,0 +1,31 @@
+▶ Municipal Service Request Tracker
+  ▶ createRequest
+    ✔ should create a new request with valid data (2.195731ms)
+    ✔ should throw error for empty title (0.553861ms)
+    ✔ should throw error for empty description (0.302454ms)
+    ✔ should throw error for invalid status (0.345388ms)
+    ✔ should default status to pending when not provided (0.407598ms)
+  ✔ createRequest (4.752161ms)
+  ▶ listRequests
+    ✔ should return an empty array when no requests exist (0.370225ms)
+    ✔ should return all requests (0.623039ms)
+  ✔ listRequests (1.202565ms)
+  ▶ filterByStatus
+    ✔ should throw error for invalid status (0.307915ms)
+    ✔ should return empty array when no requests match the status (0.396146ms)
+    ✔ should return only requests with matching status (1.416821ms)
+  ✔ filterByStatus (2.366727ms)
+  ▶ updateStatus
+    ✔ should throw error for invalid status (0.446535ms)
+    ✔ should throw error for non-existent request (0.235742ms)
+    ✔ should update request status successfully (0.446151ms)
+  ✔ updateStatus (1.287492ms)
+✔ Municipal Service Request Tracker (13.359214ms)
+ℹ tests 13
+ℹ suites 5
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 64.253815
