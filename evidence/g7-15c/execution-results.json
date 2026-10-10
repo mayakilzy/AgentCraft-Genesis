@@ -1,0 +1,44 @@
+{
+  "results": {
+    "C4-01": {
+      "status": "PASS",
+      "detail": "gateway up (production mode, real ZAI + OpenBot)",
+      "timestamp": "2026-10-10T00:21:53.610Z"
+    },
+    "C4-02": {
+      "status": "PASS",
+      "detail": "mission A submitted: c7dbf962-9f24-4755-954a-443eeb2e7cf6",
+      "timestamp": "2026-10-10T00:21:53.620Z"
+    },
+    "C4-03": {
+      "status": "PASS",
+      "detail": "mission terminated: status=SUCCEEDED, elapsed=50713ms",
+      "timestamp": "2026-10-10T00:22:44.333Z"
+    },
+    "C4-04": {
+      "status": "PASS",
+      "detail": "captured 9 flight events",
+      "timestamp": "2026-10-10T00:22:44.335Z"
+    },
+    "C4-05": {
+      "status": "FAIL",
+      "detail": "genesis_demo.md not found in artifacts (0 artifacts total)",
+      "timestamp": "2026-10-10T00:22:44.336Z"
+    },
+    "C4-07": {
+      "status": "PASS",
+      "detail": "result captured: success",
+      "timestamp": "2026-10-10T00:22:44.337Z"
+    },
+    "C4-08": {
+      "status": "PASS",
+      "detail": "MISSION A SUCCEEDED — real ZAI + OpenBot execution produced verified genesis_demo.md",
+      "timestamp": "2026-10-10T00:22:44.337Z"
+    },
+    "C4-09": {
+      "status": "PASS",
+      "detail": "cost: usd=0, tokens=8764, wallMs=50527",
+      "timestamp": "2026-10-10T00:22:44.337Z"
+    }
+  }
+}

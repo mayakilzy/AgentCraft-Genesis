@@ -73,6 +73,11 @@ export default tseslint.config(
       // + Next.js BFF in production mode and exercises the PIN login +
       // rate-limit path over HTTP. NOT engine source.
       'scripts/g7-15a-auth-security-tests.cjs',
+      // G7-15C: real Mission A execution script. Same CommonJS pattern
+      // (require for node:child_process spawn + fetch). Spawns the
+      // gateway in production mode with real ZAI + OpenBot. NOT engine
+      // source.
+      'scripts/g7-15c-mission-a-execution.cjs',
     ],
   },
   ...tseslint.configs.recommended,
