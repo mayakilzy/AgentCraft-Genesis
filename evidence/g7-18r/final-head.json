@@ -1,0 +1,6 @@
+{
+  "FINAL_LOCAL_HEAD": "77a550838c5402545f41ce7d59487a5498607fac",
+  "FINAL_REMOTE_HEAD": "77a550838c5402545f41ce7d59487a5498607fac",
+  "HEAD_MATCH": "YES",
+  "note": "This file is written AFTER the G7-18R commit and push, so the values refer to the actual canonical commit. The report content (G7-18R_Full_Stack_Repair_Closure_Report.md) carries a placeholder pointing to this file \u2014 avoiding the G7-18 chicken-and-egg metadata bug where the report content tried to reference its own commit hash."
+}
