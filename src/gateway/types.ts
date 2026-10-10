@@ -120,6 +120,25 @@ export interface MissionSubmission {
    * stronger verification, they must supply explicit criteria here.
    */
   readonly acceptanceCriteria?: readonly AcceptanceCheckInput[];
+  /**
+   * G7-18B: caller-supplied mission input files. When provided, these files
+   * are staged into every computer-bearing worker's workspace BEFORE the
+   * worker starts (via the orchestrator's existing `missionInputs` staging
+   * mechanism — Phase 4.8B in `src/mission/orchestrator.ts`).
+   *
+   * This field is on the TRANSPORT type (MissionSubmission), NOT on the frozen
+   * Goal contract. The orchestrator's `missionInputs` option is the engine
+   * seam; the gateway simply wires it through. No frozen contract modification.
+   *
+   * Paths must be safe project-relative paths (no absolute paths, no `..`
+   * traversal, no Windows separators, no leading/trailing slashes). The
+   * `parseSubmission()` function in `http-server.ts` validates and rejects
+   * malformed paths, duplicates, conflicts, and oversized payloads. The
+   * orchestrator's staging loop writes each file inside the per-worker
+   * workspace directory only — the caller cannot select a workspace or
+   * host path.
+   */
+  readonly missionInputs?: readonly MissionInputInput[];
 }
 
 /**
@@ -135,6 +154,29 @@ export type AcceptanceCheckInput =
   | { readonly kind: 'file'; readonly label: string; readonly path: string; readonly expectIncludes?: string }
   | { readonly kind: 'content-in-artifacts'; readonly label: string; readonly expectIncludes: string }
   | { readonly kind: 'hash-match'; readonly label: string; readonly path: string; readonly expectHash: string };
+
+/**
+ * G7-18B: caller-supplied mission input file (transport-facing shape).
+ *
+ * Mirrors the engine's `MissionInput` (defined in `src/mission/orchestrator.ts`)
+ * but lives on the transport type so the gateway types module does not import
+ * the orchestrator (which depends on engine internals). `MissionService.start()`
+ * converts these to engine `MissionInput` instances when wiring the orchestrator.
+ *
+ * `path` must be a safe project-relative path. `parseSubmission()` in
+ * `http-server.ts` enforces the safety rules: no absolute paths, no `..`
+ * traversal, no Windows separators, no leading/trailing slashes, no empty
+ * segments, no NUL bytes, no duplicates, no parent/child conflicts. Paths
+ * that survive validation are joined onto the worker's workspace directory
+ * by the orchestrator's staging loop — the caller cannot select a workspace
+ * or host path.
+ */
+export interface MissionInputInput {
+  /** Workspace-relative path (e.g. "expenses.csv", "input/orders.json"). */
+  readonly path: string;
+  /** The authoritative file contents (UTF-8 string). */
+  readonly contents: string;
+}
 
 /**
  * A snapshot of a mission at a point in time. Returned by GET /v1/missions/{id}

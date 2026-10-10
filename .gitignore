@@ -30,3 +30,5 @@ data/projects/
 
 # G7-15B: Mission history runtime data (atomic JSON persistence per mission)
 data/missions/
+evidence/g7-18b/clean-room-app/hub*.db
+evidence/g7-18b/clean-room-app/node_modules/

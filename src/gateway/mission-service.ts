@@ -860,6 +860,16 @@ export class MissionService {
       missionTimeoutMs: timeoutMs,
       signal: controller.signal,
       checks: (ctx) => this.buildChecks(ctx, missionRuntime.acceptanceCriteria),
+      // G7-18B: propagate caller-supplied mission input files to the
+      // orchestrator's existing `missionInputs` staging seam (Phase 4.8B
+      // in src/mission/orchestrator.ts). The orchestrator stages each file
+      // into every computer-bearing worker's workspace BEFORE the worker
+      // starts. Validation was done at the transport boundary by
+      // validateMissionInputs() in http-server.ts; here we just forward
+      // the validated list. No frozen contract modification.
+      ...(submission.missionInputs !== undefined && submission.missionInputs.length > 0
+        ? { missionInputs: submission.missionInputs.map((i) => ({ path: i.path, contents: i.contents })) }
+        : {}),
       // G7-14: pass the lazy MCP provider to the orchestrator. The
       // orchestrator passes it to each WorkerAgent. The worker's genome
       // grants (mcp:<tool>) determine which tools it can invoke. The

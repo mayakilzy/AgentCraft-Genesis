@@ -1,0 +1,92 @@
+{
+  "A-01": {
+    "status": "PASS",
+    "detail": "all 9 files present: True",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-02": {
+    "status": "INFO",
+    "detail": "changed=2 unchanged=7 \u2014 changed: ['server.js', 'test/db.test.js']",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-03": {
+    "status": "PASS",
+    "detail": "npm install exit=0",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-04": {
+    "status": "PASS",
+    "detail": "backend started on port 3180",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-05": {
+    "status": "PASS",
+    "detail": "GET /api/projects \u2192 200 ok=True",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-06": {
+    "status": "PASS",
+    "detail": "GET / \u2192 200, has <html: True",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-07": {
+    "status": "PASS",
+    "detail": "POST /api/projects \u2192 201, id=1",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-08": {
+    "status": "PASS",
+    "detail": "project in list: True",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-09": {
+    "status": "FAIL",
+    "detail": "POST /api/projects/1/tasks \u2192 404, id=None",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-10": {
+    "status": "FAIL",
+    "detail": "PATCH /api/tasks/None \u2192 404, status=None",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-11": {
+    "status": "FAIL",
+    "detail": "filter includes tid: False",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-12": {
+    "status": "PASS",
+    "detail": "empty name rejected: 400",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-12b": {
+    "status": "PASS",
+    "detail": "invalid status rejected: 400",
+    "timestamp": "2026-10-10T21:09:02"
+  },
+  "A-13": {
+    "status": "PASS",
+    "detail": "project persisted: True",
+    "timestamp": "2026-10-10T21:09:03"
+  },
+  "A-13b": {
+    "status": "FAIL",
+    "detail": "task+status persisted: False",
+    "timestamp": "2026-10-10T21:09:03"
+  },
+  "A-14": {
+    "status": "FAIL",
+    "detail": "npm test: exit=1, pass=0, fail=6",
+    "timestamp": "2026-10-10T21:09:14"
+  },
+  "A-15": {
+    "status": "FAIL",
+    "detail": "browser: task create failed: 404",
+    "timestamp": "2026-10-10T21:09:17"
+  },
+  "A-16": {
+    "status": "PASS",
+    "detail": "no secrets in artifacts",
+    "timestamp": "2026-10-10T21:09:17"
+  }
+}

@@ -441,6 +441,7 @@ function parseSubmission(body: unknown): MissionSubmission | null {
     idempotencyKey?: string;
     label?: string;
     acceptanceCriteria?: import('./types.js').AcceptanceCheckInput[];
+    missionInputs?: import('./types.js').MissionInputInput[];
   } = { outcome };
   if (typeof obj.context === 'string') submission.context = obj.context;
   if (Array.isArray(obj.constraints)) {
@@ -484,7 +485,155 @@ function parseSubmission(body: unknown): MissionSubmission | null {
       submission.acceptanceCriteria = criteria;
     }
   }
+  // G7-18B: parse caller-supplied mission input files. Validation is
+  // centralized in validateMissionInputs() below. Returns null on any
+  // violation — the caller gets a 400 INVALID_SUBMISSION response.
+  if (obj.missionInputs !== undefined) {
+    const inputs = validateMissionInputs(obj.missionInputs);
+    if (inputs === null) {
+      return null;
+    }
+    if (inputs.length > 0) {
+      submission.missionInputs = inputs;
+    }
+  }
   return submission;
+}
+
+/**
+ * G7-18B: hard limits for caller-supplied mission input files.
+ *
+ * These are documented, conservative ceilings intended for staging an
+ * existing project's source files (not arbitrary binary blobs). The
+ * per-file limit fits the largest source file in a typical web app;
+ * the total limit fits a project with ~64 source files of moderate size.
+ * The count limit prevents a caller from staging thousands of tiny
+ * files that would explode the worker's workspace. All three limits
+ * are enforced here at the transport boundary, BEFORE the orchestrator
+ * stages the files.
+ */
+const MISSION_INPUT_MAX_FILE_COUNT = 64;
+const MISSION_INPUT_MAX_BYTES_PER_FILE = 256 * 1024; // 256 KiB
+// Note: the total-bytes limit MUST be below the gateway's maxRequestBodyBytes
+// (default 1_000_000 = ~977 KiB) so that a valid missionInputs payload can
+// never exceed the request-body limit. 768 KiB leaves ~200 KiB of headroom
+// for the rest of the request body (outcome, context, constraints, etc.).
+const MISSION_INPUT_MAX_TOTAL_BYTES = 768 * 1024; // 768 KiB
+
+/**
+ * G7-18B: validate caller-supplied mission input files.
+ *
+ * Rules (all enforced, all conservative):
+ *   - Must be an array (empty array is allowed — equivalent to no inputs).
+ *   - Each entry must be an object with string `path` and string `contents`.
+ *   - `path` must be safe project-relative:
+ *       • non-empty, no leading or trailing slash
+ *       • no backslashes (POSIX-only separators)
+ *       • no NUL bytes
+ *       • segments split on '/' must all be non-empty and not '..' or '.'
+ *       • no duplicate segments that would normalize differently
+ *   - No duplicate paths (case-sensitive).
+ *   - No parent/child conflicts (e.g. `a` and `a/b` would conflict because
+ *     `a` cannot be both a file and a directory).
+ *   - Per-file size limit (MISSION_INPUT_MAX_BYTES_PER_FILE).
+ *   - Total size limit (MISSION_INPUT_MAX_TOTAL_BYTES).
+ *   - File count limit (MISSION_INPUT_MAX_FILE_COUNT).
+ *
+ * Returns the validated inputs (as transport-type MissionInputInput[]) on
+ * success, or null on any violation. The caller (parseSubmission) returns
+ * null to handleSubmit, which emits a 400 INVALID_SUBMISSION response.
+ *
+ * Contents are NOT logged here. The validation log line (if any) reports
+ * only path, size, and count — never contents.
+ */
+function validateMissionInputs(raw: unknown): import('./types.js').MissionInputInput[] | null {
+  if (!Array.isArray(raw)) {
+    return null;
+  }
+  if (raw.length === 0) {
+    return [];
+  }
+  if (raw.length > MISSION_INPUT_MAX_FILE_COUNT) {
+    return null;
+  }
+  const inputs: import('./types.js').MissionInputInput[] = [];
+  const seenPaths = new Set<string>();
+  // Track directory prefixes to catch parent/child conflicts:
+  // if `a/b` is staged as a file, no later input can stage `a/b/c` because
+  // `a/b` is already a file, not a directory.
+  const filePaths = new Set<string>();
+  let totalBytes = 0;
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') {
+      return null;
+    }
+    const e = entry as Record<string, unknown>;
+    const path = e.path;
+    const contents = e.contents;
+    if (typeof path !== 'string' || typeof contents !== 'string') {
+      return null;
+    }
+    if (path.length === 0) {
+      return null;
+    }
+    // Reject NUL bytes (defense-in-depth against path injection).
+    if (path.indexOf('\0') !== -1 || contents.indexOf('\0') !== -1) {
+      return null;
+    }
+    // Reject backslashes (Windows separator on POSIX would create files
+    // named `foo\bar` which is confusing and not portable).
+    if (path.indexOf('\\') !== -1) {
+      return null;
+    }
+    // Reject absolute paths and trailing slash.
+    if (path.startsWith('/') || path.endsWith('/')) {
+      return null;
+    }
+    // Split on '/' and validate every segment. This catches `..` traversal,
+    // empty segments (from `//` or leading/trailing slash already rejected),
+    // and `.` (current-directory) segments.
+    const segments = path.split('/');
+    for (const seg of segments) {
+      if (seg.length === 0 || seg === '..' || seg === '.') {
+        return null;
+      }
+    }
+    // Reject duplicate paths (case-sensitive — `Foo` and `foo` are different
+    // on POSIX but case-folding filesystems would silently overwrite; we
+    // reject the case-sensitive duplicate here, which is the safer default).
+    if (seenPaths.has(path)) {
+      return null;
+    }
+    // Reject parent/child conflicts. If `a/b` is already staged as a file,
+    // `a/b/c` is not allowed because `a/b` is not a directory. Conversely,
+    // if `a/b/c` is already staged, `a/b` is not allowed because it would
+    // have to be both a file and a directory.
+    const prefix = segments.slice(0, -1).join('/');
+    if (prefix.length > 0 && filePaths.has(prefix)) {
+      return null;
+    }
+    // Check whether this path is a prefix of any already-staged file (i.e.
+    // this path would be a directory containing an existing file).
+    const thisPathWithSlash = path + '/';
+    for (const existing of filePaths) {
+      if (existing.startsWith(thisPathWithSlash)) {
+        return null;
+      }
+    }
+    // Per-file size limit.
+    const byteLength = Buffer.byteLength(contents, 'utf8');
+    if (byteLength > MISSION_INPUT_MAX_BYTES_PER_FILE) {
+      return null;
+    }
+    totalBytes += byteLength;
+    if (totalBytes > MISSION_INPUT_MAX_TOTAL_BYTES) {
+      return null;
+    }
+    seenPaths.add(path);
+    filePaths.add(path);
+    inputs.push({ path, contents });
+  }
+  return inputs;
 }
 
 /**

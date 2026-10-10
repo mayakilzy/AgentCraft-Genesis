@@ -1,0 +1,11 @@
+{
+  "server.js": "a32081adee07a848efaaa487a01afa232fdea0516a5e054c4c00c85c91c84c66",
+  "public/index.html": "71358747764ed20c2e3318596e86c7e3c294d3dd4cf3e6329042ad21f91021ab",
+  "public/styles.css": "a60fa2b388e093d585c3e288258df4e56366c7165a8e09196e54b974f0259df2",
+  "public/app.js": "e2275551b472143b5a20dc72b80a4457cd94d56b35959a95be28c912c317a5b9",
+  "test/api.test.js": "dd3c66aa43aba4db1566ebda6fde97bc2c7a0b56ed94d53eec86f750f2b0b8b7",
+  "test/db.test.js": "85b7fcbbb721747f98accbd375ded67e5eb9f0a211483ce261cf815dd6c4d4e1",
+  "test/integration.test.js": "c6967d6c4a1f7be8865070efede6613588a5562f43be24ba2bc23dffa78c7f25",
+  "package.json": "587ba47b1082b8763b1722bf2b25b6767a8c9cdb8577f3cb32892ce19b9f3e31",
+  "README.md": "718db0f4b096089cba7813ffeb62f2ffb36e2c345b9dc22c3d94300ea537a279"
+}

@@ -1,0 +1,13 @@
+{
+  "missionId": "9f08eaeb-20d5-4c93-baf5-d82f4f438cc3",
+  "status": "PARTIAL",
+  "terminal": true,
+  "elapsedSec": 542,
+  "tokens": 337542,
+  "wallMs": 540667,
+  "humanInterventions": 0,
+  "artifactCount": 10,
+  "workspaceFileCount": 46,
+  "originalFileCount": 9,
+  "originalTotalBytes": 55756
+}

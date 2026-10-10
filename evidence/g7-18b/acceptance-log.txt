@@ -1,0 +1,24 @@
+=== Phase E: Independent Behavioral Acceptance ===
+Clean room: /home/z/my-project/work/evidence/g7-18b/clean-room-app
+[2026-10-10T21:09:02] A-01: PASS — all 9 files present: True
+[2026-10-10T21:09:02] A-02: INFO — changed=2 unchanged=7 — changed: ['server.js', 'test/db.test.js']
+[2026-10-10T21:09:02] A-03: PASS — npm install exit=0
+[2026-10-10T21:09:02] A-04: PASS — backend started on port 3180
+--- backend stdout ---
+Community Project Hub listening on port 3180
+[2026-10-10T21:09:02] A-05: PASS — GET /api/projects → 200 ok=True
+[2026-10-10T21:09:02] A-06: PASS — GET / → 200, has <html: True
+[2026-10-10T21:09:02] A-07: PASS — POST /api/projects → 201, id=1
+[2026-10-10T21:09:02] A-08: PASS — project in list: True
+[2026-10-10T21:09:02] A-09: FAIL — POST /api/projects/1/tasks → 404, id=None
+[2026-10-10T21:09:02] A-10: FAIL — PATCH /api/tasks/None → 404, status=None
+[2026-10-10T21:09:02] A-11: FAIL — filter includes tid: False
+[2026-10-10T21:09:02] A-12: PASS — empty name rejected: 400
+[2026-10-10T21:09:02] A-12b: PASS — invalid status rejected: 400
+[2026-10-10T21:09:03] A-13: PASS — project persisted: True
+[2026-10-10T21:09:03] A-13b: FAIL — task+status persisted: False
+[2026-10-10T21:09:14] A-14: FAIL — npm test: exit=1, pass=0, fail=6
+[2026-10-10T21:09:17] A-15: FAIL — browser: task create failed: 404
+[2026-10-10T21:09:17] A-16: PASS — no secrets in artifacts
+
+=== Acceptance summary: 11 PASS, 6 FAIL, 1 INFO ===
