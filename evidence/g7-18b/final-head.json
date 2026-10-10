@@ -1,0 +1,6 @@
+{
+  "FINAL_LOCAL_HEAD": "9fb6fbdb254a8658bda2f7fc1a08047f79c7d9a3",
+  "FINAL_REMOTE_HEAD": "9fb6fbdb254a8658bda2f7fc1a08047f79c7d9a3",
+  "HEAD_MATCH": "YES",
+  "note": "Written post-push to avoid the G7-18 chicken-and-egg metadata bug. The report content references this file rather than embedding the hash of its own commit."
+}
