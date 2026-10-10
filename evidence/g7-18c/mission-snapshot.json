@@ -1,0 +1,111 @@
+{
+  "missionId": "b4e1fc88-aebf-4bfa-a2b0-f592d1da1cc9",
+  "callerId": "g7-18c-pilot-caller",
+  "status": "PARTIAL",
+  "terminal": true,
+  "acceptedAt": "2026-10-10T21:25:59.233Z",
+  "finishedAt": "2026-10-10T21:34:59.941Z",
+  "goalOutcome": "Repair the Community Project Hub so ALL original G7-18 behavioral acceptance tests pass. The 9 existing files are staged in your workspace \u2014 read_file them first. Make minimal necessary changes. Do NOT regenerate.\n\nDefects to fix (diagnostic leads, not exhaustive):\n\n1. server.js route-parsing bug (4 occurrences): `pathname.split('/')[2]` returns 'projects'/'tasks' not the id. For `/api/projects/1` split is `['','api','projects','1']` \u2014 id is at index [3]. Fix lines ~108, 116, 121, 143: change `[2]` to `[3]`.\n\n2. server.js missing FK enforcement: `initializeDb()` creates tables with `REFERENCES projects(id) ON DELETE CASCADE` but never runs `PRAGMA foreign_keys = ON;`. Add it BEFORE CREATE TABLE so FK constraints fire.\n\n3. test/api.test.js + test/integration.test.js (line ~80): `serverProcess.stderr.on(...)` listens for 'listening on port' but `console.log(...)` writes to STDOUT. Change `stderr` to `stdout`.\n\n4. test/db.test.js: opens `new DatabaseSync(testDbFile)` and queries `sqlite_master` but never creates the schema. Add `db.exec()` with CREATE TABLE statements (same schema as server.js) + `PRAGMA foreign_keys = ON;` at the start of each test or in a beforeEach hook.\n\nPreserve: SQLite persistence, project CRUD, input validation, the HTTP route table, the {ok,data,error} JSON response shape, HTTP status codes (200/201/400/404/500), the vanilla HTML/CSS/JS frontend, the node:sqlite DatabaseSync API.\n\nAfter repair, run `node --test test/api.test.js test/db.test.js test/integration.test.js` \u2014 ALL tests must pass.\n\nAfter repair, call: {\"action\":\"finish\",\"summary\":\"repaired\",\"artifacts\":[\"server.js\",\"public/index.html\",\"public/styles.css\",\"public/app.js\",\"test/api.test.js\",\"test/db.test.js\",\"test/integration.test.js\",\"package.json\",\"README.md\"]}",
+  "result": {
+    "status": "partial",
+    "summary": "mission aborted (timeout or cancellation) before completion",
+    "evidence": [
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at server.js",
+        "location": "software-engineer-1:server.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at public/index.html",
+        "location": "software-engineer-1:public/index.html"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at public/styles.css",
+        "location": "software-engineer-1:public/styles.css"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at public/app.js",
+        "location": "software-engineer-1:public/app.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/api.test.js",
+        "location": "software-engineer-1:test/api.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/db.test.js",
+        "location": "software-engineer-1:test/db.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/integration.test.js",
+        "location": "software-engineer-1:test/integration.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at package.json",
+        "location": "software-engineer-1:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at README.md",
+        "location": "software-engineer-1:README.md"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at server.js",
+        "location": "documentation-writer-2:server.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at public/index.html",
+        "location": "documentation-writer-2:public/index.html"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at public/styles.css",
+        "location": "documentation-writer-2:public/styles.css"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at public/app.js",
+        "location": "documentation-writer-2:public/app.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/api.test.js",
+        "location": "documentation-writer-2:test/api.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/db.test.js",
+        "location": "documentation-writer-2:test/db.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/integration.test.js",
+        "location": "documentation-writer-2:test/integration.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at package.json",
+        "location": "documentation-writer-2:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at README.md",
+        "location": "documentation-writer-2:README.md"
+      }
+    ],
+    "cost": {
+      "usd": 0,
+      "tokens": 458534,
+      "wallMs": 540643,
+      "humanInterventions": 0
+    }
+  }
+}

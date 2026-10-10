@@ -32,3 +32,5 @@ data/projects/
 data/missions/
 evidence/g7-18b/clean-room-app/hub*.db
 evidence/g7-18b/clean-room-app/node_modules/
+evidence/g7-18c/clean-room-app/hub*.db
+evidence/g7-18c/clean-room-app/node_modules/

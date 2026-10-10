@@ -1,0 +1,38 @@
+{
+  "server.js": {
+    "sha256": "ced1ef6f06ef00a1f85b075bd6ecb2ae55260681ae2fbb1152a4a881ee9124bc",
+    "bytes": 7578
+  },
+  "public/index.html": {
+    "sha256": "71358747764ed20c2e3318596e86c7e3c294d3dd4cf3e6329042ad21f91021ab",
+    "bytes": 2568
+  },
+  "public/styles.css": {
+    "sha256": "a60fa2b388e093d585c3e288258df4e56366c7165a8e09196e54b974f0259df2",
+    "bytes": 4958
+  },
+  "public/app.js": {
+    "sha256": "e2275551b472143b5a20dc72b80a4457cd94d56b35959a95be28c912c317a5b9",
+    "bytes": 6687
+  },
+  "test/api.test.js": {
+    "sha256": "dd3c66aa43aba4db1566ebda6fde97bc2c7a0b56ed94d53eec86f750f2b0b8b7",
+    "bytes": 14660
+  },
+  "test/db.test.js": {
+    "sha256": "78f8aa6fddfea93aab50f12903e6468d50783e91b5ff207b3477b039d695ec2a",
+    "bytes": 6876
+  },
+  "test/integration.test.js": {
+    "sha256": "c6967d6c4a1f7be8865070efede6613588a5562f43be24ba2bc23dffa78c7f25",
+    "bytes": 6252
+  },
+  "package.json": {
+    "sha256": "587ba47b1082b8763b1722bf2b25b6767a8c9cdb8577f3cb32892ce19b9f3e31",
+    "bytes": 502
+  },
+  "README.md": {
+    "sha256": "718db0f4b096089cba7813ffeb62f2ffb36e2c345b9dc22c3d94300ea537a279",
+    "bytes": 3253
+  }
+}

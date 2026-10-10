@@ -1,0 +1,54 @@
+
+> community-project-hub@0.1.0 test
+> node --test test/api.test.js test/db.test.js test/integration.test.js
+
+▶ API Tests
+  ▶ GET /api/projects
+    ✖ should return empty array when no projects exist
+  ✖ GET /api/projects
+  ▶ POST /api/projects
+    ✖ should create a new project with valid data
+    ✖ should reject project with empty name
+    ✖ should reject project with missing name
+    ✖ should reject project with invalid JSON
+  ✖ POST /api/projects
+  ▶ GET /api/projects/:id
+    ✖ should return project by ID
+    ✖ should return 404 for non-existent project
+  ✖ GET /api/projects/:id
+  ▶ POST /api/projects/:id/tasks
+    ✖ should create a new task for existing project
+    ✖ should return 404 for non-existent project
+    ✖ should reject task with empty title
+  ✖ POST /api/projects/:id/tasks
+  ▶ PATCH /api/tasks/:id
+    ✖ should update task status with valid value
+    ✖ should return 404 for non-existent task
+    ✖ should reject invalid task status
+    ✖ should reject update without status
+  ✖ PATCH /api/tasks/:id
+  ▶ GET /api/tasks?status=
+    ✖ should filter tasks by status
+  ✖ GET /api/tasks?status=
+✖ API Tests (25.86126ms)
+▶ Database Tests
+  ▶ Table Structure
+    ✔ should create projects table with correct schema (2.056615ms)
+    ✔ should create tasks table with correct schema (0.518516ms)
+  ✔ Table Structure (3.144087ms)
+  ▶ Foreign Key Constraints
+    ✔ should allow inserting task with valid project_id (0.793067ms)
+    ✔ should reject inserting task with non-existent project_id (0.44658ms)
+  ✔ Foreign Key Constraints (1.518821ms)
+  ▶ Cascade Delete
+    ✔ should delete tasks when project is deleted (0.884479ms)
+  ✔ Cascade Delete (1.224617ms)
+  ▶ Data Persistence
+    ✔ should persist data after database is closed and reopened (0.878696ms)
+  ✔ Data Persistence (1.058105ms)
+✔ Database Tests (7.438472ms)
+▶ Integration Tests
+  ▶ Full Lifecycle Test
+    ✖ should persist data across server restarts (52.771059ms)
+  ✖ Full Lifecycle Test (54.349465ms)
+✖ Integration Tests (76.392587ms)
