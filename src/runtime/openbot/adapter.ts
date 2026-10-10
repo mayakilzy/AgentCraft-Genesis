@@ -174,8 +174,14 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
     if (running.computer) {
       await running.computer.stop();
     }
+    // G7-15D: remove the live computer API client (the process is stopped,
+    // so HTTP calls would fail). But KEEP the worker in this.workers so
+    // listArtifactsFromDisk() can still find workspaceDir after retirement.
+    // Previously, stopWorker() deleted from BOTH Maps, making the workspace
+    // invisible to getArtifacts() — a successful mission's artifact would
+    // disappear from the API despite existing on disk.
     this.computers.delete(botId);
-    this.workers.delete(botId);
+    // Do NOT delete from this.workers — the workspaceDir is still needed.
   }
 
   /**
@@ -206,13 +212,13 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
    * deliverables.
    */
   async listArtifacts(): Promise<readonly ArtifactSnapshot[]> {
-    if (this.closed) {
-      // G7-11C fix: closed adapter has no live worker processes, but the
-      // workspace directories persist on disk (stopWorker retires the process
-      // but does NOT delete the workspace — only reset() does). Read artifacts
-      // directly from the filesystem so getArtifacts() works after mission
-      // termination. This is the production path: the orchestrator's finally{}
-      // retires workers before the gateway's getArtifacts() is called.
+    // G7-15D: fall back to disk reads when the adapter is closed OR when all
+    // computer processes have been retired (stopWorker deletes from
+    // this.computers but keeps the worker in this.workers for disk access).
+    // Previously, the fallback only fired when this.closed === true, which
+    // left a window after stopWorker() (computers empty, not yet closed)
+    // where listArtifacts() returned [] despite the workspace existing on disk.
+    if (this.closed || this.computers.size === 0) {
       return this.listArtifactsFromDisk();
     }
     const out: ArtifactSnapshot[] = [];
@@ -307,7 +313,10 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
     for (const botId of botIds) {
       const running = this.workers.get(botId);
       if (running?.computer) {
-        await running.computer.stop();
+        // G7-15D: wrap in try-catch because stopWorker() may have already
+        // stopped this computer. Double-stop is harmless but some process
+        // managers throw on the second SIGTERM.
+        try { await running.computer.stop(); } catch { /* already stopped */ }
       }
     }
     this.workers.clear();
