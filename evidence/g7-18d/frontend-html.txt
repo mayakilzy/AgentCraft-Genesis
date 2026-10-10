@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Project Hub</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Community Project Hub</h1>
+    </header>
+
+    <main>
+      <section class="create-project">
+        <h2>Create New Project</h2>
+        <form id="create-project-form">
+          <div class="form-group">
+            <label for="project-name">Project Name *</label>
+            <input type="text" id="project-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="project-description">Description</label>
+            <textarea id="project-description" name="description"></textarea>
+          </div>
+          <button type="submit">Create Project</button>
+        </form>
+      </section>
+
+      <section class="projects">
+        <div class="filters">
+          <h2>Projects</h2>
+          <div class="status-filter">
+            <button class="filter-btn active" data-status="all">All</button>
+            <button class="filter-btn" data-status="active">Active</button>
+            <button class="filter-btn" data-status="archived">Archived</button>
+          </div>
+        </div>
+        <div id="projects-list" class="project-list">
+          <!-- Projects will be dynamically loaded here -->
+        </div>
+      </section>
+
+      <section id="project-detail" class="project-detail" style="display: none;">
+        <button id="back-to-projects">← Back to Projects</button>
+        <div id="project-detail-header">
+          <!-- Project details will be loaded here -->
+        </div>
+        <div class="create-task">
+          <h3>Create New Task</h3>
+          <form id="create-task-form">
+            <div class="form-group">
+              <label for="task-title">Task Title *</label>
+              <input type="text" id="task-title" name="title" required>
+  

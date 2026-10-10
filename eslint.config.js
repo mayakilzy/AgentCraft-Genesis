@@ -104,6 +104,7 @@ export default tseslint.config(
       'evidence/g7-18r/**',
       'evidence/g7-18b/**',
       'evidence/g7-18c/**',
+      'evidence/g7-18d/**',
     ],
   },
   ...tseslint.configs.recommended,

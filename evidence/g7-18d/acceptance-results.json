@@ -1,0 +1,92 @@
+{
+  "A-01": {
+    "status": "PASS",
+    "detail": "all 9 files present: True",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-02": {
+    "status": "INFO",
+    "detail": "changed=2 unchanged=7 \u2014 changed: ['server.js', 'test/integration.test.js']",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-03": {
+    "status": "PASS",
+    "detail": "npm install exit=0",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-04": {
+    "status": "PASS",
+    "detail": "backend started on port 3180",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-05": {
+    "status": "PASS",
+    "detail": "GET /api/projects \u2192 200 ok=True",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-06": {
+    "status": "PASS",
+    "detail": "GET / \u2192 200, has <html: True",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-07": {
+    "status": "PASS",
+    "detail": "POST /api/projects \u2192 201, id=1",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-08": {
+    "status": "PASS",
+    "detail": "project in list: True",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-09": {
+    "status": "PASS",
+    "detail": "POST /api/projects/1/tasks \u2192 201, id=1",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-10": {
+    "status": "PASS",
+    "detail": "PATCH /api/tasks/1 \u2192 200, status=in-progress",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-11": {
+    "status": "PASS",
+    "detail": "filter includes tid: True",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-12": {
+    "status": "PASS",
+    "detail": "empty name rejected: 400",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-12b": {
+    "status": "PASS",
+    "detail": "invalid status rejected: 400",
+    "timestamp": "2026-10-10T23:50:33"
+  },
+  "A-13": {
+    "status": "PASS",
+    "detail": "project persisted: True",
+    "timestamp": "2026-10-10T23:50:34"
+  },
+  "A-13b": {
+    "status": "PASS",
+    "detail": "task+status persisted: True",
+    "timestamp": "2026-10-10T23:50:34"
+  },
+  "A-14": {
+    "status": "FAIL",
+    "detail": "npm test TIMEOUT after 120s \u2014 partial: pass=0, fail=0",
+    "timestamp": "2026-10-10T23:52:34"
+  },
+  "A-15": {
+    "status": "PASS",
+    "detail": "browser: OK (project+task+update+filter) \u2014 screenshot /home/z/my-project/work/evidence/g7-18d/browser-acceptance-dashboard.png",
+    "timestamp": "2026-10-10T23:52:38"
+  },
+  "A-16": {
+    "status": "PASS",
+    "detail": "no secrets in artifacts",
+    "timestamp": "2026-10-10T23:52:38"
+  }
+}

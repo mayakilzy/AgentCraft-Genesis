@@ -1,0 +1,33 @@
+
+> community-project-hub@0.1.0 test
+> node --test test/api.test.js test/db.test.js test/integration.test.js
+
+▶ API Tests
+  ▶ GET /api/projects
+    ✔ should return empty array when no projects exist (16.927782ms)
+  ✔ GET /api/projects (17.554413ms)
+  ▶ POST /api/projects
+    ✔ should create a new project with valid data (4.309208ms)
+    ✔ should reject project with empty name (2.065312ms)
+    ✔ should reject project with missing name (1.422539ms)
+    ✔ should reject project with invalid JSON (1.989789ms)
+  ✔ POST /api/projects (10.609272ms)
+  ▶ GET /api/projects/:id
+    ✔ should return project by ID (2.646467ms)
+    ✔ should return 404 for non-existent project (1.424627ms)
+  ✔ GET /api/projects/:id (4.541572ms)
+  ▶ POST /api/projects/:id/tasks
+    ✔ should create a new task for existing project (3.788234ms)
+    ✔ should return 404 for non-existent project (1.662741ms)
+    ✔ should reject task with empty title (3.538066ms)
+  ✔ POST /api/projects/:id/tasks (9.395898ms)
+  ▶ PATCH /api/tasks/:id
+    ✔ should update task status with valid value (5.016031ms)
+    ✔ should return 404 for non-existent task (2.327526ms)
+    ✔ should reject invalid task status (2.494243ms)
+    ✔ should reject update without status (2.332107ms)
+  ✔ PATCH /api/tasks/:id (12.534186ms)
+  ▶ GET /api/tasks?status=
+    ✖ should filter tasks by status (7.423778ms)
+  ✖ GET /api/tasks?status= (8.074549ms)
+✖ API Tests (86.625802ms)

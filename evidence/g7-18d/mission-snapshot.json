@@ -1,0 +1,111 @@
+{
+  "missionId": "771b7f01-f9b2-49c4-95b7-33917e814fdf",
+  "callerId": "g7-18d-pilot-caller",
+  "status": "PARTIAL",
+  "terminal": true,
+  "acceptedAt": "2026-10-10T23:41:55.230Z",
+  "finishedAt": "2026-10-10T23:48:55.933Z",
+  "goalOutcome": "Repair the existing Community Project Hub. The 9 files are staged in your workspace \u2014 read_file them first.\n\nDefect: server.js route ordering. Line 110: `GET /api/projects/:id` matches any pathname starting with `/api/projects/` \u2014 including `/api/projects/1/tasks`. Line 118: `GET /api/projects/:id/tasks` is never reached because line 110 matches first. Result: `GET /api/projects/1/tasks` returns a project object instead of a tasks array.\n\nFix: reorder the routes so the more specific `/tasks` route is checked BEFORE the general `:id` route. OR add `&& !pathname.endsWith('/tasks')` to the line 110 condition. The fix is ONE route reorder or ONE condition addition.\n\nAlso fix test/integration.test.js: line 163 calls `startTestServer()` a second time on the same port (3002) while the first server from `test.before` is still running. This causes EADDRINUSE \u2192 \"Server closed with code 1\". Fix: store the server process from `test.before` and reuse it at line 163 instead of starting a new one. OR: stop the first server before starting the second.\n\nDo NOT modify the other 7 files. Do NOT regenerate. Preserve all working features: SQLite persistence, project CRUD, task CRUD, input validation, the {ok,data,error} JSON shape, HTTP status codes, the node:sqlite DatabaseSync API, the vanilla frontend.\n\nAfter repair, run `node --test test/api.test.js test/db.test.js test/integration.test.js` \u2014 ALL tests must pass.\n\nAfter repair, call: {\"action\":\"finish\",\"summary\":\"repaired\",\"artifacts\":[\"server.js\",\"public/index.html\",\"public/styles.css\",\"public/app.js\",\"test/api.test.js\",\"test/db.test.js\",\"test/integration.test.js\",\"package.json\",\"README.md\"]}",
+  "result": {
+    "status": "partial",
+    "summary": "mission aborted (timeout or cancellation) before completion",
+    "evidence": [
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at server.js",
+        "location": "software-engineer-1:server.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at public/index.html",
+        "location": "software-engineer-1:public/index.html"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at public/styles.css",
+        "location": "software-engineer-1:public/styles.css"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at public/app.js",
+        "location": "software-engineer-1:public/app.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/api.test.js",
+        "location": "software-engineer-1:test/api.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/db.test.js",
+        "location": "software-engineer-1:test/db.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/integration.test.js",
+        "location": "software-engineer-1:test/integration.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at package.json",
+        "location": "software-engineer-1:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at README.md",
+        "location": "software-engineer-1:README.md"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at server.js",
+        "location": "documentation-writer-2:server.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at public/index.html",
+        "location": "documentation-writer-2:public/index.html"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at public/styles.css",
+        "location": "documentation-writer-2:public/styles.css"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at public/app.js",
+        "location": "documentation-writer-2:public/app.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/api.test.js",
+        "location": "documentation-writer-2:test/api.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/db.test.js",
+        "location": "documentation-writer-2:test/db.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/integration.test.js",
+        "location": "documentation-writer-2:test/integration.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at package.json",
+        "location": "documentation-writer-2:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at README.md",
+        "location": "documentation-writer-2:README.md"
+      }
+    ],
+    "cost": {
+      "usd": 0,
+      "tokens": 240311,
+      "wallMs": 420659,
+      "humanInterventions": 0
+    }
+  }
+}

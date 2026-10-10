@@ -1,0 +1,24 @@
+=== Phase 3: Independent Clean-Room Acceptance ===
+Clean room: /home/z/my-project/work/evidence/g7-18d/clean-room-app
+[2026-10-10T23:50:33] A-01: PASS — all 9 files present: True
+[2026-10-10T23:50:33] A-02: INFO — changed=2 unchanged=7 — changed: ['server.js', 'test/integration.test.js']
+[2026-10-10T23:50:33] A-03: PASS — npm install exit=0
+[2026-10-10T23:50:33] A-04: PASS — backend started on port 3180
+--- backend stdout ---
+Community Project Hub listening on port 3180
+[2026-10-10T23:50:33] A-05: PASS — GET /api/projects → 200 ok=True
+[2026-10-10T23:50:33] A-06: PASS — GET / → 200, has <html: True
+[2026-10-10T23:50:33] A-07: PASS — POST /api/projects → 201, id=1
+[2026-10-10T23:50:33] A-08: PASS — project in list: True
+[2026-10-10T23:50:33] A-09: PASS — POST /api/projects/1/tasks → 201, id=1
+[2026-10-10T23:50:33] A-10: PASS — PATCH /api/tasks/1 → 200, status=in-progress
+[2026-10-10T23:50:33] A-11: PASS — filter includes tid: True
+[2026-10-10T23:50:33] A-12: PASS — empty name rejected: 400
+[2026-10-10T23:50:33] A-12b: PASS — invalid status rejected: 400
+[2026-10-10T23:50:34] A-13: PASS — project persisted: True
+[2026-10-10T23:50:34] A-13b: PASS — task+status persisted: True
+[2026-10-10T23:52:34] A-14: FAIL — npm test TIMEOUT after 120s — partial: pass=0, fail=0
+[2026-10-10T23:52:38] A-15: PASS — browser: OK (project+task+update+filter) — screenshot /home/z/my-project/work/evidence/g7-18d/browser-acceptance-dashboard.png
+[2026-10-10T23:52:38] A-16: PASS — no secrets in artifacts
+
+=== Acceptance summary: 16 PASS, 1 FAIL, 1 INFO ===
