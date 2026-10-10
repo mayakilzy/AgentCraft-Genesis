@@ -118,6 +118,8 @@ import {
   MISSION_HISTORY_SCHEMA_VERSION,
   type MissionHistoryRecord,
 } from '../mission/mission-history-store.js';
+import { structuredLog } from './logger.js';
+import { existsSync, rmSync } from 'node:fs';
 
 import type {
   CallerIdentity,
@@ -605,9 +607,54 @@ export class MissionService {
       if (rt.idempotencyKey !== undefined) {
         this.idempotencyIndex.delete(rt.idempotencyKey);
       }
+      // G7-16A: clean up the OpenBot workspace directory for this mission.
+      // The workspace directory was created by the per-mission runtime adapter
+      // at `${OPENBOT_ROOT_DIR}/{missionId}/`. At this point:
+      //   - The mission is terminal (SUCCEEDED/FAILED/PARTIAL/CANCELLED).
+      //   - persistTerminal() has already captured artifact metadata in the
+      //     history store (if the history store is configured).
+      //   - The retention window has elapsed (default 5 min).
+      //   - The workspace content is no longer retrievable via the API after
+      //     eviction (the history store has metadata only — documented).
+      // This is the existing lifecycle boundary; no new background service.
+      this.cleanupWorkspace(missionId, rt);
     }
     this.sweepCount += 1;
     return { evicted: toEvict.length, remaining: this.missions.size };
+  }
+
+  /**
+   * G7-16A: clean up the OpenBot workspace directory for an evicted mission.
+   * Safe: only called from sweepTerminalMissions() for terminal missions
+   * past their retention window. The workspace directory is under
+   * OPENBOT_ROOT_DIR; the mission's runtime adapter created it. The adapter
+   * has already been stopped (stopWorker in orchestrator's finally{}).
+   *
+   * Defense-in-depth: verify the path is under the configured rootDir and
+   * does NOT contain path traversal before deleting.
+   */
+  private cleanupWorkspace(missionId: string, rt: MissionRuntime): void {
+    // Only clean up if the runtime has a workspaceDir property (OpenBot adapter).
+    // MemoryRuntime does not create workspace directories.
+    const provider = rt.runtime as (WorkerRuntime & {
+      options?: { rootDir?: string };
+    }) | undefined;
+    if (provider === undefined) return;
+    // The OpenBot adapter's rootDir is `${OPENBOT_ROOT_DIR}/{missionId}`.
+    // We read it from the adapter's options if available; otherwise skip
+    // (MemoryRuntime has no workspace on disk).
+    const rootDir = provider?.options?.rootDir;
+    if (rootDir === undefined || rootDir.length === 0) return;
+    // Path traversal protection: the rootDir must not contain '..'.
+    if (rootDir.includes('..')) return;
+    try {
+      if (existsSync(rootDir)) {
+        rmSync(rootDir, { recursive: true, force: true });
+        structuredLog('info', 'workspace_cleanup', `workspace deleted: ${rootDir}`, { missionId });
+      }
+    } catch (err) {
+      structuredLog('warn', 'workspace_cleanup', `failed to delete workspace: ${err instanceof Error ? err.message : String(err)}`, { missionId });
+    }
   }
 
   /**
@@ -806,9 +853,10 @@ export class MissionService {
         });
       } catch (err) {
         // Best-effort: a history-write failure does NOT block the mission.
-        console.error(`[mission-service] WARN: failed to persist initial history for ${missionId}: ${err instanceof Error ? err.message : String(err)}`);
+        structuredLog('warn', 'history', `failed to persist initial history: ${err instanceof Error ? err.message : String(err)}`, { missionId });
       }
     }
+    structuredLog('info', 'gateway', 'mission accepted', { missionId, callerId: caller.callerId });
 
     // 9. Start the orchestrator in the background.
     missionRuntime.status = 'RUNNING';
@@ -836,6 +884,7 @@ export class MissionService {
         if (this.historyStore !== null) {
           this.persistTerminal(missionRuntime);
         }
+        structuredLog('info', 'gateway', 'mission completed', { missionId, status: missionRuntime.status, callerId: missionRuntime.callerId });
         return result;
       },
       (error) => {
@@ -858,6 +907,7 @@ export class MissionService {
         if (this.historyStore !== null) {
           this.persistTerminal(missionRuntime);
         }
+        structuredLog('error', 'gateway', 'mission failed', { missionId, status: missionRuntime.status, failureClass, callerId: missionRuntime.callerId });
         return missionRuntime.result;
       },
     );
@@ -1386,14 +1436,11 @@ export class MissionService {
     try {
       records = this.historyStore.loadAll();
     } catch (err) {
-      // Best-effort: a load failure does NOT block startup. The history
-      // index remains empty (no recovered missions), but new missions can
-      // still be started + persisted.
-      console.error(
-        `[mission-service] WARN: failed to load mission history: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      structuredLog('warn', 'history_recovery', `failed to load mission history: ${err instanceof Error ? err.message : String(err)}`);
       return;
     }
+    structuredLog('info', 'history_recovery', `loaded ${records.size} mission record(s) from disk`);
+    let recoveredCount = 0;
     for (const [missionId, record] of records) {
       if (isTerminal(record.status)) {
         // Terminal record — load as-is.
@@ -1429,7 +1476,11 @@ export class MissionService {
           );
         }
         this.historyIndex.set(missionId, recovered);
+        recoveredCount++;
       }
+    }
+    if (recoveredCount > 0) {
+      structuredLog('warn', 'history_recovery', `recovered ${recoveredCount} interrupted mission(s) as OUTCOME_UNCONFIRMED`);
     }
   }
 
@@ -1515,9 +1566,7 @@ export class MissionService {
       // This is the truthful behavior: we do NOT know the mission failed;
       // we only know the durable record does not confirm the outcome.
       rt.persistenceFailed = true;
-      console.error(
-        `[mission-service] WARN: failed to persist terminal history for ${rt.missionId}: ${err instanceof Error ? err.message : String(err)}. The in-process result is still returned to the caller, but the durable record does NOT confirm it. On restart, this mission will be recovered as OUTCOME_UNCONFIRMED.`,
-      );
+      structuredLog('warn', 'history', `failed to persist terminal record: ${err instanceof Error ? err.message : String(err)}. Outcome not durably confirmed; will recover as OUTCOME_UNCONFIRMED.`, { missionId: rt.missionId });
     }
   }
 

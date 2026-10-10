@@ -82,6 +82,8 @@ export default tseslint.config(
       // (require for Playwright + node:child_process spawn). Spawns the
       // gateway + Next.js + Chromium to verify the full UI delivery path.
       'scripts/g7-15e-browser-acceptance.cjs',
+      // G7-15F: production golden path script. Same CommonJS pattern.
+      'scripts/g7-15f-golden-path.cjs',
     ],
   },
   ...tseslint.configs.recommended,
