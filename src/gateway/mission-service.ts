@@ -665,8 +665,11 @@ export class MissionService {
     // Containment: resolvedDir must start with resolvedRoot + path separator.
     // This prevents sibling-prefix attacks (e.g., /root/mission-abc vs
     // /root/mission-abcdef) by requiring a path boundary.
-    if (!resolvedDir.startsWith(resolvedRoot + '/') && resolvedDir !== resolvedRoot) {
-      structuredLog('warn', 'workspace_cleanup', `rejected path outside root: ${resolvedDir} not under ${resolvedRoot}`, { missionId });
+    // G7-17 Step 0: reject resolvedDir === resolvedRoot unconditionally —
+    // the workspace must be STRICTLY UNDER the root, never equal to it.
+    // Deleting the root would destroy ALL mission workspaces.
+    if (resolvedDir === resolvedRoot || !resolvedDir.startsWith(resolvedRoot + '/')) {
+      structuredLog('warn', 'workspace_cleanup', `rejected path outside root: ${resolvedDir} not strictly under ${resolvedRoot}`, { missionId });
       return;
     }
 
@@ -683,8 +686,10 @@ export class MissionService {
       }
       // The resolved (real) path must also be under the root.
       // This catches symlinks that redirect outside OPENBOT_ROOT_DIR.
-      if (!resolved.startsWith(resolvedRoot + '/') && resolved !== resolvedRoot) {
-        structuredLog('warn', 'workspace_cleanup', `rejected symlink escape: ${resolved} not under ${resolvedRoot}`, { missionId });
+      // G7-17 Step 0: reject resolved === resolvedRoot — the real path
+      // must be strictly under the root, never equal to it.
+      if (resolved === resolvedRoot || !resolved.startsWith(resolvedRoot + '/')) {
+        structuredLog('warn', 'workspace_cleanup', `rejected symlink escape: ${resolved} not strictly under ${resolvedRoot}`, { missionId });
         return;
       }
 

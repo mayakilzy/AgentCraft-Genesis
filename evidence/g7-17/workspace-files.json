@@ -1,0 +1,10 @@
+[
+  "generalist-worker-2/profiles/.control/generalist-worker-2.json",
+  "mission-verifier-1/profiles/.control/mission-verifier-1.json",
+  "software-engineer-1/profiles/.control/software-engineer-1.json",
+  "software-engineer-1/workspace/README.md",
+  "software-engineer-1/workspace/app.js",
+  "software-engineer-1/workspace/data.json",
+  "software-engineer-1/workspace/package.json",
+  "software-engineer-1/workspace/test.js"
+]

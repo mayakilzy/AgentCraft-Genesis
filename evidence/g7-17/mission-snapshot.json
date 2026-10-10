@@ -1,0 +1,20 @@
+{
+  "missionId": "ca782568-1292-4da4-8e72-7d18ef2a856c",
+  "callerId": "g7-17-pilot-caller",
+  "status": "FAILED",
+  "terminal": true,
+  "acceptedAt": "2026-10-10T06:44:35.645Z",
+  "finishedAt": "2026-10-10T06:46:09.174Z",
+  "goalOutcome": "Build a small, functional Node.js application: \"Municipal Service Request Tracker — Prototype v0.1\". \n\nThe application must:\n1. Create a service request (with id, title, description, status, created_at).\n2. List all existing requests.\n3. Filter requests by status (pending, in-progress, resolved, rejected).\n4. Update request status.\n5. Persist records to a local JSON file (data.json).\n6. Validate user input (reject empty titles, invalid status values).\n7. Include automated tests (using Node.js built-in test runner or vitest).\n8. Include a README.md with installation and usage instructions.\n\nUse synthetic data only. No real citizen data. No external API calls. No database.\n\nThe application should be in a single file: app.js with a package.json and README.md.\nCreate all files using the write_file action. The application must be independently executable with: node app.js\n\nProvide all files needed: app.js, package.json, README.md, and a test file.",
+  "result": {
+    "status": "failure",
+    "summary": "verification failed and no artifacts were produced: 10 of 10 acceptance check(s) failed: app.js exists (\"app.js\" not found in the clean room: OpenBot computer /files/read failed (404): There is no file at app.js.); package.json exists (\"package.json\" not found in the clean room: OpenBot computer /files/read failed (404): There is no file at package.json.); README.md exists (\"README.md\" not found in the clean room: OpenBot computer /files/read failed (404): There is no file at README.md.); app.js has createRequest (expected content \"createRequest\" was NOT found in any artifact across all workers); app.js has listRequests (expected content \"listRequests\" was NOT found in any artifact across all workers); app.js has filterByStatus (expected content \"filterByStatus\" was NOT found in any artifact across all workers); app.js has updateStatus (expected content \"updateStatus\" was NOT found in any artifact across all workers); app.js has data persistence (expected content \"data.json\" was NOT found in any artifact across all workers); app.js has input validation (expected content \"valid\" was NOT found in any artifact across all workers); README has npm install (expected content \"npm\" was NOT found in any artifact across all workers)",
+    "evidence": [],
+    "cost": {
+      "usd": 0,
+      "tokens": 37067,
+      "wallMs": 93491,
+      "humanInterventions": 0
+    }
+  }
+}

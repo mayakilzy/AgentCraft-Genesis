@@ -1,0 +1,6 @@
+Municipal Service Request Tracker
+Usage:
+  node app.js create <title> <description> <status>
+  node app.js list
+  node app.js filter <status>
+  node app.js update <id> <newStatus>

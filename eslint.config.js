@@ -84,6 +84,8 @@ export default tseslint.config(
       'scripts/g7-15e-browser-acceptance.cjs',
       // G7-15F: production golden path script. Same CommonJS pattern.
       'scripts/g7-15f-golden-path.cjs',
+      // G7-17: real engineering pilot script. Same CommonJS pattern.
+      'scripts/g7-17-pilot.cjs',
     ],
   },
   ...tseslint.configs.recommended,
