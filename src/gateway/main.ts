@@ -368,6 +368,7 @@ async function main(): Promise<void> {
       reasoningFactory: () => reasoning,
       mcpServers,
       missionHistoryStore,
+      maxWorkerSteps: Number(process.env.GENESIS_MAX_WORKER_STEPS) || 5,
     });
   } else {
     console.error('[genesis-gateway] EXECUTION MODE: development');
@@ -377,6 +378,7 @@ async function main(): Promise<void> {
       defaultMissionTimeoutMs: config.defaultMissionTimeoutMs,
       mcpServers,
       missionHistoryStore,
+      maxWorkerSteps: Number(process.env.GENESIS_MAX_WORKER_STEPS) || 5,
     });
   }
 

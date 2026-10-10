@@ -1,0 +1,218 @@
+▶ createRequest
+  ✔ should create a new request with valid data (2.438635ms)
+  ✖ should throw error for empty title (0.798676ms)
+  ✖ should throw error for empty description (0.438647ms)
+  ✖ should throw error for invalid status (0.512792ms)
+✖ createRequest (5.23483ms)
+▶ listRequests
+  ✖ should return an empty array when no requests exist (2.003262ms)
+  ✖ should return all requests (0.72264ms)
+✖ listRequests (3.011338ms)
+▶ filterByStatus
+  ✖ should filter requests by status (1.119512ms)
+  ✖ should throw error for invalid status (0.472799ms)
+✖ filterByStatus (1.874982ms)
+▶ updateStatus
+  ✔ should update a request status (0.738456ms)
+  ✖ should throw error for non-existent ID (0.486531ms)
+  ✖ should throw error for invalid status (0.48199ms)
+✖ updateStatus (1.99277ms)
+▶ validateRequest
+  ✔ should pass validation for valid data (0.423368ms)
+  ✖ should throw error for empty title (0.285998ms)
+  ✖ should throw error for empty description (0.263249ms)
+  ✖ should throw error for invalid status (0.215016ms)
+✖ validateRequest (1.407373ms)
+ℹ tests 15
+ℹ suites 5
+ℹ pass 3
+ℹ fail 12
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 74.801511
+
+✖ failing tests:
+
+test at test.js:28:5
+✖ should throw error for empty title (0.798676ms)
+  TypeError [ERR_AMBIGUOUS_ARGUMENT]: The "error/message" argument is ambiguous. The error message "Title cannot be empty" is identical to the message.
+      at expectsError (node:assert:662:15)
+      at ok.throws (node:assert:759:3)
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:29:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_AMBIGUOUS_ARGUMENT'
+  }
+
+test at test.js:34:5
+✖ should throw error for empty description (0.438647ms)
+  TypeError [ERR_AMBIGUOUS_ARGUMENT]: The "error/message" argument is ambiguous. The error message "Description cannot be empty" is identical to the message.
+      at expectsError (node:assert:662:15)
+      at ok.throws (node:assert:759:3)
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:35:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_AMBIGUOUS_ARGUMENT'
+  }
+
+test at test.js:40:5
+✖ should throw error for invalid status (0.512792ms)
+  TypeError [ERR_AMBIGUOUS_ARGUMENT]: The "error/message" argument is ambiguous. The error message "Invalid status. Must be one of: pending, in-progress, resolved, rejected" is identical to the message.
+      at expectsError (node:assert:662:15)
+      at ok.throws (node:assert:759:3)
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:41:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_AMBIGUOUS_ARGUMENT'
+  }
+
+test at test.js:48:5
+✖ should return an empty array when no requests exist (2.003262ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   {
+  +     createdAt: '2026-10-10T07:14:10.835Z',
+  +     description: 'Main St light out',
+  +     id: 1791616450835,
+  +     status: 'in-progress',
+  +     title: 'Street Light Out'
+  +   },
+  +   {
+  +     createdAt: '2026-10-10T07:14:11.010Z',
+  +     description: 'Pothole on Main St',
+  +     id: 1791616451010,
+  +     status: 'pending',
+  +     title: 'Fix pothole'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:50:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1905:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { id: 1791616450835, title: 'Street Light Out', description: 'Main St light out', status: 'in-progress', createdAt: '2026-10-10T07:14:10.835Z' }, { id: 1791616451010, title: 'Fix pothole', description: 'Pothole on Main St', status: 'pending', createdAt: '2026-10-10T07:14:11.010Z' }, { id: 1791616451016, title: 'Fix pothole', description: 'Pothole on Main St', status: 'pending', createdAt: '2026-10-10T07:14:11.016Z' }, { id: 1791616451016, title: 'Fix traffic light', description: 'Traffic light out at 5th and Main', status: 'in-progress', createdAt: '2026-10-10T07:14:11.016Z' }, { id: 1791616451017, title: 'Fix pothole', description: 'Pothole on Main St', status: 'pending', createdAt: '2026-10-10T07:14:11.017Z' }, { id: 1791616451017, title: 'Fix traffic light', description: 'Traffic light out at 5th and Main', status: 'in-progress', createdAt: '2026-10-10T07:14:11.017Z' }, { id: 1791616451017, title: 'Fix sidewalk', description: 'Broken sidewalk on Oak St', status: 'pending', createdAt: '2026-10-10T07:14:11.017Z' }, { id: 1791616451020, title: 'Fix pothole', description: 'Pothole on Main St', status: 'resolved', createdAt: '2026-10-10T07:14:11.020Z' }, { id: 1791616451021, title: 'Fix pothole', description: 'Pothole on Main St', status: 'pending', createdAt: '2026-10-10T07:14:11.021Z' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test.js:53:5
+✖ should return all requests (0.72264ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  4 !== 2
+  
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:58:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 4,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test.js:63:5
+✖ should filter requests by status (1.119512ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  4 !== 2
+  
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:69:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1905:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 4,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test.js:75:5
+✖ should throw error for invalid status (0.472799ms)
+  TypeError [ERR_AMBIGUOUS_ARGUMENT]: The "error/message" argument is ambiguous. The error message "Invalid status. Must be one of: pending, in-progress, resolved, rejected" is identical to the message.
+      at expectsError (node:assert:662:15)
+      at ok.throws (node:assert:759:3)
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:76:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_AMBIGUOUS_ARGUMENT'
+  }
+
+test at test.js:90:5
+✖ should throw error for non-existent ID (0.486531ms)
+  TypeError [ERR_AMBIGUOUS_ARGUMENT]: The "error/message" argument is ambiguous. The error message "Request with ID 999 not found" is identical to the message.
+      at expectsError (node:assert:662:15)
+      at ok.throws (node:assert:759:3)
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:91:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_AMBIGUOUS_ARGUMENT'
+  }
+
+test at test.js:96:5
+✖ should throw error for invalid status (0.48199ms)
+  TypeError [ERR_AMBIGUOUS_ARGUMENT]: The "error/message" argument is ambiguous. The error message "Invalid status. Must be one of: pending, in-progress, resolved, rejected" is identical to the message.
+      at expectsError (node:assert:662:15)
+      at ok.throws (node:assert:759:3)
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:98:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_AMBIGUOUS_ARGUMENT'
+  }
+
+test at test.js:111:5
+✖ should throw error for empty title (0.285998ms)
+  TypeError [ERR_AMBIGUOUS_ARGUMENT]: The "error/message" argument is ambiguous. The error message "Title cannot be empty" is identical to the message.
+      at expectsError (node:assert:662:15)
+      at ok.throws (node:assert:759:3)
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:112:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_AMBIGUOUS_ARGUMENT'
+  }
+
+test at test.js:117:5
+✖ should throw error for empty description (0.263249ms)
+  TypeError [ERR_AMBIGUOUS_ARGUMENT]: The "error/message" argument is ambiguous. The error message "Description cannot be empty" is identical to the message.
+      at expectsError (node:assert:662:15)
+      at ok.throws (node:assert:759:3)
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:118:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_AMBIGUOUS_ARGUMENT'
+  }
+
+test at test.js:123:5
+✖ should throw error for invalid status (0.215016ms)
+  TypeError [ERR_AMBIGUOUS_ARGUMENT]: The "error/message" argument is ambiguous. The error message "Invalid status. Must be one of: pending, in-progress, resolved, rejected" is identical to the message.
+      at expectsError (node:assert:662:15)
+      at ok.throws (node:assert:759:3)
+      at TestContext.<anonymous> (/home/z/my-project/AgentCraft-Genesis/evidence/g7-17r/clean-room-test/test.js:124:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    code: 'ERR_AMBIGUOUS_ARGUMENT'
+  }

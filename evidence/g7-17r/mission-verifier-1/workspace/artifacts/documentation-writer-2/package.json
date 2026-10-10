@@ -1,0 +1,17 @@
+{
+  "name": "municipal-service-request-tracker",
+  "version": "0.1.0",
+  "description": "A prototype for tracking municipal service requests",
+  "main": "app.js",
+  "scripts": {
+    "test": "node --test test.js"
+  },
+  "keywords": [
+    "municipal",
+    "service",
+    "request",
+    "tracker"
+  ],
+  "author": "",
+  "license": "ISC"
+}

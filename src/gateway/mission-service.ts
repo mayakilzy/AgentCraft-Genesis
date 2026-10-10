@@ -267,6 +267,13 @@ export interface MissionServiceOptions {
    */
   readonly sweepIntervalMs?: number;
   /**
+   * G7-17R: maximum number of steps a worker can take before its budget is
+   * exhausted. Default: 5 (sufficient for simple missions). Engineering
+   * missions that produce multiple files may need 10-15. Configurable to
+   * avoid hardcoding a single budget for all mission types.
+   */
+  readonly maxWorkerSteps?: number;
+  /**
    * G7-15B: durable mission history store. When provided, terminal mission
    * records are persisted to disk (one atomic JSON file per mission) and
    * recovered on startup. Interrupted missions (was RUNNING/ACCEPTED when
@@ -352,6 +359,8 @@ export class MissionService {
   private readonly defaultMissionTimeoutMs: number;
   private readonly maxActiveMissionsGlobal: number;
   private readonly maxOutcomeLength: number;
+  /** G7-17R: configurable worker step budget. */
+  private readonly maxWorkerStepsConfig: number;
   /** G6-08 (Phase 3): retention window for terminal missions (ms). */
   private readonly terminalMissionRetentionMs: number;
   /** G6-08 (Phase 3): sweeper interval handle (kept so close() can clear it). */
@@ -389,6 +398,7 @@ export class MissionService {
     this.defaultMissionTimeoutMs = options.defaultMissionTimeoutMs ?? DEFAULT_MISSION_TIMEOUT_MS;
     this.maxActiveMissionsGlobal = options.maxActiveMissionsGlobal ?? DEFAULT_MAX_ACTIVE_GLOBAL;
     this.maxOutcomeLength = options.maxOutcomeLength ?? DEFAULT_OUTCOME_MAX_LENGTH;
+    this.maxWorkerStepsConfig = options.maxWorkerSteps ?? 5;
     this.terminalMissionRetentionMs =
       options.terminalMissionRetentionMs ?? DEFAULT_TERMINAL_RETENTION_MS;
     this.historyStore = options.missionHistoryStore ?? null;
@@ -846,7 +856,7 @@ export class MissionService {
         }
         return { usd: 0, tokens: 0 };
       },
-      maxWorkerSteps: 5,
+      maxWorkerSteps: this.maxWorkerStepsConfig,
       missionTimeoutMs: timeoutMs,
       signal: controller.signal,
       checks: (ctx) => this.buildChecks(ctx, missionRuntime.acceptanceCriteria),

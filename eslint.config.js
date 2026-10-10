@@ -86,6 +86,8 @@ export default tseslint.config(
       'scripts/g7-15f-golden-path.cjs',
       // G7-17: real engineering pilot script. Same CommonJS pattern.
       'scripts/g7-17-pilot.cjs',
+      // G7-17R: autonomous repair script. Same CommonJS pattern.
+      'scripts/g7-17r-repair.cjs',
     ],
   },
   ...tseslint.configs.recommended,
