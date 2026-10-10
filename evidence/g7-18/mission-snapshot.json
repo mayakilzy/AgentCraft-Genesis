@@ -1,0 +1,66 @@
+{
+  "missionId": "f4ee2752-4339-4f6e-9874-4e9f1cd15273",
+  "callerId": "g7-18-autonomous-caller",
+  "status": "PARTIAL",
+  "terminal": true,
+  "acceptedAt": "2026-10-10T19:52:58.919Z",
+  "finishedAt": "2026-10-10T20:01:59.545Z",
+  "goalOutcome": "Build \"Community Project Hub v0.1\": local full-stack Node.js web app: REST API, SQLite persistence, vanilla HTML/CSS/JS frontend, tests, README.\n\nStack: Node.js built-ins only (node:http, node:sqlite, node:test, node:assert). No npm deps. No build step. Server serves /api/* JSON + static frontend from public/. Write ALL files, then finish.\n\n9 files:\n1. server.js \u2014 node:http + node:sqlite. Tables projects(id,name,description,status,created_at) + tasks(id,project_id FK\u2192projects ON DELETE CASCADE,title,description,status,created_at). REST: GET/POST /api/projects, GET /api/projects/:id, GET/POST /api/projects/:id/tasks, PATCH /api/tasks/:id, GET /api/tasks?status=todo|in-progress|done. Validation: reject empty name/title, invalid status. Codes 200/201/400/404/500. JSON {ok,data,error}. DB=process.env.DB_FILE||\"hub.db\". Port=process.env.PORT||3000.\n2. public/index.html \u2014 dashboard: project list, create-project form, status filter, project detail + task list + create-task form, task status dropdown.\n3. public/styles.css \u2014 responsive mobile-first, max-width 960px.\n4. public/app.js \u2014 fetch projects, create, view tasks, create task, PATCH status, filter, feedback.\n5. test/api.test.js \u2014 node:test, real HTTP requests covering every endpoint + validation + 404s.\n6. test/db.test.js \u2014 node:test, verify tables, FK, cascade delete, persistence.\n7. test/integration.test.js \u2014 node:test, full lifecycle: start, create project+task, update status, kill, restart, verify persisted.\n8. package.json \u2014 name \"community-project-hub\", type commonjs, scripts.start=\"node server.js\", scripts.test=\"node --test test/api.test.js test/db.test.js test/integration.test.js\".\n9. README.md \u2014 install, startup, test, API table, browser usage.\n\nFull per-file spec in context. After ALL 9 files, call: {\"action\":\"finish\",\"summary\":\"Done\",\"artifacts\":[\"server.js\",\"public/index.html\",\"public/styles.css\",\"public/app.js\",\"test/api.test.js\",\"test/db.test.js\",\"test/integration.test.js\",\"package.json\",\"README.md\"]}",
+  "result": {
+    "status": "partial",
+    "summary": "mission aborted (timeout or cancellation) before completion",
+    "evidence": [
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at server.js",
+        "location": "documentation-writer-2:server.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at public/index.html",
+        "location": "documentation-writer-2:public/index.html"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at public/styles.css",
+        "location": "documentation-writer-2:public/styles.css"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at public/app.js",
+        "location": "documentation-writer-2:public/app.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/api.test.js",
+        "location": "documentation-writer-2:test/api.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/db.test.js",
+        "location": "documentation-writer-2:test/db.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/integration.test.js",
+        "location": "documentation-writer-2:test/integration.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at package.json",
+        "location": "documentation-writer-2:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at README.md",
+        "location": "documentation-writer-2:README.md"
+      }
+    ],
+    "cost": {
+      "usd": 0,
+      "tokens": 798257,
+      "wallMs": 540578,
+      "humanInterventions": 0
+    }
+  }
+}

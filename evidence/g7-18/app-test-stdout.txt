@@ -1,0 +1,257 @@
+
+> community-project-hub@0.1.0 test
+> node --test test/api.test.js test/db.test.js test/integration.test.js
+
+▶ API Tests
+  ▶ GET /api/projects
+    ✖ should return empty array when no projects exist
+  ✖ GET /api/projects
+  ▶ POST /api/projects
+    ✖ should create a new project with valid data
+    ✖ should reject project with empty name
+    ✖ should reject project with missing name
+    ✖ should reject project with invalid JSON
+  ✖ POST /api/projects
+  ▶ GET /api/projects/:id
+    ✖ should return project by ID
+    ✖ should return 404 for non-existent project
+  ✖ GET /api/projects/:id
+  ▶ POST /api/projects/:id/tasks
+    ✖ should create a new task for existing project
+    ✖ should return 404 for non-existent project
+    ✖ should reject task with empty title
+  ✖ POST /api/projects/:id/tasks
+  ▶ PATCH /api/tasks/:id
+    ✖ should update task status with valid value
+    ✖ should return 404 for non-existent task
+    ✖ should reject invalid task status
+    ✖ should reject update without status
+  ✖ PATCH /api/tasks/:id
+  ▶ GET /api/tasks?status=
+    ✖ should filter tasks by status
+  ✖ GET /api/tasks?status=
+✖ API Tests (21.225198ms)
+▶ Database Tests
+  ▶ Table Structure
+    ✖ should create projects table with correct schema (0.756962ms)
+    ✖ should create tasks table with correct schema (0.353975ms)
+  ✖ Table Structure (2.904482ms)
+  ▶ Foreign Key Constraints
+    ✖ should allow inserting task with valid project_id (0.231425ms)
+    ✖ should reject inserting task with non-existent project_id (0.185592ms)
+  ✖ Foreign Key Constraints (0.651322ms)
+  ▶ Cascade Delete
+    ✖ should delete tasks when project is deleted (0.285275ms)
+  ✖ Cascade Delete (0.587444ms)
+  ▶ Data Persistence
+    ✖ should persist data after database is closed and reopened (0.346247ms)
+  ✖ Data Persistence (0.518579ms)
+✖ Database Tests (5.277727ms)
+▶ Integration Tests
+  ▶ Full Lifecycle Test
+    ✖ should persist data across server restarts
+  ✖ Full Lifecycle Test
+✖ Integration Tests (22.507187ms)
+ℹ tests 22
+ℹ suites 14
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 16
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 245.14514
+
+✖ failing tests:
+
+test at test/api.test.js:124:5
+✖ should return empty array when no projects exist
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:123:8
+✖ GET /api/projects
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:133:5
+✖ should create a new project with valid data
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:149:5
+✖ should reject project with empty name
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:161:5
+✖ should reject project with missing name
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:172:5
+✖ should reject project with invalid JSON
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:132:8
+✖ POST /api/projects
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:209:5
+✖ should return project by ID
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:227:5
+✖ should return 404 for non-existent project
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:208:8
+✖ GET /api/projects/:id
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:236:5
+✖ should create a new task for existing project
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:263:5
+✖ should return 404 for non-existent project
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:275:5
+✖ should reject task with empty title
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:235:8
+✖ POST /api/projects/:id/tasks
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:299:5
+✖ should update task status with valid value
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:327:5
+✖ should return 404 for non-existent task
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:336:5
+✖ should reject invalid task status
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:364:5
+✖ should reject update without status
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:298:8
+✖ PATCH /api/tasks/:id
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:392:5
+✖ should filter tasks by status
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:391:8
+✖ GET /api/tasks?status=
+  'test did not finish before its parent and was cancelled'
+
+test at test/api.test.js:122:6
+✖ API Tests (21.225198ms)
+  Error: Server closed with code 1
+      at ChildProcess.<anonymous> (/home/z/my-project/work/evidence/g7-18/clean-room-app/test/api.test.js:97:16)
+      at ChildProcess.emit (node:events:514:28)
+      at maybeClose (node:internal/child_process:1141:16)
+      at ChildProcess._handle.onexit (node:internal/child_process:306:5)
+
+test at test/db.test.js:28:5
+✖ should create projects table with correct schema (0.756962ms)
+  TypeError: Cannot read properties of undefined (reading 'Database')
+      at TestContext.<anonymous> (/home/z/my-project/work/evidence/g7-18/clean-room-app/test/db.test.js:31:25)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at node:internal/test_runner/test:1903:71
+      at node:internal/per_context/primordials:504:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:478:3)
+      at node:internal/per_context/primordials:504:9
+      at Array.map (<anonymous>)
+
+test at test/db.test.js:50:5
+✖ should create tasks table with correct schema (0.353975ms)
+  TypeError: Cannot read properties of undefined (reading 'Database')
+      at TestContext.<anonymous> (/home/z/my-project/work/evidence/g7-18/clean-room-app/test/db.test.js:53:25)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1905:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1905:7)
+
+test at test/db.test.js:77:5
+✖ should allow inserting task with valid project_id (0.231425ms)
+  TypeError: Cannot read properties of undefined (reading 'Database')
+      at TestContext.<anonymous> (/home/z/my-project/work/evidence/g7-18/clean-room-app/test/db.test.js:80:25)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at node:internal/test_runner/test:1903:71
+      at node:internal/per_context/primordials:504:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:478:3)
+      at node:internal/per_context/primordials:504:9
+      at Array.map (<anonymous>)
+
+test at test/db.test.js:98:5
+✖ should reject inserting task with non-existent project_id (0.185592ms)
+  TypeError: Cannot read properties of undefined (reading 'Database')
+      at TestContext.<anonymous> (/home/z/my-project/work/evidence/g7-18/clean-room-app/test/db.test.js:101:25)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1905:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/db.test.js:122:5
+✖ should delete tasks when project is deleted (0.285275ms)
+  TypeError: Cannot read properties of undefined (reading 'Database')
+      at TestContext.<anonymous> (/home/z/my-project/work/evidence/g7-18/clean-room-app/test/db.test.js:125:25)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at node:internal/test_runner/test:1903:71
+      at node:internal/per_context/primordials:504:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:478:3)
+      at node:internal/per_context/primordials:504:9
+      at Array.map (<anonymous>)
+
+test at test/db.test.js:154:5
+✖ should persist data after database is closed and reopened (0.346247ms)
+  TypeError: Cannot read properties of undefined (reading 'Database')
+      at TestContext.<anonymous> (/home/z/my-project/work/evidence/g7-18/clean-room-app/test/db.test.js:157:25)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at node:internal/test_runner/test:1903:71
+      at node:internal/per_context/primordials:504:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:478:3)
+      at node:internal/per_context/primordials:504:9
+      at Array.map (<anonymous>)
+
+test at test/integration.test.js:124:5
+✖ should persist data across server restarts
+  'test did not finish before its parent and was cancelled'
+
+test at test/integration.test.js:123:8
+✖ Full Lifecycle Test
+  'test did not finish before its parent and was cancelled'
+
+test at test/integration.test.js:122:6
+✖ Integration Tests (22.507187ms)
+  Error: Server closed with code 1
+      at ChildProcess.<anonymous> (/home/z/my-project/work/evidence/g7-18/clean-room-app/test/integration.test.js:97:16)
+      at ChildProcess.emit (node:events:514:28)
+      at maybeClose (node:internal/child_process:1141:16)
+      at Socket.<anonymous> (node:internal/child_process:498:11)
+      at Socket.emit (node:events:514:28)
+      at Pipe.<anonymous> (node:net:362:12)

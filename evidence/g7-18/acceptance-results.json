@@ -1,0 +1,132 @@
+{
+  "A-01": {
+    "status": "PASS",
+    "detail": "all 9 files present: True",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "HASH-server.js": {
+    "status": "INFO",
+    "detail": "a32081adee07a848efaaa487a01afa232fdea0516a5e054c4c00c85c91c84c66",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "HASH-public/index.html": {
+    "status": "INFO",
+    "detail": "71358747764ed20c2e3318596e86c7e3c294d3dd4cf3e6329042ad21f91021ab",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "HASH-public/styles.css": {
+    "status": "INFO",
+    "detail": "a60fa2b388e093d585c3e288258df4e56366c7165a8e09196e54b974f0259df2",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "HASH-public/app.js": {
+    "status": "INFO",
+    "detail": "e2275551b472143b5a20dc72b80a4457cd94d56b35959a95be28c912c317a5b9",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "HASH-test/api.test.js": {
+    "status": "INFO",
+    "detail": "dd3c66aa43aba4db1566ebda6fde97bc2c7a0b56ed94d53eec86f750f2b0b8b7",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "HASH-test/db.test.js": {
+    "status": "INFO",
+    "detail": "85b7fcbbb721747f98accbd375ded67e5eb9f0a211483ce261cf815dd6c4d4e1",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "HASH-test/integration.test.js": {
+    "status": "INFO",
+    "detail": "c6967d6c4a1f7be8865070efede6613588a5562f43be24ba2bc23dffa78c7f25",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "HASH-package.json": {
+    "status": "INFO",
+    "detail": "587ba47b1082b8763b1722bf2b25b6767a8c9cdb8577f3cb32892ce19b9f3e31",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "HASH-README.md": {
+    "status": "INFO",
+    "detail": "718db0f4b096089cba7813ffeb62f2ffb36e2c345b9dc22c3d94300ea537a279",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-03": {
+    "status": "PASS",
+    "detail": "npm install exit=0",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-04": {
+    "status": "FAIL",
+    "detail": "backend started on port 3180",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-05": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-06": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-07": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-08": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-09": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-10": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-11": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-12": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-12b": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-13": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-13b": {
+    "status": "FAIL",
+    "detail": "backend never came up \u2014 skipping",
+    "timestamp": "2026-10-10T20:04:08"
+  },
+  "A-14": {
+    "status": "FAIL",
+    "detail": "npm test: exit=1, pass=0, fail=6",
+    "timestamp": "2026-10-10T20:04:09"
+  },
+  "A-15": {
+    "status": "FAIL",
+    "detail": "backend not ready for browser test",
+    "timestamp": "2026-10-10T20:04:09"
+  },
+  "A-16": {
+    "status": "PASS",
+    "detail": "no real secrets in artifacts (checked 4 patterns)",
+    "timestamp": "2026-10-10T20:04:09"
+  }
+}

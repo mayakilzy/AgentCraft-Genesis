@@ -90,10 +90,17 @@ export default tseslint.config(
       'scripts/g7-17r-repair.cjs',
       // G7-17S: first full success script. Same CommonJS pattern.
       'scripts/g7-17s-success.cjs',
+      // G7-18: autonomous full-stack engineering challenge. Same CommonJS
+      // pattern (require for Playwright + node:child_process + node:http).
+      // Submits the Community Project Hub spec and runs the independent
+      // clean-room acceptance suite.
+      'scripts/g7-18-autonomous.cjs',
+      'scripts/g7-18-goal.cjs',
       // Generated application artifacts in evidence directories — not engine source.
       'evidence/g7-17/**',
       'evidence/g7-17r/**',
       'evidence/g7-17s/**',
+      'evidence/g7-18/**',
     ],
   },
   ...tseslint.configs.recommended,

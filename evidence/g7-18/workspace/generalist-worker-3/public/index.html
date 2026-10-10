@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Project Hub</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Community Project Hub</h1>
+    </header>
+    
+    <main>
+      <section class="create-project">
+        <h2>Create New Project</h2>
+        <form id="create-project-form">
+          <div class="form-group">
+            <label for="project-name">Project Name</label>
+            <input type="text" id="project-name" required>
+          </div>
+          <div class="form-group">
+            <label for="project-description">Description</label>
+            <textarea id="project-description" rows="3"></textarea>
+          </div>
+          <button type="submit">Create Project</button>
+        </form>
+      </section>
+      
+      <section class="project-filters">
+        <h2>Filter Projects</h2>
+        <div class="filter-buttons">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="active">Active</button>
+          <button class="filter-btn" data-filter="archived">Archived</button>
+        </div>
+      </section>
+      
+      <section class="project-list">
+        <h2>Projects</h2>
+        <div id="projects-container">
+          <!-- Projects will be dynamically added here -->
+        </div>
+      </section>
+      
+      <section class="project-detail" id="project-detail" style="display: none;">
+        <div class="project-header">
+          <button id="back-to-projects">← Back to Projects</button>
+          <h2 id="detail-project-name"></h2>
+          <p id="detail-project-description"></p>
+        </div>
+        
+        <div class="create-task">
+          <h3>Create New Task</h3>
+          <form id="create-task-form">
+            <div class="form-group">
+              <label for="task-title">Task Title</label>
+              <input type="text" id="task-title" required>
+            </div>
+            <div class="form-group">
+              <label for="task-description">Description</label>
+              <textarea id="task-description" rows="2"></textarea>
+            </div>
+            <input type="hidden" id="task-project-id">
+            <button type="submit">Create Task</button>
+          </form>
+        </div>
+        
+        <div class="task-list">
+          <h3>Tasks</h3>
+          <div id="tasks-container">
+            <!-- Tasks will be dynamically added here -->
+          </div>
+        </div>
+      </section>
+    </main>
+    
+    <div id="message-container"></div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>

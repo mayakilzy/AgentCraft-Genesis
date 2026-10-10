@@ -1,0 +1,14 @@
+{
+  "name": "community-project-hub",
+  "version": "0.1.0",
+  "description": "A local full-stack Node.js web app for managing community projects and tasks.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/api.test.js test/db.test.js test/integration.test.js"
+  },
+  "keywords": ["project", "task", "management", "nodejs", "sqlite"],
+  "author": "",
+  "license": "ISC"
+}

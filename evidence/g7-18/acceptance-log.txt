@@ -1,0 +1,42 @@
+=== Phase 3: Independent Acceptance Suite ===
+Clean room: /home/z/my-project/work/evidence/g7-18/clean-room-app
+[2026-10-10T20:04:08] A-01: PASS — all 9 files present: True
+[2026-10-10T20:04:08] HASH-server.js: INFO — a32081adee07a848efaaa487a01afa232fdea0516a5e054c4c00c85c91c84c66
+[2026-10-10T20:04:08] HASH-public/index.html: INFO — 71358747764ed20c2e3318596e86c7e3c294d3dd4cf3e6329042ad21f91021ab
+[2026-10-10T20:04:08] HASH-public/styles.css: INFO — a60fa2b388e093d585c3e288258df4e56366c7165a8e09196e54b974f0259df2
+[2026-10-10T20:04:08] HASH-public/app.js: INFO — e2275551b472143b5a20dc72b80a4457cd94d56b35959a95be28c912c317a5b9
+[2026-10-10T20:04:08] HASH-test/api.test.js: INFO — dd3c66aa43aba4db1566ebda6fde97bc2c7a0b56ed94d53eec86f750f2b0b8b7
+[2026-10-10T20:04:08] HASH-test/db.test.js: INFO — 85b7fcbbb721747f98accbd375ded67e5eb9f0a211483ce261cf815dd6c4d4e1
+[2026-10-10T20:04:08] HASH-test/integration.test.js: INFO — c6967d6c4a1f7be8865070efede6613588a5562f43be24ba2bc23dffa78c7f25
+[2026-10-10T20:04:08] HASH-package.json: INFO — 587ba47b1082b8763b1722bf2b25b6767a8c9cdb8577f3cb32892ce19b9f3e31
+[2026-10-10T20:04:08] HASH-README.md: INFO — 718db0f4b096089cba7813ffeb62f2ffb36e2c345b9dc22c3d94300ea537a279
+[2026-10-10T20:04:08] A-03: PASS — npm install exit=0
+[2026-10-10T20:04:08] A-04: FAIL — backend started on port 3180
+--- backend stdout (first 500 chars) ---
+node:internal/modules/cjs/loader:1138
+      throw new ERR_UNKNOWN_BUILTIN_MODULE(specifier);
+      ^
+
+Error [ERR_UNKNOWN_BUILTIN_MODULE]: No such built-in module: node:sqlite3
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1138:13)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at Module._load (node:internal/modules/cjs/loader:1341:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/module
+---
+[2026-10-10T20:04:08] A-05: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-06: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-07: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-08: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-09: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-10: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-11: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-12: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-12b: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-13: FAIL — backend never came up — skipping
+[2026-10-10T20:04:08] A-13b: FAIL — backend never came up — skipping
+[2026-10-10T20:04:09] A-14: FAIL — npm test: exit=1, pass=0, fail=6
+[2026-10-10T20:04:09] A-15: FAIL — backend not ready for browser test
+[2026-10-10T20:04:09] A-16: PASS — no real secrets in artifacts (checked 4 patterns)
+
+=== Acceptance summary: 3 PASS, 14 FAIL, 9 INFO ===
