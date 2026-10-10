@@ -210,7 +210,7 @@ async function buildRealRuntimeFactory(): Promise<((ctx: { missionId: string }) 
     // Capture locally so the closure sees a non-null reference.
     const OpenBotRuntimeAdapterCtor = openBotAdapterCtor!;
     // Return a per-mission factory.
-    return (ctx: { missionId: string }): { runtime: WorkerRuntime } => {
+    return (ctx: { missionId: string }): { runtime: WorkerRuntime; workspaceDir?: string } => {
       // Per-mission rootDir subdirectory — isolates worker workspaces.
       // The adapter creates this lazily inside startComputerProcess.
       const missionRootDir = `${rootDir}/${ctx.missionId}`;
@@ -218,7 +218,11 @@ async function buildRealRuntimeFactory(): Promise<((ctx: { missionId: string }) 
         checkoutDir,
         rootDir: missionRootDir,
       };
-      return { runtime: new OpenBotRuntimeAdapterCtor(opts) };
+      return {
+        runtime: new OpenBotRuntimeAdapterCtor(opts),
+        // G7-16A-H1: pass the workspace directory for cleanup after retention.
+        workspaceDir: missionRootDir,
+      };
     };
   }
   console.error(`FATAL: Unknown GENESIS_RUNTIME_PROVIDER: ${provider}`);

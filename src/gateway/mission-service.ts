@@ -119,7 +119,7 @@ import {
   type MissionHistoryRecord,
 } from '../mission/mission-history-store.js';
 import { structuredLog } from './logger.js';
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync, rmSync, realpathSync } from 'node:fs';
 
 import type {
   CallerIdentity,
@@ -191,6 +191,15 @@ interface MissionRuntime {
    * this flag is set) — the in-process result is NOT changed.
    */
   persistenceFailed?: boolean;
+  /**
+   * G7-16A-H1: the mission's workspace directory on disk (if any).
+   * Populated by the runtimeFactory when the runtime adapter creates
+   * a workspace directory (OpenBot adapter sets it to
+   * `${OPENBOT_ROOT_DIR}/{missionId}`). Used by the sweeper to clean
+   * up the workspace after the retention window. MemoryRuntime leaves
+   * this undefined (no disk workspace).
+   */
+  workspaceDir?: string;
 }
 
 /**
@@ -215,6 +224,8 @@ export interface MissionServiceOptions {
   readonly runtimeFactory?: (ctx: { missionId: string }) => {
     runtime: WorkerRuntime;
     computers?: Map<string, MemoryComputer>;
+    /** G7-16A-H1: disk workspace directory (for cleanup after retention). */
+    workspaceDir?: string;
   };
   /**
    * Factory for the reasoning provider. Default: a scripted reasoning
@@ -634,24 +645,29 @@ export class MissionService {
    * does NOT contain path traversal before deleting.
    */
   private cleanupWorkspace(missionId: string, rt: MissionRuntime): void {
-    // Only clean up if the runtime has a workspaceDir property (OpenBot adapter).
-    // MemoryRuntime does not create workspace directories.
-    const provider = rt.runtime as (WorkerRuntime & {
-      options?: { rootDir?: string };
-    }) | undefined;
-    if (provider === undefined) return;
-    // The OpenBot adapter's rootDir is `${OPENBOT_ROOT_DIR}/{missionId}`.
-    // We read it from the adapter's options if available; otherwise skip
-    // (MemoryRuntime has no workspace on disk).
-    const rootDir = provider?.options?.rootDir;
-    if (rootDir === undefined || rootDir.length === 0) return;
-    // Path traversal protection: the rootDir must not contain '..'.
-    if (rootDir.includes('..')) return;
+    // G7-16A-H1: use the workspaceDir captured from the runtimeFactory,
+    // not the adapter's private options field (which is inaccessible).
+    const workspaceDir = rt.workspaceDir;
+    if (workspaceDir === undefined || workspaceDir.length === 0) return;
+    // Path traversal protection: reject '..' and absolute paths outside
+    // the expected rootDir. The workspaceDir is set by the runtimeFactory
+    // in main.ts as `${OPENBOT_ROOT_DIR}/{missionId}` — a relative-under-root
+    // path that should not contain '..'.
+    if (workspaceDir.includes('..')) return;
+    // Verify the path resolves to a real directory (not a symlink to
+    // outside the allowed root). Use realpath to resolve symlinks, then
+    // check the resolved path still starts with the expected prefix.
     try {
-      if (existsSync(rootDir)) {
-        rmSync(rootDir, { recursive: true, force: true });
-        structuredLog('info', 'workspace_cleanup', `workspace deleted: ${rootDir}`, { missionId });
+      if (!existsSync(workspaceDir)) return; // already deleted or never existed
+      const resolved = realpathSync(workspaceDir);
+      // Additional containment check: the resolved path must NOT contain
+      // '..' (a symlink could redirect outside the root).
+      if (resolved.includes('..')) {
+        structuredLog('warn', 'workspace_cleanup', `rejected symlink escape: ${resolved}`, { missionId });
+        return;
       }
+      rmSync(workspaceDir, { recursive: true, force: true });
+      structuredLog('info', 'workspace_cleanup', `workspace deleted: ${workspaceDir}`, { missionId });
     } catch (err) {
       structuredLog('warn', 'workspace_cleanup', `failed to delete workspace: ${err instanceof Error ? err.message : String(err)}`, { missionId });
     }
@@ -830,6 +846,8 @@ export class MissionService {
       acceptanceCriteria: submission.acceptanceCriteria,
       computers,
       runtime,
+      // G7-16A-H1: capture the workspace directory for cleanup after retention.
+      ...(runtimeBuild.workspaceDir !== undefined ? { workspaceDir: runtimeBuild.workspaceDir } : {}),
     };
     this.missions.set(missionId, missionRuntime);
     if (submission.idempotencyKey) {
@@ -1770,6 +1788,7 @@ export class MissionService {
   private buildDefaultRuntime(): {
     runtime: WorkerRuntime;
     computers: Map<string, MemoryComputer>;
+    workspaceDir?: string;
   } {
     // G6-08 (RB-1): use the promoted MemoryRuntime from src/runtime/memory-computer.ts.
     // MemoryRuntime implements ArtifactsProvider so the gateway's getArtifacts()
@@ -1780,6 +1799,7 @@ export class MissionService {
     return {
       runtime,
       computers: runtime.computers as Map<string, MemoryComputer>,
+      // MemoryRuntime has no disk workspace — workspaceDir is undefined.
     };
   }
 
