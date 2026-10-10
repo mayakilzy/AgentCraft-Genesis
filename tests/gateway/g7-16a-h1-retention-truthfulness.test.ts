@@ -53,6 +53,7 @@ beforeEach(() => {
 
 afterEach(() => {
   try { rmSync(tempDir, { recursive: true, force: true }); } catch { /* ignore */ }
+  delete process.env.OPENBOT_ROOT_DIR;
 });
 
 // Helper: create a MissionService with a workspaceDir-returning factory
@@ -61,6 +62,10 @@ function createServiceWithWorkspace(wsDir: string | undefined, opts: {
   retentionMs?: number;
   sweepIntervalMs?: number;
 } = {}) {
+  // Set OPENBOT_ROOT_DIR to the workspace root so cleanupWorkspace()
+  // can verify path containment. This is required by G7-16A-H2's
+  // canonical path containment check.
+  process.env.OPENBOT_ROOT_DIR = workspaceRoot;
   return new MissionService({
     defaultMissionTimeoutMs: 5_000,
     missionHistoryStore: new FileMissionHistoryStore({ dir: historyDir }),
@@ -180,6 +185,7 @@ describe('G7-16A-H1 — Artifact Retention & Cleanup Safety', () => {
 
     // Start mission A with ws1, complete, sweep (should delete ws1).
     const store = new FileMissionHistoryStore({ dir: historyDir });
+    process.env.OPENBOT_ROOT_DIR = workspaceRoot;
     const service = new MissionService({
       defaultMissionTimeoutMs: 5_000,
       missionHistoryStore: store,

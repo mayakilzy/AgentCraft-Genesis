@@ -120,6 +120,7 @@ import {
 } from '../mission/mission-history-store.js';
 import { structuredLog } from './logger.js';
 import { existsSync, rmSync, realpathSync } from 'node:fs';
+import { resolve as resolvePath } from 'node:path';
 
 import type {
   CallerIdentity,
@@ -645,27 +646,48 @@ export class MissionService {
    * does NOT contain path traversal before deleting.
    */
   private cleanupWorkspace(missionId: string, rt: MissionRuntime): void {
-    // G7-16A-H1: use the workspaceDir captured from the runtimeFactory,
-    // not the adapter's private options field (which is inaccessible).
+    // G7-16A-H2: canonical path containment for workspace cleanup.
     const workspaceDir = rt.workspaceDir;
     if (workspaceDir === undefined || workspaceDir.length === 0) return;
-    // Path traversal protection: reject '..' and absolute paths outside
-    // the expected rootDir. The workspaceDir is set by the runtimeFactory
-    // in main.ts as `${OPENBOT_ROOT_DIR}/{missionId}` — a relative-under-root
-    // path that should not contain '..'.
+    // Reject path traversal in the raw string.
     if (workspaceDir.includes('..')) return;
-    // Verify the path resolves to a real directory (not a symlink to
-    // outside the allowed root). Use realpath to resolve symlinks, then
-    // check the resolved path still starts with the expected prefix.
+
+    // Resolve to a canonical absolute path (resolves '.', '..' segments
+    // but does NOT resolve symlinks).
+    const resolvedDir = resolvePath(workspaceDir);
+
+    // Determine the trusted root from the OPENBOT_ROOT_DIR env var.
+    // The workspaceDir should be `${OPENBOT_ROOT_DIR}/{missionId}`.
+    // We verify that resolvedDir is strictly under the resolved root.
+    const rootEnv = process.env.OPENBOT_ROOT_DIR;
+    if (rootEnv === undefined || rootEnv.length === 0) return;
+    const resolvedRoot = resolvePath(rootEnv);
+    // Containment: resolvedDir must start with resolvedRoot + path separator.
+    // This prevents sibling-prefix attacks (e.g., /root/mission-abc vs
+    // /root/mission-abcdef) by requiring a path boundary.
+    if (!resolvedDir.startsWith(resolvedRoot + '/') && resolvedDir !== resolvedRoot) {
+      structuredLog('warn', 'workspace_cleanup', `rejected path outside root: ${resolvedDir} not under ${resolvedRoot}`, { missionId });
+      return;
+    }
+
     try {
       if (!existsSync(workspaceDir)) return; // already deleted or never existed
-      const resolved = realpathSync(workspaceDir);
-      // Additional containment check: the resolved path must NOT contain
-      // '..' (a symlink could redirect outside the root).
-      if (resolved.includes('..')) {
-        structuredLog('warn', 'workspace_cleanup', `rejected symlink escape: ${resolved}`, { missionId });
+
+      // Resolve symlinks to check the real target.
+      let resolved: string;
+      try {
+        resolved = realpathSync(workspaceDir);
+      } catch {
+        // realpathSync throws if the path doesn't exist or is a broken symlink.
+        return; // Already gone or broken — skip safely.
+      }
+      // The resolved (real) path must also be under the root.
+      // This catches symlinks that redirect outside OPENBOT_ROOT_DIR.
+      if (!resolved.startsWith(resolvedRoot + '/') && resolved !== resolvedRoot) {
+        structuredLog('warn', 'workspace_cleanup', `rejected symlink escape: ${resolved} not under ${resolvedRoot}`, { missionId });
         return;
       }
+
       rmSync(workspaceDir, { recursive: true, force: true });
       structuredLog('info', 'workspace_cleanup', `workspace deleted: ${workspaceDir}`, { missionId });
     } catch (err) {
