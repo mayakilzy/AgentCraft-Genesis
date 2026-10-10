@@ -212,40 +212,77 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
    * deliverables.
    */
   async listArtifacts(): Promise<readonly ArtifactSnapshot[]> {
-    // G7-15D: fall back to disk reads when the adapter is closed OR when all
-    // computer processes have been retired (stopWorker deletes from
-    // this.computers but keeps the worker in this.workers for disk access).
-    // Previously, the fallback only fired when this.closed === true, which
-    // left a window after stopWorker() (computers empty, not yet closed)
-    // where listArtifacts() returned [] despite the workspace existing on disk.
-    if (this.closed || this.computers.size === 0) {
+    // G7-15E: unified artifact listing — iterate this.workers (which has ALL
+    // workers, both running and stopped). For each worker:
+    //   - If the computer is still in this.computers → use the live HTTP API.
+    //   - If the computer is NOT in this.computers (stopped) → read from disk
+    //     via workspaceDir.
+    //
+    // This fixes the G7-15D mixed-lifecycle bug: when some workers are stopped
+    // (removed from this.computers by stopWorker) and others are still running
+    // (still in this.computers), the old code only iterated this.computers and
+    // missed the stopped workers' artifacts. Now both paths are unified.
+    //
+    // The closed-adapter shortcut (this.closed) still goes straight to
+    // listArtifactsFromDisk() since all computers are stopped at that point.
+    if (this.closed) {
       return this.listArtifactsFromDisk();
     }
     const out: ArtifactSnapshot[] = [];
-    for (const [botId, computer] of this.computers) {
+    for (const [botId, worker] of this.workers) {
       if (isVerifierWorkerId(botId)) continue;
-      try {
-        const entries = await computer.listFiles();
-        for (const entry of entries) {
-          if (entry.kind !== 'file') continue;
-          // Path traversal protection (defense-in-depth — the worker's
-          // workspace is already confined by the computer contract).
-          if (entry.path.includes('..') || entry.path.startsWith('/')) continue;
-          const bytes = entry.bytes ?? 0;
-          let content: string | undefined;
-          if (bytes <= ARTIFACT_INLINE_LIMIT) {
+      const computer = this.computers.get(botId);
+      if (computer !== undefined) {
+        // Live path: the computer process is still running.
+        try {
+          const entries = await computer.listFiles();
+          for (const entry of entries) {
+            if (entry.kind !== 'file') continue;
+            if (entry.path.includes('..') || entry.path.startsWith('/')) continue;
+            const bytes = entry.bytes ?? 0;
+            let content: string | undefined;
+            if (bytes <= ARTIFACT_INLINE_LIMIT) {
+              try {
+                const r = await computer.readFile(entry.path);
+                content = r.text;
+              } catch {
+                content = undefined;
+              }
+            }
+            out.push({ workerId: botId, path: entry.path, bytes, content });
+          }
+        } catch {
+          // Worker's computer process may have exited — fall through to disk.
+        }
+      }
+      // Disk path: the computer is stopped (not in this.computers) OR the
+      // live read failed. Read directly from the workspace directory.
+      if (worker.computer !== null) {
+        const workspaceDir = worker.computer.workspaceDir;
+        try {
+          const entries = await readdir(workspaceDir, { withFileTypes: true });
+          for (const entry of entries) {
+            if (!entry.isFile()) continue;
+            const path = entry.name;
+            if (path.includes('..') || path.startsWith('/')) continue;
+            const fullPath = join(workspaceDir, path);
             try {
-              const r = await computer.readFile(entry.path);
-              content = r.text;
+              const stats = await stat(fullPath);
+              const bytes = stats.size;
+              // Skip if already added via the live path (same path).
+              if (out.some((a) => a.workerId === botId && a.path === path)) continue;
+              let content: string | undefined;
+              if (bytes <= ARTIFACT_INLINE_LIMIT) {
+                content = await readFile(fullPath, 'utf8');
+              }
+              out.push({ workerId: botId, path, bytes, content });
             } catch {
-              // File vanished between list and read — report by size only.
-              content = undefined;
+              // File vanished between readdir and stat — skip.
             }
           }
-          out.push({ workerId: botId, path: entry.path, bytes, content });
+        } catch {
+          // Workspace directory may not exist or be unreadable — skip.
         }
-      } catch {
-        // Worker's computer process may have exited — skip this worker.
       }
     }
     out.sort((a, b) =>

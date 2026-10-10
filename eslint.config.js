@@ -78,6 +78,10 @@ export default tseslint.config(
       // gateway in production mode with real ZAI + OpenBot. NOT engine
       // source.
       'scripts/g7-15c-mission-a-execution.cjs',
+      // G7-15E: final browser acceptance script. Same CommonJS pattern
+      // (require for Playwright + node:child_process spawn). Spawns the
+      // gateway + Next.js + Chromium to verify the full UI delivery path.
+      'scripts/g7-15e-browser-acceptance.cjs',
     ],
   },
   ...tseslint.configs.recommended,

@@ -1,0 +1,13 @@
+{
+  "missions": [
+    {
+      "missionId": "312b03bc-d24b-4efe-85e2-d00df0b0ee1a",
+      "status": "SUCCEEDED",
+      "terminal": true,
+      "acceptedAt": "2026-10-10T03:57:04.054Z",
+      "finishedAt": "2026-10-10T03:57:04.065Z",
+      "outcomePreview": "Write a markdown file named output.md with the content \"# Genesis gateway output\"."
+    }
+  ],
+  "nextCursor": null
+}
