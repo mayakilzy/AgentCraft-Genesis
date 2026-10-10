@@ -602,8 +602,27 @@ function extractTextFromParts(parts: readonly Part[] | readonly unknown[]): stri
 
 /**
  * Build an A2A Task object from a MissionSnapshot.
+ *
+ * G7-15B-H2: the A2A Task's `metadata` field (a protocol-supported key-value
+ * object, per the @a2a-js/sdk Task interface) carries the internal Genesis
+ * mission status + failure class as machine-readable metadata. This lets
+ * external A2A consumers distinguish a confirmed execution failure
+ * (metadata.genesis_status = "FAILED") from an unconfirmed outcome after
+ * restart (metadata.genesis_status = "OUTCOME_UNCONFIRMED") WITHOUT parsing
+ * the human-readable failureMessage.
+ *
+ * The A2A TaskState enum has no "unknown" state, so OUTCOME_UNCONFIRMED maps
+ * to TaskState.FAILED (state: 4) — but the metadata.genesis_status field
+ * provides the machine-readable distinction. A confirmed FAILED mission
+ * carries genesis_status = "FAILED" (NOT "OUTCOME_UNCONFIRMED"); the
+ * unconfirmed indicator is ONLY on OUTCOME_UNCONFIRMED records.
  */
-function buildTaskFromSnapshot(taskId: string, snapshot: { status: MissionStatus; result?: { summary: string } }): Task {
+function buildTaskFromSnapshot(taskId: string, snapshot: {
+  status: MissionStatus;
+  result?: { summary: string };
+  failureClass?: string;
+  failureMessage?: string;
+}): Task {
   const state = statusToA2ATaskState(snapshot.status);
   const artifacts =
     snapshot.result && snapshot.result.summary.length > 0
@@ -624,6 +643,15 @@ function buildTaskFromSnapshot(taskId: string, snapshot: { status: MissionStatus
           },
         ]
       : [];
+  // G7-15B-H2: populate the protocol-supported `metadata` field with the
+  // internal mission status + failure class. This is the machine-readable
+  // distinction between confirmed failure and unconfirmed outcome.
+  const metadata: { [key: string]: unknown } = {
+    genesis_status: snapshot.status,
+  };
+  if (snapshot.failureClass !== undefined) {
+    metadata.genesis_failure_class = snapshot.failureClass;
+  }
   return {
     id: taskId,
     contextId: taskId,
@@ -634,7 +662,7 @@ function buildTaskFromSnapshot(taskId: string, snapshot: { status: MissionStatus
     },
     artifacts,
     history: [],
-    metadata: undefined,
+    metadata,
   } as unknown as Task;
 }
 
