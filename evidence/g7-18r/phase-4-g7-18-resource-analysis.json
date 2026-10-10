@@ -1,0 +1,146 @@
+{
+  "mission_id": "f4ee2752-4339-4f6e-9874-4e9f1cd15273",
+  "mission_status": "PARTIAL",
+  "mission_cost": {
+    "usd": 0,
+    "tokens": 798257,
+    "wallMs": 540578,
+    "humanInterventions": 0
+  },
+  "per_worker": {
+    "software-engineer-1": {
+      "role": "",
+      "status": "failure",
+      "summary": "the worker could not produce a valid action after repeated attempts",
+      "steps": 1,
+      "reasoningCalls": 3,
+      "reasoningRetries": 0,
+      "failureClass": "PROVIDER_FAILURE"
+    },
+    "documentation-writer-2": {
+      "role": "",
+      "status": "success",
+      "summary": "Done",
+      "steps": 9,
+      "reasoningCalls": 11,
+      "reasoningRetries": 0,
+      "failureClass": null
+    },
+    "generalist-worker-3": {
+      "role": "",
+      "status": "failure",
+      "summary": "reasoning provider failed: aborted",
+      "steps": 8,
+      "reasoningCalls": 8,
+      "reasoningRetries": 0,
+      "failureClass": "CANCELLED"
+    }
+  },
+  "worker_steps": {
+    "software-engineer-1": [
+      [
+        1,
+        "write_file",
+        true
+      ]
+    ],
+    "documentation-writer-2": [
+      [
+        1,
+        "write_file",
+        true
+      ],
+      [
+        2,
+        "write_file",
+        true
+      ],
+      [
+        3,
+        "write_file",
+        true
+      ],
+      [
+        4,
+        "write_file",
+        true
+      ],
+      [
+        5,
+        "write_file",
+        true
+      ],
+      [
+        6,
+        "write_file",
+        true
+      ],
+      [
+        7,
+        "write_file",
+        true
+      ],
+      [
+        8,
+        "write_file",
+        true
+      ],
+      [
+        9,
+        "write_file",
+        true
+      ]
+    ],
+    "generalist-worker-3": [
+      [
+        1,
+        "list_files",
+        false
+      ],
+      [
+        2,
+        "run_command",
+        true
+      ],
+      [
+        3,
+        "run_command",
+        true
+      ],
+      [
+        4,
+        "run_command",
+        true
+      ],
+      [
+        5,
+        "run_command",
+        true
+      ],
+      [
+        6,
+        "run_command",
+        true
+      ],
+      [
+        7,
+        "run_command",
+        true
+      ],
+      [
+        8,
+        "run_command",
+        true
+      ]
+    ]
+  },
+  "failed_actions": [
+    {
+      "workerId": "generalist-worker-3",
+      "step": 1,
+      "action": "list_files",
+      "observation_excerpt": ""
+    }
+  ],
+  "note": "Token consumption is reported at MISSION level only (cost.tokens = 798257). Per-worker token telemetry is NOT available in the evidence \u2014 the worker-finished event reports reasoningCalls (call count) and steps (action count), not tokens. No per-worker token attribution can be derived without inventing metrics."
+}
