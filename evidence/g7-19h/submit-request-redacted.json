@@ -1,0 +1,56 @@
+{
+  "outcome": "Build \"Service Request Tracker — Production Acceptance v0.2\": a Node.js CLI app.\n\nCapabilities (each MUST be implemented and verified):\n1. Create: \"node src/index.js create \\\"<title>\\\" \\\"<description>\\\"\" writes a new request with status=\"open\" and a generated id, then prints the id to stdout.\n2. List: \"node src/index.js list\" prints all requests as a JSON array to stdout.\n3. Update: \"node src/index.js update <id> <new-status>\" transitions status; valid forward transitions: open→in_progress, in_progress→resolved only. Reject same-status, backward, and unknown statuses.\n4. Persist: store all requests in \"data/requests.json\" (create dir + file if absent).\n5. Reject invalid inputs: empty title, unknown id, unknown new-status, invalid transition — each prints a clear error to stderr and exits code 1.\n6. Automated tests using node:test (built-in): at least 6 cases covering (a) create, (b) list, (c) update, (d) persistence across restart, (e) invalid-input rejection, (f) one negative test.\n7. README.md with: app description, install, run tests, CLI usage examples (create/list/update), valid status transitions table.\n\nAfter producing all 5 files, finish with artifacts: [\"package.json\",\"README.md\",\"src/index.js\",\"src/store.js\",\"test/app.test.js\"].\n\nAfter producing all files, npm test MUST exit 0 within 60 seconds.",
+  "context": "G7-19H — Live Production Acceptance. Real Z.ai + real OpenBot. Greenfield mission — NO missionInputs staged. The workers must design and produce the entire Service Request Tracker v0.2 from scratch using only Node.js >= 20 standard library (no external dependencies, no HTTP server, no browser).\n\nREQUIRED FILE STRUCTURE (write ALL 5 files via write_file, then finish):\n1. package.json — fields: name=\"service-request-tracker\", version=\"0.2.0\", type=\"module\", scripts.test=\"node --test test/\", scripts.start=\"node src/index.js\". NO dependencies field (or empty). NO devDependencies.\n2. README.md — sections: # Service Request Tracker, ## What it does, ## Install (npm install — no deps), ## Run tests (npm test), ## CLI usage (create/list/update examples), ## Valid status transitions (open→in_progress→resolved, forward-only).\n3. src/store.js — exported functions: loadRequests() reads data/requests.json (returns [] if absent, creates dir + file if missing); saveRequests(arr) writes data/requests.json atomically; createRequest(title, description) returns a new {id,title,description,status:\"open\",createdAt} and persists it; listRequests() returns the array; updateStatus(id, newStatus) — validates id exists, validates new-status is known value, validates forward-only transition, throws on invalid input.\n4. src/index.js — CLI entrypoint: parses process.argv, dispatches to src/store.js functions. Exit codes: 0 on success, 1 on user input error, 2 on internal error.\n5. test/app.test.js — uses node:test + node:assert. At least 6 tests covering (a) create, (b) list, (c) update, (d) persistence across restart, (e) invalid-input rejection, (f) one negative test.\n\nSTATUS TRANSITIONS:\n- open → in_progress (allowed)\n- in_progress → resolved (allowed)\n- open → resolved (FORBIDDEN — must go through in_progress first; throw)\n- Any backward (resolved → in_progress, etc.) — REJECT (throw)\n- Same-status (open → open) — REJECT (throw)\n- Unknown new-status string — REJECT (throw)\n\nACCEPTANCE: write_file 5 times (one per file), then finish with the 5 artifact paths. NO external dependencies. NO new files beyond the 5 listed. NO test framework other than node:test.\n\nCLEAN ROOM GUARANTEE: after the mission, an independent clean-room run will: (1) cd into the produced package, (2) npm install (must be a no-op), (3) npm test (must exit 0 within 60s), (4) run the CLI: create, list, update, list — verifying CRUD + persistence + invalid-input rejection.",
+  "constraints": [
+    "Use Node.js >= 20 standard library ONLY. No external npm runtime dependencies.",
+    "Single-process CLI app. No HTTP server. No background daemon.",
+    "No new files beyond the 5 listed (package.json, README.md, src/index.js, src/store.js, test/app.test.js).",
+    "No code modification by the operator — the test must run against the worker's own output.",
+    "After producing all files, npm test MUST exit 0 within 60 seconds in a clean room."
+  ],
+  "label": "g7-19h-live-acceptance",
+  "acceptanceCriteria": [
+    {
+      "kind": "file",
+      "label": "package.json exists",
+      "path": "package.json"
+    },
+    {
+      "kind": "file",
+      "label": "README.md exists",
+      "path": "README.md"
+    },
+    {
+      "kind": "file",
+      "label": "src/index.js exists",
+      "path": "src/index.js"
+    },
+    {
+      "kind": "file",
+      "label": "src/store.js exists",
+      "path": "src/store.js"
+    },
+    {
+      "kind": "file",
+      "label": "test/app.test.js exists",
+      "path": "test/app.test.js"
+    },
+    {
+      "kind": "content-in-artifacts",
+      "label": "README mentions npm test",
+      "expectIncludes": "npm test"
+    },
+    {
+      "kind": "content-in-artifacts",
+      "label": "store.js uses JSON persistence",
+      "expectIncludes": "requests.json"
+    },
+    {
+      "kind": "command",
+      "label": "explicit caller-supplied npm test (G7-19F propagation test)",
+      "command": "npm test",
+      "expectExit": 0
+    }
+  ],
+  "_note": "redacted: api key not included in body; auth via Authorization header"
+}

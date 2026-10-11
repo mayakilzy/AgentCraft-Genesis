@@ -1,0 +1,19 @@
+{
+  "missionId": "2787ad25-bfa6-4bb4-ab38-ff9b0298f2e3",
+  "acceptedAt": "2026-10-11T09:10:48.174Z",
+  "finishedAt": "2026-10-11T09:19:49.054Z",
+  "status": "PARTIAL",
+  "terminal": true,
+  "tokens": 145184,
+  "wallMs": 540827,
+  "artifactsCount": 22,
+  "workerIds": [
+    "documentation-writer-2",
+    "generalist-worker-3",
+    "software-engineer-1",
+    "verification-engineer-4"
+  ],
+  "verifiedPackageSelection": null,
+  "artifactsWithConflictResolution": 12,
+  "heuristicAuthoritySafe": true
+}

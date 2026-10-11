@@ -1,0 +1,333 @@
+{
+  "topLevelVerifiedPackageSelection": null,
+  "perArtifactVpsCount": 22,
+  "perArtifactVpsSample": [
+    {
+      "workerId": "documentation-writer-2",
+      "path": "README.md",
+      "vps": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 3 candidate(s); 3 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "path": "package.json",
+      "vps": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 3 candidate(s); 3 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    }
+  ],
+  "conflictsCount": 12,
+  "conflictSummary": [
+    {
+      "workerId": "documentation-writer-2",
+      "path": "README.md",
+      "hash": "06bfbfc8a328697657effbe81ac3e08b751dc69cc4e3ce7162a0caf6e08627cc",
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "hash": "e32f4568a896f9e8"
+        },
+        {
+          "workerId": "verification-engineer-4",
+          "hash": "1607658e4603bc38"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "path": "src/index.js",
+      "hash": "74944975db8eecb2819ec261a5c4926ce1a74a0ad8679b7f012f1ae0b5a15734",
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "hash": "ae4cd71defa2da1f"
+        },
+        {
+          "workerId": "verification-engineer-4",
+          "hash": "e329ac740f159b94"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "path": "src/store.js",
+      "hash": "0711d3bd6c5224b3ebf97eaf2a19a05fe1a9eb37c5c6a25d1a2175908ca92c56",
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "hash": "35fe4458e30584ff"
+        },
+        {
+          "workerId": "verification-engineer-4",
+          "hash": "5d79fb40a7792c2a"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "path": "test/app.test.js",
+      "hash": "50b473406273c43595208bf015185b00aebace9f8c369505f236aeddf8064414",
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "hash": "f30c8db8c09c472a"
+        },
+        {
+          "workerId": "verification-engineer-4",
+          "hash": "04fe23e804ef3e85"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "README.md",
+      "hash": "e32f4568a896f9e8b747e4cfaf2d56a7de807157eb9ab2a6dfae0d3b1f14e55c",
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "hash": "06bfbfc8a3286976"
+        },
+        {
+          "workerId": "verification-engineer-4",
+          "hash": "1607658e4603bc38"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "src/index.js",
+      "hash": "ae4cd71defa2da1f30393734004354affc50edcb2e1e00234d2a77d5a3c8b4a1",
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "hash": "74944975db8eecb2"
+        },
+        {
+          "workerId": "verification-engineer-4",
+          "hash": "e329ac740f159b94"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "src/store.js",
+      "hash": "35fe4458e30584ff3548885d74ffd661d3f38d7d0486c2d45f4d8e63a1734095",
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "hash": "0711d3bd6c5224b3"
+        },
+        {
+          "workerId": "verification-engineer-4",
+          "hash": "5d79fb40a7792c2a"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "test/app.test.js",
+      "hash": "f30c8db8c09c472a3040c2e248aa73c6cc3cbb2f0864e681c66dfed27daa7ddd",
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "hash": "50b473406273c435"
+        },
+        {
+          "workerId": "verification-engineer-4",
+          "hash": "04fe23e804ef3e85"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "verification-engineer-4",
+      "path": "README.md",
+      "hash": "1607658e4603bc3879d46c7760d012b18cddb55775e17fa393648f7d9139a32f",
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "hash": "06bfbfc8a3286976"
+        },
+        {
+          "workerId": "software-engineer-1",
+          "hash": "e32f4568a896f9e8"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "verification-engineer-4",
+      "path": "src/index.js",
+      "hash": "e329ac740f159b94339972d45cdc11a579db353d6ad53c27371cc05960b9b3e0",
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "hash": "74944975db8eecb2"
+        },
+        {
+          "workerId": "software-engineer-1",
+          "hash": "ae4cd71defa2da1f"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "verification-engineer-4",
+      "path": "src/store.js",
+      "hash": "5d79fb40a7792c2a444bd3f91af13355dfd415eedc6182537d10389a7c651627",
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "hash": "0711d3bd6c5224b3"
+        },
+        {
+          "workerId": "software-engineer-1",
+          "hash": "35fe4458e30584ff"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      }
+    },
+    {
+      "workerId": "verification-engineer-4",
+      "path": "test/app.test.js",
+      "hash": "04fe23e804ef3e856ca2689357a22b07669042e5d0f6e30f2f10830320837e4a",
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "hash": "50b473406273c435"
+        },
+        {
+          "workerId": "software-engineer-1",
+          "hash": "f30c8db8c09c472a"
+        }
+      ],
+      "resolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "rationale": "no majority (3 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      }
+    }
+  ],
+  "fileHashes": {
+    "documentation-writer-2": {
+      "package.json": "45acbbf10e9861d3f13657a63b79953f7279f71e64a655fa66d689e628376796",
+      "README.md": "06bfbfc8a328697657effbe81ac3e08b751dc69cc4e3ce7162a0caf6e08627cc",
+      "src/index.js": "74944975db8eecb2819ec261a5c4926ce1a74a0ad8679b7f012f1ae0b5a15734",
+      "src/store.js": "0711d3bd6c5224b3ebf97eaf2a19a05fe1a9eb37c5c6a25d1a2175908ca92c56",
+      "test/app.test.js": "50b473406273c43595208bf015185b00aebace9f8c369505f236aeddf8064414"
+    },
+    "software-engineer-1": {
+      "package.json": "45acbbf10e9861d3f13657a63b79953f7279f71e64a655fa66d689e628376796",
+      "README.md": "e32f4568a896f9e8b747e4cfaf2d56a7de807157eb9ab2a6dfae0d3b1f14e55c",
+      "src/index.js": "ae4cd71defa2da1f30393734004354affc50edcb2e1e00234d2a77d5a3c8b4a1",
+      "src/store.js": "35fe4458e30584ff3548885d74ffd661d3f38d7d0486c2d45f4d8e63a1734095",
+      "test/app.test.js": "f30c8db8c09c472a3040c2e248aa73c6cc3cbb2f0864e681c66dfed27daa7ddd"
+    },
+    "verification-engineer-4": {
+      "package.json": "45acbbf10e9861d3f13657a63b79953f7279f71e64a655fa66d689e628376796",
+      "README.md": "1607658e4603bc3879d46c7760d012b18cddb55775e17fa393648f7d9139a32f",
+      "src/index.js": "e329ac740f159b94339972d45cdc11a579db353d6ad53c27371cc05960b9b3e0",
+      "src/store.js": "5d79fb40a7792c2a444bd3f91af13355dfd415eedc6182537d10389a7c651627",
+      "test/app.test.js": "04fe23e804ef3e856ca2689357a22b07669042e5d0f6e30f2f10830320837e4a"
+    }
+  },
+  "expectedManifest": [
+    "package.json",
+    "README.md",
+    "src/index.js",
+    "src/store.js",
+    "test/app.test.js"
+  ],
+  "interpretation": {
+    "packageState": "UNRESOLVED",
+    "cause": "verification ok=false (caller-supplied command check failed) → no captured verifiedPackageIdentities → no candidates passed assessment → UNRESOLVED",
+    "manifestScopedIdentity": "NOT_EXERCISED — manifest scope only matters when captureVerificationResult runs (it did not, because verificationOk=false)",
+    "heuristicSafety": "PRESERVED — all 12 conflict records have isHeuristicUnverified=true (G7-19D rule)"
+  }
+}

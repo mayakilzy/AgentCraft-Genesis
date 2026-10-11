@@ -1,0 +1,167 @@
+{
+  "H-00": {
+    "status": "PASS",
+    "detail": "evidence dir prepared + openbot root cleared",
+    "timestamp": "2026-10-11T09:10:47.117Z"
+  },
+  "H-01": {
+    "status": "PASS",
+    "detail": "production gateway up on port 4480",
+    "timestamp": "2026-10-11T09:10:48.169Z"
+  },
+  "H-02": {
+    "status": "PASS",
+    "detail": "live mission submitted: 2787ad25-bfa6-4bb4-ab38-ff9b0298f2e3",
+    "timestamp": "2026-10-11T09:10:48.180Z"
+  },
+  "H-03": {
+    "status": "INFO",
+    "detail": "waiting for live ZAI + OpenBot execution (timeout 540000ms)...",
+    "timestamp": "2026-10-11T09:10:48.181Z"
+  },
+  "H-04": {
+    "status": "PASS",
+    "detail": "mission terminated: status=PARTIAL, elapsed=542465ms, tokens=145184",
+    "timestamp": "2026-10-11T09:19:50.646Z"
+  },
+  "H-GATE-D-STATUS": {
+    "status": "PARTIAL",
+    "detail": "missionId=2787ad25-bfa6-4bb4-ab38-ff9b0298f2e3",
+    "timestamp": "2026-10-11T09:19:50.646Z"
+  },
+  "H-GATE-D-TERMINAL": {
+    "status": "YES",
+    "detail": "terminal=true",
+    "timestamp": "2026-10-11T09:19:50.646Z"
+  },
+  "H-GATE-D-ACCEPTED_AT": {
+    "status": "INFO",
+    "detail": "2026-10-11T09:10:48.174Z",
+    "timestamp": "2026-10-11T09:19:50.646Z"
+  },
+  "H-GATE-D-FINISHED_AT": {
+    "status": "INFO",
+    "detail": "2026-10-11T09:19:49.054Z",
+    "timestamp": "2026-10-11T09:19:50.646Z"
+  },
+  "H-GATE-D-TOKENS": {
+    "status": "145184",
+    "detail": "tokens=145184",
+    "timestamp": "2026-10-11T09:19:50.646Z"
+  },
+  "H-GATE-D-WALLMS": {
+    "status": "540827",
+    "detail": "wallMs=540827",
+    "timestamp": "2026-10-11T09:19:50.646Z"
+  },
+  "H-GATE-D-VERIFICATION": {
+    "status": "UNKNOWN",
+    "detail": "verification=n/a summary=",
+    "timestamp": "2026-10-11T09:19:50.646Z"
+  },
+  "H-GATE-C-WORKERS": {
+    "status": "INFO",
+    "detail": "workers observed: documentation-writer-2,generalist-worker-3,software-engineer-1,verification-engineer-4",
+    "timestamp": "2026-10-11T09:19:50.648Z"
+  },
+  "H-GATE-C-WRITE_EVENTS": {
+    "status": "PASS",
+    "detail": "write_file events: 18 (expect ≥ 5)",
+    "timestamp": "2026-10-11T09:19:50.648Z"
+  },
+  "H-GATE-C-HANDOFFS": {
+    "status": "PARTIAL",
+    "detail": "handoff events: 0",
+    "timestamp": "2026-10-11T09:19:50.648Z"
+  },
+  "H-GATE-D-MODEL": {
+    "status": "INFO",
+    "detail": "models observed: (no model field — verify via gateway logs)",
+    "timestamp": "2026-10-11T09:19:50.648Z"
+  },
+  "H-GATE-A-COMMAND_CHECKS": {
+    "status": "PARTIAL",
+    "detail": "command-type checks captured: 0",
+    "timestamp": "2026-10-11T09:19:50.648Z"
+  },
+  "H-GATE-A-OUTCOMES": {
+    "status": "PASS",
+    "detail": "command check failures captured: 0",
+    "timestamp": "2026-10-11T09:19:50.648Z"
+  },
+  "H-07": {
+    "status": "PASS",
+    "detail": "artifacts delivered: 22 (expect ≥ 5)",
+    "timestamp": "2026-10-11T09:19:50.658Z"
+  },
+  "H-08": {
+    "status": "PASS",
+    "detail": "workspace files on disk: 31",
+    "timestamp": "2026-10-11T09:19:50.660Z"
+  },
+  "H-09-documentation-writer-2": {
+    "status": "PASS",
+    "detail": "manifest completeness: 5/5 files present",
+    "timestamp": "2026-10-11T09:19:50.661Z"
+  },
+  "H-09-software-engineer-1": {
+    "status": "PASS",
+    "detail": "manifest completeness: 5/5 files present",
+    "timestamp": "2026-10-11T09:19:50.661Z"
+  },
+  "H-09-verification-engineer-4": {
+    "status": "PASS",
+    "detail": "manifest completeness: 5/5 files present",
+    "timestamp": "2026-10-11T09:19:50.661Z"
+  },
+  "H-GATE-B-STATE": {
+    "status": "INFO",
+    "detail": "no verifiedPackageSelection field in response",
+    "timestamp": "2026-10-11T09:19:50.661Z"
+  },
+  "H-GATE-B-HEURISTIC_SAFE": {
+    "status": "PASS",
+    "detail": "heuristic authority safety: 12 records with conflictResolution, all isHeuristicUnverified=true: true",
+    "timestamp": "2026-10-11T09:19:50.661Z"
+  },
+  "H-GATE-C-GRAPH": {
+    "status": "PASS",
+    "detail": "collaboration graph: 4 workers, 0 handoffs",
+    "timestamp": "2026-10-11T09:19:50.661Z"
+  },
+  "H-GATE-E-documentation-writer-2": {
+    "status": "FAIL",
+    "detail": "npm test exit=1 (184ms); functional: create=OK, list=OK, update=OK, persistence=OK, invalidReject=OK",
+    "timestamp": "2026-10-11T09:19:51.282Z"
+  },
+  "H-GATE-E-software-engineer-1": {
+    "status": "FAIL",
+    "detail": "npm test exit=1 (183ms); functional: create=OK, list=OK, update=OK, persistence=OK, invalidReject=OK",
+    "timestamp": "2026-10-11T09:19:51.945Z"
+  },
+  "H-GATE-E-verification-engineer-4": {
+    "status": "FAIL",
+    "detail": "npm test exit=1 (189ms); functional: create=OK, list=OK, update=OK, persistence=OK, invalidReject=OK",
+    "timestamp": "2026-10-11T09:19:52.590Z"
+  },
+  "H-MISSION_STATUS": {
+    "status": "PARTIAL",
+    "detail": "missionId=2787ad25-bfa6-4bb4-ab38-ff9b0298f2e3",
+    "timestamp": "2026-10-11T09:19:52.590Z"
+  },
+  "H_TERMINAL": {
+    "status": "YES",
+    "detail": "terminal=true",
+    "timestamp": "2026-10-11T09:19:52.590Z"
+  },
+  "H_TOKENS": {
+    "status": "145184",
+    "detail": "tokens=145184",
+    "timestamp": "2026-10-11T09:19:52.590Z"
+  },
+  "H_WALL_MS": {
+    "status": "545473",
+    "detail": "wallMs=545473",
+    "timestamp": "2026-10-11T09:19:52.590Z"
+  }
+}

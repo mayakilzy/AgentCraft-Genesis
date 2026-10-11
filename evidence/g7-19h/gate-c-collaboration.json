@@ -1,0 +1,63 @@
+{
+  "workers": [
+    "documentation-writer-2",
+    "generalist-worker-3",
+    "software-engineer-1",
+    "verification-engineer-4"
+  ],
+  "workerFiles": {
+    "documentation-writer-2": [
+      "README.md",
+      "package.json",
+      "src/index.js",
+      "src/store.js",
+      "test/app.test.js"
+    ],
+    "software-engineer-1": [
+      ".npm/_logs/2026-10-11T09_11_30_259Z-debug-0.log",
+      ".npm/_logs/2026-10-11T09_11_53_414Z-debug-0.log",
+      ".npm/_update-notifier-last-checked",
+      "README.md",
+      "data/requests.json",
+      "package.json",
+      "src/index.js",
+      "src/store.js",
+      "test/app.test.js"
+    ],
+    "verification-engineer-4": [
+      ".npm/_logs/2026-10-11T09_13_33_348Z-debug-0.log",
+      ".npm/_logs/2026-10-11T09_13_47_257Z-debug-0.log",
+      ".npm/_update-notifier-last-checked",
+      "README.md",
+      "package.json",
+      "src/index.js",
+      "src/store.js",
+      "test/app.test.js"
+    ]
+  },
+  "writeEventsPerWorker": {
+    "documentation-writer-2": 5,
+    "generalist-worker-3": 0,
+    "software-engineer-1": 7,
+    "verification-engineer-4": 6
+  },
+  "workerFinishedEvents": [
+    {
+      "workerId": "software-engineer-1",
+      "ts": "2026-10-11T09:19:50.647Z"
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "ts": "2026-10-11T09:19:50.647Z"
+    },
+    {
+      "workerId": "generalist-worker-3",
+      "ts": "2026-10-11T09:19:50.647Z"
+    },
+    {
+      "workerId": "verification-engineer-4",
+      "ts": "2026-10-11T09:19:50.647Z"
+    }
+  ],
+  "handoffEvents": []
+}

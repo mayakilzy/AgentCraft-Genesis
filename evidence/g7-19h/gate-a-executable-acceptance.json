@@ -1,0 +1,17 @@
+{
+  "commandChecksFromVerificationEvents": [],
+  "commandCheckFailures": [],
+  "allVerificationEvents": [
+    {
+      "type": "verification",
+      "ts": "2026-10-11T09:19:50.647Z",
+      "payload": {
+        "missionId": "2787ad25-bfa6-4bb4-ab38-ff9b0298f2e3",
+        "ok": false,
+        "passed": 22,
+        "failed": 1,
+        "failures": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "missionId": "2787ad25-bfa6-4bb4-ab38-ff9b0298f2e3",
+  "acceptedAt": "2026-10-11T09:10:48.174Z",
+  "finishedAt": "2026-10-11T09:19:49.054Z",
+  "durationMs": 540827,
+  "durationHuman": "~9 minutes (hit hard timeout)",
+  "tokens": 145184,
+  "workers": [
+    "software-engineer-1",
+    "documentation-writer-2",
+    "generalist-worker-3",
+    "verification-engineer-4"
+  ],
+  "workerOutcomes": {
+    "software-engineer-1": {
+      "status": "success",
+      "steps": 12,
+      "reasoningCalls": 13,
+      "filesWritten": 7,
+      "commandsRun": 5
+    },
+    "documentation-writer-2": {
+      "status": "success",
+      "steps": 5,
+      "reasoningCalls": 6,
+      "filesWritten": 5,
+      "commandsRun": 0
+    },
+    "generalist-worker-3": {
+      "status": "success (claimed missing permissions)",
+      "steps": 1,
+      "reasoningCalls": 2,
+      "filesWritten": 0,
+      "commandsRun": 0
+    },
+    "verification-engineer-4": {
+      "status": "failure (reasoning provider aborted - 429 rate limit)",
+      "steps": 9,
+      "reasoningCalls": 9,
+      "filesWritten": 6,
+      "commandsRun": 3
+    }
+  },
+  "artifactsTotal": 22,
+  "artifactsPerWorker": {
+    "software-engineer-1": 9,
+    "documentation-writer-2": 5,
+    "verification-engineer-4": 8
+  },
+  "expectedManifestFiles": [
+    "package.json",
+    "README.md",
+    "src/index.js",
+    "src/store.js",
+    "test/app.test.js"
+  ],
+  "workersWithCompleteManifest": [
+    "software-engineer-1",
+    "documentation-writer-2",
+    "verification-engineer-4"
+  ],
+  "packageJsonSharedHash": "45acbbf10e9861d3...",
+  "verification": {
+    "ok": false,
+    "passed": 22,
+    "failed": 1
+  },
+  "verificationFailureCause": "caller-supplied npm test exited non-zero (no package.json in verifier root)",
+  "verifiedPackageSelection": {
+    "packageState": "UNRESOLVED",
+    "selectedWorkerId": "",
+    "packageIdentity": "",
+    "rationale": "no verified package candidates (considered 3 candidate(s); 3 incomplete or unverified)"
+  },
+  "conflictsDetected": 12,
+  "conflictResolutionSafety": "all 12 records have isHeuristicUnverified=true (G7-19D preserved)",
+  "handoffEvents": 0,
+  "workerExecutionOrder": "sequential: software-engineer-1 → documentation-writer-2 → generalist-worker-3 → verification-engineer-4",
+  "duplicateAppProduction": true,
+  "duplicateAppWorkers": [
+    "software-engineer-1",
+    "documentation-writer-2",
+    "verification-engineer-4"
+  ],
+  "generalistWorkerFailure": "generalist-worker-3 produced 0 files (claimed missing openbot:workspace-files grant)",
+  "npmTestFailureRootCause": "package.json test script uses node --test test/ which is interpreted as a module path in Node v24 (test/ becomes a module name). Correct syntax: node --test (no argument) or node --test test/*.test.js",
+  "controlFixTranscript": "evidence/g7-19h/control-fixed-test-transcript.txt",
+  "controlFixResult": "8/8 tests pass in 487ms with one-line package.json fix",
+  "independentAcceptance": {
+    "cleanRoomWorkers": [
+      "software-engineer-1",
+      "documentation-writer-2",
+      "verification-engineer-4"
+    ],
+    "npmInstallExit": 0,
+    "npmTestExit": 1,
+    "functionalChecks": {
+      "create": true,
+      "list": true,
+      "update": true,
+      "persistence": true,
+      "invalidReject": true
+    }
+  },
+  "zaiRateLimitErrors": "multiple 429 errors observed in gateway log during mission execution",
+  "gates": {
+    "A_executable_acceptance": "FAIL — caller-supplied command failed (no package.json in verifier root); auto-add suppressed by matching phrase; verifier ran the check (exit non-zero)",
+    "B_package_identity": "NOT_PROVEN — verification failed, no captured identities; packageState=UNRESOLVED; no authoritative package selected",
+    "C_worker_collaboration": "PARTIAL — 4 workers ran sequentially; 0 handoff events; 3 of 4 workers produced the full app independently (duplicate production pattern persists); generalist-worker-3 contributed nothing (missing permissions claim)",
+    "D_mission_closure": "PARTIAL — terminal=true, status=PARTIAL (540s timeout); 145184 tokens consumed; 4 workers attempted; verification ran and reported ok=false (truthful)",
+    "E_independent_acceptance": "FAIL — npm test exit 1 in clean room for all 3 complete workers; same package.json syntax bug as G7-19E; functional CLI checks all PASS (create/list/update/persistence/invalidReject)"
+  }
+}

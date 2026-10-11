@@ -1,0 +1,21 @@
+
+> service-request-tracker@0.2.0 test
+> node --test
+
+✔ Create a new request (38.227136ms)
+✔ List all requests (65.650211ms)
+✔ Update a request status (60.672477ms)
+✔ Persistence across restart (59.274117ms)
+✔ Reject invalid inputs - empty title (31.1013ms)
+✔ Reject invalid inputs - unknown id (60.457514ms)
+✔ Reject invalid inputs - unknown status (58.338882ms)
+✔ Reject invalid transition - open to resolved (59.571617ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 487.511248
+Exit: 0

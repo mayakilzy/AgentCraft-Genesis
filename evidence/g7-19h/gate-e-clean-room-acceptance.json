@@ -1,0 +1,53 @@
+{
+  "documentation-writer-2": {
+    "workerId": "documentation-writer-2",
+    "cleanRoomDir": "/tmp/g7-19h-clean-room-documentation-writer-2-1791710390662",
+    "npmInstallExit": 0,
+    "npmTestExit": 1,
+    "npmTestTimedOut": false,
+    "npmTestElapsedMs": 184,
+    "npmTestStdout": "\n> service-request-tracker@0.2.0 test\n> node --test test/\n\nnode:internal/modules/cjs/loader:1568\n  throw err;\n  ^\n\nError: Cannot find module '/tmp/g7-19h-clean-room-documentation-writer-2-1791710390662/test'\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)\n    at Module._load (node:internal/modules/cjs/loader:1341:5)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v24.21.0\n✖ test (30.374212ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 37.262672\n\n✖ failing tests:\n\ntest at test:1:1\n✖ test (30.374212ms)\n  'test failed'\n",
+    "npmTestStderr": "",
+    "functional": {
+      "create": true,
+      "list": true,
+      "update": true,
+      "persistence": true,
+      "invalidReject": true
+    }
+  },
+  "software-engineer-1": {
+    "workerId": "software-engineer-1",
+    "cleanRoomDir": "/tmp/g7-19h-clean-room-software-engineer-1-1791710391282",
+    "npmInstallExit": 0,
+    "npmTestExit": 1,
+    "npmTestTimedOut": false,
+    "npmTestElapsedMs": 183,
+    "npmTestStdout": "\n> service-request-tracker@0.2.0 test\n> node --test test/\n\nnode:internal/modules/cjs/loader:1568\n  throw err;\n  ^\n\nError: Cannot find module '/tmp/g7-19h-clean-room-software-engineer-1-1791710391282/test'\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)\n    at Module._load (node:internal/modules/cjs/loader:1341:5)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v24.21.0\n✖ test (29.946938ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 36.877185\n\n✖ failing tests:\n\ntest at test:1:1\n✖ test (29.946938ms)\n  'test failed'\n",
+    "npmTestStderr": "",
+    "functional": {
+      "create": true,
+      "list": true,
+      "update": true,
+      "persistence": true,
+      "invalidReject": true
+    }
+  },
+  "verification-engineer-4": {
+    "workerId": "verification-engineer-4",
+    "cleanRoomDir": "/tmp/g7-19h-clean-room-verification-engineer-4-1791710391945",
+    "npmInstallExit": 0,
+    "npmTestExit": 1,
+    "npmTestTimedOut": false,
+    "npmTestElapsedMs": 189,
+    "npmTestStdout": "\n> service-request-tracker@0.2.0 test\n> node --test test/\n\nnode:internal/modules/cjs/loader:1568\n  throw err;\n  ^\n\nError: Cannot find module '/tmp/g7-19h-clean-room-verification-engineer-4-1791710391945/test'\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)\n    at Module._load (node:internal/modules/cjs/loader:1341:5)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v24.21.0\n✖ test (34.605085ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 42.00064\n\n✖ failing tests:\n\ntest at test:1:1\n✖ test (34.605085ms)\n  'test failed'\n",
+    "npmTestStderr": "",
+    "functional": {
+      "create": true,
+      "list": true,
+      "update": true,
+      "persistence": true,
+      "invalidReject": true
+    }
+  }
+}
