@@ -1,0 +1,82 @@
+{
+  "P2-00": {
+    "status": "PASS",
+    "detail": "loaded 9 mission input files",
+    "timestamp": "2026-10-11T02:54:14.600Z"
+  },
+  "P2-01": {
+    "status": "PASS",
+    "detail": "production gateway up on port 4280 (maxWorkerSteps=40)",
+    "timestamp": "2026-10-11T02:54:15.650Z"
+  },
+  "P2-02": {
+    "status": "PASS",
+    "detail": "repair mission submitted via missionInputs: 4422008a-c495-4a88-836e-7df84752e448",
+    "timestamp": "2026-10-11T02:54:15.663Z"
+  },
+  "P2-03": {
+    "status": "INFO",
+    "detail": "waiting for real ZAI + OpenBot execution (timeout 420s)...",
+    "timestamp": "2026-10-11T02:54:15.664Z"
+  },
+  "P2-04": {
+    "status": "PASS",
+    "detail": "mission terminated: status=FAILED, elapsed=420653ms, tokens=203057",
+    "timestamp": "2026-10-11T03:01:16.317Z"
+  },
+  "P2-05": {
+    "status": "PASS",
+    "detail": "token usage: 203057",
+    "timestamp": "2026-10-11T03:01:16.317Z"
+  },
+  "P2-06": {
+    "status": "PARTIAL",
+    "detail": "write_file events: 3 (expect ≥ 9)",
+    "timestamp": "2026-10-11T03:01:16.319Z"
+  },
+  "P2-07": {
+    "status": "PASS",
+    "detail": "artifacts delivered: 9",
+    "timestamp": "2026-10-11T03:01:16.323Z"
+  },
+  "P2-08": {
+    "status": "PASS",
+    "detail": "changed=6 unchanged=3 — changed: [\"public/app.js\",\"public/index.html\",\"public/styles.css\",\"test/api.test.js\",\"test/db.test.js\",\"test/integration.test.js\"]",
+    "timestamp": "2026-10-11T03:01:16.327Z"
+  },
+  "P2-09": {
+    "status": "FAIL",
+    "detail": "unintended changes: [\"public/app.js\",\"public/index.html\",\"public/styles.css\",\"test/db.test.js\",\"test/integration.test.js\"]",
+    "timestamp": "2026-10-11T03:01:16.327Z"
+  },
+  "P2-10": {
+    "status": "PASS",
+    "detail": "test/api.test.js was modified (expected)",
+    "timestamp": "2026-10-11T03:01:16.328Z"
+  },
+  "P2-MISSION_STATUS": {
+    "status": "FAILED",
+    "detail": "missionId=4422008a-c495-4a88-836e-7df84752e448",
+    "timestamp": "2026-10-11T03:01:16.328Z"
+  },
+  "P2_TERMINAL": {
+    "status": "YES",
+    "detail": "terminal=true",
+    "timestamp": "2026-10-11T03:01:16.328Z"
+  },
+  "P2_VERIFICATION": {
+    "status": "UNKNOWN",
+    "detail": "verification=n/a",
+    "timestamp": "2026-10-11T03:01:16.328Z"
+  },
+  "P2_TOKENS": {
+    "status": "203057",
+    "detail": "tokens=203057",
+    "timestamp": "2026-10-11T03:01:16.328Z"
+  },
+  "P2_WALL_MS": {
+    "status": "421729",
+    "detail": "wallMs=421729",
+    "timestamp": "2026-10-11T03:01:16.328Z"
+  }
+}

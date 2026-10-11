@@ -96,6 +96,12 @@ export default tseslint.config(
       // clean-room acceptance suite.
       'scripts/g7-18-autonomous.cjs',
       'scripts/g7-18-goal.cjs',
+      // G7-18E: focused autonomous repair pilot. Same CommonJS pattern
+      // (require for node:child_process + node:http). Submits the 9 existing
+      // Community Project Hub files via missionInputs bridge with the
+      // focused repair goal, then collects artifacts and computes diffs
+      // against the starting hashes.
+      'scripts/g7-18e-pilot.cjs',
       // Generated application artifacts in evidence directories — not engine source.
       'evidence/g7-17/**',
       'evidence/g7-17r/**',
@@ -105,6 +111,7 @@ export default tseslint.config(
       'evidence/g7-18b/**',
       'evidence/g7-18c/**',
       'evidence/g7-18d/**',
+      'evidence/g7-18e/**',
     ],
   },
   ...tseslint.configs.recommended,

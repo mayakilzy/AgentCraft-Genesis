@@ -1,0 +1,21 @@
+{
+  "missionId": "4422008a-c495-4a88-836e-7df84752e448",
+  "callerId": "g7-18e-final-caller",
+  "label": "g7-18e-final-repair",
+  "status": "FAILED",
+  "terminal": true,
+  "acceptedAt": "2026-10-11T02:54:15.658Z",
+  "finishedAt": "2026-10-11T03:01:15.691Z",
+  "goalOutcome": "Repair the Community Project Hub automated tests so they accurately verify the documented cross-project status-filtering behavior, and so the test process terminates cleanly.\n\nYou have been given 9 files as missionInputs. Reproduce ALL 9 (apply the repair only to test/api.test.js). Do NOT add new files. Do NOT weaken or skip any existing test. Do NOT change the test framework (still node:test).\n\nTwo defects live in test/api.test.js ONLY:\n1. The test \"should filter tasks by status\" asserts length===1 for status=todo/in-progress/done, but earlier tests in the same file share the same test DB and mutate it. Actual returned counts at assertion time: 4 (todo), 2 (in-progress), 1 (done). The application is correct — the test wrongly assumed isolation. Fix it to verify documented cross-project semantics: GET /api/tasks?status=<s> returns ALL matching tasks across ALL projects; GET /api/projects/:id/tasks returns ONLY the specified project's tasks. Acceptable fix: either (a) reset the test DB between tests via test.beforeEach, or (b) rewrite assertions to confirm the response contains exactly one task belonging to this test's own project with the expected title, while other entries belong to other projects. Do NOT replace with assert.ok(true) or skip it.\n2. The spawned server from test.before is never stopped — test.after only calls cleanupDb(). Mirror the pattern in test/integration.test.js: store the spawn handle in a module-level variable (e.g. global.testServer) in test.before, and call stopTestServer(global.testServer) in test.after so the process can exit.\n\nAfter repair, ALL tests in test/api.test.js MUST pass, AND test/db.test.js and test/integration.test.js MUST continue to pass unchanged, AND 'npm test' MUST exit 0 within 60 seconds.\n\nWrite ALL 9 files using write_file, then call finish with artifacts: [\"README.md\",\"package.json\",\"public/app.js\",\"public/index.html\",\"public/styles.css\",\"server.js\",\"test/api.test.js\",\"test/db.test.js\",\"test/integration.test.js\"].",
+  "result": {
+    "status": "failure",
+    "summary": "mission aborted (timeout or cancellation) before completion",
+    "evidence": [],
+    "cost": {
+      "usd": 0,
+      "tokens": 203057,
+      "wallMs": 420001,
+      "humanInterventions": 0
+    }
+  }
+}

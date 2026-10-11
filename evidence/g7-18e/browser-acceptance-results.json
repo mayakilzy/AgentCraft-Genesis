@@ -1,0 +1,11 @@
+{
+  "pageLoad": "PASS",
+  "h1": "Community Project Hub",
+  "projectCreateViaUI": true,
+  "taskCreateViaUI": true,
+  "taskUpdateViaAPI": true,
+  "crossProjectFilter": true,
+  "crossProjectFilterTitle": true,
+  "consoleErrors": [],
+  "screenshot": "/home/z/my-project/work/evidence/g7-18e/browser-acceptance-dashboard.png"
+}

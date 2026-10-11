@@ -1,0 +1,16 @@
+{
+  "changed": [
+    "public/app.js",
+    "public/index.html",
+    "public/styles.css",
+    "test/api.test.js",
+    "test/db.test.js",
+    "test/integration.test.js"
+  ],
+  "unchanged": [
+    "README.md",
+    "package.json",
+    "server.js"
+  ],
+  "count": 6
+}

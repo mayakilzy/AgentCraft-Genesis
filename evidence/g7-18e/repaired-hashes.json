@@ -1,0 +1,11 @@
+{
+  "README.md": "718db0f4b096089cba7813ffeb62f2ffb36e2c345b9dc22c3d94300ea537a279",
+  "package.json": "587ba47b1082b8763b1722bf2b25b6767a8c9cdb8577f3cb32892ce19b9f3e31",
+  "public/app.js": "MISSING",
+  "public/index.html": "MISSING",
+  "public/styles.css": "MISSING",
+  "server.js": "aa8dc58247b85749ba84616aa4bf9d59651b20bb5cdc789c518cecca17cc026d",
+  "test/api.test.js": "MISSING",
+  "test/db.test.js": "MISSING",
+  "test/integration.test.js": "MISSING"
+}

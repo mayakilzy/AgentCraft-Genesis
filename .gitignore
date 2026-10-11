@@ -36,3 +36,9 @@ evidence/g7-18c/clean-room-app/hub*.db
 evidence/g7-18c/clean-room-app/node_modules/
 evidence/g7-18d/clean-room-app/hub*.db
 evidence/g7-18d/clean-room-app/node_modules/
+evidence/g7-18e/clean-room-app/hub*.db
+evidence/g7-18e/clean-room-app/node_modules/
+evidence/g7-18e/clean-room-final/hub*.db
+evidence/g7-18e/clean-room-final/node_modules/
+evidence/g7-18e/diag/hub*.db
+evidence/g7-18e/diag/node_modules/

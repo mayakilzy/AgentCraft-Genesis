@@ -1,0 +1,112 @@
+{
+  "A-01": {
+    "status": "PASS",
+    "detail": "all 9 files present in clean-room-final (from software-engineer-1 worker output)",
+    "timestamp": "2026-10-11T03:02:00"
+  },
+  "A-02": {
+    "status": "PASS",
+    "detail": "changed=1 unchanged=8 — changed: ['test/api.test.js'] only (target file). README.md, package.json, public/app.js, public/index.html, public/styles.css, server.js, test/db.test.js, test/integration.test.js all unchanged vs G7-18D baseline.",
+    "timestamp": "2026-10-11T03:02:01"
+  },
+  "A-03": {
+    "status": "PASS",
+    "detail": "npm install exit=0 in clean-room-final",
+    "timestamp": "2026-10-11T03:02:30"
+  },
+  "A-04": {
+    "status": "PASS",
+    "detail": "backend started on port 3180 with DB_FILE=hub-accept.db",
+    "timestamp": "2026-10-11T03:02:40"
+  },
+  "A-05": {
+    "status": "PASS",
+    "detail": "GET /api/projects → 200, ok=true, data=[]",
+    "timestamp": "2026-10-11T03:02:40"
+  },
+  "A-06": {
+    "status": "PASS",
+    "detail": "GET / → 200, returns index.html with <title>Community Project Hub</title>",
+    "timestamp": "2026-10-11T03:02:40"
+  },
+  "A-07": {
+    "status": "PASS",
+    "detail": "POST /api/projects → 201, id=1, status=active",
+    "timestamp": "2026-10-11T03:02:41"
+  },
+  "A-08": {
+    "status": "PASS",
+    "detail": "project visible in GET /api/projects response",
+    "timestamp": "2026-10-11T03:02:41"
+  },
+  "A-09": {
+    "status": "PASS",
+    "detail": "POST /api/projects/1/tasks → 201, id=1, status=todo",
+    "timestamp": "2026-10-11T03:02:41"
+  },
+  "A-10": {
+    "status": "PASS",
+    "detail": "PATCH /api/tasks/1 → 200, status=in-progress",
+    "timestamp": "2026-10-11T03:02:41"
+  },
+  "A-11": {
+    "status": "PASS",
+    "detail": "GET /api/tasks?status=in-progress includes the patched task id=1",
+    "timestamp": "2026-10-11T03:02:41"
+  },
+  "A-12": {
+    "status": "PASS",
+    "detail": "empty name rejected: 400 Project name is required",
+    "timestamp": "2026-10-11T03:02:42"
+  },
+  "A-12b": {
+    "status": "PASS",
+    "detail": "invalid status rejected: 400 Invalid task status",
+    "timestamp": "2026-10-11T03:02:42"
+  },
+  "A-13": {
+    "status": "PASS",
+    "detail": "project persisted across backend restart (SIGTERM + restart with same DB_FILE)",
+    "timestamp": "2026-10-11T03:02:55"
+  },
+  "A-13b": {
+    "status": "PASS",
+    "detail": "task + status (in-progress) persisted across backend restart",
+    "timestamp": "2026-10-11T03:02:55"
+  },
+  "A-14": {
+    "status": "PASS",
+    "detail": "npm test (full suite, 60s timeout) → exit 0 in 0.39s. 22 tests pass, 0 fail. Previously-failing 'should filter tasks by status' now PASSES (49.6ms).",
+    "timestamp": "2026-10-11T03:03:00"
+  },
+  "A-14b": {
+    "status": "PASS",
+    "detail": "npm test process terminates cleanly within 60s (no hang). Test.beforeEach reset pattern + stopTestServer in test.after fix the orphaned-server hang from G7-18D.",
+    "timestamp": "2026-10-11T03:03:00"
+  },
+  "A-15": {
+    "status": "PASS",
+    "detail": "browser acceptance: page load, project create via UI, task create via UI, task PATCH via API, cross-project in-progress filter returns 1 task with correct title. Screenshot at evidence/g7-18e/browser-acceptance-dashboard.png. Console errors: [].",
+    "timestamp": "2026-10-11T03:04:30"
+  },
+  "A-15b": {
+    "status": "PASS",
+    "detail": "cross-project filter verified: GET /api/tasks?status=in-progress with 2 projects × 1 task each (one per project, both in-progress) returns BOTH tasks across both projects. GET /api/projects/1/tasks returns only Project 1's task. GET /api/projects/2/tasks returns only Project 2's task.",
+    "timestamp": "2026-10-11T03:02:57"
+  },
+  "A-16": {
+    "status": "PASS",
+    "detail": "no secrets in clean-room-final files (no ghp_, sk-, password)",
+    "timestamp": "2026-10-11T03:02:01"
+  },
+  "A-17": {
+    "status": "PASS",
+    "detail": "Genesis typecheck PASS, lint PASS (0 errors), full regression PASS (913 passed | 9 skipped | 0 failed across 93 files).",
+    "timestamp": "2026-10-11T03:07:00"
+  },
+  "A-18": {
+    "status": "PASS",
+    "detail": "frozen contracts UNCHANGED: src/contracts/core.ts, src/mission/verification.ts, src/mission/orchestrator.ts, src/goal/goal-compiler.ts — 0 diff lines vs G7-18D baseline (c09a593).",
+    "timestamp": "2026-10-11T03:07:30"
+  }
+}

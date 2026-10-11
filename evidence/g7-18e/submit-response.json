@@ -1,0 +1,12 @@
+{
+  "missionId": "4422008a-c495-4a88-836e-7df84752e448",
+  "status": "RUNNING",
+  "accepted": true,
+  "links": {
+    "self": "/v1/missions/4422008a-c495-4a88-836e-7df84752e448",
+    "events": "/v1/missions/4422008a-c495-4a88-836e-7df84752e448/events",
+    "result": "/v1/missions/4422008a-c495-4a88-836e-7df84752e448/result",
+    "artifacts": "/v1/missions/4422008a-c495-4a88-836e-7df84752e448/artifacts",
+    "cancel": "/v1/missions/4422008a-c495-4a88-836e-7df84752e448/cancel"
+  }
+}
