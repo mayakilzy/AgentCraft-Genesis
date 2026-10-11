@@ -1,0 +1,67 @@
+[
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] No MCP config (GENESIS_MCP_SERVERS_CONFIG not set).\n",
+    "ts": "2026-10-11T05:21:45.453Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] EXECUTION MODE: production (real providers required)\n",
+    "ts": "2026-10-11T05:21:45.453Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-11T05:21:45.569Z\",\"component\":\"history_recovery\",\"message\":\"loaded 5 mission record(s) from disk\"}\n",
+    "ts": "2026-10-11T05:21:45.570Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] HTTP API listening on http://127.0.0.1:4380\n",
+    "ts": "2026-10-11T05:21:45.613Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] A2A inbound listening on http://127.0.0.1:4381\n[genesis-gateway] Agent Card at http://127.0.0.1:4381/.well-known/agent-card.json\n[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.\n[genesis-gateway] 1 caller(s) configured.\n[genesis-gateway] Execution mode: production\n[genesis-gateway] In-process mission state; no durability across restart.\n[genesis-gateway] Conversations are durable (JSONL on disk).\n[genesis-gateway] Projects are durable (atomic JSON on disk).\n",
+    "ts": "2026-10-11T05:21:45.613Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-11T05:21:45.764Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"4ff5192f-cb34-41f5-88ed-c2f0eb528437\",\"callerId\":\"g7-19e-smoke-caller\"}\n",
+    "ts": "2026-10-11T05:21:45.764Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1083:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:861:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:961:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:561:24)\n",
+    "ts": "2026-10-11T05:24:41.825Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1083:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:861:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:961:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:561:24)\n",
+    "ts": "2026-10-11T05:24:46.853Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1083:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:861:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:961:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:561:24)\n",
+    "ts": "2026-10-11T05:25:01.876Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1083:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:861:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:961:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:561:24)\n",
+    "ts": "2026-10-11T05:25:31.917Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1083:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:861:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:961:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:561:24)\n",
+    "ts": "2026-10-11T05:26:31.942Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1083:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:861:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:961:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:561:24)\n",
+    "ts": "2026-10-11T05:28:31.971Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-11T05:30:46.382Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"4ff5192f-cb34-41f5-88ed-c2f0eb528437\",\"status\":\"PARTIAL\",\"callerId\":\"g7-19e-smoke-caller\"}\n",
+    "ts": "2026-10-11T05:30:46.382Z"
+  }
+]

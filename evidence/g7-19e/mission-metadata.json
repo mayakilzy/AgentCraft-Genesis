@@ -1,0 +1,15 @@
+{
+  "missionId": "4ff5192f-cb34-41f5-88ed-c2f0eb528437",
+  "acceptedAt": "2026-10-11T05:21:45.768Z",
+  "finishedAt": "2026-10-11T05:30:46.379Z",
+  "status": "PARTIAL",
+  "terminal": true,
+  "tokens": 257956,
+  "wallMs": 543538,
+  "artifactsCount": 12,
+  "manifestPresent": 5,
+  "manifestExpected": 5,
+  "verifiedPackageSelection": null,
+  "artifactsWithConflictResolution": 8,
+  "heuristicAuthoritySafe": true
+}

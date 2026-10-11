@@ -1,0 +1,72 @@
+{
+  "missionId": "4ff5192f-cb34-41f5-88ed-c2f0eb528437",
+  "callerId": "g7-19e-smoke-caller",
+  "label": "g7-19e-live-smoke",
+  "status": "PARTIAL",
+  "terminal": true,
+  "acceptedAt": "2026-10-11T05:21:45.763Z",
+  "finishedAt": "2026-10-11T05:30:46.379Z",
+  "goalOutcome": "Build \"Service Request Tracker — Smoke v0.1\": a minimal Node.js CLI app.\n\nCapabilities (each MUST be implemented and verified):\n1. Create a service request: \"node src/index.js create \\\"<title>\\\" \\\"<description>\\\"\" writes a new request with status=\"open\" and a generated id, then prints the id to stdout.\n2. List all requests: \"node src/index.js list\" prints all requests as a JSON array to stdout.\n3. Update a request status: \"node src/index.js update <id> <new-status>\" transitions status; valid transitions: open→in_progress, in_progress→resolved only (forward-only; reject same-status or backward).\n4. Persist records locally: store all requests in \"data/requests.json\" (create the dir if absent, create the file if absent).\n5. Reject invalid inputs: empty title, unknown id, unknown new-status, invalid transition — each prints a clear error to stderr and exits with code 1.\n6. Include automated tests using node:test (built-in): at least 6 test cases covering (a) create, (b) list, (c) update, (d) persistence across restart (new store instance reads the same file), (e) invalid input rejection, (f) one negative test.\n7. Include README.md with: app description, install instructions (npm install — should be a no-op since no deps), run tests (npm test), CLI usage examples for create/list/update, valid status transitions table.\n\nAfter producing all 5 files, finish with artifacts: [\"package.json\",\"README.md\",\"src/index.js\",\"src/store.js\",\"test/app.test.js\"].",
+  "result": {
+    "status": "partial",
+    "summary": "mission aborted (timeout or cancellation) before completion",
+    "evidence": [
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at package.json",
+        "location": "software-engineer-1:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at README.md",
+        "location": "software-engineer-1:README.md"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at src/index.js",
+        "location": "software-engineer-1:src/index.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at src/store.js",
+        "location": "software-engineer-1:src/store.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/app.test.js",
+        "location": "software-engineer-1:test/app.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at package.json",
+        "location": "documentation-writer-2:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at README.md",
+        "location": "documentation-writer-2:README.md"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at src/index.js",
+        "location": "documentation-writer-2:src/index.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at src/store.js",
+        "location": "documentation-writer-2:src/store.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Documentation Writer deliverable at test/app.test.js",
+        "location": "documentation-writer-2:test/app.test.js"
+      }
+    ],
+    "cost": {
+      "usd": 0,
+      "tokens": 257956,
+      "wallMs": 540569,
+      "humanInterventions": 0
+    }
+  }
+}

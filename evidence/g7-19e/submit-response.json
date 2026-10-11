@@ -1,0 +1,12 @@
+{
+  "missionId": "4ff5192f-cb34-41f5-88ed-c2f0eb528437",
+  "status": "RUNNING",
+  "accepted": true,
+  "links": {
+    "self": "/v1/missions/4ff5192f-cb34-41f5-88ed-c2f0eb528437",
+    "events": "/v1/missions/4ff5192f-cb34-41f5-88ed-c2f0eb528437/events",
+    "result": "/v1/missions/4ff5192f-cb34-41f5-88ed-c2f0eb528437/result",
+    "artifacts": "/v1/missions/4ff5192f-cb34-41f5-88ed-c2f0eb528437/artifacts",
+    "cancel": "/v1/missions/4ff5192f-cb34-41f5-88ed-c2f0eb528437/cancel"
+  }
+}

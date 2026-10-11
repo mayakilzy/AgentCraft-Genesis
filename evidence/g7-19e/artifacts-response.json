@@ -1,0 +1,324 @@
+{
+  "missionId": "4ff5192f-cb34-41f5-88ed-c2f0eb528437",
+  "artifacts": [
+    {
+      "workerId": "documentation-writer-2",
+      "path": "README.md",
+      "content": "# Service Request Tracker — Smoke v0.1\n\n## What it does\nA minimal Node.js CLI app for tracking service requests with status transitions. It allows creating, listing, and updating service requests while persisting data locally in a JSON file.\n\n## Install\n```bash\nnpm install\n```\nNote: This is a no-op as the app uses only Node.js standard library with no external dependencies.\n\n## Run tests\n```bash\nnpm test\n```\n\n## CLI usage\n\n### Create a new request\n```bash\nnode src/index.js create \"<title>\" \"<description>\"\n```\n\nExample:\n```bash\nnode src/index.js create \"Server down\" \"The main server is not responding\"\n```\n\n### List all requests\n```bash\nnode src/index.js list\n```\n\nExample:\n```bash\nnode src/index.js list\n```\n\n### Update a request status\n```bash\nnode src/index.js update <id> <new-status>\n```\n\nExample:\n```bash\nnode src/index.js update 123456789 in_progress\n```\n\n## Valid status transitions\n\n| From Status | To Status   | Allowed |\n|-------------|-------------|---------|\n| open        | in_progress | Yes     |\n| in_progress | resolved    | Yes     |\n| open        | resolved    | No      |\n| resolved    | open        | No      |\n| resolved    | in_progress | No      |\n| in_progress | open        | No      |\n| open        | open        | No      |\n| in_progress | in_progress | No      |\n| resolved    | resolved    | No      |\n\nOnly forward transitions are allowed. You must transition through each status in order (open → in_progress → resolved).",
+      "verified": true,
+      "bytes": 1464,
+      "contentHash": "01b8a0eb068490e040b4d91fd5627c6d6edc408e38b1f5ba4424b96147c3dc61",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "a745ce8f9d1ba580178bace1b6e34ab162bed89adac61b4f2382a596cacaff4d",
+          "bytes": 885
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "authoritativeContentHash": "01b8a0eb068490e040b4d91fd5627c6d6edc408e38b1f5ba4424b96147c3dc61",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "path": "package.json",
+      "content": "{\n  \"name\": \"service-request-tracker\",\n  \"version\": \"0.1.0\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/\",\n    \"start\": \"node src/index.js\"\n  }\n}",
+      "verified": true,
+      "bytes": 167,
+      "contentHash": "055a6b530383b72cd25ba9efe6eb5b11a47f17141be985fa19ab922220a98153",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "path": "src/index.js",
+      "content": "#!/usr/bin/env node\nimport { createRequest, listRequests, updateStatus } from './store.js';\nimport { argv } from 'process';\n\nconst command = argv[2];\n\ntry {\n  switch (command) {\n    case 'create': {\n      if (argv.length < 5) {\n        console.error('Error: Usage - node src/index.js create \"<title>\" \"<description>\"');\n        process.exit(1);\n      }\n      \n      const title = argv[3];\n      const description = argv[4];\n      \n      const newRequest = createRequest(title, description);\n      console.log(newRequest.id);\n      break;\n    }\n    \n    case 'list': {\n      if (argv.length !== 3) {\n        console.error('Error: Usage - node src/index.js list');\n        process.exit(1);\n      }\n      \n      const requests = listRequests();\n      console.log(JSON.stringify(requests, null, 2));\n      break;\n    }\n    \n    case 'update': {\n      if (argv.length !== 5) {\n        console.error('Error: Usage - node src/index.js update <id> <new-status>');\n        process.exit(1);\n      }\n      \n      const id = argv[3];\n      const newStatus = argv[4];\n      \n      const updatedRequest = updateStatus(id, newStatus);\n      console.log(JSON.stringify(updatedRequest, null, 2));\n      break;\n    }\n    \n    default: {\n      console.error('Error: Unknown command. Use create, list, or update.');\n      process.exit(1);\n    }\n  }\n} catch (error) {\n  console.error(`Error: ${error.message}`);\n  process.exit(1);\n}\n",
+      "verified": true,
+      "bytes": 1412,
+      "contentHash": "ca0d43fab717fc838e741e10718382e0ae81b42e4d17b229812ab01672335b83",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "08cdac4c504d3cdf010457597e743a542fc7e181e72a5efe30afe4f65bfdcbc5",
+          "bytes": 2323
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "authoritativeContentHash": "ca0d43fab717fc838e741e10718382e0ae81b42e4d17b229812ab01672335b83",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "path": "src/store.js",
+      "content": "import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';\nimport { join } from 'path';\n\nconst DATA_DIR = 'data';\nconst REQUESTS_FILE = join(DATA_DIR, 'requests.json');\n\n// Ensure data directory exists\nif (!existsSync(DATA_DIR)) {\n  mkdirSync(DATA_DIR);\n}\n\n// Initialize requests file if it doesn't exist\nif (!existsSync(REQUESTS_FILE)) {\n  writeFileSync(REQUESTS_FILE, '[]');\n}\n\n// Helper function to read requests from file\nconst readRequests = () => {\n  try {\n    const data = readFileSync(REQUESTS_FILE, 'utf8');\n    return JSON.parse(data);\n  } catch (error) {\n    console.error('Error reading requests:', error);\n    return [];\n  }\n};\n\n// Helper function to write requests to file\nconst writeRequests = (requests) => {\n  try {\n    writeFileSync(REQUESTS_FILE, JSON.stringify(requests, null, 2));\n  } catch (error) {\n    console.error('Error writing requests:', error);\n    throw error;\n  }\n};\n\n// Valid status transitions\nconst VALID_TRANSITIONS = {\n  'open': ['in_progress'],\n  'in_progress': ['resolved'],\n  'resolved': []\n};\n\n// Create a new request\nexport const createRequest = (title, description) => {\n  if (!title || title.trim() === '') {\n    throw new Error('Title cannot be empty');\n  }\n  \n  const requests = readRequests();\n  const newRequest = {\n    id: Date.now().toString(),\n    title: title.trim(),\n    description: description.trim(),\n    status: 'open',\n    createdAt: new Date().toISOString()\n  };\n  \n  requests.push(newRequest);\n  writeRequests(requests);\n  \n  return newRequest;\n};\n\n// List all requests\nexport const listRequests = () => {\n  return readRequests();\n};\n\n// Update request status\nexport const updateStatus = (id, newStatus) => {\n  const requests = readRequests();\n  const requestIndex = requests.findIndex(req => req.id === id);\n  \n  if (requestIndex === -1) {\n    throw new Error(`Request with id ${id} not found`);\n  }\n  \n  const request = requests[requestIndex];\n  const currentStatus = request.status;\n  \n  if (!VALID_TRANSITIONS.hasOwnProperty(newStatus)) {\n    throw new Error(`Invalid status: ${newStatus}`);\n  }\n  \n  if (currentStatus === newStatus) {\n    throw new Error(`Status is already ${newStatus}`);\n  }\n  \n  if (!VALID_TRANSITIONS[currentStatus].includes(newStatus)) {\n    throw new Error(`Cannot transition from ${currentStatus} to ${newStatus}`);\n  }\n  \n  request.status = newStatus;\n  writeRequests(requests);\n  \n  return request;\n};",
+      "verified": true,
+      "bytes": 2406,
+      "contentHash": "8e4dfa42e56f233c50cb4633c346c2884452b565c679e3b8c980d9b0f68608ad",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "89f7b74b2654ebc48e26a2d07b74a345ecef27852276406ccc80882b65d4444b",
+          "bytes": 3000
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "authoritativeContentHash": "8e4dfa42e56f233c50cb4633c346c2884452b565c679e3b8c980d9b0f68608ad",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "path": "test/app.test.js",
+      "content": "import { test } from 'node:test';\nimport assert from 'node:assert';\nimport { createRequest, listRequests, updateStatus } from '../src/store.js';\nimport { existsSync, unlinkSync, rmdirSync } from 'fs';\nimport { join } from 'path';\n\n// Clean up before each test\nconst cleanup = () => {\n  if (existsSync('data/requests.json')) {\n    unlinkSync('data/requests.json');\n  }\n  if (existsSync('data')) {\n    rmdirSync('data');\n  }\n};\n\ntest.beforeEach(cleanup);\ntest.afterEach(cleanup);\n\ntest('create adds a request to the store', () => {\n  const request = createRequest('Test Title', 'Test Description');\n  assert.strictEqual(request.status, 'open');\n  assert.ok(request.id);\n  assert.ok(request.createdAt);\n  \n  const requests = listRequests();\n  assert.strictEqual(requests.length, 1);\n  assert.strictEqual(requests[0].id, request.id);\n});\n\ntest('list returns all stored requests', () => {\n  createRequest('First Title', 'First Description');\n  createRequest('Second Title', 'Second Description');\n  \n  const requests = listRequests();\n  assert.strictEqual(requests.length, 2);\n  assert.strictEqual(requests[0].title, 'First Title');\n  assert.strictEqual(requests[1].title, 'Second Title');\n});\n\ntest('update transitions status', () => {\n  const request = createRequest('Test Title', 'Test Description');\n  const id = request.id;\n  \n  // Update to in_progress\n  const updated1 = updateStatus(id, 'in_progress');\n  assert.strictEqual(updated1.status, 'in_progress');\n  \n  // Update to resolved\n  const updated2 = updateStatus(id, 'resolved');\n  assert.strictEqual(updated2.status, 'resolved');\n});\n\ntest('persistence survives restart', () => {\n  // Create a request\n  createRequest('Persistent Title', 'Persistent Description');\n  \n  // Simulate restart by creating a new store instance\n  // We'll just reload the file directly to simulate this\n  const reloadedRequests = listRequests();\n  assert.strictEqual(reloadedRequests.length, 1);\n  assert.strictEqual(reloadedRequests[0].title, 'Persistent Title');\n});\n\ntest('empty title is rejected', () => {\n  assert.throws(() => {\n    createRequest('', 'Description');\n  }, /Title cannot be empty/);\n  \n  assert.throws(() => {\n    createRequest('   ', 'Description');\n  }, /Title cannot be empty/);\n});\n\ntest('invalid transition is rejected', () => {\n  const request = createRequest('Test Title', 'Test Description');\n  const id = request.id;\n  \n  // Try to go from open directly to resolved (should fail)\n  assert.throws(() => {\n    updateStatus(id, 'resolved');\n  }, /Cannot transition from open to resolved/);\n  \n  // Try to go backwards (should fail)\n  const updated = updateStatus(id, 'in_progress');\n  assert.strictEqual(updated.status, 'in_progress');\n  \n  assert.throws(() => {\n    updateStatus(id, 'open');\n  }, /Cannot transition from in_progress to open/);\n  \n  // Try same status (should fail)\n  assert.throws(() => {\n    updateStatus(id, 'in_progress');\n  }, /Status is already in_progress/);\n  \n  // Try unknown status (should fail)\n  assert.throws(() => {\n    updateStatus(id, 'unknown_status');\n  }, /Invalid status: unknown_status/);\n});\n\ntest('unknown id is rejected', () => {\n  assert.throws(() => {\n    updateStatus('nonexistent_id', 'in_progress');\n  }, /Request with id nonexistent_id not found/);\n});",
+      "verified": true,
+      "bytes": 3261,
+      "contentHash": "e268e202248bdf34925a148670e697a7f0642414af0a67a32f2e41ca01b60e02",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "424f7ed636e87373ae4ecbf337a44ca4e4e2b483d63bac17a325366ed4d8880a",
+          "bytes": 7490
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "authoritativeContentHash": "e268e202248bdf34925a148670e697a7f0642414af0a67a32f2e41ca01b60e02",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-11T05_22_44_449Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-g7-19e/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-g7-19e/***/software-engineer-1/workspace/.npm/_logs/2026-10-11T05_22_44_449Z-\n9 verbose logfile /tmp/openbot-workspaces-g7-19e/***/software-engineer-1/workspace/.npm/_logs/2026-10-11T05_22_44_449Z-debug-0.log\n10 silly logfile done cleaning log files\n11 verbose cwd /tmp/openbot-workspaces-g7-19e/***/software-engineer-1/workspace\n12 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n13 verbose node v24.21.0\n14 verbose npm  v11.19.0\n15 verbose exit 1\n16 verbose code 1\n",
+      "verified": true,
+      "bytes": 864,
+      "contentHash": "7279f1d7d802ccefbdf2d7de875f866a45d49d5ad245c1d68b5f19cca11f8e0f",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_update-notifier-last-checked",
+      "content": "",
+      "verified": true,
+      "bytes": 0,
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "README.md",
+      "content": "# Service Request Tracker — Smoke v0.1\n\n## What it does\nA minimal Node.js CLI app for tracking service requests with status management and persistence.\n\n## Install\n```bash\nnpm install\n```\nThis is a no-op as there are no dependencies.\n\n## Run tests\n```bash\nnpm test\n```\n\n## CLI usage\n\n### Create a service request\n```bash\nnode src/index.js create \"<title>\" \"<description>\"\n```\nExample:\n```bash\nnode src/index.js create \"Server down\" \"The production server is not responding\"\n```\n\n### List all requests\n```bash\nnode src/index.js list\n```\n\n### Update a request status\n```bash\nnode src/index.js update <id> <new-status>\n```\nExample:\n```bash\nnode src/index.js update 123 in_progress\n```\n\n## Valid status transitions\n| From | To |\n|------|----|\n| open | in_progress |\n| in_progress | resolved |\n\nAll other transitions (including backward transitions and same-status updates) are forbidden.",
+      "verified": true,
+      "bytes": 885,
+      "contentHash": "a745ce8f9d1ba580178bace1b6e34ab162bed89adac61b4f2382a596cacaff4d",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "contentHash": "01b8a0eb068490e040b4d91fd5627c6d6edc408e38b1f5ba4424b96147c3dc61",
+          "bytes": 1464
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "authoritativeContentHash": "01b8a0eb068490e040b4d91fd5627c6d6edc408e38b1f5ba4424b96147c3dc61",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "package.json",
+      "content": "{\n  \"name\": \"service-request-tracker\",\n  \"version\": \"0.1.0\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test test/\",\n    \"start\": \"node src/index.js\"\n  }\n}",
+      "verified": true,
+      "bytes": 167,
+      "contentHash": "055a6b530383b72cd25ba9efe6eb5b11a47f17141be985fa19ab922220a98153",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "src/index.js",
+      "content": "#!/usr/bin/env node\n\nimport { createRequest, listRequests, updateStatus } from './store.js';\nimport { argv } from 'process';\n\n// CLI commands\nconst commands = {\n  create: async (title, description) => {\n    try {\n      const newRequest = await createRequest(title, description);\n      console.log(newRequest.id);\n    } catch (error) {\n      console.error(`Error: ${error.message}`);\n      process.exit(1);\n    }\n  },\n  \n  list: async () => {\n    try {\n      const requests = await listRequests();\n      console.log(JSON.stringify(requests, null, 2));\n    } catch (error) {\n      console.error(`Error: ${error.message}`);\n      process.exit(2);\n    }\n  },\n  \n  update: async (id, newStatus) => {\n    try {\n      const updatedRequest = await updateStatus(id, newStatus);\n      console.log(JSON.stringify(updatedRequest, null, 2));\n    } catch (error) {\n      console.error(`Error: ${error.message}`);\n      process.exit(1);\n    }\n  }\n};\n\n// Main function\nasync function main() {\n  // Skip first two args (node and script path)\n  const [command, ...args] = argv.slice(2);\n  \n  if (!command) {\n    console.error('Error: No command provided');\n    console.log('Usage:');\n    console.log('  node src/index.js create \"<title>\" \"<description>\"');\n    console.log('  node src/index.js list');\n    console.log('  node src/index.js update <id> <new-status>');\n    process.exit(1);\n  }\n  \n  if (!commands[command]) {\n    console.error(`Error: Unknown command \"${command}\"`);\n    console.log('Available commands: create, list, update');\n    process.exit(1);\n  }\n  \n  // Validate arguments for each command\n  switch (command) {\n    case 'create':\n      if (args.length < 2) {\n        console.error('Error: create command requires title and description');\n        process.exit(1);\n      }\n      // Trim whitespace from arguments\n      await commands.create(args[0].trim(), args[1].trim());\n      break;\n      \n    case 'list':\n      if (args.length > 0) {\n        console.error('Error: list command does not take arguments');\n        process.exit(1);\n      }\n      await commands.list();\n      break;\n      \n    case 'update':\n      if (args.length < 2) {\n        console.error('Error: update command requires id and new-status');\n        process.exit(1);\n      }\n      await commands.update(args[0], args[1]);\n      break;\n  }\n}\n\nmain();",
+      "verified": true,
+      "bytes": 2323,
+      "contentHash": "08cdac4c504d3cdf010457597e743a542fc7e181e72a5efe30afe4f65bfdcbc5",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "contentHash": "ca0d43fab717fc838e741e10718382e0ae81b42e4d17b229812ab01672335b83",
+          "bytes": 1412
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "authoritativeContentHash": "ca0d43fab717fc838e741e10718382e0ae81b42e4d17b229812ab01672335b83",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "src/store.js",
+      "content": "import { promises as fs } from 'fs';\nimport { join } from 'path';\n\nconst DATA_DIR = 'data';\nconst REQUESTS_FILE = join(DATA_DIR, 'requests.json');\n\n// Initialize data directory and file if they don't exist\nasync function initializeDataStore() {\n  try {\n    await fs.access(DATA_DIR);\n  } catch {\n    await fs.mkdir(DATA_DIR, { recursive: true });\n  }\n  \n  try {\n    await fs.access(REQUESTS_FILE);\n  } catch {\n    await fs.writeFile(REQUESTS_FILE, '[]');\n  }\n}\n\n// Load requests from file\nexport async function loadRequests() {\n  await initializeDataStore();\n  try {\n    const data = await fs.readFile(REQUESTS_FILE, 'utf-8');\n    return JSON.parse(data);\n  } catch (error) {\n    console.error(`Error reading requests file: ${error.message}`);\n    return [];\n  }\n}\n\n// Save requests to file\nexport async function saveRequests(requests) {\n  await initializeDataStore();\n  try {\n    await fs.writeFile(REQUESTS_FILE, JSON.stringify(requests, null, 2));\n  } catch (error) {\n    console.error(`Error saving requests file: ${error.message}`);\n    throw error;\n  }\n}\n\n// Generate a unique ID\nfunction generateId() {\n  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);\n}\n\n// Create a new request\nexport async function createRequest(title, description) {\n  if (!title || title.trim() === '') {\n    throw new Error('Title cannot be empty');\n  }\n  \n  const requests = await loadRequests();\n  const newRequest = {\n    id: generateId(),\n    title: title.trim(),\n    description: description.trim(),\n    status: 'open',\n    createdAt: new Date().toISOString(),\n  };\n  \n  requests.push(newRequest);\n  await saveRequests(requests);\n  return newRequest;\n}\n\n// List all requests\nexport async function listRequests() {\n  return await loadRequests();\n}\n\n// Update request status\nexport async function updateStatus(id, newStatus) {\n  const requests = await loadRequests();\n  const requestIndex = requests.findIndex(req => req.id === id);\n  \n  if (requestIndex === -1) {\n    throw new Error(`Request with id ${id} not found`);\n  }\n  \n  const request = requests[requestIndex];\n  const currentStatus = request.status;\n  \n  // Validate new status\n  const validStatuses = ['open', 'in_progress', 'resolved'];\n  if (!validStatuses.includes(newStatus)) {\n    throw new Error(`Invalid status: ${newStatus}`);\n  }\n  \n  // Validate transition\n  if (currentStatus === newStatus) {\n    throw new Error(`Status is already ${newStatus}`);\n  }\n  \n  if (currentStatus === 'open' && newStatus === 'resolved') {\n    throw new Error('Cannot transition directly from open to resolved');\n  }\n  \n  if (currentStatus === 'resolved' && newStatus !== 'resolved') {\n    throw new Error('Cannot transition from resolved to any other status');\n  }\n  \n  if (currentStatus === 'in_progress' && newStatus === 'open') {\n    throw new Error('Cannot transition from in_progress to open');\n  }\n  \n  // Update the status\n  requests[requestIndex].status = newStatus;\n  await saveRequests(requests);\n  return requests[requestIndex];\n}",
+      "verified": true,
+      "bytes": 3000,
+      "contentHash": "89f7b74b2654ebc48e26a2d07b74a345ecef27852276406ccc80882b65d4444b",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "contentHash": "8e4dfa42e56f233c50cb4633c346c2884452b565c679e3b8c980d9b0f68608ad",
+          "bytes": 2406
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "authoritativeContentHash": "8e4dfa42e56f233c50cb4633c346c2884452b565c679e3b8c980d9b0f68608ad",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": true
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "test/app.test.js",
+      "content": "import { test } from 'node:test';\nimport assert from 'node:assert';\nimport { loadRequests, saveRequests, createRequest, listRequests, updateStatus } from '../src/store.js';\nimport { readFile, writeFile, rm, mkdir } from 'fs/promises';\nimport { join } from 'path';\nimport { spawn } from 'child_process';\n\nconst DATA_DIR = 'data';\nconst REQUESTS_FILE = join(DATA_DIR, 'requests.json');\n\n// Clean up before and after tests\nasync function setup() {\n  try {\n    await rm(DATA_DIR, { recursive: true });\n  } catch (e) {\n    // Directory might not exist\n  }\n}\n\nasync function teardown() {\n  try {\n    await rm(DATA_DIR, { recursive: true });\n  } catch (e) {\n    // Directory might not exist\n  }\n}\n\ntest.beforeEach(setup);\ntest.afterEach(teardown);\n\n// Test (a): create adds a request to the store\ntest('create adds a request to the store', async () => {\n  const request = await createRequest('Test Title', 'Test Description');\n  assert.strictEqual(request.status, 'open');\n  assert.ok(request.id);\n  assert.ok(request.createdAt);\n  \n  const requests = await listRequests();\n  assert.strictEqual(requests.length, 1);\n  assert.strictEqual(requests[0].id, request.id);\n});\n\n// Test (b): list returns all stored requests\ntest('list returns all stored requests', async () => {\n  await createRequest('First Title', 'First Description');\n  await createRequest('Second Title', 'Second Description');\n  \n  const requests = await listRequests();\n  assert.strictEqual(requests.length, 2);\n  assert.strictEqual(requests[0].title, 'First Title');\n  assert.strictEqual(requests[1].title, 'Second Title');\n});\n\n// Test (c): update transitions status\ntest('update transitions status', async () => {\n  const request = await createRequest('Test Title', 'Test Description');\n  const id = request.id;\n  \n  // Update to in_progress\n  await updateStatus(id, 'in_progress');\n  let requests = await listRequests();\n  let updatedRequest = requests.find(r => r.id === id);\n  assert.strictEqual(updatedRequest.status, 'in_progress');\n  \n  // Update to resolved\n  await updateStatus(id, 'resolved');\n  requests = await listRequests();\n  updatedRequest = requests.find(r => r.id === id);\n  assert.strictEqual(updatedRequest.status, 'resolved');\n});\n\n// Test (d): persistence survives restart\ntest('persistence survives restart', async () => {\n  // Create a request\n  const request = await createRequest('Test Title', 'Test Description');\n  const id = request.id;\n  \n  // Verify it's in the file\n  let data = await readFile(REQUESTS_FILE, 'utf-8');\n  let requests = JSON.parse(data);\n  assert.strictEqual(requests.length, 1);\n  assert.strictEqual(requests[0].id, id);\n  \n  // Create a new store instance and load\n  const newRequests = await loadRequests();\n  assert.strictEqual(newRequests.length, 1);\n  assert.strictEqual(newRequests[0].id, id);\n});\n\n// Test (e): empty title is rejected\ntest('empty title is rejected', async () => {\n  await assert.rejects(\n    async () => {\n      await createRequest('', 'Test Description');\n    },\n    { message: 'Title cannot be empty' }\n  );\n  \n  await assert.rejects(\n    async () => {\n      await createRequest('   ', 'Test Description');\n    },\n    { message: 'Title cannot be empty' }\n  );\n});\n\n// Test (f): invalid transition is rejected\ntest('invalid transition is rejected', async () => {\n  const request = await createRequest('Test Title', 'Test Description');\n  const id = request.id;\n  \n  // Try to skip in_progress and go directly to resolved\n  await assert.rejects(\n    async () => {\n      await updateStatus(id, 'resolved');\n    },\n    { message: 'Cannot transition directly from open to resolved' }\n  );\n  \n  // Update to in_progress first\n  await updateStatus(id, 'in_progress');\n  \n  // Try to go back to open\n  await assert.rejects(\n    async () => {\n      await updateStatus(id, 'open');\n    },\n    { message: 'Cannot transition from in_progress to open' }\n  );\n  \n  // Try to update to same status\n  await assert.rejects(\n    async () => {\n      await updateStatus(id, 'in_progress');\n    },\n    { message: 'Status is already in_progress' }\n  );\n});\n\n// Helper function to run CLI commands and capture output\nasync function runCliCommand(command) {\n  return new Promise((resolve, reject) => {\n    const child = spawn('node', ['src/index.js', ...command.split(' ')]);\n    let stdout = '';\n    let stderr = '';\n    \n    child.stdout.on('data', (data) => {\n      stdout += data.toString();\n    });\n    \n    child.stderr.on('data', (data) => {\n      stderr += data.toString();\n    });\n    \n    child.on('close', (code) => {\n      resolve({\n        status: code,\n        stdout: stdout.trim(),\n        stderr: stderr.trim()\n      });\n    });\n    \n    child.on('error', (error) => {\n      reject(error);\n    });\n  });\n}\n\n// Test CLI functionality\ntest('CLI create command', async () => {\n  const result = await runCliCommand('create \"CLI Test\" \"CLI Description\"');\n  assert.strictEqual(result.status, 0);\n  assert.ok(result.stdout); // Should have an ID\n  \n  const id = result.stdout;\n  const listResult = await runCliCommand('list');\n  assert.strictEqual(listResult.status, 0);\n  const requests = JSON.parse(listResult.stdout);\n  assert.strictEqual(requests.length, 1);\n  assert.strictEqual(requests[0].title, 'CLI Test');\n  assert.strictEqual(requests[0].description, 'CLI Description');\n});\n\ntest('CLI list command', async () => {\n  await createRequest('List Test 1', 'Description 1');\n  await createRequest('List Test 2', 'Description 2');\n  \n  const result = await runCliCommand('list');\n  assert.strictEqual(result.status, 0);\n  const requests = JSON.parse(result.stdout);\n  assert.strictEqual(requests.length, 2);\n});\n\ntest('CLI update command', async () => {\n  const createResult = await runCliCommand('create \"Update Test\" \"Description\"');\n  assert.strictEqual(createResult.status, 0);\n  const id = createResult.stdout;\n  \n  // Update to in_progress\n  let result = await runCliCommand(`update ${id} in_progress`);\n  assert.strictEqual(result.status, 0);\n  let updated = JSON.parse(result.stdout);\n  assert.strictEqual(updated.status, 'in_progress');\n  \n  // Update to resolved\n  result = await runCliCommand(`update ${id} resolved`);\n  assert.strictEqual(result.status, 0);\n  updated = JSON.parse(result.stdout);\n  assert.strictEqual(updated.status, 'resolved');\n});\n\ntest('CLI error handling - empty title', async () => {\n  const result = await runCliCommand('create \"\" \"Description\"');\n  assert.strictEqual(result.status, 1);\n  assert.ok(result.stderr.includes('Title cannot be empty'));\n});\n\ntest('CLI error handling - unknown id', async () => {\n  const result = await runCliCommand('update unknown_id in_progress');\n  assert.strictEqual(result.status, 1);\n  assert.ok(result.stderr.includes('Request with id unknown_id not found'));\n});\n\ntest('CLI error handling - invalid status', async () => {\n  const createResult = await runCliCommand('create \"Test\" \"Description\"');\n  const id = createResult.stdout;\n  \n  const result = await runCliCommand(`update ${id} invalid_status`);\n  assert.strictEqual(result.status, 1);\n  assert.ok(result.stderr.includes('Invalid status: invalid_status'));\n});\n\ntest('CLI error handling - invalid transition', async () => {\n  const createResult = await runCliCommand('create \"Test\" \"Description\"');\n  const id = createResult.stdout;\n  \n  const result = await runCliCommand(`update ${id} resolved`);\n  assert.strictEqual(result.status, 1);\n  assert.ok(result.stderr.includes('Cannot transition directly from open to resolved'));\n});",
+      "verified": true,
+      "bytes": 7490,
+      "contentHash": "424f7ed636e87373ae4ecbf337a44ca4e4e2b483d63bac17a325366ed4d8880a",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "documentation-writer-2",
+          "contentHash": "e268e202248bdf34925a148670e697a7f0642414af0a67a32f2e41ca01b60e02",
+          "bytes": 3261
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "documentation-writer-2",
+        "authoritativeContentHash": "e268e202248bdf34925a148670e697a7f0642414af0a67a32f2e41ca01b60e02",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c",
+        "packageState": "SELECTED",
+        "selectedWorkerId": "software-engineer-1",
+        "rationale": "multiple verified packages (2); selected by (packageIdentity, workerId) — winner: software-engineer-1",
+        "isAuthoritativePackage": true
+      }
+    }
+  ]
+}
