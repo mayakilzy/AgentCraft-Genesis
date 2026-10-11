@@ -1,0 +1,56 @@
+{
+  "phase": "A — Real Command Acceptance",
+  "summary": "Executed the persisted G7-19E application's npm test in an isolated real subprocess (not MemoryComputer stub). Captured the failure empirically. Tested a corrected fixture that passes. Preserved the original G7-19E evidence unchanged.",
+  "execution_script": "scripts/g7-19g-phase-a-exec.cjs",
+  "original_fixture_result": {
+    "command": "sh -c \"cd original-software-engineer-1 && npm test\"",
+    "cwd": "/tmp/g7-19g-phase-a",
+    "timeoutMs": 60000,
+    "exitCode": 1,
+    "timedOut": false,
+    "failure_mode": "Cannot find module '/tmp/g7-19g-phase-a/original-software-engineer-1/test' — Node v24 fails to resolve 'test/' (trailing slash) as a module",
+    "stdout_preview": "Error: Cannot find module '/tmp/g7-19g-phase-a/original-software-engineer-1/test' ... ✖ test (31.371781ms) ... ✖ failing tests ... test at test:1:1 ... ✖ test (31.371781ms) 'test failed'",
+    "structural_floor_pass": true,
+    "content_in_artifacts_pass": true,
+    "contradiction_verified": true,
+    "contradiction_explanation": "structural floor + content-in-artifacts PASS while npm test FAILS — proves structural checks cannot override a failed command check"
+  },
+  "corrected_fixture_result": {
+    "command": "sh -c \"cd corrected-software-engineer-1 && npm test\"",
+    "cwd": "/tmp/g7-19g-phase-a",
+    "timeoutMs": 60000,
+    "exitCode": 0,
+    "timedOut": false,
+    "tests_passed": 13,
+    "tests_failed": 0,
+    "stdout_preview": "✔ create adds a request to the store (8.464097ms) ✔ list returns all stored requests (4.025713ms) ✔ update transitions status (3.652987ms) ✔ persistence survives restart (1.826873ms) ✔ empty title is rejected (1.210578ms) ✔ invalid transition is rejected (2.393152ms) ✔ CLI create command (68.188745ms) ✔ CLI list command (37.125591ms) ✔ CLI update command (98.751389ms) ✔ CLI error handling - empty title (29.603692ms) ✔ CLI error handling - unknown id (36.582507ms) ✔ CLI error handling - invalid status (64.950884ms) ✔ CLI error handling - invalid transition (66.066884ms) ... ℹ tests 13 ℹ pass 13 ℹ fail 0",
+    "corrections_applied": [
+      "package.json: changed test script from 'node --test test/' to 'node --test' (auto-discovery)",
+      "test/app.test.js: replaced runCliCommand helper's .split(' ') with sh -c to handle quoted CLI args"
+    ]
+  },
+  "original_evidence_preserved": {
+    "g7_19e_clean_room_app_unchanged": true,
+    "original_package_json_sha256": "055a6b530383b72cd25ba9efe6eb5b11a47f17141be985fa19ab922220a98153",
+    "note": "Phase A script only READ from evidence/g7-19e/clean-room-app/...; wrote outputs to /tmp (cleaned up) and evidence/g7-19g/. Original G7-19E evidence is immutable historical record."
+  },
+  "security_audit": {
+    "command_validation": "PASS — auto-add (from G7-19F acceptance-integrity.ts) uses fixed canonical commands (npm test, yarn test, pnpm test); workerId is slugified (only [a-z0-9-]); goal text is parsed by strict regex, not used as command string",
+    "shell_escaping": "PASS — auto-add uses sh -c \"cd artifacts/<workerId> && <command>\" wrapper; workerId cannot inject shell metacharacters (slugified to [a-z0-9-])",
+    "working_directory": "PASS — OpenBot exec pins CWD to workspaceDir; auto-add cds into artifacts/<workerId>/ subdir (verifier clean-room layout). Phase A script used /tmp/g7-19g-phase-a as parent + original-software-engineer-1/ and corrected-software-engineer-1/ subdirs.",
+    "timeout": "PASS — per-command timeout configurable (default per runtime); Phase A script used 60000ms; OpenBot exec uses setTimeout + process.kill(-pid, 'SIGKILL') for the whole process group on timeout",
+    "process_cleanup": "PASS — OpenBot exec uses detached: true + process.kill(-pid, 'SIGKILL') on timeout (kills the whole group); Phase A script used child.kill('SIGKILL') + cleanup of /tmp work dir",
+    "untrusted_goal_text": "PASS — goal text is parsed by regex (\\bnpm\\s+test\\b etc.); only canonical commands emitted; the regex does not capture user-supplied command strings; the goal text is NEVER used as the command string",
+    "caller_supplied_command": "NOTE — caller-supplied command checks are propagated verbatim through the G7-19F HTTP parser + buildChecks path; caller is authenticated (API key required); verifier runs in bounded sandbox (workspace CWD + egress filter + timeout + process group kill + output clamp). The OpenBot exec shell.ts line 266 confirms: spawn('/bin/bash', ['-c', command], { cwd: workspaceDir, env: filtered, detached: true }) with hard timeout + group kill.",
+    "controls_adequate": true,
+    "blocker_reported": false
+  },
+  "guarantees_verified": {
+    "1_original_fails_executable_acceptance": true,
+    "2_structural_content_checks_may_still_pass": true,
+    "3_executable_failure_cannot_produce_verified_pass": true,
+    "4_corrected_fixture_passes": true,
+    "5_original_evidence_unchanged": true,
+    "6_command_controls_adequate": true
+  }
+}

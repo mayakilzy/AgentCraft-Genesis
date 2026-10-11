@@ -58,8 +58,8 @@ function snap(
 // DIFFERENT snapshots to `computeWorkerPackageIdentities` (the
 // "verified" snapshots) than to `buildAndSelectPackages` (the
 // "current" snapshots). The mismatch will be detected.
-function verifiedIds(snaps: readonly ArtifactSnapshot[]): Map<string, string> {
-  return computeWorkerPackageIdentities(snaps);
+function verifiedIds(snaps: readonly ArtifactSnapshot[], manifest?: readonly string[]): Map<string, string> {
+  return computeWorkerPackageIdentities(snaps, manifest);
 }
 
 // ---------------------------------------------------------------------------
@@ -270,7 +270,9 @@ describe('G7-19C Scenario 8: extra non-required files exist', () => {
     ];
     // Both paths verified.
     const verifiedPaths = new Set(['README.md', 'NOTES.md']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
+    // G7-19G: pass the manifest so the captured identity is manifest-scoped
+    // (excludes NOTES.md), matching the candidate's manifest-scoped identity.
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps, manifest));
 
     expect(result.state).toBe('SELECTED');
     expect(result.selected?.workerId).toBe('worker-a');
@@ -286,7 +288,7 @@ describe('G7-19C Scenario 8: extra non-required files exist', () => {
     ];
     // Only README.md verified; NOTES.md is not.
     const verifiedPaths = new Set(['README.md']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps, manifest));
 
     expect(result.state).toBe('UNRESOLVED');
     expect(result.candidates[0].verificationOk).toBe(false);

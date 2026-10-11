@@ -1,0 +1,38 @@
+{
+  "phase": "D — Verification + regression",
+  "typecheck": "PASS (exit 0, no errors)",
+  "lint": "PASS (exit 0, no errors)",
+  "full_regression": {
+    "test_files_passed": 105,
+    "test_files_baseline_g7_19f": 103,
+    "test_files_delta": 2,
+    "tests_passed": 1074,
+    "tests_baseline_g7_19f": 1053,
+    "tests_delta": 21,
+    "tests_skipped": 9,
+    "tests_failed": 0,
+    "duration_ms": 41240,
+    "new_test_files": [
+      "tests/runtime/g7-19g-package-identity.test.ts (13 tests)",
+      "tests/g7-19g-worker-coordination.test.ts (8 tests)"
+    ],
+    "existing_tests_updated": [
+      "tests/organization-planner.test.ts — 'wires collaboration edges' test updated for G7-19G edge count (4 → 6, added 2 direct handoff assertions)",
+      "tests/runtime/g7-19c-package-selection.test.ts — verifiedIds helper accepts optional manifest; Scenario 8 passes manifest",
+      "tests/runtime/g7-19d-content-binding.test.ts — verifiedIds helper accepts optional manifest; Scenario 3 updated to use path-coverage check (new detection mechanism for post-verification extra-file injection under manifest-scoped identity)"
+    ]
+  },
+  "frozen_contracts": {
+    "src/contracts/core.ts": "0 diff lines vs 8349c2b (G7-19F baseline)",
+    "src/mission/verification.ts": "0 diff lines vs 8349c2b",
+    "src/mission/orchestrator.ts": "0 diff lines vs 8349c2b",
+    "src/goal/goal-compiler.ts": "0 diff lines vs 8349c2b",
+    "all_four_byte_identical_to_g7_19d_baseline": true,
+    "all_four_byte_identical_to_g7_19e_baseline": true,
+    "all_four_byte_identical_to_g7_19f_baseline": true
+  },
+  "live_zai_calls": 0,
+  "live_openbot_invocations": 0,
+  "manual_changes_to_historical_evidence": 0,
+  "phase_a_real_subprocess_execution": "scripts/g7-19g-phase-a-exec.cjs executed the persisted G7-19E fixture's npm test in an isolated real subprocess — empirically verified the failure (exit 1) and the corrected fixture's success (exit 0)"
+}

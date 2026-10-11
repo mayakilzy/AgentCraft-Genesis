@@ -1,0 +1,11 @@
+{
+  "command": "sh -c \"cd original-software-engineer-1 && npm test\"",
+  "cwd": "/tmp/g7-19g-phase-a",
+  "timeoutMs": 60000,
+  "exitCode": 1,
+  "stdout": "\n> service-request-tracker@0.1.0 test\n> node --test test/\n\nnode:internal/modules/cjs/loader:1568\n  throw err;\n  ^\n\nError: Cannot find module '/tmp/g7-19g-phase-a/original-software-engineer-1/test'\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)\n    at Module._load (node:internal/modules/cjs/loader:1341:5)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v24.21.0\n✖ test (31.371781ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 38.543905\n\n✖ failing tests:\n\ntest at test:1:1\n✖ test (31.371781ms)\n  'test failed'\n",
+  "stderr": "",
+  "timedOut": false,
+  "stdoutPreview": "\n> service-request-tracker@0.1.0 test\n> node --test test/\n\nnode:internal/modules/cjs/loader:1568\n  throw err;\n  ^\n\nError: Cannot find module '/tmp/g7-19g-phase-a/original-software-engineer-1/test'\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)\n    ",
+  "stderrPreview": ""
+}

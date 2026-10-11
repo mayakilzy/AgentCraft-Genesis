@@ -120,7 +120,7 @@ import { buildAggregatedRecords, applyPackageSelection } from '../runtime/artifa
 // G7-19D: computeWorkerPackageIdentities is the content-bound verification
 // capture — it computes per-worker package identities AT VERIFICATION TIME
 // so that getArtifacts() can later detect post-verification content mutation.
-import { computeWorkerPackageIdentities } from '../runtime/package-selection.js';
+import { computeWorkerPackageIdentities, extractManifestFromAcceptanceCriteria } from '../runtime/package-selection.js';
 // G7-19F: acceptance-integrity gate — detects executable-acceptance
 // mentions in goal text (e.g., "npm test MUST exit 0") and auto-adds
 // per-worker `command`-type checks for any uncovered mention.
@@ -1570,7 +1570,27 @@ export class MissionService {
         // this map was missing and bindVerificationEvidence fell back
         // to self-assertion (verificationEvidenceHash = candidate.packageIdentity).
         // G7-19D rejects that fallback path.
-        rt.verifiedPackageIdentities = computeWorkerPackageIdentities(verifiedSnapshots);
+        //
+        // G7-19G: scope the identity to manifest-declared paths only
+        // (extracted from rt.acceptanceCriteria — the caller-supplied
+        // criteria, NOT the structural floor). This excludes auxiliary
+        // runtime/cache files (e.g., .npm/* logs with timestamps in
+        // filenames) that the worker did not explicitly declare as
+        // deliverables. Without this scoping, the identity was
+        // non-reproducible across runs (the timestamp in the .npm log
+        // filename changed each run, producing a different identity).
+        // The same manifest is used later in getArtifacts() via
+        // applyPackageSelection() → buildAndSelectPackages() →
+        // buildPackageCandidates() → computePackageIdentity() — so
+        // the captured identity and the selection-time identity are
+        // computed over the SAME manifest-scoped snapshots.
+        const verifiedManifest = extractManifestFromAcceptanceCriteria(
+          rt.acceptanceCriteria ?? [],
+        );
+        rt.verifiedPackageIdentities = computeWorkerPackageIdentities(
+          verifiedSnapshots,
+          verifiedManifest,
+        );
       } else {
         rt.verifiedPaths = new Set<string>();
         // G7-19D: when verification did not pass, the identities map

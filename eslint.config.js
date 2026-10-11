@@ -107,6 +107,12 @@ export default tseslint.config(
       // the production gateway + submits ONE live mission with real Z.ai +
       // OpenBot. NOT engine source — HTTP-based smoke test tooling.
       'scripts/g7-19e-smoke.cjs',
+      // G7-19G Phase A: real command acceptance execution script. Same
+      // CommonJS pattern (require for node:child_process + node:fs + node:crypto).
+      // Spawns the G7-19E fixture's npm test in an isolated real subprocess
+      // to empirically verify the failure. NOT engine source — real-shell
+      // execution tooling for the persisted G7-19E fixture.
+      'scripts/g7-19g-phase-a-exec.cjs',
       // Generated application artifacts in evidence directories — not engine source.
       'evidence/g7-17/**',
       'evidence/g7-17r/**',
@@ -123,6 +129,8 @@ export default tseslint.config(
       'evidence/g7-19e/**',
       // G7-19F: acceptance-integrity evidence — same shape as G7-19E.
       'evidence/g7-19f/**',
+      // G7-19G: reliability closure evidence — same shape as G7-19E/F.
+      'evidence/g7-19g/**',
     ],
   },
   ...tseslint.configs.recommended,

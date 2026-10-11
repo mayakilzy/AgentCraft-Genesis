@@ -1,0 +1,50 @@
+{
+  "phase": "B — Stable Package Identity",
+  "summary": "Modified computePackageIdentity and computeWorkerPackageIdentities to accept an optional manifestPaths parameter. When provided AND non-empty, the identity is scoped to manifest-declared paths only — excluding auxiliary runtime/cache files (.npm/* logs with timestamps in filenames). Threaded the manifest through buildPackageCandidates and captureVerificationResult.",
+  "implementation_changes": [
+    {
+      "file": "src/runtime/package-selection.ts",
+      "function": "computePackageIdentity",
+      "change": "Added optional manifestPaths parameter. When provided AND non-empty, filters snapshots to only those whose normalized path is in the manifest set. When undefined or empty, uses all snapshots (pre-G7-19G behavior).",
+      "lines_changed": 60
+    },
+    {
+      "file": "src/runtime/package-selection.ts",
+      "function": "computeWorkerPackageIdentities",
+      "change": "Added optional manifestPaths parameter. Passes it through to computePackageIdentity for each worker.",
+      "lines_changed": 8
+    },
+    {
+      "file": "src/runtime/package-selection.ts",
+      "function": "buildPackageCandidates",
+      "change": "Now passes requiredManifest to computePackageIdentity (line 675). This is the G7-19G fix: the candidate's identity is manifest-scoped, matching the captured verified identity (which is also manifest-scoped via captureVerificationResult).",
+      "lines_changed": 5
+    },
+    {
+      "file": "src/gateway/mission-service.ts",
+      "function": "captureVerificationResult",
+      "change": "Extracts the manifest from rt.acceptanceCriteria via extractManifestFromAcceptanceCriteria, passes it to computeWorkerPackageIdentities. This ensures the captured identity and the selection-time identity are BOTH manifest-scoped (consistent).",
+      "lines_changed": 24
+    }
+  ],
+  "frozen_contracts_modified": 0,
+  "test_files_added": [
+    "tests/runtime/g7-19g-package-identity.test.ts (13 tests)"
+  ],
+  "existing_tests_updated": [
+    "tests/runtime/g7-19c-package-selection.test.ts — verifiedIds helper accepts optional manifest; Scenario 8 (extra non-required files) passes manifest to keep captured+candidate identities consistent",
+    "tests/runtime/g7-19d-content-binding.test.ts — verifiedIds helper accepts optional manifest; Scenario 3 (post-verification extra file) updated to use path-coverage check (the new detection mechanism for post-verification extra-file injection, since manifest-scoped identity no longer changes when extras are added)"
+  ],
+  "guarantees_verified": {
+    "1_identical_deliverables_different_cache_same_identity": "PASS — manifest-scoped identity excludes .npm/* cache files; two workers with identical manifest content but different .npm timestamps have the SAME manifest-scoped identity (only workerId differs in the canonical)",
+    "2_changed_deliverable_content_different_identity": "PASS — manifest-scoped identity still changes when manifest file content changes",
+    "3_incomplete_manifests_rejected": "PASS — assessPackageCompleteness unchanged; rejects missing manifest paths",
+    "4_unsafe_extra_files_rejected": "PASS — assessPackageCompleteness unchanged; rejects unsafe paths (.., absolute, NUL bytes)",
+    "5_auxiliary_files_remain_visible": "PASS — buildAggregatedRecords still includes all artifacts in the records; the .npm/* files are visible to consumers (not silently ignored); they're only excluded from the identity hash",
+    "6_content_hash_binding_preserved": "PASS — captured identity (manifest-scoped) matches selection-time identity (manifest-scoped) when content unchanged; mismatch detected when content changes (G7-19D regression check)"
+  },
+  "remaining_limitations": [
+    "When manifestPaths is undefined or empty (missions with no caller-supplied file-type acceptance criteria), the identity uses ALL snapshots (pre-G7-19G behavior). This is the only sensible default when there's no manifest to filter by — but it means the .npm-logs-alter-identity issue persists for missions without a manifest. In practice, the structural floor always produces file-type checks (one per produced artifact path), so the manifest will usually include all produced paths. The G7-19G fix specifically helps when the caller supplies a STRICTER manifest (e.g., only the 5 expected files, not the .npm cache).",
+    "Post-verification extra-file injection is now detected via the PATH-COVERAGE check (the extra's path is not in verifiedPaths), not the identity check (the extra doesn't change the manifest-scoped identity). This is a behavior change from G7-19D, which detected it via identity mismatch. The OUTCOME is the same (rejection), but the mechanism is different. The G7-19D Scenario 3 test was updated to reflect this."
+  ]
+}

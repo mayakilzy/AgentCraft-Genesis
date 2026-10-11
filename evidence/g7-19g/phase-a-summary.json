@@ -1,0 +1,27 @@
+{
+  "original_fixture": {
+    "path": "/tmp/g7-19g-phase-a/original-software-engineer-1",
+    "command": "sh -c \"cd original-software-engineer-1 && npm test\"",
+    "exitCode": 1,
+    "timedOut": false,
+    "structuralFloorPass": true,
+    "contentInArtifactsPass": true,
+    "contradiction": true
+  },
+  "corrected_fixture": {
+    "path": "/tmp/g7-19g-phase-a/corrected-software-engineer-1",
+    "command": "sh -c \"cd corrected-software-engineer-1 && npm test\"",
+    "exitCode": 0,
+    "timedOut": false
+  },
+  "security_audit": {
+    "command_validation": "PASS — auto-add uses fixed canonical commands (npm test, yarn test, pnpm test); workerId is slugified (only [a-z0-9-]); goal text is parsed by strict regex, not used as command string",
+    "shell_escaping": "PASS — auto-add uses sh -c \"cd artifacts/<workerId> && <command>\" wrapper; workerId cannot inject shell metacharacters",
+    "working_directory": "PASS — OpenBot exec pins CWD to workspaceDir; auto-add cds into artifacts/<workerId>/ subdir (verifier clean-room layout)",
+    "timeout": "PASS — per-command timeout configurable (default per runtime); script used 60000ms",
+    "process_cleanup": "PASS — OpenBot exec uses detached process group + SIGKILL on timeout; child.kill signals the whole group",
+    "untrusted_goal_text": "PASS — goal text is parsed by regex; only canonical commands emitted; the regex does not capture user-supplied command strings",
+    "caller_supplied_command": "NOTE — caller-supplied command checks are propagated verbatim; caller is authenticated (API key required); verifier runs in bounded sandbox (workspace CWD + egress filter + timeout + process group kill + output clamp)"
+  },
+  "original_evidence_unchanged": true
+}

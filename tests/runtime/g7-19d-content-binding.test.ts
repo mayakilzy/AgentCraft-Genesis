@@ -101,8 +101,8 @@ function candidate(
 
 // Helper: compute verified identities from snapshots (mirrors what
 // captureVerificationResult does in production).
-function verifiedIds(snaps: readonly ArtifactSnapshot[]): Map<string, string> {
-  return computeWorkerPackageIdentities(snaps);
+function verifiedIds(snaps: readonly ArtifactSnapshot[], manifest?: readonly string[]): Map<string, string> {
+  return computeWorkerPackageIdentities(snaps, manifest);
 }
 
 // ---------------------------------------------------------------------------
@@ -266,22 +266,33 @@ describe('G7-19D Scenario 3: post-verification content mutation', () => {
     expect(result.candidates[0].rejectionReason).toContain('post-verification content mutation');
   });
 
-  it('rejects when an extra file is added post-verification (identity changes)', () => {
+  it('rejects when an extra file is added post-verification (path-coverage check)', () => {
+    // G7-19G: with manifest-scoped identity, an extra file NOT in the
+    // manifest does not alter the package identity. The detection
+    // mechanism for post-verification extra-file injection is the
+    // path-coverage check in bindVerificationEvidence: every observed
+    // path must be in the verifiedPaths set. If the extra file's path
+    // is not in verifiedPaths (because it was added post-verification
+    // and wasn't verified), the candidate is rejected.
     const manifest = ['output.md'];
     const verifiedSnapps = [snap('worker-a', 'output.md', 'content')];
-    const verifiedIdMap = verifiedIds(verifiedSnapps);
+    // G7-19G: pass the manifest so the captured identity is manifest-scoped.
+    const verifiedIdMap = verifiedIds(verifiedSnapps, manifest);
 
     // Current snapshots show an extra file added.
     const currentSnapps = [
       snap('worker-a', 'output.md', 'content'),
       snap('worker-a', 'extra.md', 'sneaked in'),  // added post-verification
     ];
-    const verifiedPaths = new Set(['output.md', 'extra.md']);  // both paths in verifiedPaths
+    // verifiedPaths reflects what was ACTUALLY verified — only output.md.
+    // The extra.md was added post-verification, so it's not in verifiedPaths.
+    const verifiedPaths = new Set(['output.md']);
     const result = buildAndSelectPackages(currentSnapps, manifest, verifiedPaths, true, verifiedIdMap);
 
-    // The candidate's identity changed (extra.md added) → does not match captured identity.
+    // The candidate is rejected because extra.md is in observedPaths
+    // but not in verifiedPaths (path-coverage check).
     expect(result.candidates[0].verificationOk).toBe(false);
-    expect(result.candidates[0].rejectionReason).toContain('post-verification content mutation');
+    expect(result.candidates[0].rejectionReason).toContain('observed path not in verified set');
     expect(result.state).toBe('UNRESOLVED');
   });
 });

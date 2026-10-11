@@ -265,6 +265,29 @@ function buildEdges(workers: readonly PlannedWorker[]): CollaborationEdge[] {
   const writer = workers.find((worker) => worker.role.includes('Writer'));
 
   if (coordinator) {
+    // G7-19G: in addition to the existing coordinator-orchestrated
+    // collaboration graph (each worker reports to the coordinator,
+    // coordinator hands off to the writer), add a DIRECT handoff
+    // edge from each non-coordinator non-writer worker to the
+    // writer. This ensures that when the coordinator doesn't run
+    // (timeout, cancellation, or specialist count < 3), the writer
+    // still sees upstream worker artifacts in its brief — instead
+    // of having NO upstream inputs (which is what happened in the
+    // G7-19E mission, causing the documentation-writer-2 to
+    // produce a duplicate complete application).
+    //
+    // The direct edges do NOT replace the coordinator-orchestrated
+    // path — both coexist. When the coordinator runs, the writer
+    // sees both the coordinator's integrated summary AND each
+    // upstream worker's raw result. This is NOT misleading — it's
+    // two views of the same data (the writer can correlate). When
+    // the coordinator doesn't run, the writer sees only the raw
+    // results directly — which is the desired behavior.
+    //
+    // No cycles: the edges go from non-coordinator workers → writer
+    // (and → coordinator via 'report'); the writer doesn't have
+    // outgoing edges; the coordinator has outgoing edges only to
+    // the writer (existing). The graph is a DAG.
     for (const worker of workers) {
       if (worker.id === coordinator.id) {
         continue;
@@ -273,6 +296,14 @@ function buildEdges(workers: readonly PlannedWorker[]): CollaborationEdge[] {
     }
     if (writer && writer.id !== coordinator.id) {
       edges.push({ from: coordinator.id, to: writer.id, kind: 'handoff' });
+      // G7-19G: direct handoffs from each non-coordinator non-writer
+      // worker to the writer. Skip the writer itself (no self-edge)
+      // and the coordinator (it already hands off to the writer).
+      for (const worker of workers) {
+        if (worker.id === writer.id) continue;
+        if (worker.id === coordinator.id) continue;
+        edges.push({ from: worker.id, to: writer.id, kind: 'handoff' });
+      }
     }
     return edges;
   }

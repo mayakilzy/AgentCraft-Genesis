@@ -124,16 +124,32 @@ describe('OrganizationPlanner v0.1 (TASK-007)', () => {
 
   it('wires collaboration edges toward the coordinator and the writer', () => {
     const research = planFor(RESEARCH_GOAL);
-    // 3 specialists report to the coordinator; the coordinator hands off to the writer.
-    expect(research.collaboration).toHaveLength(4);
+    // G7-19G: 3 specialists report to the coordinator (3 report edges);
+    // the coordinator hands off to the writer (1 handoff edge); AND
+    // each non-coordinator non-writer specialist has a DIRECT handoff
+    // edge to the writer (2 direct handoff edges for the 2 non-coordinator
+    // non-writer specialists: web-researcher-1 and data-analyst-2 →
+    // report-writer-3). Total: 3 + 1 + 2 = 6 edges.
+    expect(research.collaboration).toHaveLength(6);
     expect(
       research.collaboration.filter((edge) => edge.kind === 'report'),
     ).toHaveLength(3);
     expect(
       research.collaboration.filter((edge) => edge.kind === 'handoff'),
-    ).toHaveLength(1);
+    ).toHaveLength(3);  // 1 coordinator→writer + 2 direct specialist→writer
     expect(research.collaboration).toContainEqual({
       from: 'mission-coordinator-1',
+      to: 'report-writer-3',
+      kind: 'handoff',
+    });
+    // G7-19G: verify the direct handoff edges exist.
+    expect(research.collaboration).toContainEqual({
+      from: 'web-researcher-1',
+      to: 'report-writer-3',
+      kind: 'handoff',
+    });
+    expect(research.collaboration).toContainEqual({
+      from: 'data-analyst-2',
       to: 'report-writer-3',
       kind: 'handoff',
     });

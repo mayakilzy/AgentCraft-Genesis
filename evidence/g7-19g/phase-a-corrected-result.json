@@ -1,0 +1,11 @@
+{
+  "command": "sh -c \"cd corrected-software-engineer-1 && npm test\"",
+  "cwd": "/tmp/g7-19g-phase-a",
+  "timeoutMs": 60000,
+  "exitCode": 0,
+  "stdout": "\n> service-request-tracker@0.1.0 test\n> node --test\n\n✔ create adds a request to the store (8.464097ms)\n✔ list returns all stored requests (4.025713ms)\n✔ update transitions status (3.652987ms)\n✔ persistence survives restart (1.826873ms)\n✔ empty title is rejected (1.210578ms)\n✔ invalid transition is rejected (2.393152ms)\n✔ CLI create command (68.188745ms)\n✔ CLI list command (37.125591ms)\n✔ CLI update command (98.751389ms)\n✔ CLI error handling - empty title (29.603692ms)\n✔ CLI error handling - unknown id (36.582507ms)\n✔ CLI error handling - invalid status (64.950884ms)\n✔ CLI error handling - invalid transition (66.066902ms)\nℹ tests 13\nℹ suites 0\nℹ pass 13\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 488.021381\n",
+  "stderr": "",
+  "timedOut": false,
+  "stdoutPreview": "\n> service-request-tracker@0.1.0 test\n> node --test\n\n✔ create adds a request to the store (8.464097ms)\n✔ list returns all stored requests (4.025713ms)\n✔ update transitions status (3.652987ms)\n✔ persistence survives restart (1.826873ms)\n✔ empty title is rejected (1.210578ms)\n✔ invalid transition is rejected (2.393152ms)\n✔ CLI create command (68.188745ms)\n✔ CLI list command (37.125591ms)\n✔ CLI update command (98.751389ms)\n✔ CLI error handling - empty title (29.603692ms)\n✔ CLI error handling - unkn",
+  "stderrPreview": ""
+}

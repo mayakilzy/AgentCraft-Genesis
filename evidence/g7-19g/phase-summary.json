@@ -1,0 +1,52 @@
+{
+  "A-00": {
+    "status": "PASS",
+    "detail": "evidence dir + work dir prepared at /tmp/g7-19g-phase-a",
+    "timestamp": "2026-10-11T06:55:45.509Z"
+  },
+  "A-01": {
+    "status": "PASS",
+    "detail": "copied 5 G7-19E files to /tmp/g7-19g-phase-a/original-software-engineer-1",
+    "timestamp": "2026-10-11T06:55:45.513Z"
+  },
+  "A-02": {
+    "status": "PASS",
+    "detail": "npm test failed as expected: exitCode=1, timedOut=false",
+    "timestamp": "2026-10-11T06:55:45.700Z"
+  },
+  "A-03-STRUCTURAL": {
+    "status": "PASS",
+    "detail": "structural floor: all 5 files present",
+    "timestamp": "2026-10-11T06:55:45.700Z"
+  },
+  "A-03-CONTENT": {
+    "status": "PASS",
+    "detail": "content-in-artifacts: README mentions npm test=true, store.js mentions requests.json=true",
+    "timestamp": "2026-10-11T06:55:45.700Z"
+  },
+  "A-03-CONTRADICTION": {
+    "status": "PASS",
+    "detail": "structural+content PASS while command FAILS — proves structural cannot override command",
+    "timestamp": "2026-10-11T06:55:45.700Z"
+  },
+  "A-04": {
+    "status": "PASS",
+    "detail": "corrected fixture created at /tmp/g7-19g-phase-a/corrected-software-engineer-1 (package.json + test helper fixed)",
+    "timestamp": "2026-10-11T06:55:45.701Z"
+  },
+  "A-05": {
+    "status": "PASS",
+    "detail": "corrected npm test passed: exitCode=0",
+    "timestamp": "2026-10-11T06:55:46.330Z"
+  },
+  "A-06": {
+    "status": "PASS",
+    "detail": "original G7-19E package.json hash unchanged: 055a6b530383b72c...",
+    "timestamp": "2026-10-11T06:55:46.334Z"
+  },
+  "A-SUMMARY": {
+    "status": "PASS",
+    "detail": "phase A summary written",
+    "timestamp": "2026-10-11T06:55:46.335Z"
+  }
+}

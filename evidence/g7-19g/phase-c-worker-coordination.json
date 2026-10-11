@@ -1,0 +1,30 @@
+{
+  "phase": "C — Worker Coordination",
+  "summary": "Modified buildEdges in organization-planner.ts (NON-FROZEN) to add direct handoff edges from each non-coordinator non-writer worker to the writer, EVEN when a coordinator is present. This ensures the writer sees upstream worker artifacts in its brief even when the coordinator doesn't run (timeout, cancellation, or specialist count < 3).",
+  "implementation_change": {
+    "file": "src/organization/organization-planner.ts",
+    "function": "buildEdges",
+    "change": "In the `if (coordinator)` branch, after adding the existing coordinator → writer handoff edge, ALSO add direct handoff edges from each non-coordinator non-writer worker to the writer. The direct edges coexist with the coordinator-orchestrated path — they don't replace it.",
+    "lines_added": 31,
+    "rationale": "When the coordinator doesn't run (timeout/cancelled), the writer's only upstream edge would have been coordinator → writer (which didn't fire). With G7-19G, the writer has direct edges from each non-coordinator non-writer worker — these fire even when the coordinator doesn't run. The writer's brief includes 'Inputs from colleagues:' listing each upstream worker's result + artifacts."
+  },
+  "frozen_contracts_modified": 0,
+  "test_files_added": [
+    "tests/g7-19g-worker-coordination.test.ts (8 tests)"
+  ],
+  "existing_tests_updated": [
+    "tests/organization-planner.test.ts — 'wires collaboration edges toward the coordinator and the writer' test updated: edge count from 4 to 6 (3 reports + 1 coordinator→writer handoff + 2 new direct specialist→writer handoffs); added assertions for the 2 new direct edges (web-researcher-1 → report-writer-3, data-analyst-2 → report-writer-3)"
+  ],
+  "guarantees_verified": {
+    "1_writer_has_direct_handoffs": "PASS — the writer receives direct handoff edges from each non-coordinator non-writer worker (in addition to the existing coordinator → writer edge)",
+    "2_no_NEW_cycles_introduced": "PASS — the G7-19G-added edges are all of the form 'non-coordinator-non-writer-worker → writer'; none have the writer or coordinator as `from`; they cannot form a cycle that involves the writer as a sender. NOTE: the planner has a pre-existing writer↔coordinator cycle (writer reports to coordinator; coordinator hands off to writer) — this is structural (every non-coordinator worker reports to the coordinator) and cannot be fixed without changing coordinator behavior (forbidden by the brief). The pre-existing cycle doesn't cause issues because specialists run sequentially (writer before coordinator) and upstreamResults() only looks at INBOUND edges (the coordinator hasn't run yet when the writer runs, so it's excluded from the writer's brief).",
+    "3_no_duplicated_upstream_references": "PASS — the writer has at most ONE edge from each upstream worker (no duplicates); the writer's inbound edge set is {coordinator, swe1, ve4, ...} — each upstream worker appears once",
+    "4_coordinator_behavior_intact": "PASS — all non-coordinator workers still report to the coordinator (3 report edges); the coordinator still has a handoff edge to the writer (1 handoff edge); the coordinator's role is preserved",
+    "5_doc_worker_can_identify_existing_app_artifacts": "PASS — structural prerequisite verified: the writer has direct edges from each non-coordinator non-writer worker. The briefcase's renderTaskBrief (FROZEN) uses upstreamResults() to populate 'Inputs from colleagues:' — when the coordinator didn't run, the writer's only upstream edges would have been coordinator → writer (which didn't fire). With G7-19G, the writer has direct edges from each non-coordinator worker — these fire even when the coordinator doesn't run. CAVEAT: the briefcase warns 'Do not assume that adding graph edges alone transfers workspace files.' The G7-19G fix gives the writer CONTEXT (what files exist upstream) but not FILE ACCESS (workspaces are isolated). Actual file access would require orchestrator changes (FROZEN) — out of G7-19G scope.",
+    "6_existing_planner_scenarios_compatible": "PASS — single-worker mission (Sole Operator) has no edges; existing fixtures (SIMPLE_GOAL) still produce single-worker plans"
+  },
+  "remaining_limitations": [
+    "The G7-19G fix adds direct EDGES in the collaboration graph. The briefcase's renderTaskBrief (FROZEN) uses these edges to populate 'Inputs from colleagues:' in the writer's brief. The writer sees upstream worker summaries + artifact PATHS. But the writer CANNOT access the upstream worker's actual file content (each worker's workspace is isolated by the OpenBot runtime). To give the writer file access would require staging upstream artifacts into the downstream worker's workspace — which is in the FROZEN orchestrator's territory (missionInputs mechanism is for caller-supplied inputs, not worker-produced outputs). This is documented as a remaining limitation.",
+    "The pre-existing writer↔coordinator cycle (writer reports to coordinator; coordinator hands off to writer) is structural and cannot be fixed without changing coordinator behavior. The G7-19G fix does NOT introduce NEW cycles. The pre-existing cycle doesn't cause issues because of the sequential specialist execution order and upstreamResults()'s inbound-only traversal."
+  ]
+}

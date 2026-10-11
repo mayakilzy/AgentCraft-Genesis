@@ -282,6 +282,26 @@ export function extractManifestFromAcceptanceCriteria(
  * Two candidates with the same workerId, same paths, and same content
  * hashes have the same identity. This is invariant under input order.
  *
+ * ## G7-19G — Manifest-scoped identity
+ *
+ * When `manifestPaths` is provided AND non-empty, the identity is
+ * computed over ONLY the snapshots whose normalized path is in the
+ * manifest set. This excludes auxiliary runtime/cache files (e.g.,
+ * `.npm/_logs/<timestamp>-debug-0.log`, `.npm/_update-notifier-
+ * last-checked`) that the worker did not explicitly declare as
+ * deliverables.
+ *
+ * This closes the G7-19F Phase 1 finding: pre-G7-19G, the identity
+ * was computed over ALL snapshots — including `.npm/*` cache files
+ * whose filenames contain timestamps. This made the identity
+ * non-reproducible across runs (the timestamp changed each run,
+ * producing a different filename, hence a different identity).
+ *
+ * When `manifestPaths` is undefined OR empty, the identity uses ALL
+ * snapshots (the pre-G7-19G behavior). This preserves backward
+ * compatibility for tests and for missions with no caller-supplied
+ * `file`-type acceptance criteria (no manifest to filter by).
+ *
  * ## Non-inlined files
  *
  * When a file's content was not inlined (large files > 64KB), the
@@ -292,17 +312,41 @@ export function extractManifestFromAcceptanceCriteria(
  * the identity alone to determine VERIFIED; it uses the
  * verification binding (which checks the verified-paths set).
  *
+ * ## What this does NOT do
+ *
+ * - It does NOT silently ignore undeclared files. The files are
+ *   still VISIBLE in the gateway's artifact records (the response
+ *   includes ALL artifacts produced by the worker, regardless of
+ *   whether they're in the manifest). The identity computation
+ *   simply excludes them from the canonical hash so they cannot
+ *   alter the package's verified authority.
+ * - It does NOT reject unsafe paths. That's done by
+ *   {@link assessPackageCompleteness} (defense in depth).
+ * - It does NOT detect post-verification content mutation. That's
+ *   done by {@link bindVerificationEvidence} (G7-19D).
+ *
  * @param workerId the worker that produced this package
  * @param snapshots the per-(workerId, path) entries for this worker
  *   (already filtered to this worker)
+ * @param manifestPaths optional sorted normalized manifest paths.
+ *   When provided AND non-empty, the identity is scoped to only
+ *   these paths (G7-19G). When undefined or empty, uses all
+ *   snapshots (pre-G7-19G behavior).
  * @returns the canonical SHA-256 identity (hex)
  */
 export function computePackageIdentity(
   workerId: string,
   snapshots: readonly ArtifactSnapshot[],
+  manifestPaths?: readonly string[],
 ): string {
+  // G7-19G: filter to manifest paths when provided.
+  let scoped = snapshots;
+  if (manifestPaths !== undefined && manifestPaths.length > 0) {
+    const manifestSet = new Set(manifestPaths.map((p) => normalizePath(p)));
+    scoped = snapshots.filter((s) => manifestSet.has(normalizePath(s.path)));
+  }
   // Sort by path for determinism.
-  const sorted = [...snapshots].sort((a, b) =>
+  const sorted = [...scoped].sort((a, b) =>
     a.path < b.path ? -1 : a.path > b.path ? 1 : 0,
   );
   const files = sorted.map((s) => {
@@ -624,7 +668,11 @@ export function buildPackageCandidates(
   const candidates: PackageCandidate[] = [];
   for (const [workerId, snapps] of byWorker) {
     const observedPaths = snapps.map((s) => s.path);
-    const packageIdentity = computePackageIdentity(workerId, snapps);
+    // G7-19G: scope the package identity to manifest-declared paths
+    // so auxiliary runtime/cache files (e.g., .npm/* logs with
+    // timestamps in filenames) cannot alter the identity of an
+    // otherwise unchanged deliverable package.
+    const packageIdentity = computePackageIdentity(workerId, snapps, requiredManifest);
     const completeness = assessPackageCompleteness(observedPaths, requiredManifest);
     const base: PackageCandidate = {
       workerId,
@@ -797,6 +845,12 @@ export function buildAndSelectPackages(
  */
 export function computeWorkerPackageIdentities(
   snapshots: readonly ArtifactSnapshot[],
+  // G7-19G: optional manifest paths. When provided AND non-empty,
+  // the per-worker identity is scoped to only the manifest-declared
+  // paths. This excludes auxiliary runtime/cache files (e.g., .npm/*
+  // logs) that the worker did not explicitly declare as deliverables.
+  // When undefined or empty, uses all snapshots (pre-G7-19G behavior).
+  manifestPaths?: readonly string[],
 ): Map<string, string> {
   // Group snapshots by workerId.
   const byWorker = new Map<string, ArtifactSnapshot[]>();
@@ -814,7 +868,7 @@ export function computeWorkerPackageIdentities(
   // Compute the package identity per worker.
   const out = new Map<string, string>();
   for (const [workerId, snapps] of byWorker) {
-    out.set(workerId, computePackageIdentity(workerId, snapps));
+    out.set(workerId, computePackageIdentity(workerId, snapps, manifestPaths));
   }
   return out;
 }
