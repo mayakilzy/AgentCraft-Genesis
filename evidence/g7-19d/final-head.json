@@ -1,0 +1,32 @@
+{
+  "mission": "G7-19D",
+  "baselineHead": "f445f5111615ea9198dadba46d72fc3885dd13e0",
+  "mainCommit": {
+    "sha": "713faf1813fb9d0b9e9d5862b3148684632ca611",
+    "message": "G7-19D: production verification integrity gate",
+    "pushedAt": "2026-10-11T05:05:00Z"
+  },
+  "finalLocalHead": "713faf1813fb9d0b9e9d5862b3148684632ca611",
+  "finalRemoteHead": "713faf1813fb9d0b9e9d5862b3148684632ca611",
+  "headMatch": "YES",
+  "verified": {
+    "localHeadMatches": true,
+    "remoteHeadMatches": true,
+    "verificationTimestamp": "2026-10-11T05:05:30Z"
+  },
+  "summary": {
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "fullRegression": "1024 passed, 9 skipped, 0 failed (101 files)",
+    "frozenContracts": {
+      "src/contracts/core.ts": "UNCHANGED (0 diff vs f445f51)",
+      "src/mission/verification.ts": "UNCHANGED (0 diff vs f445f51)",
+      "src/mission/orchestrator.ts": "UNCHANGED (0 diff vs f445f51) — G7-19C narrow exception preserved",
+      "src/goal/goal-compiler.ts": "UNCHANGED (0 diff vs f445f51)"
+    },
+    "newTests": 28,
+    "liveProviderCalls": 0,
+    "productionSmokeReady": "YES",
+    "nextStageStarted": "NO"
+  }
+}
