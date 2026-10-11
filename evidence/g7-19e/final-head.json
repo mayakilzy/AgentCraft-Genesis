@@ -1,0 +1,48 @@
+{
+  "mission": "G7-19E",
+  "baseline_head": "471823e76f657319d75d475ff9cf84098a6be132",
+  "main_commit": {
+    "sha": "b7a954c88e0d88506293ac206b7238cdfdd4ae8d",
+    "subject": "G7-19E: live production smoke test",
+    "pushed_at": "2026-10-11T05:36:5X UTC",
+    "remote_verified": true
+  },
+  "live_mission": {
+    "id": "4ff5192f-cb34-41f5-88ed-c2f0eb528437",
+    "status": "PARTIAL",
+    "terminal": true,
+    "accepted_at": "2026-10-11T05:21:45.768Z",
+    "finished_at": "2026-10-11T05:30:46.379Z",
+    "duration_ms": 540569,
+    "tokens": 257956,
+    "reasoning_calls": 30
+  },
+  "verified_package_selection": {
+    "state": "SELECTED",
+    "policy": "verified-only-deterministic",
+    "selected_worker_id": "software-engineer-1",
+    "package_identity": "4a3db1a3592bcf401c791f4baf26e540894f40085d620330f72f5199c452892c"
+  },
+  "integrity_gates": {
+    "A_artifact_truth": "PASS",
+    "B_package_coherence": "PASS",
+    "C_verification": "PASS",
+    "D_content_identity": "PASS",
+    "E_authority": "PASS",
+    "F_mission_closure": "PASS",
+    "G_independent_acceptance": "PARTIAL"
+  },
+  "frozen_contracts_unchanged_vs_g7_19d_baseline": {
+    "src/contracts/core.ts": "0 diff lines",
+    "src/mission/verification.ts": "0 diff lines",
+    "src/mission/orchestrator.ts": "0 diff lines (G7-19C narrow exception preserved unchanged)",
+    "src/goal/goal-compiler.ts": "0 diff lines"
+  },
+  "final_local_head": "b7a954c88e0d88506293ac206b7238cdfdd4ae8d",
+  "final_remote_head": "b7a954c88e0d88506293ac206b7238cdfdd4ae8d",
+  "head_match": "YES",
+  "next_stage_started": "NO",
+  "ready_for_larger_challenge": "NO",
+  "production_smoke_ready_at_baseline": "YES",
+  "production_smoke_result": "PARTIAL — application works manually but worker's npm test has 2 defects; system truthfully reported PARTIAL status and SELECTED package with content-bound verification"
+}
