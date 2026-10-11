@@ -283,6 +283,12 @@ export interface MissionListResult {
  * are OPTIONAL so existing clients continue to work unchanged (backward
  * compatibility). Provenance (`workerId`, `path`, `bytes`) is preserved
  * exactly as before.
+ *
+ * G7-19B: optional `conflictResolution` field is added for deterministic
+ * conflict resolution. When `conflict=true`, this field documents the
+ * policy used to pick the authoritative version and points to it. The
+ * field is OPTIONAL and additive — existing clients continue to work
+ * unchanged.
  */
 export interface MissionArtifactRecord {
   /** The worker that produced this artifact. */
@@ -320,6 +326,44 @@ export interface MissionArtifactRecord {
     readonly contentHash: string;
     readonly bytes: number;
   }>;
+  /**
+   * G7-19B: when `conflict=true`, this field documents the deterministic
+   * policy used to pick the authoritative version and points to it.
+   * The same `conflictResolution` object (modulo `isAuthoritative`)
+   * appears on every record for the same conflicting path, so the
+   * caller can identify the chosen version from any record.
+   *
+   * - `isAuthoritative=true` on the record whose `workerId` matches
+   *   `authoritativeWorkerId`. The other records for the same path
+   *   have `isAuthoritative=false`.
+   * - The `policy` field names the resolution policy (e.g.,
+   *   `"majority-then-lexicographic"`). See the policy documentation
+   *   in `src/runtime/artifact-aggregation.ts`.
+   * - The `rationale` field explains WHY this version was chosen —
+   *   e.g., `"majority vote (2 of 3 versions agree on hash abc123…)"`
+   *   or `"no majority (3 distinct versions); tiebreak by
+   *   lexicographic workerId"`.
+   * - `authoritativeContentHash` lets the caller verify that the
+   *   chosen record's content matches the hash.
+   *
+   * Omitted when `conflict=false` or when there is no conflict.
+   */
+  readonly conflictResolution?: {
+    /** Policy name (e.g., "majority-then-lexicographic"). */
+    readonly policy: string;
+    /** WorkerId of the chosen authoritative version. */
+    readonly authoritativeWorkerId: string;
+    /** ContentHash of the chosen authoritative version. */
+    readonly authoritativeContentHash: string;
+    /** Human-readable explanation of why this version was chosen. */
+    readonly rationale: string;
+    /**
+     * `true` on the chosen record; `false` on the other records for
+     * the same path. The caller can find the authoritative version
+     * by filtering for `conflictResolution.isAuthoritative === true`.
+     */
+    readonly isAuthoritative: boolean;
+  };
 }
 
 /**

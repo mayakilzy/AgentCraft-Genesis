@@ -1,0 +1,72 @@
+{
+  "typecheck": {
+    "status": "PASS",
+    "exit_code": 0,
+    "command": "npm run typecheck"
+  },
+  "lint": {
+    "status": "PASS",
+    "exit_code": 0,
+    "command": "npm run lint",
+    "errors_count": 0,
+    "note": "Fixed one require() style import in the test file by switching to ES import."
+  },
+  "full_regression": {
+    "status": "PASS",
+    "exit_code": 0,
+    "command": "npm test",
+    "test_files_passed": 97,
+    "tests_passed": 951,
+    "tests_skipped": 9,
+    "tests_failed": 0,
+    "duration_ms": 38450,
+    "previous_baseline_g7_19a": {
+      "test_files_passed": 96,
+      "tests_passed": 936,
+      "tests_skipped": 9,
+      "tests_failed": 0
+    },
+    "new_tests_added": 15,
+    "new_test_files": [
+      "tests/runtime/g7-19b-conflict-resolution.test.ts (15 tests)"
+    ]
+  },
+  "frozen_contracts": {
+    "status": "UNCHANGED",
+    "baseline": "3cb0043e3af558b3c89714d713e37840de4d2b9b (G7-19A final HEAD)",
+    "files_checked": [
+      "src/contracts/core.ts",
+      "src/mission/verification.ts",
+      "src/mission/orchestrator.ts",
+      "src/goal/goal-compiler.ts"
+    ],
+    "diff_lines_vs_baseline_3cb0043": {
+      "src/contracts/core.ts": 0,
+      "src/mission/verification.ts": 0,
+      "src/mission/orchestrator.ts": 0,
+      "src/goal/goal-compiler.ts": 0
+    }
+  },
+  "modified_files": [
+    "src/gateway/types.ts (44 lines added, optional conflictResolution field)",
+    "src/runtime/artifact-aggregation.ts (262 lines added, resolveConflict() + ConflictResolutionResult + CONFLICT_RESOLUTION_POLICY + buildAggregatedRecords update)"
+  ],
+  "new_files": [
+    "tests/runtime/g7-19b-conflict-resolution.test.ts (15 tests, 9 brief scenarios + 6 sub-tests + bonus)",
+    "evidence/g7-19b/phase-1-design.md (Phase 1 design document)",
+    "evidence/g7-19b/regression-results.json (this file)"
+  ],
+  "live_provider_calls": 0,
+  "conflict_resolution_policy": "majority-then-lexicographic",
+  "policy_tiers": {
+    "tier_1_majority": "When >=2 workers agree on the same contentHash, pick that hash. Chosen workerId = lexicographically smallest among the winners.",
+    "tier_2_lexicographic_fallback": "When no majority (all disagree or tie in counts), pick the lexicographically smallest workerId among ALL versions. Arbitrary but transparent.",
+    "tier_0_no_conflict": "When all versions have the same hash (or single version), no conflict, no resolution."
+  },
+  "backward_compatibility": {
+    "new_field_is_optional": true,
+    "existing_conflict_and_conflictVersions_unchanged": true,
+    "sort_order_unchanged": "(workerId, path) — same as pre-G7-19A and G7-19A",
+    "g7_19a_tests_still_pass": "23/23 PASS"
+  }
+}
