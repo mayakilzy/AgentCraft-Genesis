@@ -1,0 +1,20 @@
+{
+  "MISSION": "G7-19B",
+  "FINAL_LOCAL_HEAD": "c5f3c8e939d0f56d677dea36ae52639e425d18d2",
+  "FINAL_REMOTE_HEAD": "c5f3c8e939d0f56d677dea36ae52639e425d18d2",
+  "HEAD_MATCH": "YES",
+  "BASELINE_HEAD": "3cb0043e3af558b3c89714d713e37840de4d2b9b",
+  "CONFLICT_RESOLUTION_POLICY": "majority-then-lexicographic",
+  "POLICY_TIERS": {
+    "tier_0_no_conflict": "single version or unanimous → omit conflictResolution field",
+    "tier_1_majority": ">=2 workers agree on same contentHash → pick that hash; chosen workerId = lexicographically smallest among winners",
+    "tier_2_lexicographic_fallback": "no unique winner with >=2 votes → pick lexicographically smallest workerId among ALL versions; rationale documents the fallback"
+  },
+  "PROVENANCE_PRESERVED": "YES — conflictVersions lists all other versions on every record; conflictResolution appears on every record for the same path with isAuthoritative=true only on the chosen one",
+  "DETERMINISTIC_TESTS": "15 passed (9 brief scenarios + 6 sub-tests + bonus)",
+  "LIVE_PROVIDER_CALLS": 0,
+  "FULL_REGRESSION": "951 passed, 9 skipped, 0 failed (97 files)",
+  "FROZEN_CONTRACTS": "UNCHANGED (0 diff lines vs 3cb0043)",
+  "NEXT_STAGE_STARTED": "NO",
+  "note": "Written post-push to avoid the G7-18 chicken-and-egg metadata bug. The MAIN G7-19B commit (this HEAD) contains everything except final-head.json itself. The NEXT commit on top will add this file. The 'majority-then-lexicographic' policy is deterministic and transparent: it picks the majority version when >=2 workers agree, and falls back to lexicographic workerId when all disagree. The Tier 2 fallback is arbitrary (it may not pick the semantically correct version) — the rationale string documents this, and all conflicting versions remain in conflictVersions so downstream verification can override."
+}
