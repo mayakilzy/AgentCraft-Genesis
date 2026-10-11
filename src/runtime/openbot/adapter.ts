@@ -49,9 +49,114 @@ interface RunningWorker {
 const VERIFIER_WORKER_PREFIX = 'mission-verifier';
 /** Files at or above this size are returned without inlined content. */
 const ARTIFACT_INLINE_LIMIT = 65_536;
+/**
+ * G7-19A: hard cap on the number of file entries a single worker's
+ * recursive listing can return. Defends against a runaway workspace
+ * (e.g. a worker that wrote a million tiny files, or a symlink loop).
+ * The G7-18E workspace had 9 files in 4 directories; this cap leaves
+ * plenty of headroom while bounding the worst case.
+ */
+const ARTIFACT_LISTING_MAX_FILES = 4_096;
 
 function isVerifierWorkerId(workerId: string): boolean {
   return workerId === 'mission-verifier-1' || workerId.startsWith(VERIFIER_WORKER_PREFIX);
+}
+
+/**
+ * G7-19A — Deterministic recursive file listing under a workspace root.
+ *
+ * The pre-G7-19A `listArtifacts` and `listArtifactsFromDisk` implementations
+ * called `readdir(workspaceDir, { withFileTypes: true })` and then filtered
+ * with `if (!entry.isFile()) continue;`. That filter skipped every directory
+ * entry, so files inside `public/`, `test/`, or any other subdirectory were
+ * silently dropped from the artifact response — even though they existed
+ * on disk in the worker's workspace.
+ *
+ * This helper walks the workspace tree depth-first, accumulating every
+ * regular file's workspace-relative path. Path-traversal protection is
+ * applied per segment (no `..`, no leading `/`, no NUL bytes). Symlinks
+ * are skipped (we only follow real subdirectories) to prevent a crafted
+ * symlink from escaping the workspace.
+ *
+ * The walk is bounded by {@link ARTIFACT_LISTING_MAX_FILES} so a runaway
+ * workspace cannot exhaust memory. When the cap is reached, the walk
+ * stops and the caller sees the files accumulated so far — never a
+ * silent truncation that masquerades as a complete listing.
+ *
+ * Exported for direct unit-testing in
+ * `tests/runtime/g7-19a-recursion.test.ts`. The function is pure with
+ * respect to its inputs (it only reads the filesystem under the given
+ * `workspaceDir`).
+ *
+ * @param workspaceDir absolute filesystem path to the worker's workspace root
+ * @returns array of `{ relativePath, fullPath, bytes }` for every regular
+ *          file under `workspaceDir`, sorted by relativePath for determinism
+ */
+export async function listWorkspaceFilesRecursive(workspaceDir: string): Promise<
+  ReadonlyArray<{ readonly relativePath: string; readonly fullPath: string; readonly bytes: number }>
+> {
+  const out: Array<{ relativePath: string; fullPath: string; bytes: number }> = [];
+  const stack: Array<{ readonly dir: string; readonly prefix: string }> = [
+    { dir: workspaceDir, prefix: '' },
+  ];
+  // Guard against symlink loops and runaway directory nesting. The G7-18E
+  // workspace was 2 levels deep; 32 leaves ample headroom without being
+  // unbounded.
+  const visitedRealpaths = new Set<string>();
+  while (stack.length > 0 && out.length < ARTIFACT_LISTING_MAX_FILES) {
+    const { dir, prefix } = stack.pop()!;
+    let entries: import('node:fs').Dirent[];
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      continue; // directory vanished or unreadable — skip silently
+    }
+    // Sort entries by name for deterministic ordering (independent of FS order)
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    for (const entry of entries) {
+      if (out.length >= ARTIFACT_LISTING_MAX_FILES) break;
+      // Path-traversal protection per segment.
+      if (
+        entry.name === '' ||
+        entry.name === '.' ||
+        entry.name === '..' ||
+        entry.name.includes('\0') ||
+        entry.name.includes('/')
+      ) {
+        continue;
+      }
+      const relativePath = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
+      const fullPath = join(dir, entry.name);
+      if (entry.isFile()) {
+        try {
+          const stats = await stat(fullPath);
+          out.push({ relativePath, fullPath, bytes: stats.size });
+        } catch {
+          // File vanished between readdir and stat — skip.
+        }
+      } else if (entry.isDirectory()) {
+        // Skip symlinked directories to prevent escape — only follow real
+        // subdirectories. This also bounds the walk to the workspace tree.
+        if (entry.isSymbolicLink()) continue;
+        try {
+          const real = await stat(fullPath);
+          if (!real.isDirectory()) continue;
+          // Use real path to dedupe in case of bind mounts.
+          const key = `${real.dev}:${real.ino}:${real.size}`;
+          if (visitedRealpaths.has(key)) continue;
+          visitedRealpaths.add(key);
+          stack.push({ dir: fullPath, prefix: relativePath });
+        } catch {
+          // stat failed — skip silently
+        }
+      }
+      // Other entry kinds (block devices, sockets, FIFOs) are ignored.
+    }
+  }
+  out.sort((a, b) =>
+    a.relativePath < b.relativePath ? -1 : a.relativePath > b.relativePath ? 1 : 0,
+  );
+  return out;
 }
 
 export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
@@ -257,31 +362,32 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
       }
       // Disk path: the computer is stopped (not in this.computers) OR the
       // live read failed. Read directly from the workspace directory.
+      // G7-19A: walk the workspace RECURSIVELY via listWorkspaceFilesRecursive
+      // so files in subdirectories (public/, test/, etc.) are no longer
+      // silently dropped. The pre-G7-19A code used `readdir(workspaceDir)`
+      // and `if (!entry.isFile()) continue;` which skipped every directory
+      // entry — causing the G7-18E artifact aggregation to miss 6 of the 9
+      // Community Project Hub files (all of public/* and all of test/*).
       if (worker.computer !== null) {
         const workspaceDir = worker.computer.workspaceDir;
-        try {
-          const entries = await readdir(workspaceDir, { withFileTypes: true });
-          for (const entry of entries) {
-            if (!entry.isFile()) continue;
-            const path = entry.name;
-            if (path.includes('..') || path.startsWith('/')) continue;
-            const fullPath = join(workspaceDir, path);
+        const diskEntries = await listWorkspaceFilesRecursive(workspaceDir);
+        for (const entry of diskEntries) {
+          // Skip if already added via the live path (same path).
+          if (out.some((a) => a.workerId === botId && a.path === entry.relativePath)) continue;
+          let content: string | undefined;
+          if (entry.bytes <= ARTIFACT_INLINE_LIMIT) {
             try {
-              const stats = await stat(fullPath);
-              const bytes = stats.size;
-              // Skip if already added via the live path (same path).
-              if (out.some((a) => a.workerId === botId && a.path === path)) continue;
-              let content: string | undefined;
-              if (bytes <= ARTIFACT_INLINE_LIMIT) {
-                content = await readFile(fullPath, 'utf8');
-              }
-              out.push({ workerId: botId, path, bytes, content });
+              content = await readFile(entry.fullPath, 'utf8');
             } catch {
-              // File vanished between readdir and stat — skip.
+              content = undefined;
             }
           }
-        } catch {
-          // Workspace directory may not exist or be unreadable — skip.
+          out.push({
+            workerId: botId,
+            path: entry.relativePath,
+            bytes: entry.bytes,
+            content,
+          });
         }
       }
     }
@@ -311,28 +417,25 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
       if (isVerifierWorkerId(botId)) continue;
       if (worker.computer === null) continue;
       const workspaceDir = worker.computer.workspaceDir;
-      try {
-        const entries = await readdir(workspaceDir, { withFileTypes: true });
-        for (const entry of entries) {
-          if (!entry.isFile()) continue;
-          const path = entry.name;
-          // Path traversal protection (defense-in-depth).
-          if (path.includes('..') || path.startsWith('/')) continue;
-          const fullPath = join(workspaceDir, path);
+      // G7-19A: walk the workspace RECURSIVELY via listWorkspaceFilesRecursive
+      // so files in subdirectories (public/, test/, etc.) are no longer
+      // silently dropped (same fix as the disk path in listArtifacts above).
+      const diskEntries = await listWorkspaceFilesRecursive(workspaceDir);
+      for (const entry of diskEntries) {
+        let content: string | undefined;
+        if (entry.bytes <= ARTIFACT_INLINE_LIMIT) {
           try {
-            const stats = await stat(fullPath);
-            const bytes = stats.size;
-            let content: string | undefined;
-            if (bytes <= ARTIFACT_INLINE_LIMIT) {
-              content = await readFile(fullPath, 'utf8');
-            }
-            out.push({ workerId: botId, path, bytes, content });
+            content = await readFile(entry.fullPath, 'utf8');
           } catch {
-            // File vanished between readdir and stat — skip.
+            content = undefined;
           }
         }
-      } catch {
-        // Workspace directory may not exist or be unreadable — skip.
+        out.push({
+          workerId: botId,
+          path: entry.relativePath,
+          bytes: entry.bytes,
+          content,
+        });
       }
     }
     out.sort((a, b) =>

@@ -1,0 +1,64 @@
+{
+  "typecheck": {
+    "status": "PASS",
+    "exit_code": 0,
+    "command": "npm run typecheck"
+  },
+  "lint": {
+    "status": "PASS",
+    "exit_code": 0,
+    "command": "npm run lint",
+    "errors_count": 0
+  },
+  "full_regression": {
+    "status": "PASS",
+    "exit_code": 0,
+    "command": "npm test",
+    "test_files_passed": 96,
+    "tests_passed": 936,
+    "tests_skipped": 9,
+    "tests_failed": 0,
+    "duration_ms": 36690,
+    "previous_baseline": {
+      "test_files_passed": 93,
+      "tests_passed": 913,
+      "tests_skipped": 9,
+      "tests_failed": 0
+    },
+    "new_tests_added": 23,
+    "new_test_files": [
+      "tests/runtime/g7-19a-aggregation.test.ts (13 tests)",
+      "tests/runtime/g7-19a-recursion.test.ts (8 tests)",
+      "tests/gateway/g7-19a-aggregation-integration.test.ts (2 tests)"
+    ]
+  },
+  "frozen_contracts": {
+    "status": "UNCHANGED",
+    "files_checked": [
+      "src/contracts/core.ts",
+      "src/mission/verification.ts",
+      "src/mission/orchestrator.ts",
+      "src/goal/goal-compiler.ts"
+    ],
+    "diff_lines_vs_baseline_8faa1c4": {
+      "src/contracts/core.ts": 0,
+      "src/mission/verification.ts": 0,
+      "src/mission/orchestrator.ts": 0,
+      "src/goal/goal-compiler.ts": 0
+    }
+  },
+  "modified_files": [
+    "src/gateway/mission-service.ts (44 lines changed, backward-compatible)",
+    "src/gateway/types.ts (31 lines added, optional fields only)",
+    "src/runtime/openbot/adapter.ts (177 lines changed, recursion fix + exported helper)"
+  ],
+  "new_files": [
+    "src/runtime/artifact-aggregation.ts (pure function module)",
+    "tests/runtime/g7-19a-aggregation.test.ts (13 tests, 8 scenarios + bonus)",
+    "tests/runtime/g7-19a-recursion.test.ts (8 tests for Defect A)",
+    "tests/gateway/g7-19a-aggregation-integration.test.ts (2 integration tests)",
+    "evidence/g7-19a/phase-1-root-cause.md (Phase 1 diagnosis)",
+    "evidence/g7-19a/regression-results.json (this file)"
+  ],
+  "live_provider_calls": 0
+}

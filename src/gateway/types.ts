@@ -277,6 +277,12 @@ export interface MissionListResult {
 /**
  * An artifact descriptor returned by GET /v1/missions/{id}/artifacts.
  * Resolves to actual produced content (not a placeholder).
+ *
+ * G7-19A: optional `contentHash`, `conflict`, and `conflictVersions`
+ * fields are added for deterministic conflict detection. These fields
+ * are OPTIONAL so existing clients continue to work unchanged (backward
+ * compatibility). Provenance (`workerId`, `path`, `bytes`) is preserved
+ * exactly as before.
  */
 export interface MissionArtifactRecord {
   /** The worker that produced this artifact. */
@@ -289,6 +295,31 @@ export interface MissionArtifactRecord {
   readonly verified: boolean;
   /** Content length in bytes. */
   readonly bytes: number;
+  /**
+   * G7-19A: SHA-256 hash of the artifact content (hex). Empty string when
+   * content was not inlined (large files). Use this field to compare
+   * versions across workers without re-hashing the inlined content.
+   */
+  readonly contentHash?: string;
+  /**
+   * G7-19A: `true` when at least one OTHER worker wrote the same `path`
+   * with a DIFFERENT `contentHash`. When `true`, `conflictVersions`
+   * lists every other version. When `false` (or omitted), no conflict
+   * was detected — either this is the only version, or all versions
+   * at this path have the same hash.
+   */
+  readonly conflict?: boolean;
+  /**
+   * G7-19A: when `conflict=true`, the list of OTHER workers' versions
+   * of the same path. Each entry has the worker's id, content hash,
+   * and byte size. Use this to inspect which workers disagree.
+   * Omitted when `conflict=false` or when there is no conflict.
+   */
+  readonly conflictVersions?: ReadonlyArray<{
+    readonly workerId: string;
+    readonly contentHash: string;
+    readonly bytes: number;
+  }>;
 }
 
 /**

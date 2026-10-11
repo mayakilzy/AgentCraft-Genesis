@@ -111,8 +111,12 @@ import { RuleDecisionProvider } from '../routing/decision-provider.js';
 import { MemoryComputer, MemoryRuntime } from '../runtime/memory-computer.js';
 import type {
   ArtifactsProvider,
+  ArtifactSnapshot,
   WorkerRuntime,
 } from '../runtime/computer.js';
+// G7-19A: deterministic artifact aggregation (conflict detection,
+// per-path provenance, content hashing) — pure function layer.
+import { buildAggregatedRecords } from '../runtime/artifact-aggregation.js';
 import {
   FileMissionHistoryStore,
   MISSION_HISTORY_SCHEMA_VERSION,
@@ -1234,24 +1238,25 @@ export class MissionService {
       // This is the production path — OpenBotRuntimeAdapter populates its
       // internal `computers` Map from the actual worker processes, which
       // the gateway previously could not see.
+      //
+      // G7-19A: route through `buildAggregatedRecords()` so that the
+      // response includes `contentHash`, `conflict`, and
+      // `conflictVersions` for paths where multiple workers wrote
+      // different content. This is the conflict-detection requirement
+      // of the G7-19A brief. The function is a pure deterministic
+      // transformation — no provider calls, no filesystem access beyond
+      // what `listArtifacts()` already did.
       const provider = rt.runtime as (WorkerRuntime & Partial<ArtifactsProvider>) | undefined;
       if (provider && typeof provider.listArtifacts === 'function') {
         const snapshots = await provider.listArtifacts();
-        const records: MissionArtifactRecord[] = [];
-        for (const s of snapshots) {
-          records.push({
-            workerId: s.workerId,
-            path: s.path,
-            content: s.content,
-            verified: verificationOk && verifiedPaths.has(s.path),
-            bytes: s.bytes,
-          });
-        }
-        return records;
+        return buildAggregatedRecords(snapshots, verificationOk, verifiedPaths);
       }
 
       // Legacy dev-path fallback (default MemoryRuntime built inside MissionService).
-      const records: MissionArtifactRecord[] = [];
+      // G7-19A: also route through buildAggregatedRecords for consistent
+      // conflict detection on the dev path. We synthesize ArtifactSnapshot
+      // entries from the in-memory computer.files Map, then aggregate.
+      const devSnapshots: ArtifactSnapshot[] = [];
       for (const [workerId, computer] of rt.computers) {
         if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
           continue;
@@ -1259,22 +1264,29 @@ export class MissionService {
         for (const [path, content] of computer.files) {
           // Path traversal protection: reject paths containing '..' or absolute paths
           if (path.includes('..') || path.startsWith('/')) continue;
-          records.push({
+          const isInlined = content.length <= 65_536;
+          devSnapshots.push({
             workerId,
             path,
-            content: content.length <= 65_536 ? content : undefined,
-            verified: verificationOk && verifiedPaths.has(path),
             bytes: content.length,
+            ...(isInlined ? { content } : {}),
           });
         }
       }
-      return records;
+      return buildAggregatedRecords(devSnapshots, verificationOk, verifiedPaths);
     }
 
     // G7-15B: mission not in the in-process registry — consult the history
     // index. Return the persisted artifact metadata (path + verified + bytes)
     // WITHOUT content (the workspace is gone after restart). This is truthful:
     // the paths and verification status are durable; the content is not.
+    //
+    // G7-19A: history records have no per-worker provenance (the original
+    // workerId is not persisted) and no inlined content (so no contentHash).
+    // Conflict detection is therefore not applicable on this path — we
+    // return the persisted records as-is. This is documented behavior, not
+    // a silent regression: the history path is the post-restart fallback,
+    // and a restarted mission has no live workers to conflict.
     const record = this.historyIndex.get(missionId);
     if (record === undefined) {
       throw new MissionNotFoundError(missionId);
