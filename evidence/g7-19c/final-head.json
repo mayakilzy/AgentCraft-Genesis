@@ -1,0 +1,31 @@
+{
+  "mission": "G7-19C",
+  "baselineHead": "581ecd0e47e1b46124599bf360a2316beb423998",
+  "mainCommit": {
+    "sha": "463c64d374e0699687c38053a665c4d771a38f7f",
+    "message": "G7-19C: verified package selection & evidence-based closure",
+    "pushedAt": "2026-10-11T04:38:00Z"
+  },
+  "finalLocalHead": "463c64d374e0699687c38053a665c4d771a38f7f",
+  "finalRemoteHead": "463c64d374e0699687c38053a665c4d771a38f7f",
+  "headMatch": "YES",
+  "verified": {
+    "localHeadMatches": true,
+    "remoteHeadMatches": true,
+    "verificationTimestamp": "2026-10-11T04:38:30Z"
+  },
+  "summary": {
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "fullRegression": "996 passed, 9 skipped, 0 failed (99 files)",
+    "frozenContracts": {
+      "src/contracts/core.ts": "UNCHANGED (0 diff vs 581ecd0)",
+      "src/mission/verification.ts": "UNCHANGED (0 diff vs 581ecd0)",
+      "src/mission/orchestrator.ts": "AUTHORIZED narrow G7-19C exception (64 diff lines — disk-state fallback for hasDeliverable only)",
+      "src/goal/goal-compiler.ts": "UNCHANGED (0 diff vs 581ecd0)"
+    },
+    "newTests": 45,
+    "liveProviderCalls": 0,
+    "nextStageStarted": "NO"
+  }
+}
