@@ -1,0 +1,18 @@
+{
+  "MISSION": "G7-19A",
+  "FINAL_LOCAL_HEAD": "f15da7e09c70c0dbf7838f0b446913c66d506a94",
+  "FINAL_REMOTE_HEAD": "f15da7e09c70c0dbf7838f0b446913c66d506a94",
+  "HEAD_MATCH": "YES",
+  "BASELINE_HEAD": "8faa1c43ca63a39669daf56e704ec2e404615628",
+  "ROOT_CAUSE": "TWO_COMPOUNDING_DEFECTS",
+  "ARTIFACT_AGGREGATION": "FIXED (listArtifacts recurses via listWorkspaceFilesRecursive)",
+  "CONFLICT_HANDLING": "ADDED (src/runtime/artifact-aggregation.ts — pure function, SHA-256 + conflict flags)",
+  "VERIFICATION_INTEGRITY": "PARTIAL (Defect E documented — cannot fix without touching frozen verification.ts)",
+  "MISSION_CLOSURE": "PARTIAL (Defect B documented — gateway exposes disk-state fallback via artifacts endpoint; orchestrator status unchanged)",
+  "DETERMINISTIC_TESTS": "23 passed (8 brief scenarios + G7-18E reproduction + recursion edge cases + gateway integration)",
+  "LIVE_PROVIDER_CALLS": 0,
+  "FULL_REGRESSION": "936 passed, 9 skipped, 0 failed (96 files)",
+  "FROZEN_CONTRACTS": "UNCHANGED (0 diff lines vs 8faa1c4)",
+  "NEXT_STAGE_STARTED": "NO",
+  "note": "Written post-push to avoid the G7-18 chicken-and-egg metadata bug. The MAIN G7-19A commit (this HEAD) contains everything except final-head.json itself. The NEXT commit on top will add this file. Mission addressed five root-cause defects: A (listArtifacts recursion) and C (conflict detection) are fixed in code; B, D, and E are documented in evidence/g7-19a/phase-1-root-cause.md because the smallest fix would require modifying frozen contracts (src/mission/orchestrator.ts and src/mission/verification.ts)."
+}
