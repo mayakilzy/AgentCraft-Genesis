@@ -1,0 +1,84 @@
+{
+  "mission": "G7-19F",
+  "mission_type": "acceptance_integrity_and_worker_coordination_audit",
+  "baseline_head": "39aa0c6a162bf2d80a9581f9a136d1ccb6e3bdbb",
+  "main_commit": {
+    "sha": "81f9e2f7fe8840f7c893876a4a4606d7f2c0ae04",
+    "subject": "G7-19F: acceptance integrity & worker coordination audit",
+    "pushed_at": "2026-10-11T06:08 UTC",
+    "remote_verified": true
+  },
+  "live_zai_calls": 0,
+  "live_openbot_invocations": 0,
+  "phase_1_evidence_reconstructed": {
+    "file_hashes_verified": true,
+    "genuine_conflict_records": 8,
+    "genuine_conflict_explanation": "4 conflicting paths × 2 workers (one record per (workerId, path) tuple); only package.json is identical; README.md, src/index.js, src/store.js, test/app.test.js have genuinely different content",
+    "g7_19e_report_note_6_corrected": true,
+    "new_finding_packageIdentity_non_reproducibility": "computePackageIdentity includes .npm/* cache files (with timestamps in filenames), making the identity non-reproducible across runs. Documented in G7-19F report Remaining Limitations for future G7-20."
+  },
+  "phase_2_acceptance_integrity": {
+    "root_cause": "3-layer silent disappearance: (1) frozen goal compiler stores prose as hardConstraints strings (no auto-translation); (2) HTTP parser silently skipped command-type criteria pre-G7-19F; (3) transport type had no command variant pre-G7-19F; (4) buildChecks had no command branch pre-G7-19F; (5) verifier (frozen) already supported command checks natively, unchanged.",
+    "correction_implementation": [
+      "src/runtime/acceptance-integrity.ts (NEW, 309 lines): detect executable-acceptance mentions in goal text; emit per-worker auto-added command checks using sh -c wrapper for verifier clean-room layout",
+      "src/gateway/types.ts: added command variant to AcceptanceCheckInput transport type",
+      "src/gateway/http-server.ts: added else-if branch to accept command-type criteria (no silent skip)",
+      "src/gateway/mission-service.ts: added goalContext + goalConstraints to MissionRuntime; modified buildChecks to propagate command + invoke auto-add"
+    ],
+    "frozen_contracts_modified": 0,
+    "auto_add_patterns": ["npm test", "yarn test", "pnpm test"],
+    "auto_add_path_template": "sh -c \"cd artifacts/<workerId> && <command>\"",
+    "no_worker_produced_requiredFile_fallback": "sentinel check: sh -c \"echo G7-19F blocker: ... 1>&2; exit 1\" — always fails honestly"
+  },
+  "phase_3_worker_coordination": {
+    "coordination_defect_proven": true,
+    "evidence": "two specialists produced duplicate complete applications because (A) brief tells each worker the FULL mission outcome (frozen renderTaskBrief); (B) writer's only upstream edge is via the coordinator which didn't run (NON-FROZEN buildEdges); (C) goal compiler over-extracted 4 capability needs (frozen).",
+    "targeted_correction_proposed": "modify buildEdges in src/organization/organization-planner.ts (NON-FROZEN) to add direct handoff edges from each non-coordinator worker to the writer, even when a coordinator is present",
+    "implemented_in_g7_19f": false,
+    "reason_not_implemented": "G7-19F brief says 'Only propose a targeted correction if the evidence proves a coordination defect'. Implementation deferred to focused G7-20 task with proper test coverage.",
+    "evidence_file": "evidence/g7-19f/phase-3-worker-coordination-findings.json"
+  },
+  "phase_4_guarantees": {
+    "1_original_fails_executable_acceptance": true,
+    "2_structural_content_checks_may_still_pass": true,
+    "3_executable_failure_cannot_produce_verified_pass": true,
+    "4_corrected_fixture_passes_without_modifying_original": true,
+    "5_existing_missions_remain_compatible": true,
+    "6_genuine_conflicts_distinguished_from_identical_content": true
+  },
+  "phase_5_regression": {
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "tests_passed": 1053,
+    "tests_skipped": 9,
+    "tests_failed": 0,
+    "test_files_passed": 103,
+    "baseline_tests_passed_g7_19e": 1024,
+    "baseline_test_files_g7_19e": 101,
+    "delta_tests": 29,
+    "delta_test_files": 2,
+    "frozen_contracts_unchanged_vs_g7_19d_471823e": {
+      "src/contracts/core.ts": "0 diff lines",
+      "src/mission/verification.ts": "0 diff lines",
+      "src/mission/orchestrator.ts": "0 diff lines",
+      "src/goal/goal-compiler.ts": "0 diff lines"
+    },
+    "frozen_contracts_unchanged_vs_g7_19e_39aa0c6": {
+      "src/contracts/core.ts": "0 diff lines",
+      "src/mission/verification.ts": "0 diff lines",
+      "src/mission/orchestrator.ts": "0 diff lines",
+      "src/goal/goal-compiler.ts": "0 diff lines"
+    }
+  },
+  "implementation_stats": {
+    "new_code_lines": 440,
+    "new_test_lines": 795,
+    "new_files": ["src/runtime/acceptance-integrity.ts", "tests/runtime/g7-19f-acceptance-integrity.test.ts", "tests/gateway/g7-19f-integration.test.ts"],
+    "modified_files": ["src/gateway/types.ts", "src/gateway/http-server.ts", "src/gateway/mission-service.ts", "eslint.config.js"]
+  },
+  "final_local_head": "81f9e2f7fe8840f7c893876a4a4606d7f2c0ae04",
+  "final_remote_head": "81f9e2f7fe8840f7c893876a4a4606d7f2c0ae04",
+  "head_match": "YES",
+  "next_stage_started": "NO",
+  "success_condition_met": "YES — Genesis must not report an application as fully verified when an explicitly required executable acceptance check was omitted or failed. After G7-19F: (a) caller-supplied command checks no longer silently dropped (Parts 1-3); (b) uncovered executable-acceptance mentions in goal text are auto-translated into per-worker command checks (Part 4); (c) the verifier runs these checks and fails the mission honestly when the command fails (existing verifier behavior preserved)."
+}
