@@ -478,6 +478,21 @@ function parseSubmission(body: unknown): MissionSubmission | null {
         criteria.push({ kind: 'content-in-artifacts', label, expectIncludes: c.expectIncludes });
       } else if (kind === 'hash-match' && typeof c.path === 'string' && typeof c.expectHash === 'string') {
         criteria.push({ kind: 'hash-match', label, path: c.path, expectHash: c.expectHash });
+      } else if (kind === 'command' && typeof c.command === 'string') {
+        // G7-19F: accept caller-supplied command-type acceptance checks.
+        // Pre-G7-19F these were silently skipped — see the G7-19F report
+        // for the root-cause analysis. The verifier runs `command` in its
+        // clean-room workspace; the caller is responsible for crafting a
+        // command that works in the verifier's layout (e.g.,
+        // `sh -c "cd artifacts/<workerId> && npm test"`).
+        const entry: {
+          kind: 'command'; label: string; command: string;
+          expectExit?: number; expectOutputIncludes?: string; expectOutputExcludes?: string;
+        } = { kind: 'command', label, command: c.command };
+        if (typeof c.expectExit === 'number') entry.expectExit = c.expectExit;
+        if (typeof c.expectOutputIncludes === 'string') entry.expectOutputIncludes = c.expectOutputIncludes;
+        if (typeof c.expectOutputExcludes === 'string') entry.expectOutputExcludes = c.expectOutputExcludes;
+        criteria.push(entry);
       }
       // Unknown kinds are silently skipped — the structural floor still applies.
     }

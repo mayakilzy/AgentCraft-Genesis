@@ -102,6 +102,11 @@ export default tseslint.config(
       // focused repair goal, then collects artifacts and computes diffs
       // against the starting hashes.
       'scripts/g7-18e-pilot.cjs',
+      // G7-19E: live production smoke test driver. Same CommonJS pattern
+      // (require for node:child_process + node:http + node:crypto). Spawns
+      // the production gateway + submits ONE live mission with real Z.ai +
+      // OpenBot. NOT engine source — HTTP-based smoke test tooling.
+      'scripts/g7-19e-smoke.cjs',
       // Generated application artifacts in evidence directories — not engine source.
       'evidence/g7-17/**',
       'evidence/g7-17r/**',
@@ -112,6 +117,12 @@ export default tseslint.config(
       'evidence/g7-18c/**',
       'evidence/g7-18d/**',
       'evidence/g7-18e/**',
+      // G7-19E: live smoke test evidence — produced application files
+      // (clean-room-app/), gateway logs, mission snapshot, etc. Not engine
+      // source; not TypeScript.
+      'evidence/g7-19e/**',
+      // G7-19F: acceptance-integrity evidence — same shape as G7-19E.
+      'evidence/g7-19f/**',
     ],
   },
   ...tseslint.configs.recommended,

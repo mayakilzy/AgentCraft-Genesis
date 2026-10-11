@@ -1,0 +1,93 @@
+{
+  "phase": "3 — Worker coordination",
+  "plan_created_event": {
+    "seq": 2,
+    "rationale": "Scope \"complex\" in domain \"software-engineering\" with 4 capability needs. Planned 4 specialist role(s): Software Engineer [code-execution], Documentation Writer [document-authoring], Generalist Worker [data-analysis], Verification Engineer [browser-verification]. Mission Coordinator added because 3+ specialists require integration."
+  },
+  "worker_outcomes": [
+    {
+      "workerId": "software-engineer-1",
+      "role": "Software Engineer",
+      "capability_need": "code-execution",
+      "status": "success",
+      "steps": 20,
+      "reasoning_calls": 21,
+      "files_written": ["package.json", "README.md", "src/index.js", "src/store.js", "test/app.test.js", ".npm/_logs/...debug-0.log", ".npm/_update-notifier-last-checked"]
+    },
+    {
+      "workerId": "documentation-writer-2",
+      "role": "Documentation Writer",
+      "capability_need": "document-authoring",
+      "status": "success",
+      "steps": 5,
+      "reasoning_calls": 6,
+      "files_written": ["package.json", "README.md", "src/index.js", "src/store.js", "test/app.test.js"]
+    },
+    {
+      "workerId": "generalist-worker-3",
+      "role": "Generalist Worker",
+      "capability_need": "data-analysis",
+      "status": "failure",
+      "failureClass": "CANCELLED",
+      "steps": 3,
+      "reasoning_calls": 3,
+      "files_written": [],
+      "summary": "reasoning provider failed: aborted"
+    },
+    {
+      "workerId": "mission-verifier-1",
+      "role": "Mission Verifier (verifier clean room)",
+      "capability_need": "verification",
+      "files_written": ["artifacts/software-engineer-1/*", "artifacts/documentation-writer-2/*"]
+    },
+    {
+      "workerId": "verification-engineer-4",
+      "role": "Verification Engineer",
+      "capability_need": "browser-verification",
+      "files_written": []
+    }
+  ],
+  "specialists_run_order": "SEQUENTIAL (for...of loop in orchestrator.ts line 554, awaited one at a time)",
+  "specialists_run_order_evidence": "software-engineer-1 finished at seq 25 → documentation-writer-2 started at seq 26 → documentation-writer-2 finished at seq 32 → generalist-worker-3 started at seq 33 → generalist-worker-3 failed at seq 37 → verification event at seq 38 → mission-finished at seq 39.",
+  "coordination_graph": {
+    "edges": [
+      { "from": "software-engineer-1", "to": "mission-coordinator-1", "kind": "report" },
+      { "from": "documentation-writer-2", "to": "mission-coordinator-1", "kind": "report" },
+      { "from": "generalist-worker-3", "to": "mission-coordinator-1", "kind": "report" },
+      { "from": "verification-engineer-4", "to": "mission-coordinator-1", "kind": "report" },
+      { "from": "mission-coordinator-1", "to": "documentation-writer-2", "kind": "handoff" }
+    ],
+    "key_observation": "documentation-writer-2's only upstream edge is FROM the coordinator. When the coordinator didn't run (mission aborted due to timeout before reaching the coordinator step), documentation-writer-2 had NO upstream inputs."
+  },
+  "brief_sent_to_documentation_writer_2": {
+    "structure": "Mission: <full outcome>; Your assignment in it: Documents the change and its usage.; Mission context: <full context>; Hard constraints: <constraints array joined>; Success criteria: <domain-inherent criteria>; Your workspace may already hold the mission's repository checkout; otherwise it starts empty...; Deliverables go to your own workspace. Finish with your artifact paths when done.",
+    "critical_omission": "The brief did NOT include 'Inputs from colleagues' because upstream.length === 0 (no upstream edges fired). The brief did NOT say 'Other workers will produce the code; you should ONLY produce README.md'. The worker saw the full mission outcome (which lists all 7 capabilities including 'create a service request', 'list requests', 'update status', 'persist records', 'reject invalid inputs', 'include automated tests', 'include a README') and reasonably interpreted its assignment ('Documents the change and its usage') as: 'I need to document a working application. To document it, the application must exist. No upstream inputs are available. I'll produce the whole thing myself.'"
+  },
+  "root_cause_analysis": {
+    "primary_defect": "BRIEF DEFECT — the brief tells each worker the FULL mission outcome, then says 'Your assignment: <responsibility>'. Without explicit role-scoping ('produce ONLY README.md; the code will come from another worker'), and without visible upstream inputs (because the coordinator didn't run), the worker reasonably produces the whole app.",
+    "secondary_defect": "COORDINATION GRAPH DEFECT — the writer's only upstream edge is via the coordinator. The planner's buildEdges function (src/organization/organization-planner.ts) puts all workers downstream of the coordinator (coordinator → writer handoff). When the coordinator is skipped (timeout or aborted), the writer has no direct upstream edge from the code-worker.",
+    "tertiary_defect": "GOAL COMPILER OVER-EXTRACTION (FROZEN) — the goal compiler extracted 4 capability needs (code-execution, document-authoring, data-analysis, browser-verification) for what's essentially a code-execution-only mission (CLI app with tests). The 'document-authoring' capability need triggered a separate Documentation Writer specialist; the 'data-analysis' need triggered a Generalist Worker; the 'browser-verification' need triggered a Verification Engineer. None of these were necessary for the actual mission."
+  },
+  "evidence_of_coordination_defect": {
+    "both_workers_wrote_full_app": true,
+    "different_content_for_4_of_5_files": true,
+    "documentation_writer_produced_code_files": true,
+    "documentation_writer_had_no_upstream_inputs": true,
+    "coordinator_did_not_run_due_to_timeout": true
+  },
+  "proposed_correction": {
+    "scope": "TARGETED — modify only the planner's buildEdges function (NON-FROZEN, src/organization/organization-planner.ts).",
+    "change": "Add a DIRECT handoff edge from each non-coordinator worker to the writer, EVEN when a coordinator is present. The coordinator's role is preserved (still receives reports, still integrates); the writer just gains a parallel direct upstream edge from each code-worker.",
+    "rationale": "When the coordinator doesn't run (timeout/cancelled), the writer still sees upstream worker artifacts directly. The brief's 'Inputs from colleagues' section would fire, listing the code-worker's files. The writer would then know: 'The code-worker has produced X, Y, Z. I should focus on documentation.'",
+    "preserves_multi_agent_collaboration": true,
+    "no_arbitrary_worker_limits": true,
+    "no_frozen_contract_modification": true,
+    "implementation_status": "PROPOSED ONLY — G7-19F brief says 'Only propose a targeted correction if the evidence proves a coordination defect.' The evidence proves the defect. The correction is documented here for the next mission to implement. Implementing it in G7-19F would be out of scope (G7-19F is about acceptance contract integrity, not worker coordination behavior changes that need their own test coverage)."
+  },
+  "alternative_corrections_considered_and_rejected": {
+    "modify_renderTaskBrief_to_role_scope": "REJECTED — renderTaskBrief is in src/mission/orchestrator.ts (FROZEN). Cannot modify.",
+    "modify_goal_compiler_to_under_extract": "REJECTED — goal compiler is FROZEN. Cannot modify.",
+    "add_workerBriefSuffix_at_gateway_layer": "PARTIAL — could be done but would be mission-specific (depends on what the goal compiler extracted). The buildEdges fix is general-purpose.",
+    "remove_coordinator_role_when_specialists_lt_3": "REJECTED — disables multi-agent collaboration. The brief explicitly forbids this."
+  }
+}

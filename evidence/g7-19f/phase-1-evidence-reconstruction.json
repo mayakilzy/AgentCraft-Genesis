@@ -1,0 +1,65 @@
+{
+  "phase": "1 — Reconstruct the actual G7-19E evidence",
+  "summary": "Verified exact hashes of all five application files from both writing workers. Determined that the 8 conflict records represent GENUINE content differences (not duplicate metadata, not an aggregation defect).",
+  "file_hashes_per_worker_path": {
+    "package.json": {
+      "software-engineer-1": "055a6b530383b72cd25ba9efe6eb5b11a47f17141be985fa19ab922220a98153",
+      "documentation-writer-2": "055a6b530383b72cd25ba9efe6eb5b11a47f17141be985fa19ab922220a98153",
+      "identical": true,
+      "bytes": {
+        "software-engineer-1": 167,
+        "documentation-writer-2": 167
+      }
+    },
+    "README.md": {
+      "software-engineer-1": "a745ce8f9d1ba580178bace1b6e34ab162bed89adac61b4f2382a596cacaff4d",
+      "documentation-writer-2": "01b8a0eb068490e040b4d91fd5627c6d6edc408e38b1f5ba4424b96147c3dc61",
+      "identical": false,
+      "bytes": {
+        "software-engineer-1": 885,
+        "documentation-writer-2": 1464
+      }
+    },
+    "src/index.js": {
+      "software-engineer-1": "08cdac4c504d3cdf010457597e743a542fc7e181e72a5efe30afe4f65bfdcbc5",
+      "documentation-writer-2": "ca0d43fab717fc838e741e10718382e0ae81b42e4d17b229812ab01672335b83",
+      "identical": false,
+      "bytes": {
+        "software-engineer-1": 2323,
+        "documentation-writer-2": 1412
+      }
+    },
+    "src/store.js": {
+      "software-engineer-1": "89f7b74b2654ebc48e26a2d07b74a345ecef27852276406ccc80882b65d4444b",
+      "documentation-writer-2": "8e4dfa42e56f233c50cb4633c346c2884452b565c679e3b8c980d9b0f68608ad",
+      "identical": false,
+      "bytes": {
+        "software-engineer-1": 3000,
+        "documentation-writer-2": 2406
+      }
+    },
+    "test/app.test.js": {
+      "software-engineer-1": "424f7ed636e87373ae4ecbf337a44ca4e4e2b483d63bac17a325366ed4d8880a",
+      "documentation-writer-2": "e268e202248bdf34925a148670e697a7f0642414af0a67a32f2e41ca01b60e02",
+      "identical": false,
+      "bytes": {
+        "software-engineer-1": 7490,
+        "documentation-writer-2": 3261
+      }
+    }
+  },
+  "conflict_record_analysis": {
+    "total_records_in_response": 12,
+    "records_with_conflict_resolution": 8,
+    "explanation": "8 conflict records = 4 conflicting paths × 2 workers (one record per (workerId, path) tuple). The 4 non-conflicting records are: package.json from software-engineer-1 (identical content → no conflict), package.json from documentation-writer-2 (identical → no conflict), plus 2 .npm/* cache files from software-engineer-1 that documentation-writer-2 didn't write (no other version to conflict with).",
+    "genuine_content_differences": true,
+    "aggregation_defect": false,
+    "duplicate_metadata": false,
+    "g7_19a_conflict_detection_correctness": "PASS — G7-19A's conflict detection correctly identified the 4 genuinely-different paths and excluded the 1 identical path (package.json)."
+  },
+  "g7_19e_report_corrections": {
+    "note": "The G7-19E report's Note 6 incorrectly stated that 'Both workers wrote identical content (verified by matching contentHash for each path)'. The actual evidence shows ONLY package.json is identical; the other 4 files have genuinely different content. This correction does NOT change the G7-19E outcome (the smoke test still PARTIAL: the worker's npm test script has defects; the system truthfully reported the mission status).",
+    "impact_on_g7_19e_findings": "NONE — the G7-19E integrity gates A–G evaluation is unchanged. Gate B (package coherence) still passes: the selected worker (software-engineer-1) is a single coherent worker; its packageIdentity (4a3db1a3...c452892c) is computed over all its files (including .npm/* cache). The two workers' packageIdentities are DIFFERENT (software-engineer-1: fe4673bbf929c7f6909d935d76aa4934a3d2ba1a384984a87c4cb7fdf72f37f2 over the 5 manifest files only; documentation-writer-2: 7e6109bd39fa99127c1c7f9a081a7c08a7677d05e75274ffb87355e7717c3277 over the 5 manifest files only) — but software-engineer-1's packageIdentity when including .npm/* cache files becomes 4a3db1a3...c452892c, which is lexicographically smaller than documentation-writer-2's 7e6109bd..., so software-engineer-1 wins the tiebreak.",
+    "new_finding_for_g7_19f": "The packageIdentity computation includes .npm/* cache files (which have a TIMESTAMP in the filename: .npm/_logs/2026-10-11T05_22_44_449Z-debug-0.log). This makes the packageIdentity non-reproducible across runs. See G7-19F report Section 7 (Remaining Limitations) for details."
+  }
+}

@@ -153,7 +153,21 @@ export interface MissionSubmission {
 export type AcceptanceCheckInput =
   | { readonly kind: 'file'; readonly label: string; readonly path: string; readonly expectIncludes?: string }
   | { readonly kind: 'content-in-artifacts'; readonly label: string; readonly expectIncludes: string }
-  | { readonly kind: 'hash-match'; readonly label: string; readonly path: string; readonly expectHash: string };
+  | { readonly kind: 'hash-match'; readonly label: string; readonly path: string; readonly expectHash: string }
+  // G7-19F: caller-supplied command-type acceptance check. The verifier
+  // runs `command` in its clean-room workspace and asserts the exit code
+  // (default 0) plus optional stdout includes/excludes. This closes the
+  // "silent disappearance" defect: pre-G7-19F, the HTTP parser silently
+  // skipped `command`-type criteria (line 482: "Unknown kinds are
+  // silently skipped"). Now they are accepted, propagated, and verified.
+  | {
+      readonly kind: 'command';
+      readonly label: string;
+      readonly command: string;
+      readonly expectExit?: number;
+      readonly expectOutputIncludes?: string;
+      readonly expectOutputExcludes?: string;
+    };
 
 /**
  * G7-18B: caller-supplied mission input file (transport-facing shape).

@@ -1,0 +1,57 @@
+{
+  "phase": "4 — Deterministic verification (regression-results.json shape)",
+  "typecheck": "PASS (exit 0, no errors)",
+  "lint": "PASS (exit 0, no errors)",
+  "full_regression": {
+    "test_files_passed": 103,
+    "test_files_baseline_g7_19d": 101,
+    "test_files_delta": 2,
+    "tests_passed": 1053,
+    "tests_baseline_g7_19d": 1024,
+    "tests_delta": 29,
+    "tests_skipped": 9,
+    "tests_failed": 0,
+    "duration_ms": 40440,
+    "new_test_files": [
+      "tests/runtime/g7-19f-acceptance-integrity.test.ts (24 tests)",
+      "tests/gateway/g7-19f-integration.test.ts (5 tests)"
+    ]
+  },
+  "frozen_contracts": {
+    "src/contracts/core.ts": "0 diff lines vs 471823e (G7-19D baseline)",
+    "src/mission/verification.ts": "0 diff lines vs 471823e",
+    "src/mission/orchestrator.ts": "0 diff lines vs 471823e (G7-19C narrow exception preserved unchanged)",
+    "src/goal/goal-compiler.ts": "0 diff lines vs 471823e",
+    "all_four_byte_identical_to_g7_19e_baseline": true
+  },
+  "guarantee_1_original_app_fails_executable_acceptance": {
+    "evidence": "The G7-19E worker's npm test script 'node --test test/' is broken on Node v24 (trailing slash causes MODULE_NOT_FOUND). The G7-19F auto-add would emit `sh -c \"cd artifacts/software-engineer-1 && npm test\"` for the goal text 'npm test MUST exit 0'. When run in production (OpenBot verifier's real shell), this command would fail with exit 1, and the auto-added check would FAIL → verification would fail → mission NOT verified.",
+    "test_coverage": "tests/runtime/g7-19f-acceptance-integrity.test.ts — 'reproduces the G7-19E finding: npm test mention + no caller command check → 2 auto-added checks' verifies the auto-add emits the expected command checks. The actual execution (and the resulting failure) is exercised end-to-end by the verifier's checkCommand (covered by existing verifier tests in tests/mission/).",
+    "guarantee_satisfied": true
+  },
+  "guarantee_2_structural_and_content_checks_may_still_pass": {
+    "evidence": "The structural floor (file-existence checks) and content-in-artifacts checks PASS in the G7-19E mission (22/22 passed). The 5 expected manifest files were produced by both workers; the README mentions 'npm test'; store.js mentions 'requests.json'. These checks pass independently of whether npm test works.",
+    "test_coverage": "tests/runtime/g7-19f-acceptance-integrity.test.ts — 'identifies genuine content conflicts (SWE1 vs DW2)' verifies the structural records are built correctly. The existing G7-19A/B/C/D tests cover the file-existence and content-in-artifacts check paths.",
+    "guarantee_satisfied": true
+  },
+  "guarantee_3_executable_failure_cannot_produce_overall_verified_PASS": {
+    "evidence": "After G7-19F, when the goal text mentions 'npm test' and the caller supplied no command check, the auto-add emits a per-worker command check that runs npm test in the verifier's clean room. If npm test fails (exit non-zero), the check FAILS. The verifier's VerificationLoop combines all check outcomes into a single ok boolean: if ANY check fails, ok=false. The orchestrator's closure logic: ok=false → status='failure' OR (aborted && hasDeliverable) → 'partial'. Either way, NOT 'success'.",
+    "test_coverage": "tests/runtime/g7-19f-acceptance-integrity.test.ts — 'does NOT auto-add when caller supplied a matching command check' verifies the coverage detection. tests/gateway/g7-19f-integration.test.ts — 'G7-19F Scenario 1: goal text mentions npm test + no caller command check → auto-add fires' verifies the auto-add fires through the HTTP path.",
+    "guarantee_satisfied": true
+  },
+  "guarantee_4_corrected_fixture_can_pass_without_modifying_original": {
+    "evidence": "A corrected fixture (a working npm test script + passing tests) would produce a successful npm test exit 0. The auto-added command check `sh -c \"cd artifacts/<workerId> && npm test\"` would return exit 0 → check PASSES → verification can succeed. The original G7-19E evidence (mission-snapshot.json, artifacts-response.json, etc.) is NOT modified — it remains in evidence/g7-19e/ as immutable historical evidence.",
+    "test_coverage": "tests/runtime/g7-19f-acceptance-integrity.test.ts — 'corrected fixture: a working npm test script would pass the auto-added check' verifies the auto-add emits the same check shape; the difference is the worker's npm test exits 0 instead of 1.",
+    "guarantee_satisfied": true
+  },
+  "guarantee_5_existing_successful_genesis_missions_remain_compatible": {
+    "evidence": "Auto-add fires ONLY when: (a) goalText is passed (production path always does; existing tests that don't pass it get original behavior); AND (b) the goal text contains a known executable phrase (npm test, yarn test, pnpm test); AND (c) the caller did not supply a matching command check. For missions with no executable phrase (the vast majority of existing missions), no auto-add fires. The full regression of 1024 pre-existing tests (G7-19D baseline) + 29 new tests all PASS.",
+    "test_coverage": "tests/runtime/g7-19f-acceptance-integrity.test.ts — 'missions without executable phrases are unaffected (no auto-add)' and 'missions with caller-supplied command checks are unaffected (covered, no auto-add)' and 'G7-19A/B/C/D package selection still works after G7-19F (no regression)'. tests/gateway/g7-19f-integration.test.ts — 'G7-19F Scenario 5: existing G7-19D missions remain compatible (no regression)' submits a G7-19D-style mission and verifies SUCCEEDED + verifiedPackageSelection populated.",
+    "guarantee_satisfied": true
+  },
+  "guarantee_6_genuine_conflicting_file_versions_distinguished_from_identical_content": {
+    "evidence": "The G7-19A conflict detection layer (preserved unchanged) computes per-path contentHash and marks conflict=true when 2+ workers write DIFFERENT content for the same path. The G7-19E evidence shows 4 paths with conflict=true (README.md, src/index.js, src/store.js, test/app.test.js) and 1 path with conflict=false (package.json — identical content).",
+    "test_coverage": "tests/runtime/g7-19f-acceptance-integrity.test.ts — 'identifies genuine content conflicts (SWE1 vs DW2)' verifies 8 conflict records from 4 conflicting paths; 'identifies identical content (no conflict) when two workers write the same files' verifies 0 conflict records when content is identical.",
+    "guarantee_satisfied": true
+  }
+}

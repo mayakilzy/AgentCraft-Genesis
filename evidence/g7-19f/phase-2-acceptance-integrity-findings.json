@@ -1,0 +1,60 @@
+{
+  "phase": "2 — Acceptance contract integrity",
+  "user_requirement": "npm test MUST exit 0 within 60s",
+  "transformation_chain": [
+    {
+      "layer": "1. Goal compiler (FROZEN — src/goal/goal-compiler.ts)",
+      "behavior": "Takes goal.constraints (array of strings) and stores them as hardConstraints (line 260: hardConstraints: [...(goal.constraints ?? [])]). Does NOT translate prose constraints into executable AcceptanceCheck objects.",
+      "evidence": "Line 260 of goal-compiler.ts: `hardConstraints: [...(goal.constraints ?? [])]`. The compiler never calls any function that would convert 'npm test MUST exit 0' into `{ kind: 'command', command: 'npm test', expectExit: 0 }`."
+    },
+    {
+      "layer": "2. HTTP server (NON-FROZEN — src/gateway/http-server.ts)",
+      "behavior_pre_g7_19f": "When parsing acceptanceCriteria from POST body, only accepted kind: 'file', 'content-in-artifacts', 'hash-match'. ALL OTHER KINDS (including 'command') were SILENTLY SKIPPED (line 482: 'Unknown kinds are silently skipped — the structural floor still applies.').",
+      "behavior_post_g7_19f": "Added an `else if (kind === 'command' && typeof c.command === 'string')` branch that accepts command-type criteria and propagates them."
+    },
+    {
+      "layer": "3. Transport type (NON-FROZEN — src/gateway/types.ts)",
+      "behavior_pre_g7_19f": "AcceptanceCheckInput union only had 3 variants: file, content-in-artifacts, hash-match. The 'command' variant was not in the type.",
+      "behavior_post_g7_19f": "Added a 4th variant: `{ kind: 'command'; label: string; command: string; expectExit?: number; expectOutputIncludes?: string; expectOutputExcludes?: string }`."
+    },
+    {
+      "layer": "4. buildChecks (NON-FROZEN — src/gateway/mission-service.ts)",
+      "behavior_pre_g7_19f": "When merging caller-supplied criteria into the checks array, only handled kind: 'file', 'content-in-artifacts', 'hash-match'. Caller-supplied 'command' checks would be silently dropped (no else branch for command).",
+      "behavior_post_g7_19f": "Added an `else if (c.kind === 'command')` branch that propagates the command check through to the verifier."
+    },
+    {
+      "layer": "5. Verifier (FROZEN — src/mission/verification.ts)",
+      "behavior_pre_g7_19f": "Already supported kind: 'command' checks natively (checkCommand method, line 590+). Runs `this.verifier.exec(check.command)` and checks exit code + stdout + stderr. UNCHANGED by G7-19F.",
+      "behavior_post_g7_19f": "UNCHANGED — the verifier already supported command checks; the G7-19F fix is at the gateway layer (layers 2-4) to STOP SILENTLY DROPPING them."
+    }
+  ],
+  "root_cause_summary": "The user's prose requirement 'npm test MUST exit 0 within 60s' was stored as a STRING in GoalRequirements.hardConstraints (frozen layer 1). It was never translated into an executable AcceptanceCheck. If the user had supplied a `command`-type check explicitly, it would have been SILENTLY DROPPED at layers 2 (HTTP parser) and 4 (buildChecks). The verifier (layer 5) supports command checks natively but never saw them because layers 2-4 filtered them out. Three layers of silent disappearance.",
+  "g7_19f_correction": {
+    "new_module": "src/runtime/acceptance-integrity.ts",
+    "new_module_lines": 309,
+    "new_module_purpose": "Detects executable-acceptance phrases in goal text (e.g., 'npm test', 'yarn test', 'pnpm test'). For each uncovered mention, emits per-worker auto-added command checks at verification time. The auto-added checks run in the verifier's clean room via `sh -c \"cd artifacts/<workerId> && <command>\"` — supporting the verifier's clean-room layout (which puts files under artifacts/<workerId>/<path>).",
+    "transport_type_change": "Added 'command' variant to AcceptanceCheckInput union (src/gateway/types.ts).",
+    "http_parser_change": "Added else-if branch for kind='command' (src/gateway/http-server.ts).",
+    "buildchecks_change": "Added else-if branch for kind='command' to propagate caller-supplied command checks. Added goalText parameter + auto-add invocation at the end. (src/gateway/mission-service.ts)",
+    "missionruntime_change": "Added goalContext and goalConstraints fields to MissionRuntime interface. Stored at submission time from submission.context + submission.constraints. (src/gateway/mission-service.ts)",
+    "verifier_change": "NONE — verifier already supported command checks natively (frozen contract preserved).",
+    "frozen_contracts_modified": "NONE — all 4 frozen contracts byte-identical to baseline 471823e (G7-19D) and 39aa0c6 (G7-19E)."
+  },
+  "g7_19f_auto_add_behavior": {
+    "detection_patterns": [
+      { "regex": "\\bnpm\\s+test\\b", "command": "npm test", "requiredFile": "package.json" },
+      { "regex": "\\byarn\\s+test\\b", "command": "yarn test", "requiredFile": "package.json" },
+      { "regex": "\\bpnpm\\s+test\\b", "command": "pnpm test", "requiredFile": "package.json" }
+    ],
+    "auto_add_path": "sh -c \"cd artifacts/<workerId> && <command>\"",
+    "no_worker_produced_requiredFile": "Emits a sentinel `sh -c \"echo G7-19F blocker: ... 1>&2; exit 1\"` check that always fails honestly.",
+    "conservative_scope": "Only detects phrases that name a specific known command. Vague phrases like 'tests must pass' or 'the application must work' are NOT auto-translated — the caller must provide an explicit command check for those."
+  },
+  "verifier_compatibility": {
+    "verifier_supports_command_checks": true,
+    "verifier_checkCommand_implementation": "src/mission/verification.ts line 590+. Runs `this.verifier.exec(check.command)` and asserts exit code + optional stdout includes/excludes.",
+    "verifier_clean_room_layout": "Files are copied to `artifacts/<workerId>/<path>` in the verifier's workspace. The auto-added command uses `sh -c \"cd artifacts/<workerId> && <command>\"` to run the command in the worker's clean-room subdirectory.",
+    "production_openbot_exec": "Delegates to a real shell (OpenBot client.exec) — supports `sh -c \"...\"` natively.",
+    "dev_mode_memory_computer_exec": "Returns canned results (default: exit 0, empty stdout/stderr). Tests that need to verify failure must inject canned exec results via MemoryComputer.execResults."
+  }
+}

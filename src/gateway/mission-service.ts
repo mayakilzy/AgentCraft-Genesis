@@ -121,6 +121,10 @@ import { buildAggregatedRecords, applyPackageSelection } from '../runtime/artifa
 // capture — it computes per-worker package identities AT VERIFICATION TIME
 // so that getArtifacts() can later detect post-verification content mutation.
 import { computeWorkerPackageIdentities } from '../runtime/package-selection.js';
+// G7-19F: acceptance-integrity gate — detects executable-acceptance
+// mentions in goal text (e.g., "npm test MUST exit 0") and auto-adds
+// per-worker `command`-type checks for any uncovered mention.
+import { buildAutoAddedChecksForGoal } from '../runtime/acceptance-integrity.js';
 import {
   FileMissionHistoryStore,
   MISSION_HISTORY_SCHEMA_VERSION,
@@ -168,6 +172,22 @@ interface MissionRuntime {
   readonly controller: AbortController;
   readonly recorder: MemoryFlightRecorder;
   readonly goalOutcome: string;
+  /**
+   * G7-19F: the goal's context (prose supplied by the caller). Stored
+   * alongside `goalOutcome` so `buildChecks()` can scan the full goal
+   * text (outcome + context + constraints) for executable-acceptance
+   * mentions like "npm test MUST exit 0" and auto-add per-worker
+   * `command`-type checks for any mention that the caller did not cover
+   * explicitly. This closes the G7-19E "silent disappearance" defect:
+   * the user's prose requirement is now translated into executable
+   * verification at the gateway layer (no frozen-contract modification).
+   */
+  readonly goalContext: string;
+  /**
+   * G7-19F: the goal's constraints (an array of prose strings supplied by
+   * the caller). Same purpose as {@link goalContext}.
+   */
+  readonly goalConstraints: readonly string[];
   /**
    * G7-11 (FM-07/FM-08): caller-supplied acceptance criteria. Stored on the
    * runtime so buildChecks() can merge them with the structural floor.
@@ -828,6 +848,15 @@ export class MissionService {
     const controller = new AbortController();
     const recorder = new MemoryFlightRecorder();
     const goalOutcome = submission.outcome;
+    // G7-19F: store the goal's context + constraints alongside the
+    // outcome so buildChecks() can scan the full goal text for
+    // executable-acceptance mentions (e.g., "npm test MUST exit 0")
+    // and auto-add per-worker command checks for any uncovered
+    // mention. This closes the G7-19E "silent disappearance" defect:
+    // the user's prose requirement is now translated into executable
+    // verification at the gateway layer.
+    const goalContext: string = submission.context ?? '';
+    const goalConstraints: readonly string[] = submission.constraints ?? [];
 
     // 5. Build the runtime — FRESH per mission (G6-08 RB-2).
     //    Production runtimes (OpenBot) get a per-mission rootDir so worker
@@ -890,7 +919,16 @@ export class MissionService {
       maxWorkerSteps: this.maxWorkerStepsConfig,
       missionTimeoutMs: timeoutMs,
       signal: controller.signal,
-      checks: (ctx) => this.buildChecks(ctx, missionRuntime.acceptanceCriteria),
+      checks: (ctx) => this.buildChecks(
+        ctx,
+        missionRuntime.acceptanceCriteria,
+        // G7-19F: pass the full goal text (outcome + context +
+        // constraints) so buildChecks() can detect executable-
+        // acceptance mentions (e.g., "npm test MUST exit 0") and
+        // auto-add per-worker `command`-type checks for any mention
+        // the caller did not cover explicitly.
+        `${missionRuntime.goalOutcome}\n${missionRuntime.goalContext}\n${missionRuntime.goalConstraints.join('\n')}`,
+      ),
       // G7-18B: propagate caller-supplied mission input files to the
       // orchestrator's existing `missionInputs` staging seam (Phase 4.8B
       // in src/mission/orchestrator.ts). The orchestrator stages each file
@@ -920,6 +958,10 @@ export class MissionService {
       controller,
       recorder,
       goalOutcome,
+      // G7-19F: store the goal's context + constraints so buildChecks()
+      // can scan the full goal text for executable-acceptance mentions.
+      goalContext,
+      goalConstraints,
       // G7-11: store caller-supplied acceptance criteria for buildChecks().
       acceptanceCriteria: submission.acceptanceCriteria,
       computers,
@@ -1843,6 +1885,13 @@ export class MissionService {
       artifacts: ReadonlyArray<ArtifactSource>;
     },
     callerCriteria?: readonly AcceptanceCheckInput[],
+    // G7-19F: the full goal text (outcome + constraints) so the
+    // executable-acceptance detector can scan for prose requirements
+    // like "npm test MUST exit 0" and auto-add per-worker command
+    // checks for any uncovered mention. Optional: pre-G7-19F callers
+    // (and existing tests) that don't pass this argument get the
+    // original behavior (no auto-add).
+    goalText?: string,
   ): readonly AcceptanceCheck[] {
     // Structural floor: every produced artifact must exist in the clean-room
     // copy. This is the baseline verification that always applies.
@@ -1924,8 +1973,47 @@ export class MissionService {
               expectHash: c.expectHash,
             });
           }
+        } else if (c.kind === 'command') {
+          // G7-19F: propagate caller-supplied command-type acceptance
+          // checks. Pre-G7-19F these were silently dropped here (no
+          // `command` branch in the dispatch). The verifier's
+          // `checkCommand` (in src/mission/verification.ts) runs
+          // `command` in the verifier's clean-room workspace.
+          //
+          // The caller is responsible for crafting a command that
+          // works in the verifier's clean-room layout (e.g.,
+          // `sh -c "cd artifacts/<workerId> && npm test"`). The
+          // auto-add path (below) handles the common case; this
+          // branch handles caller-supplied explicit checks.
+          checks.push({
+            kind: 'command',
+            label: c.label,
+            command: c.command,
+            ...(c.expectExit !== undefined ? { expectExit: c.expectExit } : {}),
+            ...(c.expectOutputIncludes !== undefined ? { expectOutputIncludes: c.expectOutputIncludes } : {}),
+            ...(c.expectOutputExcludes !== undefined ? { expectOutputExcludes: c.expectOutputExcludes } : {}),
+          });
         }
       }
+    }
+
+    // G7-19F: scan the goal text for executable-acceptance mentions
+    // (e.g., "npm test MUST exit 0"). For each uncovered mention,
+    // auto-add per-worker `command`-type checks at verification time.
+    // This closes the G7-19E "silent disappearance" defect: the user's
+    // prose requirement is now translated into executable verification
+    // at the gateway layer.
+    //
+    // The auto-add runs ONLY when the caller passed goalText (the
+    // production path always does; existing tests that don't pass it
+    // get the original behavior — no auto-add).
+    if (goalText !== undefined && goalText.length > 0) {
+      const autoAdded = buildAutoAddedChecksForGoal(
+        goalText,
+        callerCriteria ?? [],
+        context.artifacts.map((s) => ({ workerId: s.workerId, paths: s.paths })),
+      );
+      checks.push(...autoAdded);
     }
 
     if (checks.length === 0) {
