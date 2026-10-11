@@ -1,0 +1,30 @@
+{
+  "task": "G7-19H",
+  "title": "Live Acceptance & Collaboration Proof",
+  "baseline": "989e3cf21a0f4562daf3a2b0ddd1fcc913437c5b",
+  "main_commit": "169bad150ea4d084b64e5f8f9233962fbad8a0c8",
+  "main_commit_message": "G7-19H: live acceptance & collaboration proof — production validation",
+  "main_commit_pushed_at": "2026-10-11T09:30:00Z",
+  "remote_head_after_push": "169bad150ea4d084b64e5f8f9233962fbad8a0c8",
+  "local_head_after_push": "169bad150ea4d084b64e5f8f9233962fbad8a0c8",
+  "head_match": "YES",
+  "working_tree_clean": true,
+  "frozen_contracts_unchanged": true,
+  "source_modifications": false,
+  "live_missions_executed": 1,
+  "live_mission_id": "2787ad25-bfa6-4bb4-ab38-ff9b0298f2e3",
+  "live_tokens_consumed": 145184,
+  "live_wall_ms": 540827,
+  "overall_verdict": "FAIL",
+  "gates": {
+    "A_executable_acceptance": "PASS",
+    "B_package_identity": "NOT_PROVEN",
+    "C_worker_collaboration": "PARTIAL",
+    "D_mission_closure_truthfulness": "PASS",
+    "E_independent_acceptance": "FAIL",
+    "OVERALL_PRODUCTION_PROOF": "FAIL"
+  },
+  "stop_after_g7_19h": true,
+  "g7_20_authorized": false,
+  "next_action": "Await architectural review and explicit authorization."
+}
