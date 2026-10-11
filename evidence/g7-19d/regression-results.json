@@ -1,0 +1,54 @@
+{
+  "mission": "G7-19D",
+  "baselineHead": "f445f5111615ea9198dadba46d72fc3885dd13e0",
+  "typecheck": "PASS",
+  "lint": "PASS",
+  "fullRegression": {
+    "testFilesPassed": 101,
+    "testsPassed": 1024,
+    "testsSkipped": 9,
+    "testsFailed": 0,
+    "duration": "39.24s",
+    "regressions": 0
+  },
+  "g7_19d_tests": {
+    "pure_function_tests": {
+      "file": "tests/runtime/g7-19d-content-binding.test.ts",
+      "testsPassed": 21,
+      "scenarios_covered": [
+        "Scenario 1: identical paths, different content hashes (2 sub-tests)",
+        "Scenario 2: verification for A; B must not inherit (2 sub-tests)",
+        "Scenario 3: post-verification content mutation (2 sub-tests)",
+        "Scenario 4: stale verification evidence (2 sub-tests)",
+        "Scenario 5: verified identity matches selected package (2 sub-tests)",
+        "Scenario 6: verification evidence missing (2 sub-tests)",
+        "Scenario 7: three conflicting workers, one verified",
+        "Scenario 8: three conflicting workers, no verified",
+        "Scenario 9: heuristic preference disagrees with verified selection",
+        "Scenario 10 (pure): gateway response shape does not imply unverified authority (2 sub-tests)",
+        "bindVerificationEvidence identity comparison edge cases (4 sub-tests)"
+      ]
+    },
+    "gateway_integration_tests": {
+      "file": "tests/gateway/g7-19d-integration.test.ts",
+      "testsPassed": 7,
+      "scenarios_covered": [
+        "Scenario 10 (HTTP): gateway marks conflictResolution.isHeuristicUnverified=true whenever present (2 sub-tests)",
+        "Scenario 11: existing G7-19A/B/C behavior remains compatible",
+        "Scenario 12: timeout safety (gateway-level)",
+        "Scenario 13: G7-17S-style mission remains successful",
+        "Verification-to-selection evidence flow (2 sub-tests) — captureVerificationResult populates verifiedPackageIdentities; getArtifacts uses it for content binding; backward compat with bare-path acceptance criteria"
+      ]
+    },
+    "total_new_tests": 28
+  },
+  "frozen_contracts": {
+    "src/contracts/core.ts": "UNCHANGED (0 diff lines vs f445f51)",
+    "src/mission/verification.ts": "UNCHANGED (0 diff lines vs f445f51)",
+    "src/mission/orchestrator.ts": "UNCHANGED (0 diff lines vs f445f51) — the G7-19C narrow exception is preserved",
+    "src/goal/goal-compiler.ts": "UNCHANGED (0 diff lines vs f445f51)"
+  },
+  "live_provider_calls": 0,
+  "next_stage_started": "NO",
+  "production_smoke_ready": "YES"
+}

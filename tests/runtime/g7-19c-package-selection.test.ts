@@ -22,6 +22,7 @@ import {
   extractManifestFromAcceptanceCriteria,
   normalizePath,
   stripVerifierPrefix,
+  computeWorkerPackageIdentities,
   PACKAGE_SELECTION_POLICY,
   type PackageCandidate,
 } from '../../src/runtime/package-selection.js';
@@ -45,6 +46,22 @@ function snap(
   };
 }
 
+// G7-19D helper: compute the per-worker verified package identities
+// from snapshots — mirrors what `captureVerificationResult` does in
+// production. The returned map represents the identities captured AT
+// VERIFICATION TIME. When `getArtifacts()` (in tests, when
+// `buildAndSelectPackages` or `applyPackageSelection`) is called later
+// with the SAME snapshots, the candidate identities will match the
+// verified identities → verification evidence binds.
+//
+// To simulate post-verification content mutation in tests, pass
+// DIFFERENT snapshots to `computeWorkerPackageIdentities` (the
+// "verified" snapshots) than to `buildAndSelectPackages` (the
+// "current" snapshots). The mismatch will be detected.
+function verifiedIds(snaps: readonly ArtifactSnapshot[]): Map<string, string> {
+  return computeWorkerPackageIdentities(snaps);
+}
+
 // ---------------------------------------------------------------------------
 // SCENARIO 1 — One worker produces a complete verified package
 // ---------------------------------------------------------------------------
@@ -57,7 +74,7 @@ describe('G7-19C Scenario 1: one worker produces a complete verified package', (
       snap('software-engineer-1', 'package.json', '{}'),
     ];
     const verifiedPaths = new Set(['README.md', 'package.json']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.policy).toBe(PACKAGE_SELECTION_POLICY);
     expect(result.state).toBe('SELECTED');
@@ -82,7 +99,7 @@ describe('G7-19C Scenario 2: one worker produces an incomplete package', () => {
       // CONTRIBUTING.md is MISSING.
     ];
     const verifiedPaths = new Set(['README.md', 'package.json']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('UNRESOLVED');
     expect(result.selected).toBeUndefined();
@@ -120,7 +137,7 @@ describe('G7-19C Scenario 3: three workers conflict; only one verified', () => {
     // output.md (extra.md is missing from their workspaces) → their
     // packages are INCOMPLETE.)
     const verifiedPaths = new Set(['output.md', 'extra.md']);
-    const result = buildAndSelectPackages(distinctSnapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(distinctSnapps, manifest, verifiedPaths, true, verifiedIds(distinctSnapps));
 
     // Worker-a has both required paths AND both are verified → VERIFIED.
     // Worker-b and worker-c have output.md (verified) but missing extra.md → INCOMPLETE.
@@ -153,7 +170,7 @@ describe('G7-19C Scenario 4: two verified candidates, deterministic tiebreak', (
       snap('worker-a', 'file.txt', 'content A'),
     ];
     const verifiedPaths = new Set(['file.txt']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('SELECTED');
     expect(result.candidates.length).toBe(2);
@@ -208,7 +225,7 @@ describe('G7-19C Scenario 6: verification evidence does not bind to candidate', 
     ];
     // verifiedPaths contains only file.txt — extra.md is not verified.
     const verifiedPaths = new Set(['file.txt']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('UNRESOLVED');
     expect(result.selected).toBeUndefined();
@@ -231,7 +248,7 @@ describe('G7-19C Scenario 7: required manifest file is missing', () => {
       // CONTRIBUTING.md missing.
     ];
     const verifiedPaths = new Set(['README.md', 'package.json']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('UNRESOLVED');
     expect(result.candidates[0].completenessOk).toBe(false);
@@ -253,7 +270,7 @@ describe('G7-19C Scenario 8: extra non-required files exist', () => {
     ];
     // Both paths verified.
     const verifiedPaths = new Set(['README.md', 'NOTES.md']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('SELECTED');
     expect(result.selected?.workerId).toBe('worker-a');
@@ -269,7 +286,7 @@ describe('G7-19C Scenario 8: extra non-required files exist', () => {
     ];
     // Only README.md verified; NOTES.md is not.
     const verifiedPaths = new Set(['README.md']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('UNRESOLVED');
     expect(result.candidates[0].verificationOk).toBe(false);
@@ -290,7 +307,7 @@ describe('G7-19C Scenario 9: duplicate normalized paths are rejected', () => {
       snap('worker-a', './README.md', '# duplicate'),
     ];
     const verifiedPaths = new Set(['README.md']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('UNRESOLVED');
     expect(result.candidates[0].completenessOk).toBe(false);
@@ -310,7 +327,7 @@ describe('G7-19C Scenario 10: path traversal and unsafe paths are rejected', () 
       snap('worker-a', '../etc/passwd', 'evil'),
     ];
     const verifiedPaths = new Set(['README.md']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('UNRESOLVED');
     expect(result.candidates[0].completenessOk).toBe(false);
@@ -325,7 +342,7 @@ describe('G7-19C Scenario 10: path traversal and unsafe paths are rejected', () 
       snap('worker-a', '/etc/passwd', 'evil'),
     ];
     const verifiedPaths = new Set(['README.md']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('UNRESOLVED');
     expect(result.candidates[0].completenessOk).toBe(false);
@@ -340,7 +357,7 @@ describe('G7-19C Scenario 10: path traversal and unsafe paths are rejected', () 
       snap('worker-a', 'evil\0README.md', 'evil'),
     ];
     const verifiedPaths = new Set(['README.md']);
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     expect(result.state).toBe('UNRESOLVED');
     expect(result.candidates[0].completenessOk).toBe(false);
@@ -495,6 +512,11 @@ describe('G7-19C Scenario 17: G7-18E exact conflict matrix', () => {
       manifest.map((p) => ({ kind: 'file' as const, label: `${p} exists`, path: p })),
       verifiedPaths,
       false,
+      // G7-19D: verification did not pass, so verifiedPackageIdentities
+      // is undefined. All candidates will be rejected at the
+      // identity check (which is the correct G7-19D behavior when no
+      // verified attestation exists).
+      undefined,
     );
 
     // verifiedPackageSelection on every record, state=UNRESOLVED.
@@ -508,9 +530,12 @@ describe('G7-19C Scenario 17: G7-18E exact conflict matrix', () => {
     expect(readmeRecords.length).toBe(3);
     expect(readmeRecords.every((r) => r.conflict === true)).toBe(true);
     expect(readmeRecords.every((r) => r.conflictResolution !== undefined)).toBe(true);
-    // isHeuristicUnverified is NOT set (would be true only if a verified
-    // package was selected).
-    expect(readmeRecords.every((r) => r.conflictResolution?.isHeuristicUnverified === undefined)).toBe(true);
+    // G7-19D: isHeuristicUnverified is ALWAYS set to true when
+    // conflictResolution is present (regardless of SELECTED vs UNRESOLVED).
+    // The flag's semantic is "this conflictResolution is a heuristic
+    // display preference, NOT a verified authoritative selection" —
+    // which is true whenever conflictResolution exists.
+    expect(readmeRecords.every((r) => r.conflictResolution?.isHeuristicUnverified === true)).toBe(true);
 
     // The 3-way conflict on test/api.test.js: G7-19B picks documentation-writer-2
     // via lexicographic fallback (smallest workerId alphabetically among
@@ -537,7 +562,7 @@ describe('G7-19C Scenario 17: G7-18E exact conflict matrix', () => {
     // verifiedPaths = only se-1's 9 paths.
     const verifiedPaths = new Set(manifest);
     // verificationOk=true.
-    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true);
+    const result = buildAndSelectPackages(snapps, manifest, verifiedPaths, true, verifiedIds(snapps));
 
     // All three workers are COMPLETE.
     expect(result.candidates.every((c) => c.completenessOk)).toBe(true);
@@ -601,7 +626,7 @@ describe('G7-19C Scenario 19: deterministic ordering across repeated runs', () =
     for (let i = 0; i < 5; i++) {
       // Shuffle the input order each run.
       const shuffled = [...snapps].sort(() => (i % 2 === 0 ? 1 : -1));
-      results.push(buildAndSelectPackages(shuffled, manifest, verifiedPaths, true));
+      results.push(buildAndSelectPackages(shuffled, manifest, verifiedPaths, true, verifiedIds(shuffled)));
     }
 
     // All 5 results must be identical.
@@ -634,6 +659,9 @@ describe('G7-19C Scenario 20: backward compatibility with G7-19A/G7-19B', () => 
       [{ kind: 'file', label: 'output exists', path: 'output.md' }],
       verifiedPaths,
       true,
+      // G7-19D: pass the per-worker verified identities captured at
+      // verification time. The snapshots are the same — identities match.
+      verifiedIds(snapps),
     );
 
     // Every record still has contentHash, conflict, conflictVersions.
@@ -695,6 +723,8 @@ describe('G7-19C Scenario 20: backward compatibility with G7-19A/G7-19B', () => 
       ],
       verifiedPaths,
       true,
+      // G7-19D: pass the verified identities for content-bound verification.
+      verifiedIds(snapps),
     );
 
     // Sort order: (workerId, path) ascending.
@@ -830,7 +860,10 @@ describe('G7-19C bindVerificationEvidence edge cases', () => {
       completenessOk: true,
       verificationOk: false,
     };
-    const bound = bindVerificationEvidence(c, new Set(['a', 'b']), true);
+    // G7-19D: pass the verified identities map — the candidate's
+    // workerId 'w' has identity 'identity' which matches the candidate.
+    const verifiedIdsMap = new Map([['w', 'identity']]);
+    const bound = bindVerificationEvidence(c, new Set(['a', 'b']), true, verifiedIdsMap);
     expect(bound.verificationOk).toBe(true);
     expect(bound.verificationEvidenceHash).toBe('identity');
   });
@@ -847,10 +880,14 @@ describe('G7-19C bindVerificationEvidence edge cases', () => {
     };
     // verifiedPaths contains the prefixed form (from the verifier's
     // clean-room layout).
+    // G7-19D: pass the verified identities map — the candidate's
+    // workerId 'w' has identity 'identity' which matches.
+    const verifiedIdsMap = new Map([['w', 'identity']]);
     const bound = bindVerificationEvidence(
       c,
       new Set(['artifacts/w/README.md']),
       true,
+      verifiedIdsMap,
     );
     expect(bound.verificationOk).toBe(true);
   });

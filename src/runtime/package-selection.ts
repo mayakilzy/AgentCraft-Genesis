@@ -381,10 +381,17 @@ export function assessPackageCompleteness(
  * 2. Every observed path in the candidate is present in the
  *    `verifiedPaths` set (which `captureVerificationResult` populates
  *    from the runtime's `listArtifacts()` when verification passed).
+ * 3. **G7-19D (content-bound verification)**: the candidate's current
+ *    `packageIdentity` matches the per-worker identity captured at
+ *    verification time (`verifiedPackageIdentities.get(workerId)`).
+ *    If they differ, the content changed between verification and
+ *    selection → reject.
  *
  * This is the provenance-binding rule: verification evidence must
- * cover every file in the candidate. A partial verification (some
- * paths verified, some not) does NOT bind.
+ * cover every file in the candidate AND must attest to the exact
+ * content of the candidate. A matching path name is NOT sufficient —
+ * the package identity (a SHA-256 over all `(path, contentHash)`
+ * pairs) must match.
  *
  * ## Why "every observed path" not "every manifest path"
  *
@@ -411,10 +418,42 @@ export function assessPackageCompleteness(
  * do not trust a verification result that has no paths to back it
  * up.
  *
+ * ## G7-19D — Content-bound verification
+ *
+ * Pre-G7-19D, the `verificationEvidenceHash` was set to
+ * `candidate.packageIdentity` — the candidate's OWN identity, computed
+ * at selection time. This was self-assertion, not evidence: it proved
+ * only that the candidate's identity matched itself, not that
+ * verification ran against that exact content.
+ *
+ * G7-19D introduces `verifiedPackageIdentities` — a per-worker
+ * identity captured at verification time (in
+ * `captureVerificationResult`). The candidate's current identity
+ * must match this captured identity. If they differ, the content
+ * changed between verification and selection → reject.
+ *
+ * When all checks pass, `verificationEvidenceHash` is set to the
+ * captured verified identity (NOT the candidate's own identity).
+ * This is now EARNED evidence, not self-asserted.
+ *
+ * ## Cross-worker evidence isolation
+ *
+ * The `verifiedPackageIdentities` map is keyed by `workerId`. Worker
+ * A's verified identity cannot satisfy worker B's binding check —
+ * even if both workers wrote to the same paths with the same content
+ * hashes. The identity is computed per-worker (the workerId is part
+ * of the canonical JSON hashed by `computePackageIdentity`).
+ *
  * @param candidate the package candidate (must already have
  *   `completenessOk` and `packageIdentity` populated)
  * @param verifiedPaths the set of paths the verifier marked as verified
  * @param verificationOk whether the verification loop passed for this mission
+ * @param verifiedPackageIdentities G7-19D: per-worker package
+ *   identities captured at verification time. When `verificationOk=true`,
+ *   the candidate's `workerId` must have a matching entry here, AND
+ *   the entry must equal `candidate.packageIdentity`. When `undefined`
+ *   or absent, G7-19D rejects the candidate as "no verified package
+ *   identity captured" (cannot prove content binding).
  * @returns a new candidate with `verificationOk` and
  *   `verificationEvidenceHash` populated
  */
@@ -422,6 +461,7 @@ export function bindVerificationEvidence(
   candidate: PackageCandidate,
   verifiedPaths: ReadonlySet<string>,
   verificationOk: boolean,
+  verifiedPackageIdentities?: ReadonlyMap<string, string>,
 ): PackageCandidate {
   // Pre-condition: candidate must be COMPLETE for verification to bind.
   if (!candidate.completenessOk) {
@@ -484,11 +524,56 @@ export function bindVerificationEvidence(
     }
   }
 
-  // Verification bound: the evidence hash equals the package identity.
+  // G7-19D — Content-bound verification.
+  //
+  // The verified identity for this worker must be present in the
+  // captured map AND must match the candidate's current identity.
+  //
+  // - If the map is `undefined` (G7-19C callers that haven't been
+  //   updated to capture identities), we reject as "no verified
+  //   package identity captured" — the verification evidence cannot
+  //   be bound to the candidate's exact content.
+  // - If the map is present but has no entry for this worker, the
+  //   worker's package was not captured at verification time — reject.
+  // - If the entry differs from the candidate's current identity,
+  //   the content mutated between verification and selection — reject
+  //   (this is the post-verification mutation detection).
+  if (verifiedPackageIdentities === undefined) {
+    return {
+      ...candidate,
+      verificationOk: false,
+      ...(candidate.rejectionReason !== undefined
+        ? {}
+        : { rejectionReason: 'no verified package identity captured (pre-G7-19D caller)' }),
+    };
+  }
+  const verifiedIdentity = verifiedPackageIdentities.get(candidate.workerId);
+  if (verifiedIdentity === undefined) {
+    return {
+      ...candidate,
+      verificationOk: false,
+      ...(candidate.rejectionReason !== undefined
+        ? {}
+        : { rejectionReason: `no verified package identity captured for worker: ${candidate.workerId}` }),
+    };
+  }
+  if (verifiedIdentity !== candidate.packageIdentity) {
+    return {
+      ...candidate,
+      verificationOk: false,
+      ...(candidate.rejectionReason !== undefined
+        ? {}
+        : { rejectionReason: 'post-verification content mutation detected (verified identity ≠ current identity)' }),
+    };
+  }
+
+  // Verification bound: the evidence hash is the captured verified
+  // identity — NOT the candidate's own identity. This is EARNED
+  // evidence, not self-assertion.
   return {
     ...candidate,
     verificationOk: true,
-    verificationEvidenceHash: candidate.packageIdentity,
+    verificationEvidenceHash: verifiedIdentity,
   };
 }
 
@@ -511,6 +596,9 @@ export function bindVerificationEvidence(
  *   `extractManifestFromAcceptanceCriteria`)
  * @param verifiedPaths the set of paths the verifier marked as verified
  * @param verificationOk whether the verification loop passed for this mission
+ * @param verifiedPackageIdentities G7-19D: per-worker package identities
+ *   captured at verification time. Threaded through to
+ *   {@link bindVerificationEvidence} for content-bound verification.
  * @returns the sorted candidates
  */
 export function buildPackageCandidates(
@@ -518,6 +606,7 @@ export function buildPackageCandidates(
   requiredManifest: readonly string[],
   verifiedPaths: ReadonlySet<string>,
   verificationOk: boolean,
+  verifiedPackageIdentities?: ReadonlyMap<string, string>,
 ): readonly PackageCandidate[] {
   // 1. Group snapshots by workerId. Use a Map to preserve insertion
   // order independence.
@@ -552,7 +641,12 @@ export function buildPackageCandidates(
       verificationOk: false,
       ...(completeness.ok ? {} : { rejectionReason: completeness.reason }),
     };
-    const bound = bindVerificationEvidence(base, verifiedPaths, verificationOk);
+    const bound = bindVerificationEvidence(
+      base,
+      verifiedPaths,
+      verificationOk,
+      verifiedPackageIdentities,
+    );
     candidates.push(bound);
   }
 
@@ -649,6 +743,9 @@ export function selectVerifiedPackage(
  * @param requiredManifest the sorted, normalized required paths
  * @param verifiedPaths the set of paths the verifier marked as verified
  * @param verificationOk whether the verification loop passed
+ * @param verifiedPackageIdentities G7-19D: per-worker package identities
+ *   captured at verification time. Threaded through to
+ *   {@link bindVerificationEvidence} for content-bound verification.
  * @returns the full selection result (candidates + chosen + rationale)
  */
 export function buildAndSelectPackages(
@@ -656,12 +753,68 @@ export function buildAndSelectPackages(
   requiredManifest: readonly string[],
   verifiedPaths: ReadonlySet<string>,
   verificationOk: boolean,
+  verifiedPackageIdentities?: ReadonlyMap<string, string>,
 ): PackageSelectionResult {
   const candidates = buildPackageCandidates(
     snapshots,
     requiredManifest,
     verifiedPaths,
     verificationOk,
+    verifiedPackageIdentities,
   );
   return selectVerifiedPackage(candidates);
+}
+
+/**
+ * G7-19D — Compute per-worker package identities from a flat list of
+ * snapshots. Returns a `Map<workerId, packageIdentity>` that callers
+ * can store at verification time and later compare with the candidate
+ * identities computed at selection time.
+ *
+ * This is the **content-bound verification capture**: the identities
+ * computed here represent the worker workspaces AT VERIFICATION TIME.
+ * When `getArtifacts()` later computes candidate identities from
+ * fresh `runtime.listArtifacts()` snapshots, the two maps must agree
+ * for every worker — otherwise content mutated between verification
+ * and selection.
+ *
+ * ## Excludes verifier clean-room workers
+ *
+ * The map excludes `mission-verifier-*` workers (they hold verification
+ * copies, not mission deliverables). The caller is responsible for
+ * passing already-filtered snapshots, OR this function filters them
+ * defensively.
+ *
+ * ## Determinism
+ *
+ * The map's iteration order is insertion order (per the JS Map spec).
+ * Callers that need deterministic iteration should sort the entries.
+ *
+ * @param snapshots the raw per-(worker, path) entries from
+ *   `listArtifacts()` AT VERIFICATION TIME
+ * @returns `Map<workerId, packageIdentity>` — the per-worker identities
+ *   captured at verification time
+ */
+export function computeWorkerPackageIdentities(
+  snapshots: readonly ArtifactSnapshot[],
+): Map<string, string> {
+  // Group snapshots by workerId.
+  const byWorker = new Map<string, ArtifactSnapshot[]>();
+  for (const s of snapshots) {
+    // Exclude verifier clean-room workers defensively.
+    if (s.workerId.startsWith('mission-verifier')) continue;
+    const list = byWorker.get(s.workerId);
+    if (list === undefined) {
+      byWorker.set(s.workerId, [s]);
+    } else {
+      list.push(s);
+    }
+  }
+
+  // Compute the package identity per worker.
+  const out = new Map<string, string>();
+  for (const [workerId, snapps] of byWorker) {
+    out.set(workerId, computePackageIdentity(workerId, snapps));
+  }
+  return out;
 }

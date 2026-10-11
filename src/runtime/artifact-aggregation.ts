@@ -540,6 +540,27 @@ export function buildAggregatedRecords(
  * appropriate). All G7-19A and G7-19B tests continue to pass
  * unchanged.
  *
+ * ## G7-19D — Content-bound verification + authority semantics
+ *
+ * G7-19D extends this function with two integrity fixes:
+ *
+ *   1. **Content-bound verification** (Phase B): an additional
+ *      `verifiedPackageIdentities` parameter (per-worker package
+ *      identities captured at verification time) is threaded through
+ *      to `buildAndSelectPackages` → `bindVerificationEvidence`. The
+ *      candidate's current identity must match the captured verified
+ *      identity — otherwise the content mutated between verification
+ *      and selection, and the candidate is rejected.
+ *
+ *   2. **Authority semantics** (Phase C): the `isHeuristicUnverified`
+ *      flag is now set on `conflictResolution` WHENEVER it is present
+ *      (not just when state='SELECTED'). The flag's semantic is "this
+ *      `conflictResolution` is a heuristic display preference, NOT a
+ *      verified authoritative selection" — which is true whenever
+ *      `conflictResolution` exists. This closes the G7-19D Concern B:
+ *      the heuristic `isAuthoritative` flag was previously exposed
+ *      without warning when state='UNRESOLVED'.
+ *
  * ## Backward compatibility
  *
  * - The `verifiedPackageSelection` field is OPTIONAL. Pre-G7-19C
@@ -557,6 +578,10 @@ export function buildAggregatedRecords(
  *   (used to extract the required manifest)
  * @param verifiedPaths the set of paths the verifier marked as verified
  * @param verificationOk whether the verification loop passed for this mission
+ * @param verifiedPackageIdentities G7-19D: per-worker package
+ *   identities captured at verification time. When `undefined`, G7-19D
+ *   rejects all candidates as "no verified package identity captured"
+ *   (cannot prove content binding). This is the conservative default.
  * @returns the records with `verifiedPackageSelection` and (when
  *   appropriate) `isHeuristicUnverified` populated
  */
@@ -572,6 +597,7 @@ export function applyPackageSelection(
   }[],
   verifiedPaths: ReadonlySet<string>,
   verificationOk: boolean,
+  verifiedPackageIdentities?: ReadonlyMap<string, string>,
 ): MissionArtifactRecord[] {
   // 1. Extract the manifest from acceptance criteria.
   const manifest = extractManifestFromAcceptanceCriteria(acceptanceCriteria);
@@ -584,12 +610,14 @@ export function applyPackageSelection(
     return [...records];
   }
 
-  // 3. Build candidates and select.
+  // 3. Build candidates and select. G7-19D: thread the verified
+  //    package identities through for content-bound verification.
   const selection: PackageSelectionResult = buildAndSelectPackages(
     snapshots,
     manifest,
     verifiedPaths,
     verificationOk,
+    verifiedPackageIdentities,
   );
 
   // 4. Determine the selected workerId (empty string when UNRESOLVED).
@@ -600,8 +628,14 @@ export function applyPackageSelection(
   // 5. Apply the verifiedPackageSelection field to every record.
   //    When state='UNRESOLVED', isAuthoritativePackage=false on every
   //    record (we still populate the field for transparency).
-  //    Also: when state='SELECTED', mark the existing
-  //    conflictResolution field with isHeuristicUnverified=true.
+  //
+  //    G7-19D Phase C: ALWAYS mark conflictResolution as a heuristic
+  //    when it's present (drop the previous `state === 'SELECTED'`
+  //    guard). The isAuthoritative flag in conflictResolution is a
+  //    display preference from the G7-19B `majority-then-lexicographic`
+  //    policy — it is NEVER a verified authoritative selection.
+  //    Consumers should always look at `verifiedPackageSelection`
+  //    for the verified authority.
   return records.map((record) => {
     // Build the verifiedPackageSelection field.
     const verifiedPackageSelection = {
@@ -613,10 +647,14 @@ export function applyPackageSelection(
       isAuthoritativePackage: isAuthoritativeWorker(record.workerId),
     };
 
-    // If state='SELECTED', mark conflictResolution as heuristic (if
-    // it exists on this record).
+    // G7-19D: ALWAYS mark conflictResolution as heuristic when present.
+    // The isAuthoritative flag is a display preference, NOT a verified
+    // authoritative selection. This is true whether state='SELECTED'
+    // (verified package exists, heuristic is shadowed) or state='UNRESOLVED'
+    // (no verified package, heuristic is the ONLY selection available —
+    // and consumers must NOT mistake it for verified authority).
     let conflictResolution = record.conflictResolution;
-    if (conflictResolution !== undefined && selection.state === 'SELECTED') {
+    if (conflictResolution !== undefined) {
       conflictResolution = {
         ...conflictResolution,
         isHeuristicUnverified: true,

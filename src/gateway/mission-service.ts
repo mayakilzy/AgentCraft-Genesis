@@ -117,6 +117,10 @@ import type {
 // G7-19A: deterministic artifact aggregation (conflict detection,
 // per-path provenance, content hashing) — pure function layer.
 import { buildAggregatedRecords, applyPackageSelection } from '../runtime/artifact-aggregation.js';
+// G7-19D: computeWorkerPackageIdentities is the content-bound verification
+// capture — it computes per-worker package identities AT VERIFICATION TIME
+// so that getArtifacts() can later detect post-verification content mutation.
+import { computeWorkerPackageIdentities } from '../runtime/package-selection.js';
 import {
   FileMissionHistoryStore,
   MISSION_HISTORY_SCHEMA_VERSION,
@@ -186,6 +190,29 @@ interface MissionRuntime {
   verificationOk?: boolean;
   /** Set of artifact paths that passed verification (in the clean-room copy). */
   verifiedPaths?: Set<string>;
+  /**
+   * G7-19D — Per-worker package identities captured at verification time.
+   *
+   * When `verificationOk=true`, `captureVerificationResult` populates
+   * this map with one entry per non-verifier worker: the canonical
+   * SHA-256 package identity (computed from
+   * `runtime.listArtifacts()` snapshots AT VERIFICATION TIME).
+   *
+   * Later, `getArtifacts()` re-reads `runtime.listArtifacts()` to get
+   * CURRENT snapshots, computes candidate identities, and compares
+   * against this map. If the identities match, the package content
+   * did not change between verification and selection — verification
+   * evidence binds to the candidate's exact content. If they differ,
+   * the candidate is rejected as "post-verification content mutation
+   * detected".
+   *
+   * When `verificationOk=false` or the verification event is missing,
+   * this field stays `undefined`. Candidates are then rejected as
+   * "no verified package identity captured" (the conservative G7-19D
+   * default — verification evidence cannot be bound without an
+   * independently-captured identity).
+   */
+  verifiedPackageIdentities?: Map<string, string>;
   /**
    * G7-15B-H1: true when the terminal history write FAILED. The in-process
    * mission result is still the real outcome (SUCCEEDED/FAILED/etc.), but the
@@ -1264,6 +1291,12 @@ export class MissionService {
           rt.acceptanceCriteria ?? [],
           verifiedPaths,
           verificationOk,
+          // G7-19D: pass the per-worker verified package identities
+          // captured at verification time. The selection layer will
+          // compare these against the candidate identities computed
+          // from current snapshots — rejecting any candidate whose
+          // content mutated between verification and selection.
+          rt.verifiedPackageIdentities,
         );
       }
 
@@ -1292,12 +1325,15 @@ export class MissionService {
       // G7-19C: apply verified-package selection on the dev path too,
       // for parity with the production path. The same pure function
       // works on both — the snapshots are identical in shape.
+      // G7-19D: thread the verified package identities map for
+      // content-bound verification (same as the production path).
       return applyPackageSelection(
         devRecords,
         devSnapshots,
         rt.acceptanceCriteria ?? [],
         verifiedPaths,
         verificationOk,
+        rt.verifiedPackageIdentities,
       );
     }
 
@@ -1445,32 +1481,68 @@ export class MissionService {
         const paths = new Set<string>();
         // G6-08 (RB-1): prefer runtime's listArtifacts() (production path).
         const provider = rt.runtime as (WorkerRuntime & Partial<ArtifactsProvider>) | undefined;
+        // G7-19D — Content-bound verification capture.
+        //
+        // We capture per-worker package identities AT VERIFICATION TIME.
+        // The snapshots returned here represent the worker workspaces
+        // immediately after verification completed. The map is later
+        // compared (in getArtifacts → applyPackageSelection →
+        // bindVerificationEvidence) against the candidate identities
+        // computed from CURRENT snapshots. If they match, the package
+        // content did not change between verification and selection —
+        // verification evidence binds to the candidate's exact content.
+        // If they differ, the candidate is rejected as
+        // "post-verification content mutation detected".
+        let verifiedSnapshots: readonly ArtifactSnapshot[] = [];
         if (provider && typeof provider.listArtifacts === 'function') {
           try {
-            const snapshots = await provider.listArtifacts();
-            for (const s of snapshots) paths.add(s.path);
+            verifiedSnapshots = await provider.listArtifacts();
+            for (const s of verifiedSnapshots) paths.add(s.path);
           } catch {
             // Adapter may have been closed already — fall through to legacy path.
           }
         }
         // Legacy dev-path fallback (MemoryComputer.files).
-        for (const [workerId, computer] of rt.computers) {
-          if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
-            continue;
+        if (verifiedSnapshots.length === 0) {
+          const devSnaps: ArtifactSnapshot[] = [];
+          for (const [workerId, computer] of rt.computers) {
+            if (workerId === 'mission-verifier-1' || workerId.startsWith('mission-verifier')) {
+              continue;
+            }
+            for (const [path, content] of computer.files) {
+              paths.add(path);
+              devSnaps.push({
+                workerId,
+                path,
+                bytes: content.length,
+                ...(content.length <= 65_536 ? { content } : {}),
+              });
+            }
           }
-          for (const p of computer.files.keys()) {
-            paths.add(p);
-          }
+          verifiedSnapshots = devSnaps;
         }
         rt.verifiedPaths = paths;
+        // G7-19D: capture per-worker package identities for content
+        // binding. This map is the "verified attestation" — the
+        // identity of each worker's package AS VERIFIED. Pre-G7-19D,
+        // this map was missing and bindVerificationEvidence fell back
+        // to self-assertion (verificationEvidenceHash = candidate.packageIdentity).
+        // G7-19D rejects that fallback path.
+        rt.verifiedPackageIdentities = computeWorkerPackageIdentities(verifiedSnapshots);
       } else {
         rt.verifiedPaths = new Set<string>();
+        // G7-19D: when verification did not pass, the identities map
+        // stays undefined. bindVerificationEvidence will reject
+        // candidates with "no verified package identity captured"
+        // (the conservative G7-19D default).
       }
     } else {
       // No verification event — mission may have been cancelled before
       // verification ran. Mark as not verified.
       rt.verificationOk = false;
       rt.verifiedPaths = new Set<string>();
+      // G7-19D: identities map stays undefined when no verification
+      // event was recorded.
     }
   }
 
