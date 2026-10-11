@@ -1,0 +1,66 @@
+{
+  "mission": "G7-19G",
+  "mission_type": "reliability_closure",
+  "baseline_head": "8349c2bd8102ba0bd28c4cbc256ad13896622f4b",
+  "main_commit": {
+    "sha": "495f3cd20d04bad63e42bdf338488c2a45f89dc6",
+    "subject": "G7-19G: reliability closure — real command acceptance + stable package identity + worker coordination",
+    "pushed_at": "2026-10-11T07:30 UTC",
+    "remote_verified": true
+  },
+  "live_zai_calls": 0,
+  "live_openbot_invocations": 0,
+  "phase_a_real_command_acceptance": {
+    "original_fixture_npm_test_exit_code": 1,
+    "original_fixture_failure_mode": "Cannot find module '.../test' — Node v24 fails on trailing slash",
+    "structural_floor_pass": true,
+    "content_in_artifacts_pass": true,
+    "contradiction_verified": true,
+    "corrected_fixture_npm_test_exit_code": 0,
+    "corrected_fixture_tests_passed": 13,
+    "original_evidence_unchanged": true,
+    "original_package_json_sha256": "055a6b530383b72cd25ba9efe6eb5b11a47f17141be985fa19ab922220a98153",
+    "security_audit_pass": true,
+    "controls_adequate": true,
+    "blocker_reported": false
+  },
+  "phase_b_stable_package_identity": {
+    "implementation": "computePackageIdentity + computeWorkerPackageIdentities accept optional manifestPaths; buildPackageCandidates + captureVerificationResult pass manifest through",
+    "frozen_contracts_modified": 0,
+    "tests_added": 13,
+    "existing_tests_updated": ["g7-19c-package-selection.test.ts verifiedIds helper", "g7-19d-content-binding.test.ts Scenario 3 path-coverage check"],
+    "guarantees_verified": ["identical deliverables+different cache→SAME identity", "changed content→DIFFERENT identity", "incomplete manifests rejected", "unsafe extra files rejected", "auxiliary files remain visible", "content-hash binding preserved"]
+  },
+  "phase_c_worker_coordination": {
+    "implementation": "buildEdges in organization-planner.ts adds direct handoff edges from each non-coordinator non-writer worker to the writer, even when coordinator present",
+    "frozen_contracts_modified": 0,
+    "tests_added": 8,
+    "existing_tests_updated": ["organization-planner.test.ts edge count 4→6 + 2 direct handoff assertions"],
+    "guarantees_verified": ["writer has direct handoffs", "no NEW cycles introduced", "no duplicated upstream refs", "coordinator behavior intact", "doc worker has structural prerequisite", "existing planner scenarios compatible"],
+    "limitation": "adding edges gives CONTEXT but NOT FILE ACCESS — actual file access would require FROZEN orchestrator changes"
+  },
+  "phase_d_verification": {
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "tests_passed": 1074,
+    "tests_skipped": 9,
+    "tests_failed": 0,
+    "test_files_passed": 105,
+    "baseline_tests_passed_g7_19f": 1053,
+    "baseline_test_files_g7_19f": 103,
+    "delta_tests": 21,
+    "delta_test_files": 2,
+    "frozen_contracts_unchanged_vs_all_baselines": true
+  },
+  "implementation_stats": {
+    "new_code_lines": 165,
+    "new_test_lines": 440,
+    "new_files": ["scripts/g7-19g-phase-a-exec.cjs", "tests/runtime/g7-19g-package-identity.test.ts", "tests/g7-19g-worker-coordination.test.ts"],
+    "modified_files": ["src/runtime/package-selection.ts", "src/gateway/mission-service.ts", "src/organization/organization-planner.ts", "eslint.config.js", "tests/organization-planner.test.ts", "tests/runtime/g7-19c-package-selection.test.ts", "tests/runtime/g7-19d-content-binding.test.ts"]
+  },
+  "final_local_head": "495f3cd20d04bad63e42bdf338488c2a45f89dc6",
+  "final_remote_head": "495f3cd20d04bad63e42bdf338488c2a45f89dc6",
+  "head_match": "YES",
+  "next_stage_started": "NO",
+  "readiness_for_next_live_production_mission": "YES (conditional — re-run G7-19E Service Request Tracker with G7-19F + G7-19G fixes)"
+}
