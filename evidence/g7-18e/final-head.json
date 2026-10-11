@@ -1,0 +1,20 @@
+{
+  "MISSION": "G7-18E",
+  "FINAL_LOCAL_HEAD": "eae19924608006c162431afa69ce3c89f0a33969",
+  "FINAL_REMOTE_HEAD": "eae19924608006c162431afa69ce3c89f0a33969",
+  "HEAD_MATCH": "YES",
+  "BASELINE_HEAD": "c09a5939903e30692d5a267851270d5dbd063537",
+  "MISSION_ID": "4422008a-c495-4a88-836e-7df84752e448",
+  "MISSION_STATUS": "FAILED",
+  "TOKENS": 203057,
+  "WALL_MS": 420001,
+  "TEST_ISOLATION_FIX": "PASS",
+  "APPLICATION_TESTS": "PASS",
+  "BROWSER_ACCEPTANCE": "PASS",
+  "CLEAN_ROOM_ACCEPTANCE": "PASS",
+  "MANUAL_APPLICATION_CODE_INTERVENTION": "NO",
+  "FULL_REGRESSION": "913 passed, 9 skipped, 0 failed (93 files)",
+  "FROZEN_CONTRACTS": "UNCHANGED (0 diff lines vs c09a593)",
+  "NEXT_STAGE_STARTED": "NO",
+  "note": "Written post-push to avoid the G7-18 chicken-and-egg metadata bug. The MAIN G7-18E commit (this HEAD) contains everything except final-head.json itself. The NEXT commit on top will add this file. Mission status is FAILED because the orchestrator's per-worker artifacts aggregation was incomplete (only software-engineer-1 produced the full 9-file repair), but the focused engineering worker's deliverable is complete and correct: 8 files unchanged vs G7-18D baseline, only test/api.test.js changed, hybrid fix (per-test.beforeEach reset + cross-project-aware assertions + stopTestServer in test.after). Phase 3 clean-room acceptance passed 17/17 G7-18D checks (A-14 closed) plus 22/22 automated tests plus browser acceptance. No manual application code intervention."
+}
