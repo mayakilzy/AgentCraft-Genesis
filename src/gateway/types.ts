@@ -346,6 +346,15 @@ export interface MissionArtifactRecord {
    * - `authoritativeContentHash` lets the caller verify that the
    *   chosen record's content matches the hash.
    *
+   * G7-19C: this field is a HEURISTIC selection (deterministic but
+   * NOT verification-bound). The `isAuthoritative` flag picks a
+   * version for diagnostic display; it does NOT certify semantic
+   * correctness. When a verified package was selected (see
+   * {@link verifiedPackageSelection}), the
+   * `isHeuristicUnverified` flag is set to `true` so consumers do
+   * NOT confuse the heuristic with the verified authoritative
+   * selection.
+   *
    * Omitted when `conflict=false` or when there is no conflict.
    */
   readonly conflictResolution?: {
@@ -363,6 +372,90 @@ export interface MissionArtifactRecord {
      * by filtering for `conflictResolution.isAuthoritative === true`.
      */
     readonly isAuthoritative: boolean;
+    /**
+     * G7-19C: when `true`, this `conflictResolution` is a HEURISTIC
+     * selection (deterministic but NOT verification-bound). The
+     * `isAuthoritative` flag picks a version for diagnostic display;
+     * it does NOT certify semantic correctness. Consumers should
+     * look at {@link verifiedPackageSelection} for the
+     * verification-bound authoritative selection.
+     *
+     * When absent, the value is treated as `false` (for backward
+     * compatibility with pre-G7-19C clients). G7-19C sets this to
+     * `true` whenever a verified package was selected via
+     * `verified-only-deterministic` policy — the heuristic is
+     * preserved for diagnostic display but is explicitly marked as
+     * NOT the verified authoritative selection.
+     */
+    readonly isHeuristicUnverified?: boolean;
+  };
+  /**
+   * G7-19C: when a verified package was selected via the
+   * `verified-only-deterministic` policy, this field carries the
+   * verification-bound authoritative selection. It is the
+   * authoritative-delivery signal — distinct from
+   * `conflictResolution` (which is a deterministic heuristic).
+   *
+   * This field is OPTIONAL and additive — existing clients continue
+   * to work unchanged. It is populated only when:
+   * - A worker produced a COMPLETE package (all required manifest
+   *   paths present, no path-traversal, no symlinks, no duplicate
+   *   normalized paths).
+   * - Verification ran and passed for this mission.
+   * - Every observed path of the candidate is in the verified-paths
+   *   set (provenance-binding rule).
+   *
+   * - `packageIdentity` is the canonical SHA-256 of sorted (path,
+   *   contentHash) pairs. Two candidates with the same workerId,
+   *   same paths, and same content hashes have the same identity.
+   * - `packageState` is the final state of the selection:
+   *   `'SELECTED'` (a verified package was chosen) or
+   *   `'UNRESOLVED'` (no verified candidate exists).
+   * - `selectedWorkerId` is the workerId of the chosen candidate
+   *   (when state=`'SELECTED'`).
+   * - `rationale` explains why this candidate was chosen (single
+   *   verified, or deterministic tiebreak among multiple verified).
+   * - `isAuthoritativePackage=true` on records belonging to the
+   *   selected candidate's worker. Other records have
+   *   `isAuthoritativePackage=false`.
+   *
+   * When `packageState='UNRESOLVED'`, the field is populated on
+   * every record for transparency, with `selectedWorkerId=''` and
+   * `isAuthoritativePackage=false`. This tells consumers that the
+   * verified-package layer ran but no verified candidate was found.
+   *
+   * Omitted when the package-selection layer did not run (e.g.,
+   * pre-G7-19C clients, or paths where there is no
+   * `acceptanceCriteria` manifest to verify against).
+   */
+  readonly verifiedPackageSelection?: {
+    /** Policy name (always "verified-only-deterministic" in G7-19C). */
+    readonly policy: string;
+    /** Canonical SHA-256 identity of the selected package (hex). */
+    readonly packageIdentity: string;
+    /**
+     * Final state of the selection. `'SELECTED'` when a verified
+     * package was chosen; `'UNRESOLVED'` when no verified candidate
+     * exists. Other states (`'DISCOVERED'`, `'COMPLETE'`,
+     * `'VERIFIED'`) are intermediate and not exposed here.
+     */
+    readonly packageState: 'SELECTED' | 'UNRESOLVED';
+    /**
+     * WorkerId of the chosen candidate. Empty string when
+     * `packageState='UNRESOLVED'`.
+     */
+    readonly selectedWorkerId: string;
+    /** Human-readable explanation of the selection (or lack thereof). */
+    readonly rationale: string;
+    /**
+     * `true` on records belonging to the selected candidate's worker;
+     * `false` on the other records. Always `false` when
+     * `packageState='UNRESOLVED'`.
+     *
+     * The caller can find the authoritative package by filtering for
+     * `verifiedPackageSelection.isAuthoritativePackage === true`.
+     */
+    readonly isAuthoritativePackage: boolean;
   };
 }
 

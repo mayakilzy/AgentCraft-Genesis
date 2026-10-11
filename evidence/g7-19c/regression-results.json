@@ -1,0 +1,62 @@
+{
+  "mission": "G7-19C",
+  "baselineHead": "581ecd0e47e1b46124599bf360a2316beb423998",
+  "typecheck": "PASS",
+  "lint": "PASS",
+  "fullRegression": {
+    "testFilesPassed": 99,
+    "testsPassed": 996,
+    "testsSkipped": 9,
+    "testsFailed": 0,
+    "duration": "40.00s",
+    "regressions": 0
+  },
+  "g7_19c_tests": {
+    "unit_tests": {
+      "file": "tests/runtime/g7-19c-package-selection.test.ts",
+      "testsPassed": 33,
+      "scenarios_covered": [
+        "Scenario 1: one worker produces a complete verified package",
+        "Scenario 2: one worker produces an incomplete package",
+        "Scenario 3: three workers conflict; only one verified",
+        "Scenario 4: two verified candidates, deterministic tiebreak",
+        "Scenario 5: no package passes verification",
+        "Scenario 6: verification evidence does not bind to candidate",
+        "Scenario 7: required manifest file is missing",
+        "Scenario 8: extra non-required files exist",
+        "Scenario 9: duplicate normalized paths are rejected",
+        "Scenario 10: path traversal and unsafe paths are rejected",
+        "Scenario 16: verification fails despite complete files",
+        "Scenario 17 (lite): G7-18E exact conflict matrix pure-function reproduction",
+        "Scenario 19: deterministic ordering across repeated runs",
+        "Scenario 20: backward compatibility with G7-19A/G7-19B",
+        "bindVerificationEvidence edge cases",
+        "extractManifestFromAcceptanceCriteria helpers",
+        "normalizePath / stripVerifierPrefix helpers"
+      ]
+    },
+    "closure_tests": {
+      "file": "tests/mission/g7-19c-closure.test.ts",
+      "testsPassed": 12,
+      "scenarios_covered": [
+        "Scenario 11: worker self-reports success but disk is incomplete",
+        "Scenario 12: worker writes files but never calls finish() (timeout abort) — 2 tests",
+        "Scenario 13: timeout with a verified package",
+        "Scenario 14: timeout with only incomplete output",
+        "Scenario 15: cancellation before verification",
+        "Scenario 17 (real): G7-18E matrix via real orchestrator",
+        "Scenario 18: G7-17S successful mission regression — 3 tests",
+        "Direct disk-state fallback exercise — 2 tests"
+      ]
+    },
+    "total_new_tests": 45
+  },
+  "frozen_contracts": {
+    "src/contracts/core.ts": "UNCHANGED (0 diff lines vs 581ecd0)",
+    "src/mission/verification.ts": "UNCHANGED (0 diff lines vs 581ecd0)",
+    "src/mission/orchestrator.ts": "AUTHORIZED G7-19C narrow exception (64 diff lines — disk-state fallback for hasDeliverable only; closure structure unchanged)",
+    "src/goal/goal-compiler.ts": "UNCHANGED (0 diff lines vs 581ecd0)"
+  },
+  "live_provider_calls": 0,
+  "next_stage_started": "NO"
+}

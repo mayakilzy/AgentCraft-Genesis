@@ -14,7 +14,7 @@ import type {
 import type { GoalCompiler } from '../goal/goal-compiler.js';
 import type { GenomeCompiler } from '../genome/genome-compiler.js';
 import { OrganizationPlanner, type AdvisoryPattern } from '../organization/organization-planner.js';
-import type { WorkerComputer, WorkerRuntime, WorkspaceSurface, JobSurface } from '../runtime/computer.js';
+import type { WorkerComputer, WorkerRuntime, WorkspaceSurface, JobSurface, ArtifactsProvider } from '../runtime/computer.js';
 import type { McpCapabilityProvider } from '../runtime/mcp/capability-provider.js';
 import type { WorkerResult } from '../worker/worker-agent.js';
 import { WorkerAgent } from '../worker/worker-agent.js';
@@ -811,7 +811,63 @@ export class MissionOrchestrator {
       // is the trust authority — a WorkspaceHandle only exists if the adapter
       // actually created/observed the Space+Page.
       const observedDeliverables = await this.collectObservedDeliverables(ensured);
-      const hasDeliverable = finalArtifacts.length > 0 || observedDeliverables.length > 0;
+      // G7-19C — Evidence-based artifact discovery fallback.
+      //
+      // The orchestrator's `collectArtifacts` (above) trusts worker
+      // self-report (`result.artifacts` from each worker's `finish()`
+      // call). When a worker fails to call `finish()` cleanly — e.g.,
+      // because of a timeout abort mid-write, a provider failure, or
+      // a `finish()` call with an empty list — `finalArtifacts` is
+      // empty for that worker, even though the worker may have
+      // written meaningful recoverable files to disk.
+      //
+      // This was **Defect B** in the G7-19A root-cause analysis: the
+      // orchestrator's `hasDeliverable` was computed from
+      // `finalArtifacts.length > 0`, which evaluated to `false`
+      // whenever worker self-report was empty, even when disk state
+      // showed a complete application package. The G7-18E paradox
+      // (correct repair → FAILED mission) stemmed directly from
+      // this defect.
+      //
+      // G7-19C narrow-scope fix (Phase E of the brief): when
+      // `finalArtifacts.length === 0`, fall back to disk-state
+      // discovery via the runtime's `listArtifacts()` (when
+      // available — runtimes that implement `ArtifactsProvider`).
+      // The disk-discovered count feeds into `hasDeliverable`.
+      //
+      // This is the minimum-scoped change authorized by Phase E.
+      // The closure decision at line ~820 (`if (aborted) { status =
+      // hasDeliverable ? 'partial' : 'failure'; }`) is unchanged in
+      // structure — we just feed it disk-state-aware
+      // `hasDeliverable`. The other three frozen contracts
+      // (`src/contracts/core.ts`, `src/mission/verification.ts`,
+      // `src/goal/goal-compiler.ts`) are NOT modified.
+      let diskDiscoveredCount = 0;
+      if (finalArtifacts.length === 0) {
+        const provider =
+          this.options.runtime as WorkerRuntime & Partial<ArtifactsProvider>;
+        if (provider && typeof provider.listArtifacts === 'function') {
+          try {
+            const diskSnapshots = await provider.listArtifacts();
+            // Exclude verifier clean-room workers (they hold verification
+            // copies, not mission deliverables).
+            diskDiscoveredCount = diskSnapshots.filter(
+              (s) =>
+                !s.workerId.startsWith('mission-verifier'),
+            ).length;
+          } catch {
+            // Best-effort: if listArtifacts throws (e.g., runtime closed),
+            // treat as zero disk-discovered. The closure decision will
+            // proceed with `hasDeliverable=false` and the mission will
+            // be marked 'failure' on abort — same as the pre-G7-19C
+            // behavior in this edge case.
+          }
+        }
+      }
+      const hasDeliverable =
+        finalArtifacts.length > 0 ||
+        diskDiscoveredCount > 0 ||
+        observedDeliverables.length > 0;
       // Include observed deliverables in final evidence for the Experience record.
       finalEvidence.push(...observedDeliverables);
 

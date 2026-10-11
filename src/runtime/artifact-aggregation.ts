@@ -81,6 +81,11 @@ import { createHash } from 'node:crypto';
 
 import type { ArtifactSnapshot } from './computer.js';
 import type { MissionArtifactRecord } from '../gateway/types.js';
+import {
+  buildAndSelectPackages,
+  extractManifestFromAcceptanceCriteria,
+  type PackageSelectionResult,
+} from './package-selection.js';
 
 /**
  * Compute the SHA-256 hash of a string (hex). Empty string when the
@@ -501,4 +506,127 @@ export function buildAggregatedRecords(
         : 1,
   );
   return records;
+}
+
+// ---------------------------------------------------------------------------
+// G7-19C — Verified Package Selection layer
+// ---------------------------------------------------------------------------
+
+/**
+ * G7-19C — Apply the verified-package selection layer to a set of
+ * records previously built by {@link buildAggregatedRecords}.
+ *
+ * The function:
+ *   1. Builds package candidates from the same snapshots used by
+ *      `buildAggregatedRecords()`.
+ *   2. Selects the authoritative package via the
+ *      `verified-only-deterministic` policy.
+ *   3. Populates the optional `verifiedPackageSelection` field on
+ *      every record (pointing to the selected package or marking the
+ *      state as `UNRESOLVED`).
+ *   4. When a verified package was SELECTED (state=`'SELECTED'`),
+ *      marks the existing `conflictResolution` field with
+ *      `isHeuristicUnverified=true` so consumers know the heuristic
+ *      is NOT the verified authoritative selection.
+ *
+ * ## When to call this
+ *
+ * The gateway's `getArtifacts()` calls `buildAggregatedRecords()` to
+ * build the G7-19A/G7-19B records, then calls this function to add
+ * the G7-19C verified-package layer. The function is a pure
+ * transformation — it does NOT modify the existing
+ * `contentHash`/`conflict`/`conflictVersions`/`conflictResolution`
+ * fields (except to add the `isHeuristicUnverified` flag when
+ * appropriate). All G7-19A and G7-19B tests continue to pass
+ * unchanged.
+ *
+ * ## Backward compatibility
+ *
+ * - The `verifiedPackageSelection` field is OPTIONAL. Pre-G7-19C
+ *   clients see the same fields they saw in G7-19B.
+ * - The `isHeuristicUnverified` flag is OPTIONAL. Pre-G7-19C clients
+ *   that consume `conflictResolution.isAuthoritative` continue to
+ *   work — they just don't see the new flag (it's treated as
+ *   `false`).
+ * - The (workerId, path) sort order is unchanged.
+ * - Records are not dropped or reordered.
+ *
+ * @param records the records built by `buildAggregatedRecords()`
+ * @param snapshots the same snapshots passed to `buildAggregatedRecords()`
+ * @param acceptanceCriteria the user-supplied acceptance criteria
+ *   (used to extract the required manifest)
+ * @param verifiedPaths the set of paths the verifier marked as verified
+ * @param verificationOk whether the verification loop passed for this mission
+ * @returns the records with `verifiedPackageSelection` and (when
+ *   appropriate) `isHeuristicUnverified` populated
+ */
+export function applyPackageSelection(
+  records: readonly MissionArtifactRecord[],
+  snapshots: readonly ArtifactSnapshot[],
+  acceptanceCriteria: readonly {
+    readonly kind: string;
+    readonly path?: string;
+    readonly label?: string;
+    readonly expectIncludes?: string;
+    readonly expectHash?: string;
+  }[],
+  verifiedPaths: ReadonlySet<string>,
+  verificationOk: boolean,
+): MissionArtifactRecord[] {
+  // 1. Extract the manifest from acceptance criteria.
+  const manifest = extractManifestFromAcceptanceCriteria(acceptanceCriteria);
+
+  // 2. If there is no manifest AND no snapshots, the package-selection
+  //    layer cannot run. Return the records unchanged (no
+  //    verifiedPackageSelection field). This is the backward-compat
+  //    path for missions with no acceptance criteria.
+  if (manifest.length === 0 && snapshots.length === 0) {
+    return [...records];
+  }
+
+  // 3. Build candidates and select.
+  const selection: PackageSelectionResult = buildAndSelectPackages(
+    snapshots,
+    manifest,
+    verifiedPaths,
+    verificationOk,
+  );
+
+  // 4. Determine the selected workerId (empty string when UNRESOLVED).
+  const selectedWorkerId = selection.selected?.workerId ?? '';
+  const isAuthoritativeWorker = (workerId: string): boolean =>
+    selection.state === 'SELECTED' && workerId === selectedWorkerId;
+
+  // 5. Apply the verifiedPackageSelection field to every record.
+  //    When state='UNRESOLVED', isAuthoritativePackage=false on every
+  //    record (we still populate the field for transparency).
+  //    Also: when state='SELECTED', mark the existing
+  //    conflictResolution field with isHeuristicUnverified=true.
+  return records.map((record) => {
+    // Build the verifiedPackageSelection field.
+    const verifiedPackageSelection = {
+      policy: selection.policy,
+      packageIdentity: selection.selected?.packageIdentity ?? '',
+      packageState: selection.state,
+      selectedWorkerId,
+      rationale: selection.rationale,
+      isAuthoritativePackage: isAuthoritativeWorker(record.workerId),
+    };
+
+    // If state='SELECTED', mark conflictResolution as heuristic (if
+    // it exists on this record).
+    let conflictResolution = record.conflictResolution;
+    if (conflictResolution !== undefined && selection.state === 'SELECTED') {
+      conflictResolution = {
+        ...conflictResolution,
+        isHeuristicUnverified: true,
+      };
+    }
+
+    return {
+      ...record,
+      ...(conflictResolution === undefined ? {} : { conflictResolution }),
+      verifiedPackageSelection,
+    };
+  });
 }

@@ -116,7 +116,7 @@ import type {
 } from '../runtime/computer.js';
 // G7-19A: deterministic artifact aggregation (conflict detection,
 // per-path provenance, content hashing) — pure function layer.
-import { buildAggregatedRecords } from '../runtime/artifact-aggregation.js';
+import { buildAggregatedRecords, applyPackageSelection } from '../runtime/artifact-aggregation.js';
 import {
   FileMissionHistoryStore,
   MISSION_HISTORY_SCHEMA_VERSION,
@@ -1249,7 +1249,22 @@ export class MissionService {
       const provider = rt.runtime as (WorkerRuntime & Partial<ArtifactsProvider>) | undefined;
       if (provider && typeof provider.listArtifacts === 'function') {
         const snapshots = await provider.listArtifacts();
-        return buildAggregatedRecords(snapshots, verificationOk, verifiedPaths);
+        const records = buildAggregatedRecords(snapshots, verificationOk, verifiedPaths);
+        // G7-19C: apply the verified-package selection layer on top of
+        // the G7-19A/G7-19B records. This adds the optional
+        // `verifiedPackageSelection` field (with state SELECTED or
+        // UNRESOLVED) and marks `conflictResolution` as
+        // `isHeuristicUnverified` when a verified package was selected.
+        // The function is a pure deterministic transformation — no
+        // provider calls, no filesystem access beyond what
+        // `listArtifacts()` already did.
+        return applyPackageSelection(
+          records,
+          snapshots,
+          rt.acceptanceCriteria ?? [],
+          verifiedPaths,
+          verificationOk,
+        );
       }
 
       // Legacy dev-path fallback (default MemoryRuntime built inside MissionService).
@@ -1273,7 +1288,17 @@ export class MissionService {
           });
         }
       }
-      return buildAggregatedRecords(devSnapshots, verificationOk, verifiedPaths);
+      const devRecords = buildAggregatedRecords(devSnapshots, verificationOk, verifiedPaths);
+      // G7-19C: apply verified-package selection on the dev path too,
+      // for parity with the production path. The same pure function
+      // works on both — the snapshots are identical in shape.
+      return applyPackageSelection(
+        devRecords,
+        devSnapshots,
+        rt.acceptanceCriteria ?? [],
+        verifiedPaths,
+        verificationOk,
+      );
     }
 
     // G7-15B: mission not in the in-process registry — consult the history
