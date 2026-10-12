@@ -1,0 +1,52 @@
+{
+  "missionId": "74f1bc4a-047b-462f-a1b3-c2fe02acb584",
+  "callerId": "pilot-001r-caller",
+  "label": "pilot-001r-temp-converter",
+  "status": "SUCCEEDED",
+  "terminal": true,
+  "acceptedAt": "2026-10-12T09:16:36.526Z",
+  "finishedAt": "2026-10-12T09:17:02.401Z",
+  "goalOutcome": "Build a small web application for temperature conversion (Celsius ↔ Fahrenheit).\n\nRequirements:\n1. A server.js file that serves index.html on port 3000 using only Node.js standard library (http module).\n2. An index.html file with: input field for a number, dropdown for direction (C to F or F to C), a \"Convert\" button, and a result display area.\n3. A converter.js file with exported functions cToF(celsius) and fToC(fahrenheit).\n4. Real automated tests using node:test that verify cToF and fToC with at least 3 test cases.\n5. A package.json with scripts.test=\"node --test\" and scripts.start=\"node server.js\".\n6. A README.md with instructions for running the app and tests.\n\nAfter producing all files, npm test MUST exit 0 within 60 seconds.",
+  "result": {
+    "status": "success",
+    "summary": "Software Engineer: Successfully created a temperature converter web application with all required components. The application includes a server that serves the HTML page, conversion functions, automated tests, and documentation. All tests pass as verified by running npm test which exited with code 0.",
+    "evidence": [
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at package.json",
+        "location": "software-engineer-1:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at server.js",
+        "location": "software-engineer-1:server.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at index.html",
+        "location": "software-engineer-1:index.html"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at converter.js",
+        "location": "software-engineer-1:converter.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/converter.test.js",
+        "location": "software-engineer-1:test/converter.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at README.md",
+        "location": "software-engineer-1:README.md"
+      }
+    ],
+    "cost": {
+      "usd": 0,
+      "tokens": 26080,
+      "wallMs": 25845,
+      "humanInterventions": 0
+    }
+  }
+}

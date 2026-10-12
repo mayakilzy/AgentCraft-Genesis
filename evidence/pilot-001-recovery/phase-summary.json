@@ -1,0 +1,72 @@
+{
+  "R-00": {
+    "status": "PASS",
+    "detail": "evidence dir prepared",
+    "timestamp": "2026-10-12T09:16:35.468Z"
+  },
+  "R-01": {
+    "status": "PASS",
+    "detail": "production gateway up on port 4780",
+    "timestamp": "2026-10-12T09:16:36.521Z"
+  },
+  "R-02": {
+    "status": "PASS",
+    "detail": "live mission submitted: 74f1bc4a-047b-462f-a1b3-c2fe02acb584",
+    "timestamp": "2026-10-12T09:16:36.533Z"
+  },
+  "R-03": {
+    "status": "INFO",
+    "detail": "waiting for execution (timeout 540000ms)...",
+    "timestamp": "2026-10-12T09:16:36.534Z"
+  },
+  "R-04": {
+    "status": "PASS",
+    "detail": "mission terminated: status=SUCCEEDED, elapsed=26028ms, tokens=26080",
+    "timestamp": "2026-10-12T09:17:02.562Z"
+  },
+  "R-STATUS": {
+    "status": "SUCCEEDED",
+    "detail": "missionId=74f1bc4a-047b-462f-a1b3-c2fe02acb584",
+    "timestamp": "2026-10-12T09:17:02.562Z"
+  },
+  "R-TOKENS": {
+    "status": "26080",
+    "detail": "tokens=26080",
+    "timestamp": "2026-10-12T09:17:02.562Z"
+  },
+  "R-WRITES": {
+    "status": "PASS",
+    "detail": "write_file events: 7",
+    "timestamp": "2026-10-12T09:17:02.565Z"
+  },
+  "R-VERIFY": {
+    "status": "PASS",
+    "detail": "ok=true, passed=16, failed=0",
+    "timestamp": "2026-10-12T09:17:02.565Z"
+  },
+  "R-ARTIFACTS": {
+    "status": "PASS",
+    "detail": "artifacts: 9",
+    "timestamp": "2026-10-12T09:17:02.568Z"
+  },
+  "R-NPM_INSTALL": {
+    "status": "PASS",
+    "detail": "exit=0",
+    "timestamp": "2026-10-12T09:17:02.835Z"
+  },
+  "R-NPM_TEST": {
+    "status": "PASS",
+    "detail": "exit=0",
+    "timestamp": "2026-10-12T09:17:03.028Z"
+  },
+  "R-HTTP": {
+    "status": "PASS",
+    "detail": "HTTP 200, body=1126 bytes, has converter=true",
+    "timestamp": "2026-10-12T09:17:05.039Z"
+  },
+  "R-HASHES": {
+    "status": "PASS",
+    "detail": "6 files hashed",
+    "timestamp": "2026-10-12T09:17:05.040Z"
+  }
+}
