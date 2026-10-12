@@ -1,8 +1,14 @@
 {
   "name": "task-manager",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "test": "node --test",
     "start": "node server.js"
-  }
+  },
+  "description": "A personal task manager web application",
+  "main": "server.js",
+  "keywords": ["task", "manager", "web", "application"],
+  "author": "",
+  "license": "ISC"
 }

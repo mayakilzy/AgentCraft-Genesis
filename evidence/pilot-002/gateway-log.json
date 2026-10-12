@@ -2,81 +2,36 @@
   {
     "stream": "stderr",
     "t": "[genesis-gateway] No MCP config (GENESIS_MCP_SERVERS_CONFIG not set).\n",
-    "ts": "2026-10-12T14:43:57.120Z"
+    "ts": "2026-10-12T15:14:00.406Z"
   },
   {
     "stream": "stderr",
     "t": "[genesis-gateway] EXECUTION MODE: production (real providers required)\n",
-    "ts": "2026-10-12T14:43:57.120Z"
+    "ts": "2026-10-12T15:14:00.407Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T14:43:57.216Z\",\"component\":\"history_recovery\",\"message\":\"loaded 402 mission record(s) from disk\"}\n",
-    "ts": "2026-10-12T14:43:57.216Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T15:14:00.429Z\",\"component\":\"history_recovery\",\"message\":\"loaded 408 mission record(s) from disk\"}\n",
+    "ts": "2026-10-12T15:14:00.430Z"
   },
   {
     "stream": "stderr",
     "t": "[genesis-gateway] HTTP API listening on http://127.0.0.1:5080\n[genesis-gateway] A2A inbound listening on http://127.0.0.1:5081\n[genesis-gateway] Agent Card at http://127.0.0.1:5081/.well-known/agent-card.json\n",
-    "ts": "2026-10-12T14:43:57.257Z"
+    "ts": "2026-10-12T15:14:00.474Z"
   },
   {
     "stream": "stderr",
     "t": "[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.\n[genesis-gateway] 1 caller(s) configured.\n[genesis-gateway] Execution mode: production\n[genesis-gateway] In-process mission state; no durability across restart.\n[genesis-gateway] Conversations are durable (JSONL on disk).\n[genesis-gateway] Projects are durable (atomic JSON on disk).\n",
-    "ts": "2026-10-12T14:43:57.257Z"
+    "ts": "2026-10-12T15:14:00.474Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T14:43:57.419Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"346e1671-f205-4e3d-898c-4c62ba764f40\",\"callerId\":\"pilot-002-caller\"}\n",
-    "ts": "2026-10-12T14:43:57.420Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T15:14:00.623Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"039aa388-eac8-418c-9800-469e75db45ce\",\"callerId\":\"pilot-002-caller\"}\n",
+    "ts": "2026-10-12T15:14:00.623Z"
   },
   {
     "stream": "stderr",
-    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1202:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:891:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:1203:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:787:24)\n",
-    "ts": "2026-10-12T14:46:50.017Z"
-  },
-  {
-    "stream": "stderr",
-    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1202:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:891:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:1203:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:787:24)\n",
-    "ts": "2026-10-12T14:46:55.038Z"
-  },
-  {
-    "stream": "stderr",
-    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1202:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:891:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:1203:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:787:24)\n",
-    "ts": "2026-10-12T14:47:10.063Z"
-  },
-  {
-    "stream": "stderr",
-    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1202:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:891:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:1203:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:787:24)\n",
-    "ts": "2026-10-12T14:47:40.097Z"
-  },
-  {
-    "stream": "stderr",
-    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1202:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:891:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:1203:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:787:24)\n",
-    "ts": "2026-10-12T14:48:40.125Z"
-  },
-  {
-    "stream": "stderr",
-    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1202:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:891:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:1203:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:997:30)\n",
-    "ts": "2026-10-12T14:52:51.188Z"
-  },
-  {
-    "stream": "stderr",
-    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1202:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:891:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:1203:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:997:30)\n",
-    "ts": "2026-10-12T14:52:56.211Z"
-  },
-  {
-    "stream": "stderr",
-    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1202:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:891:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:1203:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:997:30)\n",
-    "ts": "2026-10-12T14:53:11.246Z"
-  },
-  {
-    "stream": "stderr",
-    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/work/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/work/src/providers/zai-reasoning.ts:208:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/work/src/providers/zai-reasoning.ts:168:16)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/work/src/worker/worker-agent.ts:1202:13)\n    at async WorkerAgent.run (/home/z/my-project/work/src/worker/worker-agent.ts:891:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/work/src/mission/orchestrator.ts:1203:20)\n    at async MissionOrchestrator.run (/home/z/my-project/work/src/mission/orchestrator.ts:997:30)\n",
-    "ts": "2026-10-12T14:53:41.270Z"
-  },
-  {
-    "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T14:53:57.515Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"346e1671-f205-4e3d-898c-4c62ba764f40\",\"status\":\"PARTIAL\",\"callerId\":\"pilot-002-caller\"}\n",
-    "ts": "2026-10-12T14:53:57.515Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T15:15:30.553Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"039aa388-eac8-418c-9800-469e75db45ce\",\"status\":\"PARTIAL\",\"callerId\":\"pilot-002-caller\"}\n",
+    "ts": "2026-10-12T15:15:30.553Z"
   }
 ]

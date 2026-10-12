@@ -1,54 +1,54 @@
 import { open } from 'node:sqlite';
 import { sqlite3 } from 'node:sqlite';
 
-// Create or open the database
-const openDb = async () => {
-  return await open({
+let db;
+
+async function initializeDatabase() {
+  db = await open({
     filename: './tasks.db',
     driver: sqlite3.Database
   });
-};
 
-// Create a new task
-export const createTask = async (title, description) => {
-  const db = await openDb();
-  const result = await db.run(
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      completed INTEGER DEFAULT 0
+    )
+  `);
+}
+
+async function getTasks(filter = 'all') {
+  let query = 'SELECT * FROM tasks';
+  if (filter === 'active') {
+    query += ' WHERE completed = 0';
+  } else if (filter === 'completed') {
+    query += ' WHERE completed = 1';
+  }
+  return db.all(query);
+}
+
+async function createTask(title, description) {
+  return db.run(
     'INSERT INTO tasks (title, description) VALUES (?, ?)',
     [title, description]
   );
-  return await db.get('SELECT * FROM tasks WHERE id = ?', [result.lastID]);
-};
+}
 
-// Get all tasks
-export const getTasks = async () => {
-  const db = await openDb();
-  return await db.all('SELECT * FROM tasks');
-};
-
-// Get a task by ID
-export const getTaskById = async (id) => {
-  const db = await openDb();
-  return await db.get('SELECT * FROM tasks WHERE id = ?', [id]);
-};
-
-// Update a task
-export const updateTask = async (id, title, description, completed) => {
-  const db = await openDb();
-  const result = await db.run(
+async function updateTask(id, title, description, completed) {
+  return db.run(
     'UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?',
     [title, description, completed ? 1 : 0, id]
   );
-  
-  if (result.changes === 0) {
-    return null;
-  }
-  
-  return await db.get('SELECT * FROM tasks WHERE id = ?', [id]);
-};
+}
 
-// Delete a task
-export const deleteTask = async (id) => {
-  const db = await openDb();
-  const result = await db.run('DELETE FROM tasks WHERE id = ?', [id]);
-  return result.changes > 0;
-};
+async function deleteTask(id) {
+  return db.run('DELETE FROM tasks WHERE id = ?', [id]);
+}
+
+async function getTaskById(id) {
+  return db.get('SELECT * FROM tasks WHERE id = ?', [id]);
+}
+
+export { initializeDatabase, getTasks, createTask, updateTask, deleteTask, getTaskById };

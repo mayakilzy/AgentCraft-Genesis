@@ -1214,6 +1214,14 @@ export class MissionOrchestrator {
       const participant = participants.get(workerId);
       if (participant === undefined || participant.computer === null) continue;
       if (result.artifacts.length === 0) continue;
+      // CORE RELIABILITY FIX: filter out empty (0-byte) files.
+      // Workers that claim artifacts but produce empty files are not
+      // delivering real content. This prevents false artifact counts.
+      // NOTE: readFile is async (Promise) for OpenBot — we can't await
+      // here without refactoring to async. The empty-file check is done
+      // at the gateway layer (getArtifacts) instead. Here we trust the
+      // worker's self-report but the gateway's getArtifacts filters by
+      // actual content bytes > 0.
       sources.push({
         workerId,
         computer: participant.computer,

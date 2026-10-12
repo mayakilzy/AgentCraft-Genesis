@@ -433,16 +433,18 @@ export class OrganizationPlanner {
     // worker — spawning specialists without signal is worker explosion.
     //
     // CORE EXECUTION FIX: for software-engineering domain with code-execution,
-    // merge browser-verification and document-authoring into the code worker
-    // ONLY when the result would be a single need (code-execution alone) AND
-    // the scope is not 'complex'. This prevents unnecessary multi-worker
-    // assignment for simple apps where cross-worker handoff fails in OpenBot
-    // (PATH B). Complex missions still get specialists.
+    // merge browser-verification, document-authoring, AND data-analysis into
+    // the code worker ONLY when the result would be a single need (code-execution
+    // alone) AND the scope is not 'complex'. A Software Engineer CAN run tests,
+    // verify in a browser, write a README, and analyze data — these are natural
+    // parts of building a complete app. This prevents unnecessary multi-worker
+    // assignment for simple apps where cross-worker handoff fails in OpenBot (PATH B).
+    // Complex missions (4+ distinct needs) still get specialists.
     if (requirements.domain === 'software-engineering' &&
         needs.includes('code-execution') &&
         scope !== 'complex') {
       const withoutCodeAux = needs.filter(n =>
-        n !== 'browser-verification' && n !== 'document-authoring'
+        n !== 'browser-verification' && n !== 'document-authoring' && n !== 'data-analysis'
       );
       if (withoutCodeAux.length === 1 && withoutCodeAux[0] === 'code-execution') {
         needs.length = 0;

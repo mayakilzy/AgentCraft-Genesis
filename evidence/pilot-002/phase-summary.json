@@ -2,76 +2,76 @@
   "P2-00": {
     "status": "PASS",
     "detail": "evidence dir prepared",
-    "timestamp": "2026-10-12T14:43:56.365Z"
+    "timestamp": "2026-10-12T15:13:59.562Z"
   },
   "P2-01": {
     "status": "PASS",
     "detail": "gateway up on port 5080",
-    "timestamp": "2026-10-12T14:43:57.414Z"
+    "timestamp": "2026-10-12T15:14:00.617Z"
   },
   "P2-02": {
     "status": "PASS",
-    "detail": "mission submitted: 346e1671-f205-4e3d-898c-4c62ba764f40",
-    "timestamp": "2026-10-12T14:43:57.424Z"
+    "detail": "mission submitted: 039aa388-eac8-418c-9800-469e75db45ce",
+    "timestamp": "2026-10-12T15:14:00.628Z"
   },
   "P2-03": {
     "status": "INFO",
     "detail": "waiting (timeout 600000ms, budget 60K tokens)...",
-    "timestamp": "2026-10-12T14:43:57.424Z"
+    "timestamp": "2026-10-12T15:14:00.628Z"
   },
   "P2-04": {
     "status": "PASS",
-    "detail": "terminated: status=PARTIAL, elapsed=600520ms, tokens=630897",
-    "timestamp": "2026-10-12T14:53:57.945Z"
+    "detail": "terminated: status=PARTIAL, elapsed=90086ms, tokens=69762",
+    "timestamp": "2026-10-12T15:15:30.714Z"
   },
   "P2-STATUS": {
     "status": "PARTIAL",
-    "detail": "missionId=346e1671-f205-4e3d-898c-4c62ba764f40",
-    "timestamp": "2026-10-12T14:53:57.945Z"
+    "detail": "missionId=039aa388-eac8-418c-9800-469e75db45ce",
+    "timestamp": "2026-10-12T15:15:30.714Z"
   },
   "P2-TOKENS": {
-    "status": "630897",
-    "detail": "tokens=630897",
-    "timestamp": "2026-10-12T14:53:57.945Z"
+    "status": "69762",
+    "detail": "tokens=69762",
+    "timestamp": "2026-10-12T15:15:30.714Z"
   },
   "P2-ELAPSED": {
-    "status": "600520",
-    "detail": "600520ms",
-    "timestamp": "2026-10-12T14:53:57.945Z"
+    "status": "90086",
+    "detail": "90086ms",
+    "timestamp": "2026-10-12T15:15:30.714Z"
   },
   "P2-ARTIFACTS": {
     "status": "PASS",
-    "detail": "artifacts: 26",
-    "timestamp": "2026-10-12T14:53:57.953Z"
+    "detail": "artifacts: 10",
+    "timestamp": "2026-10-12T15:15:30.720Z"
   },
   "P2-NPM_TEST": {
-    "status": "PASS",
-    "detail": "exit=0",
-    "timestamp": "2026-10-12T14:53:58.252Z"
+    "status": "FAIL",
+    "detail": "exit=1",
+    "timestamp": "2026-10-12T15:15:30.951Z"
   },
   "P2-HTTP_ROOT": {
     "status": "FAIL",
     "detail": "fetch failed",
-    "timestamp": "2026-10-12T14:54:00.254Z"
+    "timestamp": "2026-10-12T15:15:32.954Z"
   },
   "P2-API_CREATE": {
     "status": "FAIL",
     "detail": "fetch failed",
-    "timestamp": "2026-10-12T14:54:00.258Z"
+    "timestamp": "2026-10-12T15:15:32.958Z"
   },
   "P2-API_LIST": {
     "status": "FAIL",
     "detail": "fetch failed",
-    "timestamp": "2026-10-12T14:54:00.263Z"
+    "timestamp": "2026-10-12T15:15:32.960Z"
   },
   "P2-BROWSER": {
     "status": "FAIL",
     "detail": "browserType.launch: Executable doesn't exist at /home/z/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     npx playwright install                                 ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝",
-    "timestamp": "2026-10-12T14:54:00.559Z"
+    "timestamp": "2026-10-12T15:15:33.248Z"
   },
   "P2-PERSISTENCE": {
     "status": "FAIL",
     "detail": "fetch failed",
-    "timestamp": "2026-10-12T14:54:03.566Z"
+    "timestamp": "2026-10-12T15:15:36.261Z"
   }
 }

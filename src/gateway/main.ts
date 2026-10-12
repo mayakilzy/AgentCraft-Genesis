@@ -95,7 +95,12 @@ async function buildRealReasoningProvider(): Promise<ReasoningProvider | null> {
           ZAIReasoningProvider: new (opts?: ZAIReasoningOptions) => ZAIReasoningProviderType;
         };
         const opts: ZAIReasoningOptions = sdkPath ? { sdkPath } : {};
-        return new mod.ZAIReasoningProvider(opts);
+        // CORE RELIABILITY FIX: enforce hard token budget from env.
+        const maxTotalTokensEnv = process.env.GENESIS_MAX_TOTAL_TOKENS;
+        const finalOpts: ZAIReasoningOptions = maxTotalTokensEnv !== undefined
+          ? { ...opts, maxTotalTokens: parseInt(maxTotalTokensEnv, 10) }
+          : opts;
+        return new mod.ZAIReasoningProvider(finalOpts);
       } catch (e) {
         console.error('FATAL: Failed to load ZAIReasoningProvider:', e instanceof Error ? e.message : e);
         return null;

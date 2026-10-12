@@ -8,33 +8,46 @@
 </head>
 <body>
   <div class="container">
-    <h1>Personal Task Manager</h1>
+    <header>
+      <h1>Personal Task Manager</h1>
+    </header>
     
-    <div class="task-form">
-      <h2>Add New Task</h2>
-      <form id="taskForm">
-        <div class="form-group">
-          <label for="title">Title:</label>
-          <input type="text" id="title" required>
+    <main>
+      <section class="task-form">
+        <h2>Add New Task</h2>
+        <form id="taskForm">
+          <div class="form-group">
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" required>
+          </div>
+          <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Task</button>
+        </form>
+      </section>
+      
+      <section class="task-filters">
+        <h2>Filter Tasks</h2>
+        <div class="filter-buttons">
+          <button class="btn filter-btn active" data-filter="all">All</button>
+          <button class="btn filter-btn" data-filter="active">Active</button>
+          <button class="btn filter-btn" data-filter="completed">Completed</button>
         </div>
-        <div class="form-group">
-          <label for="description">Description:</label>
-          <textarea id="description"></textarea>
+      </section>
+      
+      <section class="task-list">
+        <h2>Tasks</h2>
+        <div id="taskContainer">
+          <!-- Tasks will be dynamically loaded here -->
         </div>
-        <button type="submit">Add Task</button>
-      </form>
-    </div>
+      </section>
+    </main>
     
-    <div class="task-filters">
-      <button class="filter active" data-filter="all">All</button>
-      <button class="filter" data-filter="active">Active</button>
-      <button class="filter" data-filter="completed">Completed</button>
-    </div>
-    
-    <div class="task-list">
-      <h2>Tasks</h2>
-      <div id="taskContainer"></div>
-    </div>
+    <footer>
+      <p>&copy; 2023 Personal Task Manager</p>
+    </footer>
   </div>
   
   <script src="app.js"></script>
