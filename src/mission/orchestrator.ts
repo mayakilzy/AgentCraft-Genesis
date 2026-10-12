@@ -1076,9 +1076,14 @@ export class MissionOrchestrator {
         status = hasDeliverable ? 'partial' : 'failure';
         summary = 'mission aborted (timeout or cancellation) before completion';
       } else if (verification === undefined || verification.ok) {
-        if (!hasDeliverable && workerFailures.length > 0) {
-          status = 'failure';
-          summary = `all worker runs failed: ${workerFailures
+        // D+ B03-04: Mission-Level Acceptance Gate
+        // A required worker failure prevents mission success even if
+        // verification passed (structural floor may pass on partial
+        // artifacts). The coordinator's positive summary does not override
+        // failed acceptance evidence.
+        if (workerFailures.length > 0) {
+          status = hasDeliverable ? 'partial' : 'failure';
+          summary = `mission incomplete: ${workerFailures.length} required worker(s) failed: ${workerFailures
             .map((f) => f.summary)
             .join('; ')}`;
         } else if (!hasDeliverable) {

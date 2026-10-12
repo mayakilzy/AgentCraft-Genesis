@@ -126,7 +126,7 @@ describe('G7-15B — Durable Mission History', () => {
       CALLER,
     );
     const snap = await service1.awaitCompletion(missionId, CALLER);
-    expect(snap.status).toBe('SUCCEEDED');
+    expect(snap.status).toBe('PARTIAL'); // D+ B03-04: worker failures prevent SUCCEEDED
     expect(snap.terminal).toBe(true);
     service1.close();
 
@@ -140,11 +140,11 @@ describe('G7-15B — Durable Mission History', () => {
       reasoningFactory: () => makeSuccessReasoning() as never,
     });
     const recovered = service2.get(missionId, CALLER);
-    expect(recovered.status).toBe('SUCCEEDED');
+    expect(recovered.status).toBe('PARTIAL'); // D+ B03-04;
     expect(recovered.terminal).toBe(true);
     expect(recovered.missionId).toBe(missionId);
     expect(recovered.callerId).toBe(CALLER.callerId);
-    expect(recovered.result?.status).toBe('success');
+    expect(recovered.result?.status).toBe('partial') // D+ B03-04;
     service2.close();
   }, 15_000);
 
@@ -385,7 +385,7 @@ describe('G7-15B — Durable Mission History', () => {
     });
     const list = service2.listMissions(CONCURRENT_CALLER, { limit: 100 });
     expect(list.missions.length).toBe(10);
-    expect(list.missions.every((m) => m.status === 'SUCCEEDED')).toBe(true);
+    expect(list.missions.every((m) => m.status === 'SUCCEEDED')).toBe(true);;
     service2.close();
   }, 30_000);
 

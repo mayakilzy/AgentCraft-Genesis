@@ -316,7 +316,8 @@ describe('G7-19F Scenario 3: caller-supplied command check is NOT silently dropp
     // The caller-supplied command check ran (passed count includes
     // the structural floor + the caller's command check).
     expect(v!.passed).toBeGreaterThan(0);
-    expect(result.status).toBe('SUCCEEDED');
+    // D+ B03-04: worker failures now prevent SUCCEEDED → PARTIAL
+    expect(result.status).toBe('PARTIAL');
   });
 });
 
@@ -331,7 +332,7 @@ describe('G7-19F Scenario 4: goal text with no executable phrase → no auto-add
     // No auto-added checks; the passed count should equal the structural
     // floor (1 file → 1 file check).
     expect(v!.passed).toBeGreaterThanOrEqual(1);
-    expect(baseline.status).toBe('SUCCEEDED');
+    expect(baseline.status).toBe('PARTIAL'); // D+ B03-04
   });
 });
 
@@ -341,6 +342,7 @@ describe('G7-19F Scenario 5: existing G7-19D missions remain compatible (no regr
     const result = await submitAndWait(
       'Write a markdown file named output.md with the content "# Genesis gateway output" as the sole body.',
     );
+    // D+ B03-04: single-worker mission with no handoff — worker succeeds → SUCCEEDED
     expect(result.status).toBe('SUCCEEDED');
     const v = verificationEvent(result.events);
     expect(v).not.toBeNull();
