@@ -412,6 +412,8 @@ export class WorkerAgent {
   private readonly acceptanceContract: MissionAcceptanceContract | undefined;
   // PILOT-003 R4: latest completion evidence (for mission state summary).
   private lastEvidence: CompletionEvidence | undefined;
+  // PILOT-003 R4.1: stagnation threshold (steps without new condition verified).
+  private static readonly STAGNATION_THRESHOLD = 5;
 
   constructor(options: WorkerAgentOptions) {
     this.genome = options.genome;
@@ -749,6 +751,134 @@ export class WorkerAgent {
       repoCloned: this.lastEvidence?.repoCloned ?? false,
       dependenciesInstalled: this.lastEvidence?.dependenciesInstalled ?? false,
     };
+  }
+
+  /**
+   * PILOT-003 R4.1: Build evidence-based next-action guidance.
+   *
+   * Instead of a generic "re-evaluate your approach" warning, this method
+   * analyzes the current mission state + recent actions to provide a
+   * SPECIFIC directive. The guidance is derived from:
+   *
+   * 1. The acceptance contract state (what's verified vs unverified).
+   * 2. Recent repeated actions (detecting loops like build → list → build).
+   * 3. The milestone that should come next.
+   *
+   * This is NOT hardcoding TodoMVC behavior — it's generic progress logic:
+   * "if build succeeded but server not started, direct to start the server."
+   *
+   * @param missionState the current mission state summary line
+   * @param scratchpad the full scratchpad (for repeated-action detection)
+   * @param stepsSinceProgress how many steps since a new condition was verified
+   * @returns a guidance string, or empty string if no guidance needed
+   */
+  private buildNextActionGuidance(
+    missionState: string,
+    scratchpad: readonly string[],
+    stepsSinceProgress: number,
+  ): string {
+    if (missionState.length === 0) return '';
+    // Only provide guidance when there's stagnation or unverified conditions.
+    const hasUnverified = missionState.includes('✗');
+    if (!hasUnverified && stepsSinceProgress < WorkerAgent.STAGNATION_THRESHOLD) return '';
+
+    // Detect repeated actions in recent steps.
+    const recentActions = this.extractRecentActions(scratchpad, 8);
+    const repeatedCommand = this.detectRepeatedCommand(recentActions);
+
+    // Build the guidance based on the current state.
+    const lines: string[] = [];
+
+    if (stepsSinceProgress >= WorkerAgent.STAGNATION_THRESHOLD) {
+      lines.push(`STAGNATION DETECTED: No measurable progress in the last ${stepsSinceProgress} steps.`);
+      if (repeatedCommand !== null) {
+        lines.push(`You are repeating: "${repeatedCommand}". This has already succeeded — do NOT repeat it.`);
+      }
+      lines.push('');
+    }
+
+    // Parse the mission state to find the NEXT unverified milestone.
+    const nextMilestone = this.findNextUnverifiedMilestone(missionState);
+    if (nextMilestone !== null) {
+      lines.push('NEXT REQUIRED MILESTONE:');
+      lines.push(nextMilestone);
+      lines.push('');
+      lines.push('Do not repeat previously successful build/install steps unless new evidence shows they failed.');
+    }
+
+    return lines.length > 0 ? lines.join('\n') : '';
+  }
+
+  /**
+   * Extract recent action commands from the scratchpad.
+   * Returns an array of {step, command} for the last N steps.
+   */
+  private extractRecentActions(scratchpad: readonly string[], count: number): { step: number; command: string }[] {
+    const actions: { step: number; command: string }[] = [];
+    for (const entry of scratchpad) {
+      // Match "step N: {"action":"run_command","command":"..."}"
+      const match = /step (\d+):.*"action"\s*:\s*"run_command".*"command"\s*:\s*"([^"]+)"/.exec(entry);
+      if (match) {
+        actions.push({ step: Number.parseInt(match[1]!, 10), command: match[2]! });
+      }
+    }
+    return actions.slice(-count);
+  }
+
+  /**
+   * Detect if the same command (or very similar) was run 2+ times recently.
+   * Returns the repeated command, or null if no repetition.
+   */
+  private detectRepeatedCommand(actions: { step: number; command: string }[]): string | null {
+    if (actions.length < 2) return null;
+    // Normalize: strip cwd prefixes like "cd todomvc/examples/react && "
+    const normalize = (cmd: string) => cmd.replace(/^cd\s+\S+\s*&&\s*/, '').trim();
+    const normalized = actions.map((a) => normalize(a.command));
+    // Check the last 3 actions for repetition.
+    const last3 = normalized.slice(-3);
+    if (last3.length >= 2) {
+      const last = last3[last3.length - 1]!;
+      // If the last command was run before in the last 3, it's a repeat.
+      for (let i = 0; i < last3.length - 1; i++) {
+        if (last3[i] === last) return last;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Find the next unverified milestone from the mission state summary.
+   * Returns a specific directive string, or null if no milestone found.
+   */
+  private findNextUnverifiedMilestone(missionState: string): string | null {
+    // The mission state has lines like "✗ Application started (no server detected)"
+    // We extract the first unverified condition and provide a directive.
+    if (/✗.*Application started/i.test(missionState)) {
+      return 'Start the application server (e.g., npm start, npm run serve, or npx http-server ./dist -p 7002). ' +
+             'The build already succeeded — dist/ exists. Verify the server responds with HTTP 200 before proceeding.';
+    }
+    if (/✗.*HTTP verified/i.test(missionState)) {
+      return 'Verify the running server responds over HTTP (e.g., curl http://127.0.0.1:7002/ or the port the server reports).';
+    }
+    if (/✗.*Application built/i.test(missionState)) {
+      return 'Build the application (e.g., npm run build or the project\'s documented build command).';
+    }
+    if (/✗.*Dependencies installed/i.test(missionState)) {
+      return 'Install dependencies (e.g., npm install in the project directory).';
+    }
+    if (/✗.*Repository cloned/i.test(missionState)) {
+      return 'Clone the repository (e.g., git clone <url>).';
+    }
+    if (/✗.*Browser tested/i.test(missionState)) {
+      return 'Perform a browser interaction with the running application (navigate to the URL and take a screenshot).';
+    }
+    if (/✗.*Application delivered/i.test(missionState)) {
+      return 'Package the application as a ZIP for delivery.';
+    }
+    if (/✗.*Tests pass/i.test(missionState)) {
+      return 'Run the project\'s tests (e.g., npm test) and verify they exit 0.';
+    }
+    return null;
   }
 
   private grantsFor(action: WorkerAction): string | null {
@@ -1101,10 +1231,10 @@ export class WorkerAgent {
 
     // PILOT-003 R4 (TASK 4): Nonproductive Loop Detection.
     // Track the acceptance contract state across steps. If no progress
-    // (no new condition verified) for STAGNATION_THRESHOLD steps, inject
+    // (no new condition verified) for WorkerAgent.STAGNATION_THRESHOLD steps, inject
     // a strategy-change prompt. This is NOT an arbitrary step limit —
     // it's a progress signal based on real evidence change.
-    const STAGNATION_THRESHOLD = 5;
+    
     let lastVerifiedCount = 0;
     let stepsSinceProgress = 0;
 
@@ -1171,12 +1301,11 @@ export class WorkerAgent {
         'STEPS SO FAR:',
         ...(visibleScratchpad.length === 0 ? ['(none — this is your first step)'] : visibleScratchpad),
         '',
-        // PILOT-003 R4 (TASK 4): if stagnation detected, inject strategy-change.
-        ...(stepsSinceProgress >= STAGNATION_THRESHOLD
-          ? [`WARNING: No measurable progress in the last ${STAGNATION_THRESHOLD} steps. ` +
-             `The acceptance contract state has not changed. Re-evaluate your approach — ` +
-             `try a different strategy, inspect the actual error output, or check what ` +
-             `remains in the MISSION STATE above.\n\n`]
+        // PILOT-003 R4.1: Evidence-Based Next-Action Guidance.
+        // Instead of a generic warning, provide a SPECIFIC directive based on
+        // the current acceptance contract state + repeated action detection.
+        ...(this.buildNextActionGuidance(missionStateLine, scratchpad, stepsSinceProgress).length > 0
+          ? [this.buildNextActionGuidance(missionStateLine, scratchpad, stepsSinceProgress) + '\n\n']
           : []),
         'Your next step as ONE JSON object:',
       ].join('\n');
