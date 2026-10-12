@@ -64,26 +64,29 @@ interface StagingOutcome {
 }
 
 /**
- * D+ B02 Final Security Closure (PATH B) — Check if staging can be done
- * safely in the current runtime environment.
+ * D+ B02 Lightweight Closure (L1) — Explicit runtime safety decision.
  *
- * - MemoryRuntime: SAFE — MemoryComputer enforces read-only via
- *   `writeFileTrusted` vs `writeFile` separation.
- * - OpenBot: UNSAFE — the worker's shell can modify any file under
- *   WORKSPACE_DIR, including `upstream/`. No filesystem-level isolation.
+ * Replaces the duck-type `writeFileTrusted` check with an explicit
+ * runtime-name allow-list. This is more honest: the safety decision is
+ * based on which RUNTIME is running (a system property the orchestrator
+ * controls), not on whether the worker's computer happens to expose a
+ * method with a certain name.
  *
- * This function uses duck-typing: MemoryComputer has `writeFileTrusted`;
- * OpenBotAdapter does not. If `writeFileTrusted` is absent, staging
- * is refused.
+ * - MemoryRuntime (`'memory-runtime'`): SAFE — the in-memory model
+ *   enforces read-only via `writeFileTrusted` vs `writeFile` separation.
+ *   No real filesystem; no shell access. Deterministic.
+ * - OpenBot (`'openbot-runtime-v0.1.0'`): UNSAFE — the worker's shell
+ *   has full filesystem access inside the container. No proven isolation.
+ *   Staging is REFUSED (fail-closed).
+ * - Unknown runtimes: UNSAFE — fail-closed by default.
  *
- * @param consumerComputer the consumer's WorkerComputer
- * @returns true if staging is safe (MemoryRuntime), false if unsafe (OpenBot)
+ * @param runtimeName the `name` property of the WorkerRuntime instance
+ * @returns true if staging is safe (MemoryRuntime only), false otherwise
  */
-export function canStageSafely(consumerComputer: WorkerComputer): boolean {
-  const withTrusted = consumerComputer as WorkerComputer & {
-    writeFileTrusted?: (path: string, contents: string) => Promise<unknown>;
-  };
-  return typeof withTrusted.writeFileTrusted === 'function';
+const SAFE_RUNTIMES = new Set<string>(['memory-runtime']);
+
+export function isRuntimeSafeForStaging(runtimeName: string): boolean {
+  return SAFE_RUNTIMES.has(runtimeName);
 }
 
 /**
@@ -141,8 +144,11 @@ export function detectProducerIdCollision(
 /**
  * Write a file to the consumer's computer via the trusted write path.
  *
- * Uses `writeFileTrusted` if available (MemoryComputer). If not available
- * (OpenBot), throws — the caller treats this as a staging failure.
+ * Uses `writeFileTrusted` if available (MemoryComputer). If not available,
+ * throws — the caller treats this as a staging failure.
+ *
+ * The runtime-level safety check (L1) is done by the caller before
+ * reaching this function, so this is the mechanical write step only.
  */
 async function trustedWrite(
   computer: WorkerComputer,
@@ -156,8 +162,7 @@ async function trustedWrite(
     await withTrusted.writeFileTrusted(path, contents);
     return;
   }
-  // PATH B: OpenBot has no writeFileTrusted → staging refused
-  throw new Error('trusted write path unavailable (OpenBot: isolation not proven — PATH B fail-closed)');
+  throw new Error('trusted write path unavailable on this computer');
 }
 
 /**
@@ -188,11 +193,11 @@ export async function stageUpstreamArtifactsForWorker(
   producerComputer: WorkerComputer,
   consumerComputer: WorkerComputer,
   record: (event: FlightEvent) => void,
+  runtimeName: string,
 ): Promise<StagingResult> {
-  // PATH B check: if the consumer computer cannot be trusted (OpenBot),
-  // refuse staging entirely.
-  if (!canStageSafely(consumerComputer)) {
-    const reason = 'staging refused: runtime does not support trusted write (OpenBot isolation not proven — PATH B fail-closed)';
+  // L1: explicit runtime safety check — not duck-typing on the computer.
+  if (!isRuntimeSafeForStaging(runtimeName)) {
+    const reason = `staging refused: runtime "${runtimeName}" is not approved for handoff (fail-closed)`;
     record({
       type: 'worker-step',
       workerId: producerId,

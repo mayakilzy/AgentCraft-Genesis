@@ -28,44 +28,65 @@ import { MemoryFlightRecorder as _MemoryFlightRecorder, type FlightEvent, type F
 import { stageUpstreamArtifactsForWorker, type StagingResult } from '../runtime/handoff-staging.js';
 
 /**
- * D+ B02 Final Security Closure: Topological sort of specialists by
- * collaboration edges. Producers (with outbound handoff edges) run before
- * consumers (with inbound handoff edges).
+ * D+ B02 Lightweight Closure (L2): Topological sort with cycle detection
+ * and missing-dependency validation.
+ *
+ * Uses DFS with three states (white/gray/black) to detect cycles. Rejects
+ * dependencies on workers not in the plan. Preserves original relative
+ * order for independent workers (stable sort).
+ *
+ * @returns the sorted workers, or throws if a cycle or missing dependency is found.
  */
 function topologicalSort(
   workers: readonly PlannedWorker[],
   edges: readonly CollaborationEdge[],
 ): PlannedWorker[] {
+  const workerIds = new Set(workers.map((w) => w.id));
   const deps = new Map<string, Set<string>>();
   for (const w of workers) {
     deps.set(w.id, new Set());
   }
   for (const edge of edges) {
     if (edge.kind !== 'handoff') continue;
-    const consumerDeps = deps.get(edge.to);
-    if (consumerDeps !== undefined) {
-      consumerDeps.add(edge.from);
-    }
+    // L2: only check dependencies between workers IN the current set.
+    // The coordinator is filtered out of specialists but may appear in
+    // edges — that's not a cycle or missing dependency, just an edge
+    // to/from a worker that runs separately.
+    if (!workerIds.has(edge.from) || !workerIds.has(edge.to)) continue;
+    deps.get(edge.to)!.add(edge.from);
+  }
+  // L2: DFS with three-color cycle detection
+  // white = unvisited, gray = in-progress (on current path), black = done
+  const color = new Map<string, 'white' | 'gray' | 'black'>();
+  for (const w of workers) {
+    color.set(w.id, 'white');
   }
   const result: PlannedWorker[] = [];
-  const visited = new Set<string>();
   const workerMap = new Map(workers.map((w) => [w.id, w]));
-  function visit(id: string): void {
-    if (visited.has(id)) return;
-    visited.add(id);
+
+  function visit(id: string, path: string[]): void {
+    const c = color.get(id);
+    if (c === 'black') return;
+    if (c === 'gray') {
+      throw new Error(
+        `handoff dependency cycle detected: ${[...path, id].join(' → ')}`,
+      );
+    }
+    color.set(id, 'gray');
     const d = deps.get(id);
     if (d !== undefined) {
       for (const dep of d) {
-        visit(dep);
+        visit(dep, [...path, id]);
       }
     }
+    color.set(id, 'black');
     const w = workerMap.get(id);
     if (w !== undefined) {
       result.push(w);
     }
   }
   for (const w of workers) {
-    visit(w.id);
+    visit(w.id, []);
   }
   return result;
 }
@@ -465,6 +486,7 @@ export class MissionOrchestrator {
         producerSurfaces.computer,
         consumerSurfaces.computer,
         record,
+        this.options.runtime.name,
       );
       allOutcomes.push(...result.outcomes);
       if (!result.ok) {
@@ -673,13 +695,26 @@ export class MissionOrchestrator {
       // Specialists run in plan order (upstream results flow along the
       // collaboration edges); the coordinator integrates afterwards.
       const results = new Map<string, WorkerResult>();
-      // D+ B02 Final Security Closure: sort specialists topologically so
-      // producers run before consumers. This ensures upstream artifacts
-      // exist before the consumer's staging check runs.
-      const specialists = topologicalSort(
-        plan.workers.filter((w) => w.role !== COORDINATOR_ROLE),
-        plan.collaboration,
-      );
+      // D+ B02 Lightweight Closure (L2): topological sort with cycle detection.
+      // If the plan has cycles or missing dependencies, fail honestly.
+      let specialists: PlannedWorker[];
+      try {
+        specialists = topologicalSort(
+          plan.workers.filter((w) => w.role !== COORDINATOR_ROLE),
+          plan.collaboration,
+        );
+      } catch (sortError) {
+        const reason = sortError instanceof Error ? sortError.message : String(sortError);
+        return this.finishMission(
+          missionId,
+          'failure',
+          `handoff plan error: ${reason}`,
+          [],
+          startedAt,
+          0,
+          record,
+        );
+      }
       const coordinator = plan.workers.find(
         (w) => w.role === COORDINATOR_ROLE,
       );

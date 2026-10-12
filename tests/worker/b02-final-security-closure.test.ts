@@ -11,7 +11,7 @@ import {
   stageUpstreamArtifactsForWorker,
   stagedPath,
   isUpstreamPath,
-  canStageSafely,
+  isRuntimeSafeForStaging,
   sanitizeProducerId,
   detectProducerIdCollision,
   UPSTREAM_PREFIX,
@@ -36,11 +36,11 @@ describe('SC01 — OpenBot (no writeFileTrusted) cannot stage', () => {
       async readFile() { return { path: '', text: '', bytes: 0, truncated: false }; },
       async listFiles() { return []; },
     };
-    expect(canStageSafely(openBotLike as any)).toBe(false);
+    expect(isRuntimeSafeForStaging('openbot-runtime-v0.1.0')).toBe(false);
   });
   it('MemoryComputer (has writeFileTrusted) can stage safely', () => {
     const mc = makeComputer();
-    expect(canStageSafely(mc)).toBe(true);
+    expect(isRuntimeSafeForStaging('memory-runtime')).toBe(true);
   });
 });
 
@@ -101,6 +101,7 @@ describe('SC05 — Missing producer prevents consumer', () => {
     // Producer has NO files — 'convert.ts' missing
     const result = await stageUpstreamArtifactsForWorker(
       'producer-1', ['convert.ts'], producer, consumer, () => {},
+    'memory-runtime',
     );
     expect(result.ok).toBe(false);
     expect(result.failureReason).toContain('staging failed');
@@ -118,6 +119,7 @@ describe('SC06 — Failed producer prevents consumer', () => {
     const consumer = makeComputer();
     const result = await stageUpstreamArtifactsForWorker(
       'producer-1', [], producer, consumer, () => {},
+    'memory-runtime',
     );
     expect(result.ok).toBe(true);
   });
@@ -140,9 +142,10 @@ describe('SC07 — Staging failure prevents consumer', () => {
     };
     const result = await stageUpstreamArtifactsForWorker(
       'producer-1', ['file.js'], producer, openBotConsumer as any, () => {},
+    'openbot-runtime-v0.1.0',
     );
     expect(result.ok).toBe(false);
-    expect(result.failureReason).toContain('PATH B fail-closed');
+    expect(result.failureReason).toContain('not approved for handoff');
   });
 });
 
@@ -158,6 +161,7 @@ describe('SC08 — Hash mismatch fails handoff', () => {
     // Stage successfully
     const result = await stageUpstreamArtifactsForWorker(
       'producer-1', ['file.js'], producer, consumer, () => {},
+    'memory-runtime',
     );
     expect(result.ok).toBe(true);
     // Verify hash matches
@@ -227,6 +231,7 @@ describe('SC11 — Successful transfer preserves bytes and full SHA-256', () => 
     await producer.writeFile('package.json', content);
     const result = await stageUpstreamArtifactsForWorker(
       'producer-1', ['package.json'], producer, consumer, () => {},
+    'memory-runtime',
     );
     expect(result.ok).toBe(true);
     const staged = await consumer.readFile('upstream/producer-1/package.json');
@@ -288,7 +293,7 @@ describe('SC15 — OpenBot isolation fails closed', () => {
       async readFile() { return { path: '', text: '', bytes: 0, truncated: false }; },
       async listFiles() { return []; },
     };
-    expect(canStageSafely(openBotLike as any)).toBe(false);
+    expect(isRuntimeSafeForStaging('openbot-runtime-v0.1.0')).toBe(false);
   });
 });
 

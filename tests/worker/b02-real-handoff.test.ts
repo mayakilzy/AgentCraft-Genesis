@@ -59,6 +59,7 @@ describe('H01 — Producer creates file, Consumer reads actual bytes', () => {
       producer,
       consumer,
       () => {},
+    'memory-runtime',
     );
     // Consumer can read the staged file
     const read = await consumer.readFile('upstream/software-engineer-1/src/index.js');
@@ -84,6 +85,7 @@ describe('H02 — Hash preserved across staging', () => {
       producer,
       consumer,
       () => {},
+    'memory-runtime',
     );
 
     const staged = await consumer.readFile('upstream/producer-1/package.json');
@@ -107,6 +109,7 @@ describe('H03 — No dependency means no upstream transfer', () => {
       producer,
       consumer,
       () => {},
+    'memory-runtime',
     );
     const files = await consumer.listFiles();
     expect(files).toEqual([]);
@@ -129,6 +132,7 @@ describe('H04 — Missing required artifact → explicit failure', () => {
       producer,
       consumer,
       (e) => events.push({ action: (e as { action: string }).action, ok: (e as { ok: boolean }).ok }),
+      'memory-runtime',
     );
     // A failure event was recorded
     expect(events.some((e) => e.action.startsWith('stage-handoff-failed:'))).toBe(true);
@@ -218,6 +222,7 @@ describe('H08 — Traversal and symlink escape → rejected', () => {
       producer,
       consumer,
       (e) => events.push({ action: (e as { action: string }).action, ok: (e as { ok: boolean }).ok }),
+      'memory-runtime',
     );
     // The unsafe path was rejected (failure event recorded)
     expect(events.some((e) => e.action.startsWith('stage-handoff-failed:'))).toBe(true);
@@ -236,8 +241,8 @@ describe('H09 — Conflicting ownership/content → deterministic handling', () 
     await producerA.writeFile('config.json', '{"from":"A"}');
     await producerB.writeFile('config.json', '{"from":"B"}');
 
-    await stageUpstreamArtifactsForWorker('producer-a', ['config.json'], producerA, consumer, () => {});
-    await stageUpstreamArtifactsForWorker('producer-b', ['config.json'], producerB, consumer, () => {});
+    await stageUpstreamArtifactsForWorker('producer-a', ['config.json'], producerA, consumer, () => {}, 'memory-runtime');
+    await stageUpstreamArtifactsForWorker('producer-b', ['config.json'], producerB, consumer, () => {}, 'memory-runtime');
 
     // Both staged under separate producer dirs — no conflict
     const a = await consumer.readFile('upstream/producer-a/config.json');
@@ -256,7 +261,7 @@ describe('H10 — Producer failure → no false successful handoff', () => {
     const producer = makeComputer();
     const consumer = makeComputer();
     // Producer produced nothing (failed)
-    await stageUpstreamArtifactsForWorker('producer-1', [], producer, consumer, () => {});
+    await stageUpstreamArtifactsForWorker('producer-1', [], producer, consumer, () => {}, 'memory-runtime');
     const files = await consumer.listFiles();
     expect(files).toEqual([]);
   });
@@ -298,6 +303,7 @@ describe('H12 — Multi-worker code → docs → verification → real collabora
       codeComputer,
       docComputer,
       () => {},
+    'memory-runtime',
     );
 
     // Doc worker can read the staged files (real content, not just names)
@@ -373,6 +379,7 @@ describe('H16 — No duplicate independent application caused by missing handoff
       codeComputer,
       docComputer,
       () => {},
+    'memory-runtime',
     );
     // Doc worker can read the staged src/store.js — no need to reproduce it
     const store = await docComputer.readFile('upstream/software-engineer-1/src/store.js');
