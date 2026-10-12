@@ -612,6 +612,11 @@ describe('completion-policy unit tests', () => {
     it('returns false for node --test', () => {
       expect(isLikelyFilesystemMutation('node --test')).toBe(false);
     });
+    it('returns true for node -e (REVIEW-01: removed from read-only allow-list)', () => {
+      // node -e can execute arbitrary code including fs.writeFileSync.
+      // Treated as a potential mutation after DPLUS-A-REVIEW-01.
+      expect(isLikelyFilesystemMutation('node -e "console.log(1)"')).toBe(true);
+    });
     it('returns true for npm install (unknown command)', () => {
       expect(isLikelyFilesystemMutation('npm install')).toBe(true);
     });
@@ -787,8 +792,9 @@ describe('R03/R04 — Responsibility is not capability', () => {
 
 describe('R05/R06/R07 — Shell mutation via indirect commands', () => {
   it('R05: `node -e` that modifies files after a successful test invalidates evidence', async () => {
-    // The heuristic classifies `node -e` as read-only, but the snapshot
-    // comparison at finish must catch the actual mutation.
+    // After DPLUS-A-REVIEW-01, `node -e` is classified as a mutation
+    // (removed from READ_ONLY_PREFIXES). Even if it were misclassified,
+    // the snapshot digest comparison at finish must catch the mutation.
     // Sequence:
     // 1. write package.json
     // 2. run npm test (passes, snapshot captured)

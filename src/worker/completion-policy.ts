@@ -362,7 +362,10 @@ export function isLikelyFilesystemMutation(command: string): boolean {
     'true',
     'false',
     'node --test',
-    'node -e',
+    // NOTE: 'node -e' was removed in DPLUS-A-REVIEW-01 because it can
+    // execute arbitrary code including fs.writeFileSync(). Treating it
+    // as read-only was a false optimization. The snapshot digest
+    // comparison at finish is the authoritative freshness guarantee.
     'npx tsc --noEmit',
   ];
   for (const prefix of READ_ONLY_PREFIXES) {
