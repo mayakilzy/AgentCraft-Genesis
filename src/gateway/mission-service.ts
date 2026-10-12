@@ -918,6 +918,8 @@ export class MissionService {
       },
       maxWorkerSteps: this.maxWorkerStepsConfig,
       missionTimeoutMs: timeoutMs,
+      // PILOT-003 R4: enable the acceptance contract for evidence-based completion gating.
+      enableAcceptanceContract: true,
       signal: controller.signal,
       checks: (ctx) => this.buildChecks(
         ctx,

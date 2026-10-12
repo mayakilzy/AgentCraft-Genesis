@@ -24,6 +24,12 @@ import {
   type HandoffParticipant,
 } from '../worker/handoff.js';
 import { MemoryFlightRecorder as _MemoryFlightRecorder, type FlightEvent, type FlightRecorder } from './flight-recorder.js';
+
+// PILOT-003 R4: acceptance contract for evidence-based completion gate.
+import {
+  deriveAcceptanceContract,
+  type MissionAcceptanceContract,
+} from '../worker/acceptance-contract.js';
 // D+ B02: real handoff staging helper (non-frozen layer)
 import { stageUpstreamArtifactsForWorker, type StagingResult } from '../runtime/handoff-staging.js';
 
@@ -156,6 +162,12 @@ export interface MissionOrchestratorOptions {
   readonly maxWorkerSteps?: number;
   /** Whole-mission budget (default 10 minutes). */
   readonly missionTimeoutMs?: number;
+  /**
+   * PILOT-003 R4: when true, the orchestrator derives a mission acceptance
+   * contract from the goal and passes it to each worker for evidence-based
+   * completion gating. Default: false (preserves backward compatibility).
+   */
+  readonly enableAcceptanceContract?: boolean;
   /** External cancellation. */
   readonly signal?: AbortSignal;
   /**
@@ -397,6 +409,11 @@ export class MissionOrchestrator {
     readonly workspace: WorkspaceSurface | null;
     readonly job: JobSurface | null;
   }> | undefined;
+  /**
+   * PILOT-003 R4: the mission acceptance contract, derived from the goal.
+   * Passed to each WorkerAgent for evidence-based completion gating.
+   */
+  private acceptanceContract: MissionAcceptanceContract | undefined;
 
   constructor(options: MissionOrchestratorOptions) {
     this.options = options;
@@ -528,6 +545,13 @@ export class MissionOrchestrator {
     const startedAt = Date.now();
     const missionId = this.options.missionId ?? newMissionId();
     const recorder = this.options.recorder;
+    // PILOT-003 R4: derive the acceptance contract from the goal.
+    // The contract is opt-in: only enabled when the orchestrator option
+    // `enableAcceptanceContract` is set. This preserves backward compatibility
+    // with existing missions that don't expect the contract.
+    this.acceptanceContract = this.options.enableAcceptanceContract
+      ? deriveAcceptanceContract(goal)
+      : undefined;
     // G6-08 (Phase 4 / C-VERIFY-FINDING-004): maintain an in-memory FlightEvent[]
     // ALONGSIDE the recorder so flight-action checks work regardless of
     // recorder type (MemoryFlightRecorder OR FileFlightRecorder). Previously,
@@ -1216,6 +1240,8 @@ export class MissionOrchestrator {
       ...(this.options.maxWorkerSteps === undefined
         ? {}
         : { maxSteps: this.options.maxWorkerSteps }),
+      // PILOT-003 R4: pass the acceptance contract for evidence-based completion gate.
+      ...(this.acceptanceContract === undefined ? {} : { acceptanceContract: this.acceptanceContract }),
       signal,
       onEvent: (event) => record(event),
     });

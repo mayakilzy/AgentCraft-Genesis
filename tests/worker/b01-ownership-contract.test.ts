@@ -241,7 +241,7 @@ describe('B01-T03 — Code worker cannot bypass required test', () => {
     }).run();
 
     expect(result.status).toBe('success');
-    expect(result.completionEvidence!.lastTestCommand).toEqual({ command: 'npm test', exitCode: 0 });
+    expect(result.completionEvidence!.lastTestCommand).toMatchObject({ command: 'npm test', exitCode: 0 });
   });
 });
 

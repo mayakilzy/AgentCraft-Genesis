@@ -24,9 +24,17 @@ import {
   shouldRequireRuntimeStart,
   checkRuntimeStart,
   runtimeStartFailureFeedback,
+  checkAcceptanceContract,
   type CompletionEvidence,
   type WorkspaceSnapshot,
 } from './completion-policy.js';
+// PILOT-003 R4: acceptance contract for evidence-based completion gate.
+import type { MissionAcceptanceContract } from './acceptance-contract.js';
+import {
+  verifyAcceptanceContract,
+  buildMissionStateSummary,
+  type ContractVerificationContext,
+} from './acceptance-contract.js';
 
 /**
  * The Genesis Worker (TASK-010): one genome, one brain, one pair of hands.
@@ -205,6 +213,13 @@ export interface WorkerAgentOptions {
   readonly maxSteps?: number;
   readonly signal?: AbortSignal;
   readonly onEvent?: WorkerEventSink;
+  /**
+   * PILOT-003 R4: the mission acceptance contract. When provided, the
+   * completion gate verifies every condition against real operational
+   * evidence before accepting `finish`. The worker cannot weaken the
+   * contract — it can only satisfy conditions.
+   */
+  readonly acceptanceContract?: MissionAcceptanceContract;
   /**
    * TASK-022A: identity of this LOGICAL worker instance for reasoning
    * providers that retain state between calls (the development fallback).
@@ -393,6 +408,10 @@ export class WorkerAgent {
   private readonly onEvent: WorkerEventSink | undefined;
   private readonly maxReasoningRetries: number;
   private readonly reasoningRetryBackoffMs: readonly number[];
+  // PILOT-003 R4: the acceptance contract (optional, for evidence-based completion gate).
+  private readonly acceptanceContract: MissionAcceptanceContract | undefined;
+  // PILOT-003 R4: latest completion evidence (for mission state summary).
+  private lastEvidence: CompletionEvidence | undefined;
 
   constructor(options: WorkerAgentOptions) {
     this.genome = options.genome;
@@ -413,6 +432,7 @@ export class WorkerAgent {
     this.onEvent = options.onEvent;
     this.maxReasoningRetries = options.maxReasoningRetries ?? 1;
     this.reasoningRetryBackoffMs = options.reasoningRetryBackoffMs ?? [1_000, 5_000];
+    this.acceptanceContract = options.acceptanceContract;
   }
 
   private systemPrompt(): string {
@@ -709,6 +729,26 @@ export class WorkerAgent {
     // Bound the summary to prevent prompt bloat.
     const summary = parts.join(' | ');
     return summary.length > 500 ? summary.slice(0, 500) + '…' : summary;
+  }
+
+  /**
+   * PILOT-003 R4 (TASK 3): build the verification context from the worker's
+   * current completion evidence + workspace files. Used by the mission state
+   * summary and the acceptance contract gate.
+   */
+  private buildVerificationContext(workspaceFiles: readonly string[]): ContractVerificationContext {
+    return {
+      workspaceFiles,
+      lastTestExitCode: this.lastEvidence?.lastTestCommand?.exitCode ?? null,
+      lastBuildExitCode: this.lastEvidence?.lastBuildExitCode ?? null,
+      lastStartResult: this.lastEvidence?.lastStartResult
+        ? { ok: this.lastEvidence.lastStartResult.ok, httpStatus: this.lastEvidence.lastStartResult.httpStatus }
+        : null,
+      browserEvidence: this.lastEvidence?.browserEvidence ?? { screenshotTaken: false, interactionsPassed: 0 },
+      deliveryPackage: this.lastEvidence?.deliveryPackage ?? null,
+      repoCloned: this.lastEvidence?.repoCloned ?? false,
+      dependenciesInstalled: this.lastEvidence?.dependenciesInstalled ?? false,
+    };
   }
 
   private grantsFor(action: WorkerAction): string | null {
@@ -1055,7 +1095,18 @@ export class WorkerAgent {
     // task brief's responsibility line. The contract scopes applicable
     // checks to the worker's ownedArtifacts.
     const completionEvidence = freshEvidence(this.genome, this.taskBrief);
+    // PILOT-003 R4: track the latest evidence for the mission state summary.
+    this.lastEvidence = completionEvidence;
     const mentions = detectExecutableMentions(this.taskBrief);
+
+    // PILOT-003 R4 (TASK 4): Nonproductive Loop Detection.
+    // Track the acceptance contract state across steps. If no progress
+    // (no new condition verified) for STAGNATION_THRESHOLD steps, inject
+    // a strategy-change prompt. This is NOT an arbitrary step limit —
+    // it's a progress signal based on real evidence change.
+    const STAGNATION_THRESHOLD = 5;
+    let lastVerifiedCount = 0;
+    let stepsSinceProgress = 0;
 
     const base = (): Omit<WorkerResult, 'status' | 'summary' | 'evidence' | 'failureClass' | 'reasoningRetries'> => ({
       workerId,
@@ -1092,15 +1143,47 @@ export class WorkerAgent {
         visibleScratchpad = [summary, ...scratchpad.slice(-SCRATCHPAD_WINDOW)];
       }
 
+      // PILOT-003 R4 (TASK 3): Mission State Awareness.
+      // Inject the acceptance contract state summary into the prompt so the
+      // worker knows what's accomplished and what remains. This is built
+      // from real evidence (not LLM calls) — deterministic.
+      let missionStateLine = '';
+      if (this.acceptanceContract !== undefined && this.computer !== null) {
+        try {
+          const files = (await this.computer.listFiles())
+            .filter((e) => e.kind === 'file')
+            .map((e) => e.path);
+          const verified = verifyAcceptanceContract(
+            this.acceptanceContract,
+            this.buildVerificationContext(files),
+          );
+          missionStateLine = buildMissionStateSummary(verified.contract);
+        } catch {
+          // listFiles failed — skip state summary (fail-open, don't block the worker).
+        }
+      }
+
       const prompt = [
         'TASK:',
         this.taskBrief,
         '',
+        ...(missionStateLine.length > 0 ? [missionStateLine, ''] : []),
         'STEPS SO FAR:',
         ...(visibleScratchpad.length === 0 ? ['(none — this is your first step)'] : visibleScratchpad),
         '',
+        // PILOT-003 R4 (TASK 4): if stagnation detected, inject strategy-change.
+        ...(stepsSinceProgress >= STAGNATION_THRESHOLD
+          ? [`WARNING: No measurable progress in the last ${STAGNATION_THRESHOLD} steps. ` +
+             `The acceptance contract state has not changed. Re-evaluate your approach — ` +
+             `try a different strategy, inspect the actual error output, or check what ` +
+             `remains in the MISSION STATE above.\n\n`]
+          : []),
         'Your next step as ONE JSON object:',
       ].join('\n');
+
+      // PILOT-003 R4 (TASK 4): check stagnation BEFORE calling reasoning.
+      // If stagnating, inject the warning and reset (the worker will see it).
+      // This is NOT a termination — it's a course correction.
 
       // G6-01 (P1 H-01, H-03): bounded retry on transient provider
       // failures. The retry only fires for retryable classes
@@ -1270,6 +1353,54 @@ export class WorkerAgent {
           }
           // Runtime start succeeded — fall through to accept finish.
         }
+        // PILOT-003 R4: Evidence-Based Acceptance Contract Gate.
+        // After the test gate and runtime gate pass, check the FULL acceptance
+        // contract. This is the system-level enforcement: every condition in
+        // the contract must be verified against real operational evidence.
+        // The worker cannot claim success unless the evidence is present.
+        if (this.acceptanceContract !== undefined && this.computer !== null) {
+          const workspaceFiles = (await this.computer.listFiles())
+            .filter((e) => e.kind === 'file')
+            .map((e) => e.path);
+          const contractResult = checkAcceptanceContract(
+            completionEvidence,
+            this.acceptanceContract,
+            workspaceFiles,
+          );
+          if (!contractResult.ok) {
+            completionEvidence.finishRejections += 1;
+            const rejectionCount = completionEvidence.finishRejections;
+            const feedback = contractResult.actionableFeedback ?? contractResult.reason ?? 'acceptance contract not satisfied';
+            if (rejectionCount > MAX_FINISH_REJECTIONS) {
+              return this.finish(
+                'failure',
+                `acceptance contract not satisfied after ${rejectionCount} attempts: ${contractResult.reason}`,
+                base(),
+                'WORKER_FAILURE',
+                reasoningRetries,
+                completionEvidence,
+              );
+            }
+            refusals.push(
+              `finish rejected (attempt ${rejectionCount}/${MAX_FINISH_REJECTIONS}): acceptance contract — ${contractResult.reason}`,
+            );
+            scratchpad.push(
+              `step ${steps + 1}: ${JSON.stringify(action)}`,
+              `observation: ACCEPTANCE CONTRACT GATE REJECTED — ${feedback}`,
+            );
+            steps += 1;
+            this.onEvent?.({
+              type: 'worker-step',
+              workerId,
+              step: steps,
+              action: 'finish',
+              ok: false,
+              elapsedMs: 0,
+            });
+            continue;
+          }
+          // Acceptance contract verified — fall through to accept finish.
+        }
         finishSummary = action.summary;
         for (const path of action.artifacts ?? []) {
           if (!artifacts.includes(path)) artifacts.push(path);
@@ -1375,6 +1506,19 @@ export class WorkerAgent {
           cmdStdout,
           cmdStderr,
         );
+        // PILOT-003 R4: update the evidence tracker for the mission state summary.
+        this.lastEvidence = completionEvidence;
+        // PILOT-003 R4: detect repo clone + npm install for acceptance contract.
+        if (/git\s+clone/i.test(action.command) && exitCode === 0) {
+          completionEvidence.repoCloned = true;
+        }
+        if (/npm\s+install/i.test(action.command) && exitCode === 0) {
+          completionEvidence.dependenciesInstalled = true;
+        }
+        // PILOT-003 R4: detect build commands for acceptance contract.
+        if (/npm\s+run\s+build|webpack|tsc|vite\s+build/i.test(action.command)) {
+          completionEvidence.lastBuildExitCode = exitCode ?? -1;
+        }
       }
 
       // G6-08 (Phase 5 / C-PROTOCOLS-FINDING-001): wrap tool output in a
@@ -1405,6 +1549,33 @@ export class WorkerAgent {
         observation: framedObservation,
         elapsedMs,
       });
+
+      // PILOT-003 R4 (TASK 4): Nonproductive Loop Detection.
+      // After each step, check if the acceptance contract state changed.
+      // If a new condition was verified, reset the stagnation counter.
+      // If not, increment it. The warning is injected in the next prompt.
+      if (this.acceptanceContract !== undefined && this.computer !== null) {
+        try {
+          const files = (await this.computer.listFiles())
+            .filter((e) => e.kind === 'file')
+            .map((e) => e.path);
+          const verified = verifyAcceptanceContract(
+            this.acceptanceContract,
+            this.buildVerificationContext(files),
+          );
+          const currentVerifiedCount = verified.contract.conditions.filter((c) => c.verified).length;
+          if (currentVerifiedCount > lastVerifiedCount) {
+            // Progress! New condition(s) verified.
+            lastVerifiedCount = currentVerifiedCount;
+            stepsSinceProgress = 0;
+          } else {
+            // No progress — increment stagnation counter.
+            stepsSinceProgress += 1;
+          }
+        } catch {
+          // listFiles failed — can't check progress, don't update counter.
+        }
+      }
     }
 
     if (finishSummary === '') {

@@ -65,6 +65,12 @@ import {
   parseDeliverableKindFromPrefix,
   type OwnershipContract,
 } from './ownership-contract.js';
+// PILOT-003 R4: acceptance contract for evidence-based completion gate.
+import {
+  verifyAcceptanceContract,
+  type MissionAcceptanceContract,
+  type ContractVerificationContext,
+} from './acceptance-contract.js';
 
 // ---------------------------------------------------------------------------
 // A1 — Responsibility-aware completion
@@ -309,6 +315,32 @@ export interface CompletionEvidence {
    * before `finish` is accepted.
    */
   lastStartResult: RuntimeStartResult | null;
+  /**
+   * PILOT-003 R4 (Acceptance Contract): the exit code of the last build
+   * command (npm run build, webpack, etc.). Null if no build was run.
+   * Used by the acceptance contract to verify "application-built".
+   */
+  lastBuildExitCode: number | null;
+  /**
+   * PILOT-003 R4 (Acceptance Contract): evidence that a browser interaction
+   * was performed. Used by the acceptance contract to verify "browser-tested".
+   */
+  browserEvidence: { screenshotTaken: boolean; interactionsPassed: number };
+  /**
+   * PILOT-003 R4 (Acceptance Contract): evidence that a delivery package
+   * was created. Used by the acceptance contract to verify "delivery-packaged".
+   */
+  deliveryPackage: { exists: boolean; bytes: number } | null;
+  /**
+   * PILOT-003 R4 (Acceptance Contract): evidence that a git repo was cloned.
+   * Used by the acceptance contract to verify "repo-cloned" (deploy-from-github).
+   */
+  repoCloned: boolean;
+  /**
+   * PILOT-003 R4 (Acceptance Contract): evidence that dependencies were installed.
+   * Used by the acceptance contract to verify "dependencies-installed".
+   */
+  dependenciesInstalled: boolean;
 }
 
 /**
@@ -355,6 +387,12 @@ export function freshEvidence(genome: WorkerGenome, taskBrief: string): Completi
     lastMutationStep: null,
     finishRejections: 0,
     lastStartResult: null,
+    // PILOT-003 R4: additional evidence for acceptance contract verification.
+    lastBuildExitCode: null,
+    browserEvidence: { screenshotTaken: false, interactionsPassed: 0 },
+    deliveryPackage: null,
+    repoCloned: false,
+    dependenciesInstalled: false,
   };
 }
 
@@ -937,4 +975,59 @@ function diagnoseTestFailure(
     `and only call finish after it exits 0.\n` +
     `Test output (first 1500 chars):\n${trimmedOutput}`
   );
+}
+
+// ---------------------------------------------------------------------------
+// PILOT-003 R4 — Evidence-Based Acceptance Contract Gate
+// ---------------------------------------------------------------------------
+
+/**
+ * PILOT-003 R4: check the acceptance contract against real operational evidence.
+ *
+ * This is the SYSTEM-LEVEL enforcement: the worker cannot claim success
+ * unless every condition in the contract is verified against actual evidence.
+ * The worker decides HOW to satisfy conditions; the system verifies WHETHER
+ * they are satisfied.
+ *
+ * @param evidence the worker's completion evidence
+ * @param contract the mission acceptance contract
+ * @param workspaceFiles the files currently in the worker's workspace
+ * @returns ok=true if all conditions verified, otherwise ok=false with feedback
+ */
+export function checkAcceptanceContract(
+  evidence: CompletionEvidence,
+  contract: MissionAcceptanceContract,
+  workspaceFiles: readonly string[],
+): CompletionCheckResult {
+  const ctx: ContractVerificationContext = {
+    workspaceFiles,
+    lastTestExitCode: evidence.lastTestCommand?.exitCode ?? null,
+    lastBuildExitCode: evidence.lastBuildExitCode,
+    lastStartResult: evidence.lastStartResult
+      ? { ok: evidence.lastStartResult.ok, httpStatus: evidence.lastStartResult.httpStatus }
+      : null,
+    browserEvidence: evidence.browserEvidence,
+    deliveryPackage: evidence.deliveryPackage,
+    repoCloned: evidence.repoCloned,
+    dependenciesInstalled: evidence.dependenciesInstalled,
+  };
+
+  const result = verifyAcceptanceContract(contract, ctx);
+  if (result.allVerified) {
+    return { ok: true };
+  }
+
+  // Build actionable feedback listing the unverified conditions.
+  const feedback = result.unverified
+    .map((c) => `- ${c.label}: ${c.description}${c.evidence ? ` (current: ${c.evidence})` : ''}`)
+    .join('\n');
+  return {
+    ok: false,
+    reason: `${result.unverified.length} acceptance condition(s) unverified`,
+    actionableFeedback:
+      `The mission acceptance contract is not yet satisfied. The following conditions ` +
+      `are NOT verified:\n${feedback}\n\n` +
+      `Complete the remaining work to satisfy these conditions, then call finish. ` +
+      `The system verifies REAL evidence — claims without proof will be rejected.`,
+  };
 }
