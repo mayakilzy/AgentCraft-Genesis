@@ -1,0 +1,115 @@
+{
+    "name": "todomvc-lit",
+    "private": true,
+    "type": "module",
+    "engines": {
+        "node": ">=20.19.0",
+        "npm": ">=10.0.0"
+    },
+    "scripts": {
+        "serve": "wireit",
+        "dev": "wireit",
+        "build": "wireit",
+        "tsc": "wireit",
+        "rollup": "wireit",
+        "copy-index-html": "wireit"
+    },
+    "devDependencies": {
+        "@rollup/plugin-node-resolve": "^16.0.3",
+        "@rollup/plugin-terser": "^1.0.0",
+        "@rollup/plugin-typescript": "^12.3.0",
+        "@web/dev-server": "^0.4.6",
+        "rollup": "^4.60.2",
+        "rollup-plugin-html-literals": "^2.0.1",
+        "todomvc-common": "^1.0.5",
+        "tslib": "^2.8.1",
+        "typescript": "^5.9.3",
+        "wireit": "^0.14.12"
+    },
+    "dependencies": {
+        "lit": "^3.3.2"
+    },
+    "wireit": {
+        "serve": {
+            "dependencies": [
+                "build"
+            ],
+            "files": [
+                "web-dev-server.config.js"
+            ],
+            "service": true,
+            "command": "wds"
+        },
+        "dev": {
+            "#comment": "like serve, only it doesn't do the slow rollup build",
+            "dependencies": [
+                "tsc"
+            ],
+            "files": [
+                "web-dev-server.config.js"
+            ],
+            "service": true,
+            "command": "wds"
+        },
+        "build": {
+            "dependencies": [
+                "tsc",
+                "rollup",
+                "copy-index-html",
+                "copy-base-js",
+                "copy-base-css"
+            ]
+        },
+        "tsc": {
+            "files": [
+                "src/**/*.ts",
+                "tsconfig.json"
+            ],
+            "output": [
+                "index.js",
+                "index.js.map",
+                "lib",
+                ".tsbuildinfo"
+            ],
+            "clean": false,
+            "command": "tsc"
+        },
+        "rollup": {
+            "files": [
+                "src/**/*.ts",
+                "rollup.config.mjs"
+            ],
+            "output": [
+                "dist/index.js"
+            ],
+            "command": "rollup --config rollup.config.mjs"
+        },
+        "copy-index-html": {
+            "command": "mkdir -p dist && cp index.html dist/index.html",
+            "files": [
+                "index.html"
+            ],
+            "output": [
+                "dist/index.html"
+            ]
+        },
+        "copy-base-js": {
+            "command": "mkdir -p dist && cp node_modules/todomvc-common/base.js dist/base.js",
+            "files": [
+                "node_modules/todomvc-common/base.js"
+            ],
+            "output": [
+                "dist/base.js"
+            ]
+        },
+        "copy-base-css": {
+            "command": "mkdir -p dist && cp node_modules/todomvc-common/base.css dist/base.css",
+            "files": [
+                "node_modules/todomvc-common/base.css"
+            ],
+            "output": [
+                "dist/base.css"
+            ]
+        }
+    }
+}

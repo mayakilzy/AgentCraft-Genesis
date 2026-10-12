@@ -1,0 +1,42 @@
+[
+  {
+    "stream": "stderr",
+    "t": "npm warn exec The following package was not found and will be installed: tsx@4.23.15\n",
+    "ts": "2026-10-12T21:19:21.619Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] No MCP config (GENESIS_MCP_SERVERS_CONFIG not set).\n",
+    "ts": "2026-10-12T21:19:23.728Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] EXECUTION MODE: production (real providers required)\n",
+    "ts": "2026-10-12T21:19:23.728Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T21:19:23.781Z\",\"component\":\"history_recovery\",\"message\":\"loaded 0 mission record(s) from disk\"}\n",
+    "ts": "2026-10-12T21:19:23.782Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] HTTP API listening on http://127.0.0.1:5090\n",
+    "ts": "2026-10-12T21:19:23.829Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] A2A inbound listening on http://127.0.0.1:5091\n[genesis-gateway] Agent Card at http://127.0.0.1:5091/.well-known/agent-card.json\n[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.\n[genesis-gateway] 1 caller(s) configured.\n[genesis-gateway] Execution mode: production\n[genesis-gateway] In-process mission state; no durability across restart.\n[genesis-gateway] Conversations are durable (JSONL on disk).\n[genesis-gateway] Projects are durable (atomic JSON on disk).\n",
+    "ts": "2026-10-12T21:19:23.829Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T21:19:24.184Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"12aa16ee-db3d-4917-9872-90869b4c5d09\",\"callerId\":\"pilot-003-caller\"}\n",
+    "ts": "2026-10-12T21:19:24.184Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T21:49:47.913Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"12aa16ee-db3d-4917-9872-90869b4c5d09\",\"status\":\"PARTIAL\",\"callerId\":\"pilot-003-caller\"}\n",
+    "ts": "2026-10-12T21:49:47.913Z"
+  }
+]

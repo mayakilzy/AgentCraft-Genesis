@@ -1,0 +1,21 @@
+{
+  "missionId": "12aa16ee-db3d-4917-9872-90869b4c5d09",
+  "callerId": "pilot-003-caller",
+  "label": "pilot-003-todomvc-deploy",
+  "status": "PARTIAL",
+  "terminal": true,
+  "acceptedAt": "2026-10-12T21:19:24.183Z",
+  "finishedAt": "2026-10-12T21:49:47.911Z",
+  "goalOutcome": "Take the existing GitHub repository at https://github.com/tastejs/todomvc.git and turn it into a working, verified application.\n\nClone the repository, find the React example application (expected under examples/react but discover the actual path), install its dependencies, build it, launch it on an available port, verify it loads in a real browser, perform TodoMVC interactions (create tasks, complete tasks, filter tasks, delete tasks), and verify state persistence after page reload.\n\nAfter all files are ready and the app is verified, run \"npm test\" to confirm any existing project tests pass.",
+  "result": {
+    "status": "partial",
+    "summary": "verification failed after retry: 2 of 384 acceptance check(s) failed: package.json exists in the app (\"todomvc/examples/react/package.json\" not found in the clean room: OpenBot computer /files/read failed (404): There is no file at todomvc/examples/react/package.json.); npm test exits 0 (G7-19F auto-detected from goal text) — BLOCKER: no worker produced package.json (\"sh -c \"echo G7-19F blocker: npm test requires package.json but no worker produced it 1>&2; exit 1\"\" exited 1 (expected 0); stderr: G7-19F blocker: npm test requires package.json but no worker produced it\n)",
+    "evidence": [],
+    "cost": {
+      "usd": 0,
+      "tokens": 378493,
+      "wallMs": 1823690,
+      "humanInterventions": 0
+    }
+  }
+}
