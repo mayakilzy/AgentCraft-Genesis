@@ -44,6 +44,11 @@ class MemoryComputer implements WorkerComputer {
     this.files.set(path, contents);
     return { path, bytes: contents.length, appended: false };
   }
+  // D+ B02: trusted write path for staging
+  async writeFileTrusted(path: string, contents: string) {
+    this.files.set(path, contents);
+    return { path, bytes: contents.length, appended: false };
+  }
   async readFile(path: string) {
     const text = this.files.get(path);
     if (text === undefined) throw new Error(`no file at ${path}`);

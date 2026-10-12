@@ -1,6 +1,7 @@
 import { randomBytes, createHash } from 'node:crypto';
 
 import type {
+  CollaborationEdge,
   Evidence,
   Goal,
   GoalRequirements,
@@ -24,7 +25,50 @@ import {
 } from '../worker/handoff.js';
 import { MemoryFlightRecorder as _MemoryFlightRecorder, type FlightEvent, type FlightRecorder } from './flight-recorder.js';
 // D+ B02: real handoff staging helper (non-frozen layer)
-import { stageUpstreamArtifactsForWorker } from '../runtime/handoff-staging.js';
+import { stageUpstreamArtifactsForWorker, type StagingResult } from '../runtime/handoff-staging.js';
+
+/**
+ * D+ B02 Final Security Closure: Topological sort of specialists by
+ * collaboration edges. Producers (with outbound handoff edges) run before
+ * consumers (with inbound handoff edges).
+ */
+function topologicalSort(
+  workers: readonly PlannedWorker[],
+  edges: readonly CollaborationEdge[],
+): PlannedWorker[] {
+  const deps = new Map<string, Set<string>>();
+  for (const w of workers) {
+    deps.set(w.id, new Set());
+  }
+  for (const edge of edges) {
+    if (edge.kind !== 'handoff') continue;
+    const consumerDeps = deps.get(edge.to);
+    if (consumerDeps !== undefined) {
+      consumerDeps.add(edge.from);
+    }
+  }
+  const result: PlannedWorker[] = [];
+  const visited = new Set<string>();
+  const workerMap = new Map(workers.map((w) => [w.id, w]));
+  function visit(id: string): void {
+    if (visited.has(id)) return;
+    visited.add(id);
+    const d = deps.get(id);
+    if (d !== undefined) {
+      for (const dep of d) {
+        visit(dep);
+      }
+    }
+    const w = workerMap.get(id);
+    if (w !== undefined) {
+      result.push(w);
+    }
+  }
+  for (const w of workers) {
+    visit(w.id);
+  }
+  return result;
+}
 
 // G6-08 (Phase 8 lint fix): MemoryFlightRecorder is no longer directly referenced
 // in this file after the Phase 4 C-VERIFY-FINDING-004 fix (inMemoryFlightEvents
@@ -344,15 +388,12 @@ export class MissionOrchestrator {
   }
 
   /**
-   * D+ B02: Stage upstream artifacts into a worker's workspace before it runs.
+   * D+ B02 Final Security Closure: Stage upstream artifacts into a worker's
+   * workspace before it runs. Fail-closed: if staging fails, the consumer
+   * does NOT run — the caller creates a synthetic failure WorkerResult.
    *
-   * This is the narrow frozen exception authorized by DPLUS-B01C-B02 §S2.5.
-   * It reads from prior workers' computers (read-only) and writes to this
-   * worker's computer under `upstream/<producer-id>/<path>`.
-   *
-   * The actual staging logic is in the non-frozen layer
-   * (`src/runtime/handoff-staging.ts`); this method only collects the
-   * surfaces and invokes the helper.
+   * PATH B: if the runtime does not support trusted write (OpenBot),
+   * staging is refused and the consumer does not run.
    */
   private async stageUpstreamArtifacts(
     worker: PlannedWorker,
@@ -360,43 +401,79 @@ export class MissionOrchestrator {
     results: ReadonlyMap<string, WorkerResult>,
     participants: ReadonlyMap<string, HandoffParticipant>,
     record: RecordFn,
-  ): Promise<void> {
+  ): Promise<StagingResult> {
     // Get this worker's computer (the consumer)
     const consumerSurfaces = this.surfacesByWorker?.get(worker.id);
-    if (consumerSurfaces?.computer === null || consumerSurfaces?.computer === undefined) return;
+    if (consumerSurfaces?.computer === null || consumerSurfaces?.computer === undefined) {
+      // No computer → no staging needed (worker has no computer-requiring grants)
+      return { ok: true, outcomes: [], failureReason: '' };
+    }
 
     // Find upstream workers (producers this worker depends on)
     const upstreamEdges = plan.collaboration.filter(
       (edge) => edge.to === worker.id && edge.kind === 'handoff',
     );
 
+    // If no upstream edges, no staging needed → ok (vacuously true)
+    if (upstreamEdges.length === 0) {
+      return { ok: true, outcomes: [], failureReason: '' };
+    }
+
+    // C2: check for missing/failed producers BEFORE staging
     for (const edge of upstreamEdges) {
       const producerResult = results.get(edge.from);
-      if (producerResult === undefined) continue; // producer didn't run
-      const producerSurfaces = this.surfacesByWorker?.get(edge.from);
-      if (producerSurfaces?.computer === null || producerSurfaces?.computer === undefined) continue;
-
-      // Stage each produced artifact into the consumer's workspace
-      try {
-        await stageUpstreamArtifactsForWorker(
-          edge.from,
-          producerResult.artifacts,
-          producerSurfaces.computer,
-          consumerSurfaces.computer,
-          record,
-        );
-      } catch {
-        // Best-effort: staging failure surfaces honestly in the flight record
-        record({
-          type: 'worker-step',
-          workerId: worker.id,
-          step: 0,
-          action: `stage-upstream:${edge.from}`,
+      if (producerResult === undefined) {
+        return {
           ok: false,
-          elapsedMs: 0,
-        });
+          outcomes: [],
+          failureReason: `required upstream producer "${edge.from}" did not run (no result)`,
+        };
+      }
+      if (producerResult.status === 'failure') {
+        return {
+          ok: false,
+          outcomes: [],
+          failureReason: `required upstream producer "${edge.from}" failed (status: failure)`,
+        };
+      }
+      if (producerResult.artifacts.length === 0) {
+        return {
+          ok: false,
+          outcomes: [],
+          failureReason: `required upstream producer "${edge.from}" produced no artifacts`,
+        };
       }
     }
+
+    // Stage each producer's artifacts
+    const allOutcomes: Array<StagingResult['outcomes'][number]> = [];
+    let allOk = true;
+    let failureReason = '';
+
+    for (const edge of upstreamEdges) {
+      const producerResult = results.get(edge.from)!;
+      const producerSurfaces = this.surfacesByWorker?.get(edge.from);
+      if (producerSurfaces?.computer === null || producerSurfaces?.computer === undefined) {
+        allOk = false;
+        failureReason = `producer "${edge.from}" has no computer`;
+        continue;
+      }
+
+      const result = await stageUpstreamArtifactsForWorker(
+        edge.from,
+        producerResult.artifacts,
+        producerSurfaces.computer,
+        consumerSurfaces.computer,
+        record,
+      );
+      allOutcomes.push(...result.outcomes);
+      if (!result.ok) {
+        allOk = false;
+        failureReason = result.failureReason;
+      }
+    }
+
+    return { ok: allOk, outcomes: allOutcomes, failureReason };
   }
 
   async run(goal: Goal): Promise<MissionResult> {
@@ -596,8 +673,12 @@ export class MissionOrchestrator {
       // Specialists run in plan order (upstream results flow along the
       // collaboration edges); the coordinator integrates afterwards.
       const results = new Map<string, WorkerResult>();
-      const specialists = plan.workers.filter(
-        (w) => w.role !== COORDINATOR_ROLE,
+      // D+ B02 Final Security Closure: sort specialists topologically so
+      // producers run before consumers. This ensures upstream artifacts
+      // exist before the consumer's staging check runs.
+      const specialists = topologicalSort(
+        plan.workers.filter((w) => w.role !== COORDINATOR_ROLE),
+        plan.collaboration,
       );
       const coordinator = plan.workers.find(
         (w) => w.role === COORDINATOR_ROLE,
@@ -611,14 +692,31 @@ export class MissionOrchestrator {
       };
       for (const worker of specialists) {
         if (controller.signal.aborted) break;
-        // D+ B02: stage upstream artifacts into this worker's workspace
-        // BEFORE running the worker. Reads from prior workers' computers
-        // (read-only) and writes to this worker's computer under
-        // upstream/<producer-id>/<path>. The staging helper is in the
-        // non-frozen layer (src/runtime/handoff-staging.ts); the
-        // orchestrator only invokes it. This is the narrow frozen
-        // exception authorized by DPLUS-B01C-B02 §S2.5.
-        await this.stageUpstreamArtifacts(worker, plan, results, participants, record);
+        // D+ B02 Final Security Closure: stage upstream artifacts with fail-closed.
+        // If staging fails (missing producer, missing artifact, unsafe path,
+        // hash mismatch, OpenBot runtime), the consumer does NOT run.
+        const stagingResult = await this.stageUpstreamArtifacts(worker, plan, results, participants, record);
+        if (!stagingResult.ok) {
+          // Fail-closed: consumer cannot run without required upstream
+          const failureResult: WorkerResult = {
+            workerId: worker.id,
+            status: 'failure',
+            summary: `required upstream handoff failed: ${stagingResult.failureReason}`,
+            evidence: [],
+            artifacts: [],
+            steps: 0,
+            reasoningCalls: 0,
+            refusals: [`handoff-staging-failed: ${stagingResult.failureReason}`],
+            failureClass: 'WORKER_FAILURE',
+          };
+          record({
+            type: 'worker-finished',
+            workerId: worker.id,
+            result: failureResult,
+          });
+          countWorker(failureResult);
+          continue; // skip running the consumer
+        }
         const brief = this.briefFor(
           worker,
           requirements,

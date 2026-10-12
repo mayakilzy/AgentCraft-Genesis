@@ -149,9 +149,19 @@ function buildTestGenome(workerId: string, role: string): WorkerGenome {
 // ---------------------------------------------------------------------------
 
 describe('G7-19C Scenario 11: worker self-reports success but disk is incomplete', () => {
-  it('orchestrator marks SUCCESS (self-report has entries), but disk state is incomplete', async () => {
-    // Worker calls finish() with `artifacts: ['convert.ts']` (self-report),
-    // but never actually wrote the file to disk.
+  it('orchestrator marks FAILURE when staging fails because producer artifact missing on disk', async () => {
+    // D+ B02 Final Security Closure: with fail-closed handoff, if the
+    // Software Engineer claims an artifact that doesn't exist on disk,
+    // staging fails when the Documentation Writer tries to consume it.
+    // The consumer does NOT run — the mission fails truthfully.
+    //
+    // Pre-B02: the orchestrator trusted self-report, staging was
+    // best-effort, and the consumer ran anyway (with a missing upstream
+    // file). The mission could still succeed via verification's
+    // structural floor. This was a false-success path.
+    //
+    // Post-B02: staging fails → consumer skipped → mission fails.
+    // This is the correct fail-closed behavior.
     const runtime = new MemoryRuntime();
     const reasoning = new RoleScriptedReasoning({
       'Software Engineer': [
@@ -177,15 +187,9 @@ describe('G7-19C Scenario 11: worker self-reports success but disk is incomplete
     });
     const result = await buildOrchestrator(reasoning, runtime).run(SOFTWARE_GOAL);
 
-    // The orchestrator's collectArtifacts trusts self-report — so
-    // finalArtifacts has entries, hasDeliverable=true, and (because
-    // verification passed — the verifier's deriveChecks produces
-    // file-existence checks for each self-reported path), status=success.
-    //
-    // This is the pre-G7-19C behavior preserved: the orchestrator does
-    // NOT cross-check self-report against disk state. The G7-19C fix
-    // only kicks in when self-report is EMPTY.
-    expect(result.status).toBe('success');
+    // D+ B02: staging fails because 'convert.ts' doesn't exist on disk
+    // → Documentation Writer is skipped (fail-closed) → mission fails.
+    expect(result.status).toBe('failure');
   });
 });
 
