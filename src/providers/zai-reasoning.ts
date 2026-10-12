@@ -47,8 +47,35 @@ export interface ZAIReasoningOptions {
    * (which the orchestrator maps to mission FAILED via existing error handling).
    * This is the enforceable spending bound — USD pricing is not available
    * from the SDK, so tokens are the directly measurable proxy.
+   *
+   * PILOT-002 R3.1: the ceiling is now enforced via pre-call reservation
+   * (see `maxTokensPerCall`). If the reservation would exceed the ceiling,
+   * the call is refused BEFORE consuming any provider resources. This
+   * prevents the "post-call overshoot" where a single large call pushes
+   * totalTokens past the ceiling (observed in PILOT-002 R3: 67553 vs 60000).
    */
   readonly maxTotalTokens?: number;
+  /**
+   * PILOT-002 R3.1 (TASK 03): the maximum tokens a single call is
+   * permitted to consume (input + output). Before each call, the provider
+   * reserves this amount against the remaining budget. If the reservation
+   * would exceed the ceiling, the call is refused with BudgetExceededError.
+   *
+   * After the call, the actual usage is reconciled: the reservation is
+   * released and the real tokens are added. This means the provider never
+   * overshoots the ceiling by more than one call's worth of tokens.
+   *
+   * If undefined, no pre-call reservation is made (legacy behavior: the
+   * post-call check in attemptReason catches overshoot after the fact).
+   *
+   * Provider limitation note: the ZAI SDK does not expose a `max_tokens`
+   * parameter to cap output. The reservation is an ESTIMATE based on
+   * `maxTokensPerCall` — the actual output may be less (reservation
+   * is released back) but never more than the estimate (if the provider
+   * returns more than `maxTokensPerCall` total tokens, the post-call
+   * check catches it and throws BudgetExceededError).
+   */
+  readonly maxTokensPerCall?: number;
 }
 
 export interface ReasoningUsage {
@@ -58,6 +85,18 @@ export interface ReasoningUsage {
   readonly promptTokens: number;
   readonly completionTokens: number;
   readonly totalTokens: number;
+  /**
+   * PILOT-002 R3.1 (TASK 03): reserved tokens — the sum of pre-call
+   * reservations that have not yet been reconciled against actual usage.
+   * At the end of a mission, this should be 0 (all reservations reconciled).
+   */
+  readonly reservedTokens: number;
+  /**
+   * PILOT-002 R3.1 (TASK 03): the maximum permitted tokens for a single
+   * call, used for pre-call reservation. If undefined, no reservation
+   * is made (legacy behavior).
+   */
+  readonly maxTokensPerCall: number | undefined;
 }
 
 /** Default patience for rate-limited endpoints (window measured in minutes). */
@@ -108,6 +147,7 @@ export class ZAIReasoningProvider implements ReasoningProvider {
   private readonly backoff: readonly number[];
   private readonly callTimeoutMs: number | undefined;
   private readonly maxTotalTokens: number | undefined;
+  private readonly maxTokensPerCall: number | undefined;
   private client: ZAIClient | undefined;
   private calls = 0;
   private failures = 0;
@@ -115,6 +155,15 @@ export class ZAIReasoningProvider implements ReasoningProvider {
   private promptTokens = 0;
   private completionTokens = 0;
   private totalTokens = 0;
+  /**
+   * PILOT-002 R3.1 (TASK 03): reserved tokens — the sum of pre-call
+   * reservations not yet reconciled. At the start of each `reason()` call,
+   * we reserve `maxTokensPerCall` against the budget. After the call
+   * completes (or throws), we release the reservation and add the actual
+   * usage. This prevents a new call from starting if its maximum
+   * permitted consumption cannot fit the remaining allowance.
+   */
+  private reservedTokens = 0;
 
   constructor(options: ZAIReasoningOptions = {}) {
     this.sdkPath =
@@ -122,6 +171,7 @@ export class ZAIReasoningProvider implements ReasoningProvider {
     this.backoff = options.retryBackoffMs ?? DEFAULT_RETRY_BACKOFF_MS;
     this.callTimeoutMs = options.callTimeoutMs;
     this.maxTotalTokens = options.maxTotalTokens;
+    this.maxTokensPerCall = options.maxTokensPerCall;
   }
 
   /** Real spend telemetry for MissionCost and experiment reports. */
@@ -133,6 +183,8 @@ export class ZAIReasoningProvider implements ReasoningProvider {
       promptTokens: this.promptTokens,
       completionTokens: this.completionTokens,
       totalTokens: this.totalTokens,
+      reservedTokens: this.reservedTokens,
+      maxTokensPerCall: this.maxTokensPerCall,
     };
   }
 
@@ -154,33 +206,72 @@ export class ZAIReasoningProvider implements ReasoningProvider {
   }
 
   async reason(input: ReasoningInput): Promise<ReasoningOutput> {
-    // G7-11 (FM-12): pre-call budget check. If the cumulative token count
-    // has already reached the ceiling, refuse the call BEFORE consuming any
-    // provider resources. This is the enforceable spending bound.
-    if (this.maxTotalTokens !== undefined && this.totalTokens >= this.maxTotalTokens) {
-      throw new BudgetExceededError(this.totalTokens, this.maxTotalTokens);
+    // G7-11 (FM-12) + PILOT-002 R3.1 (TASK 03): pre-call budget reservation.
+    //
+    // If maxTotalTokens and maxTokensPerCall are both set, reserve the
+    // per-call allowance BEFORE making the call. If the reservation would
+    // exceed the ceiling, refuse the call BEFORE consuming any provider
+    // resources. This prevents the "post-call overshoot" observed in
+    // PILOT-002 R3 (67553 tokens vs 60000 ceiling).
+    //
+    // Provider limitation: the ZAI SDK does not expose a `max_tokens`
+    // parameter to cap output. The reservation is an ESTIMATE — if the
+    // provider returns more tokens than `maxTokensPerCall`, the post-call
+    // check in attemptReason catches it. But in practice, the reservation
+    // ensures the budget is never exceeded by more than one call's worth.
+    if (this.maxTotalTokens !== undefined) {
+      const projected = this.totalTokens + this.reservedTokens;
+      if (projected >= this.maxTotalTokens) {
+        throw new BudgetExceededError(
+          this.totalTokens + this.reservedTokens,
+          this.maxTotalTokens,
+        );
+      }
+      // Reserve the per-call allowance if configured.
+      if (this.maxTokensPerCall !== undefined) {
+        const remaining = this.maxTotalTokens - projected;
+        if (this.maxTokensPerCall > remaining) {
+          throw new BudgetExceededError(
+            this.totalTokens + this.reservedTokens,
+            this.maxTotalTokens,
+          );
+        }
+        this.reservedTokens += this.maxTokensPerCall;
+      }
     }
     this.calls += 1;
     const maxAttempts = this.backoff.length + 1;
     let lastError: unknown;
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      try {
-        return await this.attemptReason(input);
-      } catch (error) {
-        // Budget exceeded is not retryable — rethrow immediately.
-        if (error instanceof BudgetExceededError) throw error;
-        lastError = error;
-        const rateLimited = isRateLimitError(error);
-        if (!rateLimited || attempt === maxAttempts) {
-          this.failures += 1;
-          throw error;
+    try {
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          return await this.attemptReason(input);
+        } catch (error) {
+          // Budget exceeded is not retryable — rethrow immediately.
+          if (error instanceof BudgetExceededError) throw error;
+          lastError = error;
+          const rateLimited = isRateLimitError(error);
+          if (!rateLimited || attempt === maxAttempts) {
+            this.failures += 1;
+            throw error;
+          }
+          this.rateLimitRetries += 1;
+          await sleep(this.backoff[attempt - 1]);
         }
-        this.rateLimitRetries += 1;
-        await sleep(this.backoff[attempt - 1]);
+      }
+      this.failures += 1;
+      throw lastError;
+    } finally {
+      // Release the reservation after the call (success or failure).
+      // The actual usage has been added to totalTokens by attemptReason.
+      // If attemptReason threw before adding usage (e.g., network error),
+      // the reservation is still released — no double-counting.
+      if (this.maxTokensPerCall !== undefined && this.reservedTokens >= this.maxTokensPerCall) {
+        this.reservedTokens -= this.maxTokensPerCall;
+      } else {
+        this.reservedTokens = 0;
       }
     }
-    this.failures += 1;
-    throw lastError;
   }
 
   private async attemptReason(

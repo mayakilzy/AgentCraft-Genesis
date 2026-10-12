@@ -1,11 +1,11 @@
 {
   "name": "task-manager",
-  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "test": "node --test",
     "start": "node server.js"
   },
-  "description": "A personal task manager with web UI and REST API",
-  "main": "server.js"
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }

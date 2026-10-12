@@ -1,195 +1,163 @@
-import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { createServer } from 'http';
-import { once } from 'events';
-import http from 'http';
+import { strictEqual, ok } from 'node:assert';
+import http from 'node:http';
+import { once } from 'node:events';
 
-test('Create a new task', async () => {
-  const server = createServer(async (req, res) => {
-    if (req.url === '/api/tasks' && req.method === 'POST') {
-      let body = '';
-      for await (const chunk of req) {
-        body += chunk;
-      }
-      
-      const { title, description } = JSON.parse(body);
-      
-      // Mock database response
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        id: 1,
-        title,
-        description,
-        completed: 0
-      }));
-    } else {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Not found' }));
-    }
-  });
-  
-  server.listen(0); // Use a random available port
-  await once(server, 'listening');
-  
-  const port = server.address().port;
-  const url = `http://localhost:${port}/api/tasks`;
-  
-  const postData = JSON.stringify({
-    title: 'Test Task',
-    description: 'This is a test task'
-  });
-  
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(postData)
-    }
+const BASE_URL = 'http://localhost:3000';
+
+// Helper function to make HTTP requests
+async function request(path, options = {}) {
+  const response = await fetch(`${BASE_URL}${path}`, options);
+  const data = await response.text();
+  return {
+    status: response.status,
+    headers: Object.fromEntries(response.headers.entries()),
+    data: data ? JSON.parse(data) : null
   };
-  
-  const request = http.request(url, options, (res) => {
-    let data = '';
-    
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-    
-    res.on('end', () => {
-      assert.strictEqual(res.statusCode, 201);
-      const responseData = JSON.parse(data);
-      assert.strictEqual(responseData.title, 'Test Task');
-      assert.strictEqual(responseData.description, 'This is a test task');
-      assert.strictEqual(responseData.completed, 0);
-    });
+}
+
+test('Create a task', async () => {
+  const response = await request('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'Test Task', description: 'Test Description' })
   });
   
-  request.write(postData);
-  request.end();
-  
-  await once(request, 'response');
-  server.close();
+  strictEqual(response.status, 201);
+  ok(response.data.id);
+  strictEqual(response.data.title, 'Test Task');
+  strictEqual(response.data.description, 'Test Description');
+  strictEqual(response.data.completed, false);
 });
 
-test('List all tasks', async () => {
-  const server = createServer(async (req, res) => {
-    if (req.url === '/api/tasks' && req.method === 'GET') {
-      // Mock database response
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify([
-        {
-          id: 1,
-          title: 'Task 1',
-          description: 'First task',
-          completed: 0
-        },
-        {
-          id: 2,
-          title: 'Task 2',
-          description: 'Second task',
-          completed: 1
-        }
-      ]));
-    } else {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Not found' }));
-    }
+test('List tasks', async () => {
+  // First, create a task
+  await request('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'List Test Task', description: 'For listing test' })
   });
   
-  server.listen(0); // Use a random available port
-  await once(server, 'listening');
+  // Then list all tasks
+  const response = await request('/api/tasks');
   
-  const port = server.address().port;
-  const url = `http://localhost:${port}/api/tasks`;
+  strictEqual(response.status, 200);
+  ok(Array.isArray(response.data));
+  ok(response.data.length > 0);
   
-  const options = {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  };
-  
-  const request = http.request(url, options, (res) => {
-    let data = '';
-    
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-    
-    res.on('end', () => {
-      assert.strictEqual(res.statusCode, 200);
-      const responseData = JSON.parse(data);
-      assert.strictEqual(responseData.length, 2);
-      assert.strictEqual(responseData[0].title, 'Task 1');
-      assert.strictEqual(responseData[1].completed, 1);
-    });
-  });
-  
-  request.end();
-  await once(request, 'response');
-  server.close();
+  const task = response.data.find(t => t.title === 'List Test Task');
+  ok(task);
+  strictEqual(task.description, 'For listing test');
+  strictEqual(task.completed, false);
 });
 
 test('Mark task as complete', async () => {
-  const server = createServer(async (req, res) => {
-    if (req.url === '/api/tasks/1' && req.method === 'PUT') {
-      let body = '';
-      for await (const chunk of req) {
-        body += chunk;
-      }
-      
-      const { title, description, completed } = JSON.parse(body);
-      
-      // Mock database response
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        id: 1,
-        title,
-        description,
-        completed: completed ? 1 : 0
-      }));
-    } else {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Not found' }));
-    }
+  // First, create a task
+  const createResponse = await request('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'Complete Test Task', description: 'For complete test' })
   });
   
-  server.listen(0); // Use a random available port
-  await once(server, 'listening');
+  const taskId = createResponse.data.id;
   
-  const port = server.address().port;
-  const url = `http://localhost:${port}/api/tasks/1`;
-  
-  const postData = JSON.stringify({
-    title: 'Updated Task',
-    description: 'This task is now complete',
-    completed: true
-  });
-  
-  const options = {
+  // Then mark it as complete
+  const response = await request(`/api/tasks/${taskId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(postData)
-    }
-  };
-  
-  const request = http.request(url, options, (res) => {
-    let data = '';
-    
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-    
-    res.on('end', () => {
-      assert.strictEqual(res.statusCode, 200);
-      const responseData = JSON.parse(data);
-      assert.strictEqual(responseData.title, 'Updated Task');
-      assert.strictEqual(responseData.completed, 1);
-    });
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'Complete Test Task', description: 'For complete test', completed: true })
   });
   
-  request.write(postData);
-  request.end();
-  await once(request, 'response');
-  server.close();
+  strictEqual(response.status, 200);
+  strictEqual(response.data.completed, true);
+  
+  // Verify it's marked as complete when listing
+  const listResponse = await request('/api/tasks?filter=completed');
+  const completedTask = listResponse.data.find(t => t.id === taskId);
+  ok(completedTask);
+  strictEqual(completedTask.completed, true);
+});
+
+test('Filter tasks by status', async () => {
+  // Create a completed task
+  const completedFilterResponse = await request('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'Completed Filter Task', description: 'Completed', completed: true })
+  });
+  
+  // Create an active task
+  const activeFilterResponse = await request('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'Active Filter Task', description: 'Active', completed: false })
+  });
+  
+  // Test all filter
+  const allResponse = await request('/api/tasks?filter=all');
+  strictEqual(allResponse.status, 200);
+  ok(Array.isArray(allResponse.data));
+  ok(allResponse.data.length >= 2);
+  
+  // Test active filter
+  const activeTasksResponse = await request('/api/tasks?filter=active');
+  strictEqual(activeTasksResponse.status, 200);
+  ok(Array.isArray(activeTasksResponse.data));
+  const activeTask = activeTasksResponse.data.find(t => t.id === activeFilterResponse.data.id);
+  ok(activeTask);
+  strictEqual(activeTask.completed, false);
+  
+  // Test completed filter
+  const completedTasksResponse = await request('/api/tasks?filter=completed');
+  strictEqual(completedTasksResponse.status, 200);
+  ok(Array.isArray(completedTasksResponse.data));
+  const completedTask = completedTasksResponse.data.find(t => t.id === completedFilterResponse.data.id);
+  ok(completedTask);
+  strictEqual(completedTask.completed, true);
+});
+
+test('Update a task', async () => {
+  // First, create a task
+  const createResponse = await request('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'Update Test Task', description: 'Original description' })
+  });
+  
+  const taskId = createResponse.data.id;
+  
+  // Then update it
+  const response = await request(`/api/tasks/${taskId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'Updated Task Title', description: 'Updated description', completed: true })
+  });
+  
+  strictEqual(response.status, 200);
+  strictEqual(response.data.title, 'Updated Task Title');
+  strictEqual(response.data.description, 'Updated description');
+  strictEqual(response.data.completed, true);
+});
+
+test('Delete a task', async () => {
+  // First, create a task
+  const createResponse = await request('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'Delete Test Task', description: 'To be deleted' })
+  });
+  
+  const taskId = createResponse.data.id;
+  
+  // Then delete it
+  const response = await request(`/api/tasks/${taskId}`, {
+    method: 'DELETE'
+  });
+  
+  strictEqual(response.status, 200);
+  
+  // Verify it's gone
+  const listResponse = await request('/api/tasks');
+  const deletedTask = listResponse.data.find(t => t.id === taskId);
+  strictEqual(deletedTask, undefined);
 });

@@ -95,11 +95,17 @@ async function buildRealReasoningProvider(): Promise<ReasoningProvider | null> {
           ZAIReasoningProvider: new (opts?: ZAIReasoningOptions) => ZAIReasoningProviderType;
         };
         const opts: ZAIReasoningOptions = sdkPath ? { sdkPath } : {};
-        // CORE RELIABILITY FIX: enforce hard token budget from env.
+        // CORE RELIABILITY FIX + PILOT-002 R3.1 (TASK 03): enforce hard token
+        // budget from env. The pre-call reservation mechanism (maxTokensPerCall)
+        // prevents overshoot: if a single call's max consumption cannot fit
+        // the remaining allowance, the call is refused BEFORE execution.
         const maxTotalTokensEnv = process.env.GENESIS_MAX_TOTAL_TOKENS;
-        const finalOpts: ZAIReasoningOptions = maxTotalTokensEnv !== undefined
-          ? { ...opts, maxTotalTokens: parseInt(maxTotalTokensEnv, 10) }
-          : opts;
+        const maxTokensPerCallEnv = process.env.GENESIS_MAX_TOKENS_PER_CALL;
+        const finalOpts: ZAIReasoningOptions = {
+          ...opts,
+          ...(maxTotalTokensEnv !== undefined ? { maxTotalTokens: parseInt(maxTotalTokensEnv, 10) } : {}),
+          ...(maxTokensPerCallEnv !== undefined ? { maxTokensPerCall: parseInt(maxTokensPerCallEnv, 10) } : {}),
+        };
         return new mod.ZAIReasoningProvider(finalOpts);
       } catch (e) {
         console.error('FATAL: Failed to load ZAIReasoningProvider:', e instanceof Error ? e.message : e);

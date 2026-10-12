@@ -238,7 +238,30 @@ const GRANT_BROWSER = 'openbot:browser-chromium';
 export const DEFAULT_MAX_WORKER_STEPS = 10;
 
 const MAX_PARSE_FAILURES = 2;
-const OBSERVATION_STDOUT_LIMIT = 4_000;
+/**
+ * Maximum stdout/content length included in a single observation.
+ *
+ * PILOT-002 R3.1 (TASK 04): reduced from 4000 to 2000 chars.
+ * The previous 4000-char limit meant 10 steps × 4000 = 40KB of
+ * scratchpad text, consuming most of the token budget on repeated
+ * context transmission. 2000 chars is still enough to see the
+ * meaningful part of a command output (error messages, test results)
+ * while halving the context cost.
+ */
+const OBSERVATION_STDOUT_LIMIT = 2_000;
+
+/**
+ * PILOT-002 R3.1 (TASK 04): maximum number of scratchpad entries
+ * included in the prompt. When the scratchpad exceeds this limit,
+ * only the most recent entries are kept and a one-line summary replaces
+ * the older ones. This prevents the prompt from growing linearly with
+ * step count, which was the primary cause of budget exhaustion in
+ * PILOT-002 R3 (67553 tokens in 10 steps).
+ *
+ * The window is deliberately generous (8 entries) so the worker has
+ * enough context to understand its recent actions and their outcomes.
+ */
+const SCRATCHPAD_WINDOW = 8;
 
 /** Ordinal source for auto-minted instance keys — unique per process. */
 let nextInstanceOrdinal = 0;
@@ -867,12 +890,24 @@ export class WorkerAgent {
         return this.finish('failure', 'mission aborted before completion', base(), 'CANCELLED', reasoningRetries);
       }
 
+      // PILOT-002 R3.1 (TASK 04): scratchpad windowing.
+      // When the scratchpad exceeds SCRATCHPAD_WINDOW entries, keep only
+      // the most recent entries and prepend a one-line summary. This
+      // prevents the prompt from growing linearly with step count.
+      const visibleScratchpad =
+        scratchpad.length <= SCRATCHPAD_WINDOW
+          ? scratchpad
+          : [
+              `(… ${scratchpad.length - SCRATCHPAD_WINDOW} earlier step(s) omitted — see flight recorder for full history)`,
+              ...scratchpad.slice(-SCRATCHPAD_WINDOW),
+            ];
+
       const prompt = [
         'TASK:',
         this.taskBrief,
         '',
         'STEPS SO FAR:',
-        ...(scratchpad.length === 0 ? ['(none — this is your first step)'] : scratchpad),
+        ...(visibleScratchpad.length === 0 ? ['(none — this is your first step)'] : visibleScratchpad),
         '',
         'Your next step as ONE JSON object:',
       ].join('\n');

@@ -2,36 +2,36 @@
   {
     "stream": "stderr",
     "t": "[genesis-gateway] No MCP config (GENESIS_MCP_SERVERS_CONFIG not set).\n",
-    "ts": "2026-10-12T16:31:08.931Z"
+    "ts": "2026-10-12T19:06:44.366Z"
   },
   {
     "stream": "stderr",
     "t": "[genesis-gateway] EXECUTION MODE: production (real providers required)\n",
-    "ts": "2026-10-12T16:31:08.931Z"
+    "ts": "2026-10-12T19:06:44.367Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T16:31:09.042Z\",\"component\":\"history_recovery\",\"message\":\"loaded 10 mission record(s) from disk\"}\n",
-    "ts": "2026-10-12T16:31:09.042Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T19:06:44.432Z\",\"component\":\"history_recovery\",\"message\":\"loaded 5 mission record(s) from disk\"}\n",
+    "ts": "2026-10-12T19:06:44.433Z"
   },
   {
     "stream": "stderr",
     "t": "[genesis-gateway] HTTP API listening on http://127.0.0.1:5080\n",
-    "ts": "2026-10-12T16:31:09.104Z"
+    "ts": "2026-10-12T19:06:44.474Z"
   },
   {
     "stream": "stderr",
     "t": "[genesis-gateway] A2A inbound listening on http://127.0.0.1:5081\n[genesis-gateway] Agent Card at http://127.0.0.1:5081/.well-known/agent-card.json\n[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.\n[genesis-gateway] 1 caller(s) configured.\n[genesis-gateway] Execution mode: production\n[genesis-gateway] In-process mission state; no durability across restart.\n[genesis-gateway] Conversations are durable (JSONL on disk).\n[genesis-gateway] Projects are durable (atomic JSON on disk).\n",
-    "ts": "2026-10-12T16:31:09.104Z"
+    "ts": "2026-10-12T19:06:44.474Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T16:31:09.218Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"6c8cb496-2d61-4b2e-bfa3-01ef6cff8bc9\",\"callerId\":\"pilot-002-caller\"}\n",
-    "ts": "2026-10-12T16:31:09.219Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T19:06:44.618Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"2bac80f6-fc61-4c75-a645-8e6f8ee83bce\",\"callerId\":\"pilot-002-caller\"}\n",
+    "ts": "2026-10-12T19:06:44.619Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T16:33:34.128Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"6c8cb496-2d61-4b2e-bfa3-01ef6cff8bc9\",\"status\":\"PARTIAL\",\"callerId\":\"pilot-002-caller\"}\n",
-    "ts": "2026-10-12T16:33:34.128Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T19:12:39.240Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"2bac80f6-fc61-4c75-a645-8e6f8ee83bce\",\"status\":\"PARTIAL\",\"callerId\":\"pilot-002-caller\"}\n",
+    "ts": "2026-10-12T19:12:39.241Z"
   }
 ]

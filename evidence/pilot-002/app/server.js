@@ -1,172 +1,128 @@
-import { createServer } from 'http';
-import { open, sqlite3 } from 'node:sqlite';
-import { sqlite3 as sqlite3Driver } from 'node:sqlite';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { createServer } from 'node:http';
+import { open } from 'node:sqlite';
+import { sqlite3 } from 'node:sqlite';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import 
+  { createTask, 
+    getTasks, 
+    getTaskById, 
+    updateTask, 
+    deleteTask 
+  } from './database.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const server = createServer(async (req, res) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-const PORT = 3000;
-const DB_FILE = join(__dirname, 'tasks.db');
-
-let db;
-
-async function initDB() {
-  db = await open({
-    filename: DB_FILE,
-    driver: sqlite3Driver
-  });
-  
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS tasks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      description TEXT,
-      completed INTEGER DEFAULT 0
-    )
-  `);
-}
-
-async function getTasks(req, res) {
-  try {
-    const { filter = 'all' } = req.query;
-    let query = 'SELECT * FROM tasks';
-    
-    if (filter === 'active') {
-      query += ' WHERE completed = 0';
-    } else if (filter === 'completed') {
-      query += ' WHERE completed = 1';
-    }
-    
-    const tasks = await db.all(query);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(tasks));
-  } catch (error) {
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: error.message }));
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    return res.end();
   }
-}
 
-async function createTask(req, res) {
-  try {
-    let body = '';
-    for await (const chunk of req) {
-      body += chunk;
+  // Parse URL
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const path = url.pathname;
+
+  // API Routes
+  if (path.startsWith('/api/')) {
+    try {
+      if (path === '/api/tasks' && req.method === 'GET') {
+        const filter = url.searchParams.get('filter') || 'all';
+        const tasks = await getTasks(filter);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify(tasks));
+      }
+
+      if (path === '/api/tasks' && req.method === 'POST') {
+        let body = '';
+        for await (const chunk of req) {
+          body += chunk.toString();
+        }
+        const { title, description } = JSON.parse(body);
+        const result = await createTask(title, description);
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ id: result.lastID, title, description, completed: false }));
+      }
+
+      if (path.startsWith('/api/tasks/') && req.method === 'GET') {
+        const id = path.split('/').pop();
+        const task = await getTaskById(id);
+        if (task) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify(task));
+        } else {
+          res.writeHead(404);
+          return res.end('Task not found');
+        }
+      }
+
+      if (path.startsWith('/api/tasks/') && req.method === 'PUT') {
+        const id = path.split('/').pop();
+        let body = '';
+        for await (const chunk of req) {
+          body += chunk.toString();
+        }
+        const { title, description, completed } = JSON.parse(body);
+        await updateTask(id, title, description, completed);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ id, title, description, completed }));
+      }
+
+      if (path.startsWith('/api/tasks/') && req.method === 'DELETE') {
+        const id = path.split('/').pop();
+        await deleteTask(id);
+        res.writeHead(200);
+        return res.end();
+      }
+
+      res.writeHead(404);
+      return res.end('Not found');
+    } catch (error) {
+      console.error('API Error:', error);
+      res.writeHead(500);
+      return res.end('Internal Server Error');
     }
-    
-    const { title, description } = JSON.parse(body);
-    const result = await db.run(
-      'INSERT INTO tasks (title, description) VALUES (?, ?)',
-      [title, description]
-    );
-    
-    const newTask = await db.get('SELECT * FROM tasks WHERE id = ?', [result.lastID]);
-    res.writeHead(201, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(newTask));
-  } catch (error) {
-    res.writeHead(400, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: error.message }));
   }
-}
 
-async function updateTask(req, res) {
+  // Static file serving
   try {
-    const id = req.url.split('/')[3];
-    let body = '';
-    for await (const chunk of req) {
-      body += chunk;
+    let filePath = path === '/' ? 'index.html' : path.substring(1);
+    
+    // Security check to prevent directory traversal
+    if (filePath.includes('..') || filePath.startsWith('/')) {
+      res.writeHead(403);
+      return res.end('Forbidden');
     }
     
-    const { title, description, completed } = JSON.parse(body);
+    const fileContent = await readFile(join(new URL('.', import.meta.url).pathname, filePath));
     
-    const result = await db.run(
-      'UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?',
-      [title, description, completed ? 1 : 0, id]
-    );
-    
-    if (result.changes === 0) {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Task not found' }));
-      return;
+    // Set appropriate content type
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
+    } else if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
     }
     
-    const updatedTask = await db.get('SELECT * FROM tasks WHERE id = ?', [id]);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(updatedTask));
-  } catch (error) {
-    res.writeHead(400, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: error.message }));
-  }
-}
-
-async function deleteTask(req, res) {
-  try {
-    const id = req.url.split('/')[3];
-    const result = await db.run('DELETE FROM tasks WHERE id = ?', [id]);
-    
-    if (result.changes === 0) {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Task not found' }));
-      return;
-    }
-    
-    res.writeHead(204, { 'Content-Type': 'application/json' });
-    res.end();
-  } catch (error) {
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: error.message }));
-  }
-}
-
-async function serveStaticFile(req, res) {
-  const filePath = req.url === '/' ? join(__dirname, 'index.html') : join(__dirname, req.url);
-  
-  try {
-    const fs = await import('fs');
-    const data = await fs.promises.readFile(filePath);
-    
-    const ext = filePath.split('.').pop();
-    let contentType = 'text/html';
-    
-    if (ext === 'css') contentType = 'text/css';
-    if (ext === 'js') contentType = 'application/javascript';
-    
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(data);
+    res.writeHead(200);
+    return res.end(fileContent);
   } catch (error) {
     if (error.code === 'ENOENT') {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'File not found' }));
-    } else {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: error.message }));
+      res.writeHead(404);
+      return res.end('Not found');
     }
+    console.error('Static file error:', error);
+    res.writeHead(500);
+    return res.end('Internal Server Error');
   }
-}
+});
 
-async function handleRequest(req, res) {
-  if (req.url.startsWith('/api/tasks')) {
-    if (req.method === 'GET') {
-      await getTasks(req, res);
-    } else if (req.method === 'POST') {
-      await createTask(req, res);
-    } else if (req.method === 'PUT') {
-      await updateTask(req, res);
-    } else if (req.method === 'DELETE') {
-      await deleteTask(req, res);
-    } else {
-      res.writeHead(405, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Method not allowed' }));
-    }
-  } else {
-    await serveStaticFile(req, res);
-  }
-}
-
-const server = createServer(handleRequest);
-
-server.listen(PORT, async () => {
-  await initDB();
+const PORT = 3000;
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

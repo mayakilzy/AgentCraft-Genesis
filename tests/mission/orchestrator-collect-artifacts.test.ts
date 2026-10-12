@@ -16,8 +16,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { WorkerComputer } from '../../src/runtime/computer.js';
 import { MissionOrchestrator } from '../../src/mission/orchestrator.js';
-import type { HandoffParticipant } from '../runtime/handoff.js';
-import type { WorkerResult } from '../worker/worker-agent.js';
+import type { HandoffParticipant } from '../../src/worker/handoff.js';
+import type { WorkerResult } from '../../src/worker/worker-agent.js';
 
 class StubComputer implements WorkerComputer {
   constructor(private readonly files: Map<string, string>) {}
