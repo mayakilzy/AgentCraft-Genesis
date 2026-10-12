@@ -1,0 +1,72 @@
+{
+  "C-00": {
+    "status": "PASS",
+    "detail": "evidence dir prepared",
+    "timestamp": "2026-10-12T10:53:54.540Z"
+  },
+  "C-01": {
+    "status": "PASS",
+    "detail": "gateway up on port 4980",
+    "timestamp": "2026-10-12T10:53:55.593Z"
+  },
+  "C-02": {
+    "status": "PASS",
+    "detail": "mission submitted: aaec155d-89f4-41d8-a332-9874483116ed",
+    "timestamp": "2026-10-12T10:53:55.604Z"
+  },
+  "C-03": {
+    "status": "INFO",
+    "detail": "waiting (timeout 540000ms)...",
+    "timestamp": "2026-10-12T10:53:55.604Z"
+  },
+  "C-04": {
+    "status": "PASS",
+    "detail": "terminated: status=SUCCEEDED, elapsed=18025ms, tokens=16736",
+    "timestamp": "2026-10-12T10:54:13.629Z"
+  },
+  "C-STATUS": {
+    "status": "SUCCEEDED",
+    "detail": "missionId=aaec155d-89f4-41d8-a332-9874483116ed",
+    "timestamp": "2026-10-12T10:54:13.629Z"
+  },
+  "C-TOKENS": {
+    "status": "16736",
+    "detail": "tokens=16736",
+    "timestamp": "2026-10-12T10:54:13.629Z"
+  },
+  "C-ARTIFACTS": {
+    "status": "PASS",
+    "detail": "artifacts: 9",
+    "timestamp": "2026-10-12T10:54:13.634Z"
+  },
+  "C-NPM_TEST": {
+    "status": "PASS",
+    "detail": "exit=0",
+    "timestamp": "2026-10-12T10:54:13.842Z"
+  },
+  "C-HTTP_ROOT": {
+    "status": "PASS",
+    "detail": "HTTP 200, 1126 bytes",
+    "timestamp": "2026-10-12T10:54:15.852Z"
+  },
+  "C-HTTP_CONVERTER": {
+    "status": "PASS",
+    "detail": "HTTP 200, 1177 bytes, has cToF=true",
+    "timestamp": "2026-10-12T10:54:15.856Z"
+  },
+  "C-BROWSER_100C": {
+    "status": "PASS",
+    "detail": "result: \"100°C is 212.00°F\"",
+    "timestamp": "2026-10-12T10:54:16.875Z"
+  },
+  "C-BROWSER_32F": {
+    "status": "PASS",
+    "detail": "result: \"32°F is 0.00°C\"",
+    "timestamp": "2026-10-12T10:54:17.455Z"
+  },
+  "C-BROWSER_JS_ERRORS": {
+    "status": "PASS",
+    "detail": "none",
+    "timestamp": "2026-10-12T10:54:17.456Z"
+  }
+}

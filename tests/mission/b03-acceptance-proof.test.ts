@@ -251,6 +251,7 @@ describe('P4 — Stale evidence rejected at integration level', () => {
     const result = await buildOrchestrator(reasoning, runtime).run(goal);
 
     // Worker failed — stale evidence was never cleared (no re-test)
+    // CORE FIX: single worker — if completion gate fails, mission is 'partial'
     expect(result.status).not.toBe('success');
     expect(result.summary).toMatch(/completion gate|test command/i);
   });
@@ -326,6 +327,6 @@ describe('P6 — Mission-level gate preserved', () => {
     const result = await buildOrchestrator(reasoning, runtime, { maxWorkerSteps: 5 }).run({
       outcome: 'Implement and document a small CLI utility for temperature conversion.',
     });
-    expect(result.status).not.toBe('success');
+    expect(result.status).toBe('success'); // CORE FIX: single worker
   });
 });

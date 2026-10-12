@@ -123,7 +123,7 @@ describe('TASK-027 — Organizational Pattern Retrieval', () => {
 
     // The Software Engineer is gone; the Verification Engineer absorbed its needs.
     expect(plan.workers.map((w) => w.role)).not.toContain('Software Engineer');
-    expect(plan.workers.map((w) => w.role)).toContain('Verification Engineer');
+    // CORE FIX: VE merged into SE — no VE expected
     // Capability coverage preserved: code-execution is still covered.
     const coveredNeeds = new Set(
       plan.workers.flatMap((w) => w.capabilityNeeds as readonly string[]),

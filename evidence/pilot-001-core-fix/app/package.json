@@ -1,0 +1,9 @@
+{
+  "name": "temp-converter",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "start": "node server.js"
+  }
+}

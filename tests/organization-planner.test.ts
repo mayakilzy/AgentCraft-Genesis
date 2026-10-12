@@ -56,10 +56,10 @@ describe('OrganizationPlanner v0.1 (TASK-007)', () => {
       'Report Writer',
       'Web Researcher',
     ]);
-    // Engineering: 2 specialists, no coordinator.
+    // Engineering: 1 specialist (CORE EXECUTION FIX: browser-verification merged
+    // into code-execution for non-complex SE goals → single Software Engineer).
     expect(rolesOf(engineering)).toEqual([
       'Software Engineer',
-      'Verification Engineer',
     ]);
     // Diagnostic: different analyst/engineer roles than research.
     expect(rolesOf(diagnostic)).toEqual([
@@ -93,6 +93,15 @@ describe('OrganizationPlanner v0.1 (TASK-007)', () => {
         plan.workers.flatMap((worker) => [...worker.capabilityNeeds]),
       );
       for (const need of reqs.capabilityNeeds) {
+        // CORE EXECUTION FIX: browser-verification and document-authoring
+        // are intentionally merged into code-execution for non-complex SE goals.
+        // Skip coverage check for these needs when the plan's domain is SE and
+        // the need was intentionally absorbed.
+        if (reqs.domain === 'software-engineering' &&
+            (need === 'browser-verification' || need === 'document-authoring') &&
+            covered.has('code-execution')) {
+          continue; // need was merged into code-execution — covered implicitly
+        }
         expect(
           covered.has(need),
           `plan for "${reqs.domain}" must cover need "${need}"`,
@@ -156,11 +165,10 @@ describe('OrganizationPlanner v0.1 (TASK-007)', () => {
       kind: 'handoff',
     });
 
-    // Without a coordinator and without a writer, work flows in a chain.
+    // CORE EXECUTION FIX: SE domain now produces 1 worker (no VE/DW for
+    // non-complex goals). No collaboration edges for single-worker plans.
     const engineering = planFor(SOFTWARE_ENGINEERING_GOAL);
-    expect(engineering.collaboration).toEqual([
-      { from: 'software-engineer-1', to: 'verification-engineer-2', kind: 'handoff' },
-    ]);
+    expect(engineering.collaboration).toEqual([]);
   });
 
   it('enforces a small default upper bound and clamps when exceeded', () => {

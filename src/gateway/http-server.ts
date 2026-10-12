@@ -646,7 +646,9 @@ function validateMissionInputs(raw: unknown): import('./types.js').MissionInputI
     }
     seenPaths.add(path);
     filePaths.add(path);
-    inputs.push({ path, contents });
+    // CORE EXECUTION FIX: preserve `modifiable` flag from the request
+    const modifiable = entry.modifiable;
+    inputs.push({ path, contents, ...(typeof modifiable === 'boolean' ? { modifiable } : {}) });
   }
   return inputs;
 }

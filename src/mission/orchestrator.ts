@@ -116,6 +116,7 @@ void _MemoryFlightRecorder;
 import {
   VerificationLoop,
   deriveChecks,
+  cleanRoomPath,
   type AcceptanceCheck,
   type ArtifactSource,
   type VerificationResult,
@@ -253,6 +254,15 @@ export interface MissionInput {
   readonly path: string;
   /** The authoritative file contents. */
   readonly contents: string;
+  /**
+   * CORE EXECUTION FIX: when true, the mission-input check verifies
+   * the file EXISTS in the worker's workspace but does NOT enforce
+   * hash equality. Use this for files the worker is expected to MODIFY
+   * (e.g., a bug fix in server.js). When false (default), the check
+   * enforces that the file's content hash matches the staged input —
+   * use this for reference files the worker should NOT change.
+   */
+  readonly modifiable?: boolean;
 }
 
 /**
@@ -849,25 +859,36 @@ export class MissionOrchestrator {
         // substitute), the check fails honestly. The caller's explicit
         // checks remain the primary path; this is the structural floor for
         // missions with authoritative inputs.
+        //
+        // CORE EXECUTION FIX: when a mission input is marked `modifiable`,
+        // the check verifies the file EXISTS but does NOT enforce hash
+        // equality. This allows the worker to legitimately modify files
+        // it was told to fix (e.g., server.js in a repair mission).
         const stagedInputChecks: AcceptanceCheck[] = [];
         if (this.options.missionInputs !== undefined) {
           for (const input of this.options.missionInputs) {
-            // G6-08 (Phase 4 / C-VERIFY-FINDING-005): use `expectHash` (full
-            // SHA-256) instead of the 60-char `expectIncludes` fingerprint.
-            // The 60-char fingerprint was fabricable — a worker could write a
-            // file at the same path with the first 60 chars matching but the
-            // rest fabricated, and the check would pass. The hash check
-            // compares the actual file bytes (read from the worker's own
-            // workspace, not the clean-room copy) against the staged input's
-            // SHA-256 hash. This proves the authoritative bytes reached the
-            // worker's workspace — not a fabricated substitute.
-            const expectedHash = computeSha256Hex(input.contents);
-            stagedInputChecks.push({
-              kind: 'mission-input',
-              label: `mission-input:${input.path}`,
-              path: input.path,
-              expectHash: expectedHash,
-            });
+            if (input.modifiable === true) {
+              // Modifiable input: verify file exists in the clean room.
+              // Use cleanRoomPath to point to artifacts/<workerId>/<path>.
+              for (const source of artifactSources) {
+                if (source.paths.includes(input.path)) {
+                  stagedInputChecks.push({
+                    kind: 'file',
+                    label: `mission-input:${input.path} (modifiable — existence check only)`,
+                    path: cleanRoomPath(source, input.path),
+                  });
+                }
+              }
+            } else {
+              // Reference input: enforce hash equality (original behavior).
+              const expectedHash = computeSha256Hex(input.contents);
+              stagedInputChecks.push({
+                kind: 'mission-input',
+                label: `mission-input:${input.path}`,
+                path: input.path,
+                expectHash: expectedHash,
+              });
+            }
           }
         }
         // PHASE 4.8D: auto-generate flight-action checks from mission

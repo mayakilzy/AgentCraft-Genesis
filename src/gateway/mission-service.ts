@@ -937,7 +937,7 @@ export class MissionService {
       // validateMissionInputs() in http-server.ts; here we just forward
       // the validated list. No frozen contract modification.
       ...(submission.missionInputs !== undefined && submission.missionInputs.length > 0
-        ? { missionInputs: submission.missionInputs.map((i) => ({ path: i.path, contents: i.contents })) }
+        ? { missionInputs: submission.missionInputs.map((i) => ({ path: i.path, contents: i.contents, ...(i.modifiable !== undefined ? { modifiable: i.modifiable } : {}) })) }
         : {}),
       // G7-14: pass the lazy MCP provider to the orchestrator. The
       // orchestrator passes it to each WorkerAgent. The worker's genome

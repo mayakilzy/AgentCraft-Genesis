@@ -431,6 +431,24 @@ export class OrganizationPlanner {
 
     // Conservative shapes: an undifferentiated or minimal mission gets ONE
     // worker — spawning specialists without signal is worker explosion.
+    //
+    // CORE EXECUTION FIX: for software-engineering domain with code-execution,
+    // merge browser-verification and document-authoring into the code worker
+    // ONLY when the result would be a single need (code-execution alone) AND
+    // the scope is not 'complex'. This prevents unnecessary multi-worker
+    // assignment for simple apps where cross-worker handoff fails in OpenBot
+    // (PATH B). Complex missions still get specialists.
+    if (requirements.domain === 'software-engineering' &&
+        needs.includes('code-execution') &&
+        scope !== 'complex') {
+      const withoutCodeAux = needs.filter(n =>
+        n !== 'browser-verification' && n !== 'document-authoring'
+      );
+      if (withoutCodeAux.length === 1 && withoutCodeAux[0] === 'code-execution') {
+        needs.length = 0;
+        needs.push('code-execution');
+      }
+    }
     if (requirements.domain === 'general' || scope === 'minimal') {
       // Even the Sole Operator plan records pattern influence: a Sole Operator
       // plan never applies avoid-role/prefer-role effects (there are no

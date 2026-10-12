@@ -126,7 +126,7 @@ describe('G7-15B — Durable Mission History', () => {
       CALLER,
     );
     const snap = await service1.awaitCompletion(missionId, CALLER);
-    expect(snap.status).toBe('PARTIAL'); // D+ B03-04: worker failures prevent SUCCEEDED
+    expect(snap.status).toBe('SUCCEEDED'); // CORE FIX: single worker succeeds
     expect(snap.terminal).toBe(true);
     service1.close();
 
@@ -140,11 +140,11 @@ describe('G7-15B — Durable Mission History', () => {
       reasoningFactory: () => makeSuccessReasoning() as never,
     });
     const recovered = service2.get(missionId, CALLER);
-    expect(recovered.status).toBe('PARTIAL'); // D+ B03-04;
+    expect(recovered.status).toBe('SUCCEEDED'); // CORE FIX: single worker succeeds
     expect(recovered.terminal).toBe(true);
     expect(recovered.missionId).toBe(missionId);
     expect(recovered.callerId).toBe(CALLER.callerId);
-    expect(recovered.result?.status).toBe('partial') // D+ B03-04;
+    expect(recovered.result?.status).toBe('success'); // CORE FIX: single worker succeeds
     service2.close();
   }, 15_000);
 

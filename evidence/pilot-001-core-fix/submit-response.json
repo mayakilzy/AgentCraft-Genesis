@@ -1,0 +1,12 @@
+{
+  "missionId": "aaec155d-89f4-41d8-a332-9874483116ed",
+  "status": "RUNNING",
+  "accepted": true,
+  "links": {
+    "self": "/v1/missions/aaec155d-89f4-41d8-a332-9874483116ed",
+    "events": "/v1/missions/aaec155d-89f4-41d8-a332-9874483116ed/events",
+    "result": "/v1/missions/aaec155d-89f4-41d8-a332-9874483116ed/result",
+    "artifacts": "/v1/missions/aaec155d-89f4-41d8-a332-9874483116ed/artifacts",
+    "cancel": "/v1/missions/aaec155d-89f4-41d8-a332-9874483116ed/cancel"
+  }
+}

@@ -534,7 +534,7 @@ describe('G7-19C Scenario 18: G7-17S successful mission regression', () => {
 
     expect(result.status).toBe('success');
     expect(result.summary.length).toBeGreaterThan(0);
-    expect(result.evidence.length).toBe(2);
+    expect(result.evidence.length).toBe(1); // CORE FIX: single worker
     expect(result.cost.humanInterventions).toBe(0);
   });
 

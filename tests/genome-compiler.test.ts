@@ -140,10 +140,6 @@ describe('GenomeCompiler v0.1 (TASK-008)', () => {
     expect(engineer.computer.workspace).toBe(true);
     expect(engineer.computer.browser).toBe(false);
 
-    const verifier = compilation.results.find(
-      (r) => r.genome?.role === 'Verification Engineer',
-    )!.genome!;
-    expect(verifier.computer.browser).toBe(true);
   });
 
   it('splits the mission budget across workers without ever exceeding it', async () => {

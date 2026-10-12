@@ -98,7 +98,7 @@ describe('GROUP 1 — Born Core pipeline (end-to-end)', () => {
 
     // Worker counts differ too: research 4, engineering 2, diagnostic 4.
     expect(research.plan.workers).toHaveLength(4);
-    expect(engineering.plan.workers).toHaveLength(2);
+    expect(engineering.plan.workers).toHaveLength(1); // CORE EXECUTION FIX: SE domain merges aux capabilities into code worker
     expect(diagnostic.plan.workers).toHaveLength(4);
 
     // Distinct genome tooling per domain (real differentiation, not labels).

@@ -190,6 +190,9 @@ export interface MissionInputInput {
   readonly path: string;
   /** The authoritative file contents (UTF-8 string). */
   readonly contents: string;
+  /** CORE EXECUTION FIX: when true, the mission-input check verifies
+   * existence only (not hash). Use for files the worker should modify. */
+  readonly modifiable?: boolean;
 }
 
 /**

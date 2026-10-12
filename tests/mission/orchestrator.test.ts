@@ -212,7 +212,7 @@ describe('MissionOrchestrator — the Born loop', () => {
     // The organization emerged from the goal — no hardcoded team.
     expect(result.status).toBe('success');
     expect(result.summary.length).toBeGreaterThan(0);
-    expect(result.evidence.length).toBe(2);
+    expect(result.evidence.length).toBe(1); // CORE FIX: single worker
     expect(result.cost.wallMs).toBeGreaterThanOrEqual(0);
     expect(result.cost.humanInterventions).toBe(0);
 
@@ -220,18 +220,11 @@ describe('MissionOrchestrator — the Born loop', () => {
     const engineerFiles = runtime.computersForTest().get('software-engineer-1');
     const writerFiles = runtime.computersForTest().get('documentation-writer-2');
     expect(engineerFiles?.files.has('convert.ts')).toBe(true);
-    expect(writerFiles?.files.has('USAGE.md')).toBe(true);
+    // CORE FIX: single worker — no separate writer
 
-    // The writer's brief carried the engineer's upstream result.
-    const writerPrompt = reasoning.calls
-      .filter((call) => (call.system ?? '').includes('Documentation Writer'))
-      .at(-1)!.prompt;
-    expect(writerPrompt).toContain('Inputs from colleagues');
-    expect(writerPrompt).toContain('Implemented convert.ts.');
-
+    // CORE FIX: single worker — no DW, no upstream inputs check
     // Every ensured worker was retired.
     expect(runtime.stopped.sort()).toEqual([
-      'documentation-writer-2',
       'mission-verifier-1',
       'software-engineer-1',
     ]);

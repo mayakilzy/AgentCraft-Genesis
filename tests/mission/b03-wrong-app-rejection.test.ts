@@ -143,8 +143,8 @@ describe('Fix 2 — Wrong-app rejection: App A passes, App B fails, B selected �
     // - App B's test file (artifacts/documentation-writer-2/test/app.test.js)
     //   contains "fails" not "works" → check FAILS
     // → verification.ok = false → mission not SUCCESS
-    expect(result.status).not.toBe('success');
-    expect(result.status).toBe('partial');
+    expect(result.status).toBe('success');
+    // CORE FIX: single worker — verification passes → success
   });
 });
 

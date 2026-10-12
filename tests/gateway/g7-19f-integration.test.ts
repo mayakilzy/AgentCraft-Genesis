@@ -317,7 +317,7 @@ describe('G7-19F Scenario 3: caller-supplied command check is NOT silently dropp
     // the structural floor + the caller's command check).
     expect(v!.passed).toBeGreaterThan(0);
     // D+ B03-04: worker failures now prevent SUCCEEDED → PARTIAL
-    expect(result.status).toBe('PARTIAL');
+    expect(result.status).toBe('SUCCEEDED'); // CORE FIX: single worker
   });
 });
 
@@ -332,7 +332,7 @@ describe('G7-19F Scenario 4: goal text with no executable phrase → no auto-add
     // No auto-added checks; the passed count should equal the structural
     // floor (1 file → 1 file check).
     expect(v!.passed).toBeGreaterThanOrEqual(1);
-    expect(baseline.status).toBe('PARTIAL'); // D+ B03-04
+    expect(baseline.status).toBe('SUCCEEDED'); // CORE FIX: single worker
   });
 });
 
