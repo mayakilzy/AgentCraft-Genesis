@@ -53,14 +53,15 @@ Required deliverables (produce all via file creation tool):
 4. index.html — responsive UI with: task form (title input, description textarea, add button), task list with edit/complete/delete buttons, filter buttons (All/Active/Completed).
 5. app.js — frontend JavaScript: fetch API calls to /api/tasks, render task list, handle CRUD operations, handle filtering.
 6. style.css — clean responsive styling.
-7. test/app.test.js — node:test tests for the API (at least 3 tests: create, list, complete).
+7. test/app.test.js — node:test UNIT tests for database.js functions (at least 3 tests: createTask, getTasks, updateTask). These are UNIT tests that import database.js directly and test functions in isolation. Do NOT write integration tests that start the server or connect to HTTP endpoints — tests must pass WITHOUT starting the server.
 8. README.md — one clear instruction: "npm install && npm start" then open http://localhost:3000.
 
 CRITICAL: 
-- Use node:sqlite (NOT node:sqlite3 — the built-in module is "node:sqlite" in Node v24+).
+- Use node:sqlite (NOT node:sqlite3 — the built-in module is "node:sqlite" in Node v24+). The correct API is: import { DatabaseSync } from 'node:sqlite'; const db = new DatabaseSync('tasks.db');
 - The test script must be exactly "node --test" (NO "node --test test/").
 - Server must serve BOTH API routes (/api/*) AND static files (/, /app.js, /style.css).
 - SQLite database file must persist across restarts.
+- Tests must be UNIT tests that import database.js and test functions directly. Do NOT start the server in tests. Do NOT connect to localhost:3000 in tests.
 
 After producing all files, run "npm test" via run_command to confirm tests pass, then call finish with all artifact paths.`;
 

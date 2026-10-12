@@ -264,11 +264,21 @@ export interface CompletionEvidence {
    */
   readonly ownershipContract: OwnershipContract | null;
   /**
-   * The last successful test command (exit 0), or null if no test has
+   * The last test command run (any exit code), or null if no test has
    * run yet. "Test command" means a `run_command` whose command string
    * matches a detected executable-acceptance mention (e.g., "npm test").
+   *
+   * PILOT-002 R3.2: now includes stdout/stderr (truncated) so the gate
+   * can diagnose the failure and give actionable feedback (e.g., detect
+   * ECONNREFUSED and tell the worker to write unit tests instead of
+   * integration tests).
    */
-  lastTestCommand: { readonly command: string; readonly exitCode: number } | null;
+  lastTestCommand: {
+    readonly command: string;
+    readonly exitCode: number;
+    readonly stdout?: string;
+    readonly stderr?: string;
+  } | null;
   /**
    * Workspace snapshot taken immediately after `lastTestCommand` succeeded.
    * Null if no test has run, or if the snapshot could not be computed.
@@ -581,13 +591,12 @@ export function checkCompletion(
       };
     }
     if (evidence.lastTestCommand.exitCode !== 0) {
+      // PILOT-002 R3.2: diagnose the test failure using stdout/stderr.
+      const diagnosis = diagnoseTestFailure(evidence.lastTestCommand);
       return {
         ok: false,
         reason: `last test command exited ${evidence.lastTestCommand.exitCode}, not 0`,
-        actionableFeedback:
-          `The test command "${evidence.lastTestCommand.command}" exited with code ` +
-          `${evidence.lastTestCommand.exitCode}. Inspect the failing tests, repair the code, ` +
-          `re-run the test, and only call finish after it exits 0.`,
+        actionableFeedback: diagnosis,
       };
     }
     if (evidence.lastTestSnapshot === null) {
@@ -638,10 +647,16 @@ export function checkCompletion(
 /**
  * Mark a `run_command` action in the evidence.
  *
- * - If the command matches a detected executable mention AND exited 0,
- *   record the test command + snapshot.
+ * PILOT-002 R3.2: now accepts stdout/stderr so the gate can diagnose
+ * test failures (e.g., detect ECONNREFUSED and guide the worker to
+ * write unit tests instead of integration tests).
+ *
+ * - If the command matches a detected executable mention, record the
+ *   test command + output (regardless of exit code — failures are
+ *   recorded too, so the gate can diagnose them).
+ * - If the command exited 0 AND matches a mention, record the snapshot.
  * - If the command is likely a filesystem mutation, invalidate the
- *   last test snapshot (the next finish attempt will require re-test).
+ *   last test snapshot.
  *
  * @param evidence the evidence to mutate (in place)
  * @param command the command string
@@ -649,6 +664,8 @@ export function checkCompletion(
  * @param snapshot the workspace snapshot taken after the command, or null
  * @param step the step number
  * @param mentions the executable mentions detected from the goal text
+ * @param stdout the command's stdout (truncated to 2000 chars), optional
+ * @param stderr the command's stderr (truncated to 2000 chars), optional
  */
 export function recordRunCommand(
   evidence: CompletionEvidence,
@@ -657,13 +674,28 @@ export function recordRunCommand(
   snapshot: WorkspaceSnapshot | null,
   step: number,
   mentions: readonly ExecutableAcceptanceMention[],
+  stdout?: string,
+  stderr?: string,
 ): void {
   const matchingMention = matchingTestMention(command, mentions);
-  if (matchingMention !== null && exitCode === 0) {
-    // Successful test command — record evidence
-    evidence.lastTestCommand = { command: matchingMention.command, exitCode };
-    evidence.lastTestSnapshot = snapshot;
-    evidence.lastTestStep = step;
+  if (matchingMention !== null) {
+    // PILOT-002 R3.2: record the test command regardless of exit code,
+    // so the gate can diagnose failures and give actionable feedback.
+    // Only include stdout/stderr if they contain actual content (non-empty).
+    // This keeps the object shape stable for tests that don't provide output.
+    const hasStdout = stdout !== undefined && stdout.length > 0;
+    const hasStderr = stderr !== undefined && stderr.length > 0;
+    evidence.lastTestCommand = {
+      command: matchingMention.command,
+      exitCode,
+      ...(hasStdout ? { stdout: stdout!.slice(0, 2000) } : {}),
+      ...(hasStderr ? { stderr: stderr!.slice(0, 2000) } : {}),
+    };
+    if (exitCode === 0) {
+      // Successful test — record snapshot.
+      evidence.lastTestSnapshot = snapshot;
+      evidence.lastTestStep = step;
+    }
     return;
   }
   // Check if this command is likely a filesystem mutation
@@ -836,5 +868,73 @@ export function runtimeStartFailureFeedback(
       : '') +
     `Inspect the error, repair the code, re-run "npm test" to confirm tests still pass, ` +
     `then call finish. The completion gate will re-verify the server starts and responds.`
+  );
+}
+
+/**
+ * PILOT-002 R3.2: diagnose a test failure using the stdout/stderr output.
+ *
+ * Analyzes the test output to detect common failure patterns and returns
+ * specific, actionable feedback. This is a GENERAL mechanism — it detects
+ * patterns like ECONNREFUSED (tests require a running server), import
+ * errors (wrong API usage), and assertion failures. It does NOT hardcode
+ * fixes for any specific application.
+ *
+ * Detected patterns:
+ *   - ECONNREFUSED / connection refused → tests require a running server;
+ *     tell the worker to rewrite as unit tests.
+ *   - SyntaxError / import errors → wrong API usage; show the error.
+ *   - Assertion errors → show the failing assertion.
+ *   - Unknown → generic "inspect the output" feedback.
+ */
+function diagnoseTestFailure(
+  testCommand: { readonly command: string; readonly exitCode: number; readonly stdout?: string; readonly stderr?: string },
+): string {
+  const output = `${testCommand.stdout ?? ''}\n${testCommand.stderr ?? ''}`;
+  const trimmedOutput = output.trim().slice(0, 1500);
+
+  // Detect connection-related failures (tests require a running server).
+  if (/ECONNREFUSED|connect\s+ENOTFOUND|fetch\s+failed|Connection\s+refused/i.test(output)) {
+    return (
+      `The test command "${testCommand.command}" exited ${testCommand.exitCode} because the tests ` +
+      `attempt to connect to a running server (ECONNREFUSED/fetch failed detected).\n` +
+      `This means your tests are INTEGRATION tests that require a running HTTP server.\n` +
+      `Rewrite them as UNIT tests that import the module directly and test functions in isolation.\n` +
+      `Do NOT start the server in tests. Do NOT connect to localhost or HTTP endpoints in tests.\n` +
+      `Example: instead of fetch('http://localhost:3000/api/tasks'), import the function directly:\n` +
+      `  import { createTask } from '../database.js';\n` +
+      `  test('createTask', () => { const result = createTask('title', 'desc'); assert(result.id > 0); });\n` +
+      `Test output (first 1500 chars):\n${trimmedOutput}`
+    );
+  }
+
+  // Detect SyntaxError / import errors (wrong API usage).
+  if (/SyntaxError|ERR_UNKNOWN_BUILTIN_MODULE|does not provide an export named/i.test(output)) {
+    return (
+      `The test command "${testCommand.command}" exited ${testCommand.exitCode} due to a module/import error.\n` +
+      `A file has an invalid import. Check the error message and fix the import statement.\n` +
+      `Common fix: if using node:sqlite, the correct import is:\n` +
+      `  import { DatabaseSync } from 'node:sqlite';\n` +
+      `  const db = new DatabaseSync('tasks.db');\n` +
+      `NOT: import { open, sqlite3 } from 'node:sqlite' (these exports do not exist).\n` +
+      `Test output (first 1500 chars):\n${trimmedOutput}`
+    );
+  }
+
+  // Detect assertion failures.
+  if (/AssertionError|assertion/i.test(output)) {
+    return (
+      `The test command "${testCommand.command}" exited ${testCommand.exitCode} due to assertion failures.\n` +
+      `Inspect the failing assertions and fix the code so the assertions pass.\n` +
+      `Test output (first 1500 chars):\n${trimmedOutput}`
+    );
+  }
+
+  // Generic feedback with the actual output.
+  return (
+    `The test command "${testCommand.command}" exited with code ${testCommand.exitCode}.\n` +
+    `Inspect the test output below, repair the code or the tests, re-run the test, ` +
+    `and only call finish after it exits 0.\n` +
+    `Test output (first 1500 chars):\n${trimmedOutput}`
   );
 }

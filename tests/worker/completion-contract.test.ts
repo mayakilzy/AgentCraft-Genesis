@@ -149,7 +149,7 @@ describe('A01 — Valid completion: executable deliverable + correct check + fre
     expect(result.artifacts).toEqual(['package.json', 'app.js']);
     expect(result.completionEvidence).toBeDefined();
     expect(result.completionEvidence!.deliverableKind).toBe('testable-code');
-    expect(result.completionEvidence!.lastTestCommand).toEqual({ command: 'npm test', exitCode: 0 });
+    expect(result.completionEvidence!.lastTestCommand).toMatchObject({ command: 'npm test', exitCode: 0 });
     expect(result.completionEvidence!.lastTestSnapshot).not.toBeNull();
     expect(result.completionEvidence!.finishRejections).toBe(0);
   });
@@ -210,10 +210,11 @@ describe('A03 — Failed check: nonzero exit → rejected', () => {
     }).run();
 
     expect(result.status).toBe('failure');
-    // The gate does NOT record a failed test as "lastTestCommand" — only
-    // successful tests are recorded as evidence. The gate treats a
-    // failed test the same as no test: finish is rejected.
-    expect(result.completionEvidence!.lastTestCommand).toBeNull();
+    // PILOT-002 R3.2: the gate NOW records failed tests too (for diagnosis).
+    // The gate uses the failed test output to give actionable feedback.
+    // Finish is still rejected, but with diagnostic feedback.
+    expect(result.completionEvidence!.lastTestCommand).not.toBeNull();
+    expect(result.completionEvidence!.lastTestCommand!.exitCode).toBe(1);
     // The summary should mention the gate or the missing test
     expect(result.summary).toMatch(/completion gate|test command/i);
   });
@@ -267,7 +268,7 @@ describe('A04 — Repair/retest: failing then fix then fresh success → success
 
     expect(result.status).toBe('success');
     expect(result.summary).toBe('Fixed and re-tested.');
-    expect(result.completionEvidence!.lastTestCommand).toEqual({ command: 'npm test', exitCode: 0 });
+    expect(result.completionEvidence!.lastTestCommand).toMatchObject({ command: 'npm test', exitCode: 0 });
   });
 });
 
@@ -664,7 +665,7 @@ describe('R01/R02 — Cross-workspace evidence isolation', () => {
       taskBrief: GOAL_WITH_NPM_TEST,
     }).run();
     expect(resultB.status).toBe('success');
-    expect(resultB.completionEvidence!.lastTestCommand).toEqual({ command: 'npm test', exitCode: 0 });
+    expect(resultB.completionEvidence!.lastTestCommand).toMatchObject({ command: 'npm test', exitCode: 0 });
 
     // Worker A: writes package.json but does NOT run npm test.
     // The fact that Worker B ran npm test in a DIFFERENT workspace must
@@ -706,7 +707,7 @@ describe('R01/R02 — Cross-workspace evidence isolation', () => {
     }).run();
 
     expect(resultA.status).toBe('success');
-    expect(resultA.completionEvidence!.lastTestCommand).toEqual({ command: 'npm test', exitCode: 0 });
+    expect(resultA.completionEvidence!.lastTestCommand).toMatchObject({ command: 'npm test', exitCode: 0 });
   });
 });
 

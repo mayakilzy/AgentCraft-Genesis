@@ -1340,18 +1340,27 @@ export class WorkerAgent {
       if (action.action === 'write_file') {
         recordWriteFile(completionEvidence, steps);
       } else if (action.action === 'run_command') {
-        // Extract exit code from the observation. The execute() method
-        // returns observation as JSON.stringify({ ...result, stdout }) for
-        // run_command (worker-agent.ts:721). We parse to get exitCode.
+        // Extract exit code AND stdout/stderr from the observation.
+        // PILOT-002 R3.2: capture stdout/stderr so the completion gate
+        // can diagnose test failures (e.g., ECONNREFUSED → tell worker
+        // to write unit tests instead of integration tests).
         let exitCode: number | undefined;
+        let cmdStdout: string | undefined;
+        let cmdStderr: string | undefined;
         try {
-          const parsed = JSON.parse(observation) as { exitCode?: number };
+          const parsed = JSON.parse(observation) as {
+            exitCode?: number;
+            stdout?: string;
+            stderr?: string;
+          };
           exitCode = parsed.exitCode;
+          // Strip the [TOOL OUTPUT — ...] framing prefix if present.
+          cmdStdout = parsed.stdout;
+          cmdStderr = parsed.stderr;
         } catch {
           // observation may be an error string; treat as no exit code
         }
         // Capture snapshot AFTER the command, for freshness comparison.
-        // If snapshot fails (null), the gate will fail-closed at finish.
         let snapshot: WorkspaceSnapshot | null = null;
         if (this.computer !== null) {
           snapshot = await computeWorkspaceSnapshot(this.computer);
@@ -1363,6 +1372,8 @@ export class WorkerAgent {
           snapshot,
           steps,
           mentions,
+          cmdStdout,
+          cmdStderr,
         );
       }
 
