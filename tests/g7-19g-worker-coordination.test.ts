@@ -186,13 +186,17 @@ describe('G7-19G Phase C Guarantee 4: coordinator behavior remains intact', () =
     }
   });
 
-  test('the coordinator still has a handoff edge to the writer', async () => {
+  test('the coordinator still has a report edge to the writer (B03: handoff→report)', async () => {
+    // B03 Final Closure: coordinator→writer is now 'report' (not 'handoff')
+    // because the coordinator runs AFTER specialists — a handoff edge would
+    // be architecturally unsatisfiable. The direct G7-19G edges provide
+    // the actual file-level handoff path.
     const plan = await planGoal(COMPLEX_SE_GOAL);
     const coordinator = plan.workers.find((w) => w.role === 'Mission Coordinator')!;
     const writer = plan.workers.find((w) => w.role.includes('Writer'))!;
     const coordOutbound = edgesFromWorker(plan.collaboration, coordinator.id);
-    const writerHandoff = coordOutbound.find((e) => e.to === writer.id && e.kind === 'handoff');
-    expect(writerHandoff).toBeDefined();
+    const writerReport = coordOutbound.find((e) => e.to === writer.id && e.kind === 'report');
+    expect(writerReport).toBeDefined();
   });
 });
 

@@ -130,17 +130,19 @@ describe('OrganizationPlanner v0.1 (TASK-007)', () => {
     // edge to the writer (2 direct handoff edges for the 2 non-coordinator
     // non-writer specialists: web-researcher-1 and data-analyst-2 →
     // report-writer-3). Total: 3 + 1 + 2 = 6 edges.
+    // B03 Final Closure: coordinator→writer changed from 'handoff' to 'report'
+    // (coordinator runs after specialists). So: 4 report + 2 handoff = 6 edges.
     expect(research.collaboration).toHaveLength(6);
     expect(
       research.collaboration.filter((edge) => edge.kind === 'report'),
-    ).toHaveLength(3);
+    ).toHaveLength(4);  // 3 worker→coordinator + 1 coordinator→writer (B03)
     expect(
       research.collaboration.filter((edge) => edge.kind === 'handoff'),
-    ).toHaveLength(3);  // 1 coordinator→writer + 2 direct specialist→writer
+    ).toHaveLength(2);  // 2 direct specialist→writer (G7-19G)
     expect(research.collaboration).toContainEqual({
       from: 'mission-coordinator-1',
       to: 'report-writer-3',
-      kind: 'handoff',
+      kind: 'report',  // B03: was 'handoff', now 'report'
     });
     // G7-19G: verify the direct handoff edges exist.
     expect(research.collaboration).toContainEqual({

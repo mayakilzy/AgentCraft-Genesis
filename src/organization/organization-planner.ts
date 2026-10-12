@@ -358,7 +358,12 @@ function buildEdges(workers: readonly PlannedWorker[]): CollaborationEdge[] {
       edges.push({ from: worker.id, to: coordinator.id, kind: 'report' });
     }
     if (writer && writer.id !== coordinator.id) {
-      edges.push({ from: coordinator.id, to: writer.id, kind: 'handoff' });
+      // B03 Final Closure: coordinator→writer is a REPORT edge, not HANDOFF.
+      // The coordinator runs AFTER specialists — a handoff edge would mean
+      // the writer depends on the coordinator's output, but the coordinator
+      // hasn't run when the writer starts. The direct handoff edges below
+      // (G7-19G) provide the actual file-level handoff path.
+      edges.push({ from: coordinator.id, to: writer.id, kind: 'report' });
       // G7-19G: direct handoffs from each non-coordinator non-writer
       // worker to the writer. Skip the writer itself (no self-edge)
       // and the coordinator (it already hands off to the writer).
