@@ -1,0 +1,47 @@
+{
+  "missionId": "7591d4f1-1f3f-49d0-8ea7-7aeff841dd79",
+  "callerId": "pilot-001-caller",
+  "label": "pilot-001-temp-converter",
+  "status": "PARTIAL",
+  "terminal": true,
+  "acceptedAt": "2026-10-12T08:23:00.155Z",
+  "finishedAt": "2026-10-12T08:23:25.995Z",
+  "goalOutcome": "Build a small web application for temperature conversion (Celsius ↔ Fahrenheit).\n\nRequirements:\n1. A simple HTML page with an input field for a number, a dropdown to select direction (C→F or F→C), a \"Convert\" button, and a result display area.\n2. The conversion logic in a separate JavaScript file.\n3. Real automated tests using node:test that verify the conversion formulas are correct (at least 3 test cases).\n4. A package.json with a \"test\" script that runs the tests.\n5. A README.md with brief instructions for running the app and tests.\n\nAfter producing all files, npm test MUST exit 0 within 60 seconds.",
+  "result": {
+    "status": "partial",
+    "summary": "mission incomplete: 1 required worker(s) failed: required upstream handoff failed: staging refused: runtime \"openbot-runtime-v0.1.0\" is not approved for handoff (fail-closed)",
+    "evidence": [
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at package.json",
+        "location": "software-engineer-1:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at index.html",
+        "location": "software-engineer-1:index.html"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at converter.js",
+        "location": "software-engineer-1:converter.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/converter.test.js",
+        "location": "software-engineer-1:test/converter.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at README.md",
+        "location": "software-engineer-1:README.md"
+      }
+    ],
+    "cost": {
+      "usd": 0,
+      "tokens": 30393,
+      "wallMs": 25797,
+      "humanInterventions": 0
+    }
+  }
+}

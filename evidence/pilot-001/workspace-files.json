@@ -1,0 +1,15 @@
+[
+  "documentation-writer-2/profiles/.control/documentation-writer-2.json",
+  "mission-verifier-1/profiles/.control/mission-verifier-1.json",
+  "mission-verifier-1/workspace/artifacts/software-engineer-1/README.md",
+  "mission-verifier-1/workspace/artifacts/software-engineer-1/converter.js",
+  "mission-verifier-1/workspace/artifacts/software-engineer-1/index.html",
+  "mission-verifier-1/workspace/artifacts/software-engineer-1/package.json",
+  "mission-verifier-1/workspace/artifacts/software-engineer-1/test/converter.test.js",
+  "software-engineer-1/profiles/.control/software-engineer-1.json",
+  "software-engineer-1/workspace/README.md",
+  "software-engineer-1/workspace/converter.js",
+  "software-engineer-1/workspace/index.html",
+  "software-engineer-1/workspace/package.json",
+  "software-engineer-1/workspace/test/converter.test.js"
+]

@@ -1,0 +1,82 @@
+{
+  "P-00": {
+    "status": "PASS",
+    "detail": "evidence dir prepared + openbot root cleared",
+    "timestamp": "2026-10-12T08:22:58.593Z"
+  },
+  "P-01": {
+    "status": "PASS",
+    "detail": "production gateway up on port 4680",
+    "timestamp": "2026-10-12T08:23:00.150Z"
+  },
+  "P-02": {
+    "status": "PASS",
+    "detail": "live mission submitted: 7591d4f1-1f3f-49d0-8ea7-7aeff841dd79",
+    "timestamp": "2026-10-12T08:23:00.161Z"
+  },
+  "P-03": {
+    "status": "INFO",
+    "detail": "waiting for live ZAI + OpenBot execution (timeout 540000ms)...",
+    "timestamp": "2026-10-12T08:23:00.161Z"
+  },
+  "P-04": {
+    "status": "PASS",
+    "detail": "mission terminated: status=PARTIAL, elapsed=26033ms, tokens=30393",
+    "timestamp": "2026-10-12T08:23:26.194Z"
+  },
+  "P-MISSION_STATUS": {
+    "status": "PARTIAL",
+    "detail": "missionId=7591d4f1-1f3f-49d0-8ea7-7aeff841dd79",
+    "timestamp": "2026-10-12T08:23:26.195Z"
+  },
+  "P_TOKENS": {
+    "status": "30393",
+    "detail": "tokens=30393",
+    "timestamp": "2026-10-12T08:23:26.195Z"
+  },
+  "P_WALL_MS": {
+    "status": "27602",
+    "detail": "wallMs=27602",
+    "timestamp": "2026-10-12T08:23:26.195Z"
+  },
+  "P-WRITE_EVENTS": {
+    "status": "PASS",
+    "detail": "write_file events: 7 (expect ≥ 5)",
+    "timestamp": "2026-10-12T08:23:26.196Z"
+  },
+  "P-VERIFICATION": {
+    "status": "PASS",
+    "detail": "verification ok=true, passed=13, failed=0",
+    "timestamp": "2026-10-12T08:23:26.196Z"
+  },
+  "P-ARTIFACTS": {
+    "status": "PASS",
+    "detail": "artifacts delivered: 9",
+    "timestamp": "2026-10-12T08:23:26.201Z"
+  },
+  "P-WS_FILES": {
+    "status": "PASS",
+    "detail": "workspace files on disk: 13",
+    "timestamp": "2026-10-12T08:23:26.203Z"
+  },
+  "P-NPM_INSTALL": {
+    "status": "PASS",
+    "detail": "npm install exit=0",
+    "timestamp": "2026-10-12T08:23:26.488Z"
+  },
+  "P-NPM_TEST": {
+    "status": "PASS",
+    "detail": "npm test exit=0, elapsed=199ms",
+    "timestamp": "2026-10-12T08:23:26.687Z"
+  },
+  "P-HTTP_SMOKE": {
+    "status": "PASS",
+    "detail": "no server.js, but index.html exists (1446 bytes)",
+    "timestamp": "2026-10-12T08:23:26.687Z"
+  },
+  "P-FILE_HASHES": {
+    "status": "PASS",
+    "detail": "computed hashes for 5 files",
+    "timestamp": "2026-10-12T08:23:26.687Z"
+  }
+}
