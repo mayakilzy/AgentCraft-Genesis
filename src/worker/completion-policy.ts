@@ -62,6 +62,7 @@ import type { WorkerComputer } from '../runtime/computer.js';
 import {
   applicableAcceptanceChecks,
   parseOwnershipPrefix,
+  parseDeliverableKindFromPrefix,
   type OwnershipContract,
 } from './ownership-contract.js';
 
@@ -82,6 +83,7 @@ export type DeliverableKind =
   | 'documentation' // capabilityNeeds includes 'document-authoring' (and not code-execution)
   | 'data-analysis' // capabilityNeeds includes 'data-analysis' (and not the above)
   | 'research' // capabilityNeeds includes 'web-research' (and not the above)
+  | 'verification-evidence' // D+ B01C S1.2: Verification Engineer — produces evidence, not code
   | 'general'; // fallback for unspecified / mixed / sole-operator roles
 
 /**
@@ -323,14 +325,18 @@ export function freshEvidence(genome: WorkerGenome, taskBrief: string): Completi
  * that starts with:
  * ```
  * Mission: "<outcome>"
- * Your assignment in it: [owns: src/**, test/**, package.json] Implements...
+ * Your assignment in it: [owns: src/**, test/**, package.json; kind: testable-code] Implements...
  * ```
  *
  * We extract the responsibility line (after "Your assignment in it: ")
- * and parse the `[owns: ...]` prefix to build the OwnershipContract.
+ * and parse the `[owns: ...; kind: ...]` prefix to build the OwnershipContract.
+ *
+ * D+ B01C S1.2: if the prefix declares an explicit `kind:`, the contract's
+ * deliverableKind comes from the assignment (not the capability). If no
+ * kind is declared, falls back to capability-based inference (Task A).
  *
  * @param taskBrief the full task brief string
- * @param genome the worker's genome (for capabilityNeeds + deliverableKind)
+ * @param genome the worker's genome (for capabilityNeeds + fallback deliverableKind)
  * @returns the OwnershipContract, or null if no ownership prefix is present
  */
 function parseOwnershipFromBrief(
@@ -343,15 +349,19 @@ function parseOwnershipFromBrief(
   const responsibilityLine = match[1]!;
   const { ownedArtifacts, cleanResponsibility } = parseOwnershipPrefix(responsibilityLine);
   if (ownedArtifacts.length === 0) return null; // no prefix → no contract
+  // D+ B01C S1.2: prefer the explicit kind from the prefix; fall back
+  // to capability-based inference (Task A) if not declared.
+  const explicitKind = parseDeliverableKindFromPrefix(responsibilityLine);
+  const deliverableKind = explicitKind ?? genomeDeliverableKind(genome);
   // Build a minimal contract (without re-detecting mentions — that's
   // done in checkCompletion where the goalText is available).
   return {
     workerId: genome.identity.id,
     role: genome.role,
     responsibility: cleanResponsibility,
-    deliverableKind: genomeDeliverableKind(genome),
+    deliverableKind,
     ownedArtifacts,
-    upstreamDependencies: [], // not yet known in B01 — B02 will populate
+    upstreamDependencies: [], // populated in B02
     applicableChecks: [], // populated in checkCompletion where goalText is available
   };
 }

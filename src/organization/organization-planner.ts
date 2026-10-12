@@ -9,6 +9,8 @@ import type {
 } from '../contracts/core.js';
 // D+ B01: encode ownership contract into responsibility string
 import { encodeOwnershipPrefix } from '../worker/ownership-contract.js';
+// D+ B01C S1.2: deliverable kind follows assignment, not capability
+import type { DeliverableKind } from '../worker/completion-policy.js';
 
 /**
  * GROUP 4 (TASK-027): an advisory organizational pattern the planner may
@@ -68,7 +70,16 @@ export const DEFAULT_MAX_WORKERS = 5;
 
 type Scope = 'minimal' | 'standard' | 'complex';
 
-type RoleTemplate = readonly [role: string, responsibility: string, ownedArtifacts?: readonly string[]];
+type RoleTemplate = readonly [
+  role: string,
+  responsibility: string,
+  ownedArtifacts?: readonly string[],
+  // D+ B01C S1.2: explicit deliverable kind per role, decoupling
+  // "what the worker can do" (capability) from "what the worker was
+  // assigned to produce" (responsibility). When absent, the system
+  // falls back to capability-based inference (Task A behavior).
+  deliverableKind?: DeliverableKind,
+];
 
 const COMPLEXITY_SIGNALS: readonly string[] = [
   'comprehensive',
@@ -99,16 +110,19 @@ const ROLE_TEMPLATES: Readonly<
       'Web Researcher',
       'Gathers online sources and evidence relevant to the outcome',
       ['research/**', 'sources.md'],
+      'research',
     ],
     'data-analysis': [
       'Data Analyst',
       'Analyzes collected data and derives quantitative insights',
       ['analysis/**', 'data/**'],
+      'data-analysis',
     ],
     'document-authoring': [
       'Report Writer',
       'Synthesizes findings into the final written deliverable',
       ['report.md', 'README.md'],
+      'documentation',
     ],
   },
   'software-engineering': {
@@ -116,16 +130,19 @@ const ROLE_TEMPLATES: Readonly<
       'Software Engineer',
       'Implements, runs and fixes the code changes',
       ['src/**', 'test/**', 'package.json'],
+      'testable-code',
     ],
     'browser-verification': [
       'Verification Engineer',
       'Verifies behavior end-to-end in a real browser',
       ['e2e/**', 'verification-report.md'],
+      'verification-evidence',
     ],
     'document-authoring': [
       'Documentation Writer',
       'Documents the change and its usage',
       ['README.md', 'docs/**'],
+      'documentation',
     ],
   },
   diagnostic: {
@@ -133,21 +150,25 @@ const ROLE_TEMPLATES: Readonly<
       'Diagnostic Analyst',
       'Analyzes telemetry and evidence to isolate the fault',
       ['analysis/**', 'diagnosis.md'],
+      'data-analysis',
     ],
     'code-execution': [
       'Reproduction Engineer',
       'Reproduces the failure and tests hypotheses hands-on',
       ['repro/**', 'test/**'],
+      'testable-code',
     ],
     'web-research': [
       'Technical Researcher',
       'Researches known issues and reference material',
       ['research/**', 'references.md'],
+      'research',
     ],
     'document-authoring': [
       'Report Writer',
       'Writes the diagnosis report with evidence',
       ['report.md', 'diagnosis.md'],
+      'documentation',
     ],
   },
   general: {},
@@ -228,9 +249,12 @@ function buildSpecialists(
     } else {
       // D+ B01: encode the [owns: ...] prefix into the responsibility
       // string so it flows through the frozen renderTaskBrief().
+      // D+ B01C S1.2: also encode the explicit deliverable kind (if declared)
+      // so the gate keys off the assignment, not the capability.
       const ownedArtifacts = template[2];
+      const deliverableKind = template[3];
       const responsibility = ownedArtifacts !== undefined
-        ? encodeOwnershipPrefix(ownedArtifacts, template[1])
+        ? encodeOwnershipPrefix(ownedArtifacts, template[1], deliverableKind)
         : template[1];
       specialists.push({
         id: `${slugify(template[0])}-${specialists.length + 1}`,

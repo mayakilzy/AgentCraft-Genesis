@@ -238,7 +238,13 @@ export class OpenBotRuntimeAdapter implements WorkerRuntime, ArtifactsProvider {
     });
     return {
       exec: (command, options) => client.exec(command, options),
-      writeFile: (path, contents) => client.writeFile(path, contents),
+      writeFile: (path, contents) => {
+        // D+ B02: read-only enforcement — reject direct writes to upstream/ paths.
+        if (path === 'upstream' || path.startsWith('upstream/') || path.startsWith('upstream\\')) {
+          throw new Error(`refused: "${path}" is a read-only upstream artifact (D+ B02 read-only enforcement)`);
+        }
+        return client.writeFile(path, contents);
+      },
       readFile: (path) => client.readFile(path),
       listFiles: (path) => client.listFiles(path),
       // TASK-018: the browser surface every upstream computer exposes;

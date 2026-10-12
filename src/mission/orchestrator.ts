@@ -23,6 +23,8 @@ import {
   type HandoffParticipant,
 } from '../worker/handoff.js';
 import { MemoryFlightRecorder as _MemoryFlightRecorder, type FlightEvent, type FlightRecorder } from './flight-recorder.js';
+// D+ B02: real handoff staging helper (non-frozen layer)
+import { stageUpstreamArtifactsForWorker } from '../runtime/handoff-staging.js';
 
 // G6-08 (Phase 8 lint fix): MemoryFlightRecorder is no longer directly referenced
 // in this file after the Phase 4 C-VERIFY-FINDING-004 fix (inMemoryFlightEvents
@@ -341,6 +343,62 @@ export class MissionOrchestrator {
     return brief + inputNote + obligationNote + suffix;
   }
 
+  /**
+   * D+ B02: Stage upstream artifacts into a worker's workspace before it runs.
+   *
+   * This is the narrow frozen exception authorized by DPLUS-B01C-B02 §S2.5.
+   * It reads from prior workers' computers (read-only) and writes to this
+   * worker's computer under `upstream/<producer-id>/<path>`.
+   *
+   * The actual staging logic is in the non-frozen layer
+   * (`src/runtime/handoff-staging.ts`); this method only collects the
+   * surfaces and invokes the helper.
+   */
+  private async stageUpstreamArtifacts(
+    worker: PlannedWorker,
+    plan: OrganizationPlan,
+    results: ReadonlyMap<string, WorkerResult>,
+    participants: ReadonlyMap<string, HandoffParticipant>,
+    record: RecordFn,
+  ): Promise<void> {
+    // Get this worker's computer (the consumer)
+    const consumerSurfaces = this.surfacesByWorker?.get(worker.id);
+    if (consumerSurfaces?.computer === null || consumerSurfaces?.computer === undefined) return;
+
+    // Find upstream workers (producers this worker depends on)
+    const upstreamEdges = plan.collaboration.filter(
+      (edge) => edge.to === worker.id && edge.kind === 'handoff',
+    );
+
+    for (const edge of upstreamEdges) {
+      const producerResult = results.get(edge.from);
+      if (producerResult === undefined) continue; // producer didn't run
+      const producerSurfaces = this.surfacesByWorker?.get(edge.from);
+      if (producerSurfaces?.computer === null || producerSurfaces?.computer === undefined) continue;
+
+      // Stage each produced artifact into the consumer's workspace
+      try {
+        await stageUpstreamArtifactsForWorker(
+          edge.from,
+          producerResult.artifacts,
+          producerSurfaces.computer,
+          consumerSurfaces.computer,
+          record,
+        );
+      } catch {
+        // Best-effort: staging failure surfaces honestly in the flight record
+        record({
+          type: 'worker-step',
+          workerId: worker.id,
+          step: 0,
+          action: `stage-upstream:${edge.from}`,
+          ok: false,
+          elapsedMs: 0,
+        });
+      }
+    }
+  }
+
   async run(goal: Goal): Promise<MissionResult> {
     const startedAt = Date.now();
     const missionId = this.options.missionId ?? newMissionId();
@@ -553,6 +611,14 @@ export class MissionOrchestrator {
       };
       for (const worker of specialists) {
         if (controller.signal.aborted) break;
+        // D+ B02: stage upstream artifacts into this worker's workspace
+        // BEFORE running the worker. Reads from prior workers' computers
+        // (read-only) and writes to this worker's computer under
+        // upstream/<producer-id>/<path>. The staging helper is in the
+        // non-frozen layer (src/runtime/handoff-staging.ts); the
+        // orchestrator only invokes it. This is the narrow frozen
+        // exception authorized by DPLUS-B01C-B02 §S2.5.
+        await this.stageUpstreamArtifacts(worker, plan, results, participants, record);
         const brief = this.briefFor(
           worker,
           requirements,

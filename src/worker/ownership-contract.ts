@@ -103,14 +103,23 @@ export interface OwnershipContract {
  *
  * Patterns support:
  * - Exact path: "package.json" matches "package.json"
- * - Directory glob: "src/**" matches "src/index.js", "src/store.js", etc.
+ * - Directory glob: "src/**" matches any path under src/.
  * - Prefix glob: "test/*" matches "test/app.test.js" (single level)
+ *
+ * D+ B01C S1.3: pattern and path are validated before matching.
+ * Unsafe patterns (absolute paths, `..` traversal, Windows drive paths,
+ * backslashes, empty segments) are rejected via `validateOwnershipPattern`.
  *
  * @param pattern the ownership pattern (e.g., "src/**")
  * @param path the artifact path (e.g., "src/index.js")
  * @returns true if the path matches the pattern
+ * @throws if the pattern or path is unsafe (fail-closed)
  */
 export function matchesOwnership(pattern: string, path: string): boolean {
+  // D+ B01C S1.3: validate both pattern and path before matching.
+  // Fail-closed: unsafe patterns are rejected, not silently accepted.
+  validateOwnershipPattern(pattern);
+  validateArtifactPath(path);
   if (pattern === path) return true;
   if (pattern.endsWith('/**')) {
     const prefix = pattern.slice(0, -3);
@@ -123,6 +132,84 @@ export function matchesOwnership(pattern: string, path: string): boolean {
     return !rest.includes('/');
   }
   return false;
+}
+
+/**
+ * D+ B01C S1.3 — Validate an ownership pattern for safety.
+ *
+ * Rejects:
+ * - Absolute paths (starting with `/`)
+ * - `..` traversal segments
+ * - Windows drive paths (e.g., `C:\`, `C:/`)
+ * - Backslashes (Windows path separator — ambiguous on POSIX)
+ * - Empty patterns
+ * - Patterns with empty segments (e.g., `src//file`)
+ * - Patterns starting with `/` (absolute)
+ * - Patterns containing NUL bytes
+ *
+ * @throws Error with a descriptive message if the pattern is unsafe
+ */
+export function validateOwnershipPattern(pattern: string): void {
+  if (typeof pattern !== 'string' || pattern.length === 0) {
+    throw new Error(`unsafe ownership pattern: empty or non-string (pattern=${JSON.stringify(pattern)})`);
+  }
+  if (pattern.includes('\0')) {
+    throw new Error(`unsafe ownership pattern: contains NUL byte (pattern=${JSON.stringify(pattern)})`);
+  }
+  // Absolute paths
+  if (pattern.startsWith('/')) {
+    throw new Error(`unsafe ownership pattern: absolute path (pattern=${JSON.stringify(pattern)})`);
+  }
+  // Windows drive paths (C:\ or C:/)
+  if (/^[A-Za-z]:[\\/]/.test(pattern)) {
+    throw new Error(`unsafe ownership pattern: Windows drive path (pattern=${JSON.stringify(pattern)})`);
+  }
+  // Backslashes (ambiguous path separator)
+  if (pattern.includes('\\')) {
+    throw new Error(`unsafe ownership pattern: contains backslash (pattern=${JSON.stringify(pattern)})`);
+  }
+  // Parent traversal (.. segments)
+  if (pattern.includes('..')) {
+    throw new Error(`unsafe ownership pattern: contains '..' traversal (pattern=${JSON.stringify(pattern)})`);
+  }
+  // Empty segments (e.g., "src//file" or "src/" or "/src")
+  const segments = pattern.split('/');
+  if (segments.some((s) => s.length === 0)) {
+    throw new Error(`unsafe ownership pattern: empty segment (pattern=${JSON.stringify(pattern)})`);
+  }
+}
+
+/**
+ * D+ B01C S1.3 — Validate an artifact path for safety.
+ *
+ * Same rules as `validateOwnershipPattern` but for paths being checked
+ * against patterns (e.g., "src/index.js").
+ *
+ * @throws Error with a descriptive message if the path is unsafe
+ */
+export function validateArtifactPath(path: string): void {
+  if (typeof path !== 'string' || path.length === 0) {
+    throw new Error(`unsafe artifact path: empty or non-string (path=${JSON.stringify(path)})`);
+  }
+  if (path.includes('\0')) {
+    throw new Error(`unsafe artifact path: contains NUL byte (path=${JSON.stringify(path)})`);
+  }
+  if (path.startsWith('/')) {
+    throw new Error(`unsafe artifact path: absolute path (path=${JSON.stringify(path)})`);
+  }
+  if (/^[A-Za-z]:[\\/]/.test(path)) {
+    throw new Error(`unsafe artifact path: Windows drive path (path=${JSON.stringify(path)})`);
+  }
+  if (path.includes('\\')) {
+    throw new Error(`unsafe artifact path: contains backslash (path=${JSON.stringify(path)})`);
+  }
+  if (path.includes('..')) {
+    throw new Error(`unsafe artifact path: contains '..' traversal (path=${JSON.stringify(path)})`);
+  }
+  const segments = path.split('/');
+  if (segments.some((s) => s.length === 0)) {
+    throw new Error(`unsafe artifact path: empty segment (path=${JSON.stringify(path)})`);
+  }
 }
 
 /**
@@ -159,18 +246,33 @@ export function applicableAcceptanceChecks(
   mentions: readonly ExecutableAcceptanceMention[],
   contract: OwnershipContract,
 ): readonly ExecutableAcceptanceMention[] {
-  // Only testable-code workers have executable acceptance obligations.
+  // D+ B01C S1.1: Test responsibility follows deliverableKind, NOT file ownership.
+  //
+  // The previous logic filtered mentions by `ownsArtifact(contract, m.requiredFile)`
+  // — e.g., a Software Engineer who owns `src/**` but NOT `package.json` would
+  // be exempted from `npm test` because `package.json` is not in their
+  // ownedArtifacts. This is wrong: the worker who produces `src/**` is the
+  // worker whose code `npm test` exercises. Ownership of the test-runner
+  // config file (package.json) does not equal responsibility for passing
+  // the test.
+  //
+  // Correct rule: a testable-code worker is responsible for ALL executable
+  // acceptance mentions in the goal text, regardless of which specific
+  // file each mention's `requiredFile` points to. The worker may need an
+  // upstream file (e.g., package.json from another worker) to RUN the test,
+  // but that is a handoff concern (B02), not a responsibility-scoping concern.
+  //
+  // Non-testable-code workers (documentation, data-analysis, research,
+  // general) are never responsible for executable acceptance checks,
+  // even if the goal mentions them.
   if (contract.deliverableKind !== 'testable-code') {
     return [];
   }
-  // For testable-code workers, all executable mentions apply IF the
-  // worker owns the requiredFile (e.g., package.json). If the worker
-  // has no ownedArtifacts declared, all mentions apply (backward compat
-  // with Task A behavior).
-  if (contract.ownedArtifacts.length === 0) {
-    return mentions;
-  }
-  return mentions.filter((m) => ownsArtifact(contract, m.requiredFile));
+  // For testable-code workers, all executable mentions apply.
+  // (If the worker has no ownership contract, this branch is unreachable —
+  // the caller falls back to Task A behavior. But when reached via a
+  // contract, all mentions apply to testable-code workers.)
+  return mentions;
 }
 
 // ---------------------------------------------------------------------------
@@ -223,12 +325,16 @@ export function buildOwnershipContract(
  * so it can flow through the frozen `renderTaskBrief()` without
  * requiring a frozen-contract change.
  *
- * Format: `[owns:pattern1,pattern2] responsibility text`
+ * Format: `[owns:pattern1,pattern2; kind:deliverable-kind] responsibility text`
  *
- * Example: `[owns:src/**,test/**,package.json] Implements, runs and fixes the code changes`
+ * Example: `[owns:src/**,test/**,package.json; kind:testable-code] Implements...`
  *
- * If the prefix is absent, the contract falls back to Task A behavior
- * (no ownedArtifacts declared → all applicable checks apply).
+ * The `kind:` segment is optional (D+ B01C S1.2). When absent, the
+ * deliverable kind falls back to capability-based inference (Task A).
+ *
+ * If the prefix is entirely absent (e.g., a Sole Operator or Generalist
+ * without ownedArtifacts), the contract is null and the system falls
+ * back to Task A behavior entirely.
  */
 const OWNERSHIP_PREFIX_RE = /^\[owns:([^\]]*)\]\s*(.*)$/s;
 
@@ -248,12 +354,52 @@ export function parseOwnershipPrefix(responsibility: string): {
   if (match === null) {
     return { ownedArtifacts: [], cleanResponsibility: responsibility };
   }
-  const patterns = match[1]!.trim();
-  const ownedArtifacts = patterns === ''
-    ? []
-    : patterns.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
+  const inner = match[1]!.trim();
   const cleanResponsibility = match[2]!.trim();
+  // The inner segment may contain "patterns; kind:kind-value"
+  // Split on '; kind:' to separate patterns from the kind declaration.
+  const kindSeparator = inner.indexOf('; kind:');
+  let patternsStr: string;
+  let kindStr: string | null = null;
+  if (kindSeparator >= 0) {
+    patternsStr = inner.slice(0, kindSeparator).trim();
+    kindStr = inner.slice(kindSeparator + '; kind:'.length).trim();
+  } else {
+    patternsStr = inner;
+  }
+  const ownedArtifacts = patternsStr === ''
+    ? []
+    : patternsStr.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
+  // Validate the kind value if present — must be a known DeliverableKind
+  if (kindStr !== null && kindStr.length > 0) {
+    const validKinds: readonly string[] = ['testable-code', 'documentation', 'data-analysis', 'research', 'general', 'verification-evidence'];
+    if (!validKinds.includes(kindStr)) {
+      // Unknown kind → ignore (fall back to capability inference)
+      kindStr = null;
+    }
+  } else {
+    kindStr = null;
+  }
+  // We return ownedArtifacts here; the kind is parsed separately by
+  // parseDeliverableKindFromPrefix to keep this function focused.
   return { ownedArtifacts, cleanResponsibility };
+}
+
+/**
+ * Parse the deliverable kind from the ownership prefix.
+ *
+ * Returns null if no kind is declared (caller falls back to capability
+ * inference).
+ */
+export function parseDeliverableKindFromPrefix(responsibility: string): DeliverableKind | null {
+  const match = OWNERSHIP_PREFIX_RE.exec(responsibility);
+  if (match === null) return null;
+  const inner = match[1]!.trim();
+  const kindSeparator = inner.indexOf('; kind:');
+  if (kindSeparator < 0) return null;
+  const kindStr = inner.slice(kindSeparator + '; kind:'.length).trim();
+  const validKinds: readonly DeliverableKind[] = ['testable-code', 'documentation', 'data-analysis', 'research', 'general', 'verification-evidence'];
+  return validKinds.includes(kindStr as DeliverableKind) ? (kindStr as DeliverableKind) : null;
 }
 
 /**
@@ -263,16 +409,25 @@ export function parseOwnershipPrefix(responsibility: string): {
  * attach the ownership contract to the `PlannedWorker.responsibility`
  * field.
  *
+ * D+ B01C S1.2: now encodes the deliverable kind in the prefix as
+ * `; kind:kind-value` so it flows through the frozen layer.
+ *
  * @param ownedArtifacts the owned artifact patterns
  * @param responsibility the clean responsibility text
- * @returns the responsibility string with `[owns:...]` prefix
+ * @param deliverableKind optional explicit deliverable kind (B01C S1.2)
+ * @returns the responsibility string with `[owns: ...; kind: ...]` prefix
  */
 export function encodeOwnershipPrefix(
   ownedArtifacts: readonly string[],
   responsibility: string,
+  deliverableKind?: DeliverableKind,
 ): string {
   if (ownedArtifacts.length === 0) return responsibility;
-  return `[owns: ${ownedArtifacts.join(', ')}] ${responsibility}`;
+  const patterns = ownedArtifacts.join(', ');
+  if (deliverableKind !== undefined) {
+    return `[owns: ${patterns}; kind: ${deliverableKind}] ${responsibility}`;
+  }
+  return `[owns: ${patterns}] ${responsibility}`;
 }
 
 // ---------------------------------------------------------------------------

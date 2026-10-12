@@ -9,6 +9,8 @@ import type {
   ArtifactSnapshot,
   ArtifactsProvider,
 } from './computer.js';
+// D+ B02: read-only enforcement for upstream staged artifacts
+import { isUpstreamPath } from './handoff-staging.js';
 
 /**
  * G6-08 (RC-5 / B-EXEC-FINDING-007) — Promoted from tests/helpers/memory-runtime.ts.
@@ -70,6 +72,32 @@ export class MemoryComputer implements WorkerComputer {
   }
 
   async writeFile(path: string, contents: string) {
+    // D+ B02: read-only enforcement — reject direct writes to upstream/ paths.
+    // Upstream artifacts are staged reference files from other workers and
+    // must not be modified by the consumer. Shell-based modification is
+    // addressed via snapshot comparison in completion-policy.ts.
+    //
+    // The staging helper (handoff-staging.ts) uses `writeFileTrusted` to
+    // bypass this check — it is the ONLY code path allowed to write to
+    // upstream/ paths.
+    if (isUpstreamPath(path)) {
+      throw new Error(`refused: "${path}" is a read-only upstream artifact (D+ B02 read-only enforcement)`);
+    }
+    this.files.set(path, contents);
+    return { path, bytes: contents.length, appended: false };
+  }
+
+  /**
+   * D+ B02: Trusted write path for staging upstream artifacts.
+   *
+   * This method is called ONLY by `stageUpstreamArtifactsForWorker` in
+   * `handoff-staging.ts`. It bypasses the read-only check because the
+   * staging helper is the authoritative source of upstream files.
+   *
+   * Worker code (via WorkerAgent) never calls this method — it only
+   * has access to the public `writeFile` which enforces read-only.
+   */
+  async writeFileTrusted(path: string, contents: string) {
     this.files.set(path, contents);
     return { path, bytes: contents.length, appended: false };
   }
