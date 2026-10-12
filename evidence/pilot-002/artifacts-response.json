@@ -1,0 +1,670 @@
+{
+  "missionId": "346e1671-f205-4e3d-898c-4c62ba764f40",
+  "artifacts": [
+    {
+      "workerId": "generalist-worker-2",
+      "path": "README.md",
+      "content": "",
+      "verified": false,
+      "bytes": 0,
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "674f8d1bcca0b8bf92c3074055eff776211b026c90554c0333acad4fc125768c",
+          "bytes": 54
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "generalist-worker-2",
+      "path": "app.js",
+      "content": "",
+      "verified": false,
+      "bytes": 0,
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "1d4628ff8d86901dd4b7af91b6bc4c4d8f7508fd6920ffff9963102c1b28a6a9",
+          "bytes": 6340
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "generalist-worker-2",
+      "path": "database.js",
+      "content": "import { open, Database } from 'node:sqlite';\nimport { sqlite3 } from 'node:sqlite';\n\nlet db: Database;\n\nexport async function initDB() {\n  db = await open({\n    filename: './tasks.db',\n    driver: sqlite3.Database\n  });\n  \n  await db.exec(`\n    CREATE TABLE IF NOT EXISTS tasks (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      title TEXT NOT NULL,\n      description TEXT,\n      completed INTEGER DEFAULT 0\n    )\n  `);\n}\n\nexport async function createTask(title: string, description: string) {\n  await db.run('INSERT INTO tasks (title, description) VALUES (?, ?)', [title, description]);\n  return await db.get('SELECT last_insert_rowid() as id');\n}\n\nexport async function getTasks(filter: 'all' | 'active' | 'completed' = 'all') {\n  let query = 'SELECT * FROM tasks';\n  if (filter === 'active') {\n    query += ' WHERE completed = 0';\n  } else if (filter === 'completed') {\n    query += ' WHERE completed = 1';\n  }\n  query += ' ORDER BY id DESC';\n  return await db.all(query);\n}\n\nexport async function getTaskById(id: number) {\n  return await db.get('SELECT * FROM tasks WHERE id = ?', [id]);\n}\n\nexport async function updateTask(id: number, title: string, description: string) {\n  await db.run('UPDATE tasks SET title = ?, description = ? WHERE id = ?', [title, description, id]);\n  return await getTaskById(id);\n}\n\nexport async function deleteTask(id: number) {\n  await db.run('DELETE FROM tasks WHERE id = ?', [id]);\n}\n\nexport async function completeTask(id: number) {\n  await db.run('UPDATE tasks SET completed = 1 WHERE id = ?', [id]);\n  return await getTaskById(id);\n}\n",
+      "verified": false,
+      "bytes": 1575,
+      "contentHash": "22c62808501c4f01320abf4434b588a8fd9716ea705d255e14dbcf97dd68e5d5",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "6bfca87eb0440700b08de7d1a712e3e4ceccf5f1b5e2252f303494533c7ba5ad",
+          "bytes": 1427
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "22c62808501c4f01320abf4434b588a8fd9716ea705d255e14dbcf97dd68e5d5",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "generalist-worker-2",
+      "path": "index.html",
+      "content": "",
+      "verified": false,
+      "bytes": 0,
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "87783e8b988580a95d688d27906ad65955ed9141fe98aa28fcd15820f27363af",
+          "bytes": 1166
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "generalist-worker-2",
+      "path": "package.json",
+      "content": "{\"name\": \"task-manager\", \"type\": \"module\", \"scripts\": {\"test\": \"node --test\", \"start\": \"node server.js\"}}\n",
+      "verified": false,
+      "bytes": 106,
+      "contentHash": "6575205d9dc385621f3a436c33cc5c00400a44b197983825dddffd578a086696",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "ca8eb85654ac376d6be66acafc67476dd36e97481cce627505b91504e81a59fc",
+          "bytes": 125
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "6575205d9dc385621f3a436c33cc5c00400a44b197983825dddffd578a086696",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "generalist-worker-2",
+      "path": "server.js",
+      "content": "",
+      "verified": false,
+      "bytes": 0,
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "344abe1a149c122e6fd08d14b0519f01f6eb1a10810beb7bad4cb229afb06b64",
+          "bytes": 5062
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "generalist-worker-2",
+      "path": "style.css",
+      "content": "",
+      "verified": false,
+      "bytes": 0,
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "b11e1a8c91b20ed0d9c5d2bfaa28485af8bf90f00f715950e43821b126dc113f",
+          "bytes": 2547
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "generalist-worker-2",
+      "path": "test/app.test.js",
+      "content": "",
+      "verified": false,
+      "bytes": 0,
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "software-engineer-1",
+          "contentHash": "7e69f70a2de9d29c9fe7632b12b922037ee0839ca27aa3b30712ea6bdbc7e72e",
+          "bytes": 3500
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": true,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-12T14_45_26_045Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_45_26_045Z-\n9 verbose logfile /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_45_26_045Z-debug-0.log\n10 silly logfile done cleaning log files\n11 http fetch GET 200 https://registry.npmjs.org/npm 134ms\n12 verbose cwd /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace\n13 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n14 verbose node v24.21.0\n15 verbose npm  v11.19.0\n16 notice\n16 notice New major version of npm available! 11.19.0 -> 12.2.0\n16 notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0\n16 notice To update run: npm install -g npm@12.2.0\n16 notice  { force: true, Symbol(proc-log.meta): true }\n17 verbose exit 1\n18 verbose code 1\n",
+      "verified": false,
+      "bytes": 1185,
+      "contentHash": "6322bf3d014fa2ebd503b41c575d9e613abc679c2c73402ca473914210b24d02",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-12T14_45_33_233Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_45_33_233Z-\n9 verbose logfile /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_45_33_233Z-debug-0.log\n10 silly logfile done cleaning log files\n11 verbose cwd /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace\n12 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n13 verbose node v24.21.0\n14 verbose npm  v11.19.0\n15 verbose exit 1\n16 verbose code 1\n",
+      "verified": false,
+      "bytes": 876,
+      "contentHash": "64ae4fbf782caac1793ac6e85666b39d432bb8b774a465eba4b714cc26302c16",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-12T14_45_44_844Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_45_44_844Z-\n9 verbose logfile /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_45_44_844Z-debug-0.log\n10 silly logfile done cleaning log files\n11 verbose cwd /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace\n12 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n13 verbose node v24.21.0\n14 verbose npm  v11.19.0\n15 verbose exit 1\n16 verbose code 1\n",
+      "verified": false,
+      "bytes": 876,
+      "contentHash": "75d8550c331f221e24508d188607360c74ddecff382279ffc891d62ff570d7f3",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-12T14_46_22_485Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_46_22_485Z-\n9 verbose logfile /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_46_22_485Z-debug-0.log\n10 silly logfile done cleaning log files\n11 verbose cwd /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace\n12 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n13 verbose node v24.21.0\n14 verbose npm  v11.19.0\n15 verbose exit 1\n16 verbose code 1\n",
+      "verified": false,
+      "bytes": 876,
+      "contentHash": "6824d3d16911b544d1b068651b2636d9b9ae817707c6f83336fcc116b3ea1110",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-12T14_50_40_625Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_50_40_625Z-\n9 verbose logfile /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_50_40_625Z-debug-0.log\n10 silly logfile done cleaning log files\n11 verbose cwd /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace\n12 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n13 verbose node v24.21.0\n14 verbose npm  v11.19.0\n15 verbose exit 1\n16 verbose code 1\n",
+      "verified": false,
+      "bytes": 876,
+      "contentHash": "0e6f98c623c85df3eba119de6c76ef9a771fa4fd48aeb6d2a47d47e60410dd9f",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-12T14_50_50_123Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_50_50_123Z-\n9 verbose logfile /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_50_50_123Z-debug-0.log\n10 silly logfile done cleaning log files\n11 verbose cwd /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace\n12 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n13 verbose node v24.21.0\n14 verbose npm  v11.19.0\n15 verbose exit 1\n16 verbose code 1\n",
+      "verified": false,
+      "bytes": 876,
+      "contentHash": "91a5e02183ac7a3752b712818e825c5024a08664123b9fb0112c39c450ec137a",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-12T14_52_18_536Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_52_18_536Z-\n9 verbose logfile /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_52_18_536Z-debug-0.log\n10 silly logfile done cleaning log files\n11 verbose cwd /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace\n12 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n13 verbose node v24.21.0\n14 verbose npm  v11.19.0\n15 verbose exit 1\n16 verbose code 1\n",
+      "verified": false,
+      "bytes": 876,
+      "contentHash": "a20457ef6cc2e9ac72a1744bdf631c5a76044291e7691395f2bbc0ffd6bd3be6",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-12T14_52_30_206Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_52_30_206Z-\n9 verbose logfile /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_52_30_206Z-debug-0.log\n10 silly logfile done cleaning log files\n11 verbose cwd /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace\n12 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n13 verbose node v24.21.0\n14 verbose npm  v11.19.0\n15 verbose exit 1\n16 verbose code 1\n",
+      "verified": false,
+      "bytes": 876,
+      "contentHash": "ab0133c6119056956feb215afdaa9de9a79cee3a5b6e45055aaf56a1d484ab46",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_logs/2026-10-12T14_52_41_840Z-debug-0.log",
+      "content": "0 verbose cli /usr/bin/node /usr/bin/npm\n1 info using npm@11.19.0\n2 info using node@v24.21.0\n3 silly config load:file:/usr/lib/node_modules/npm/npmrc\n4 silly config load:file:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npmrc\n5 silly config load:file:/usr/etc/npmrc\n6 verbose title npm test\n7 verbose argv \"test\"\n8 verbose logfile logs-max:10 dir:/tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_52_41_840Z-\n9 verbose logfile /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace/.npm/_logs/2026-10-12T14_52_41_840Z-debug-0.log\n10 silly logfile done cleaning log files\n11 verbose cwd /tmp/openbot-workspaces-pilot-002/***/software-engineer-1/workspace\n12 verbose os Linux 5.10.134-013.15.kangaroo.al8.x86_64\n13 verbose node v24.21.0\n14 verbose npm  v11.19.0\n15 verbose exit 0\n16 info ok\n",
+      "verified": false,
+      "bytes": 869,
+      "contentHash": "cfd32a9fbd58a65b56e32cd75dc530a708c2af105ccea60be6ed89c803ac77c4",
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": ".npm/_update-notifier-last-checked",
+      "content": "",
+      "verified": false,
+      "bytes": 0,
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "README.md",
+      "content": "npm install && npm start\ntn open http://localhost:3000",
+      "verified": false,
+      "bytes": 54,
+      "contentHash": "674f8d1bcca0b8bf92c3074055eff776211b026c90554c0333acad4fc125768c",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "generalist-worker-2",
+          "contentHash": "",
+          "bytes": 0
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "app.js",
+      "content": "document.addEventListener('DOMContentLoaded', () => {\n  const taskForm = document.getElementById('taskForm');\n  const taskContainer = document.getElementById('taskContainer');\n  const filterButtons = document.querySelectorAll('.filter');\n  \n  let currentFilter = 'all';\n  \n  // Fetch tasks from the API\n  const fetchTasks = async () => {\n    try {\n      const response = await fetch('/api/tasks');\n      const tasks = await response.json();\n      renderTasks(tasks);\n    } catch (error) {\n      console.error('Error fetching tasks:', error);\n    }\n  };\n  \n  // Render tasks based on current filter\n  const renderTasks = (tasks) => {\n    let filteredTasks = tasks;\n    \n    if (currentFilter === 'active') {\n      filteredTasks = tasks.filter(task => !task.completed);\n    } else if (currentFilter === 'completed') {\n      filteredTasks = tasks.filter(task => task.completed);\n    }\n    \n    taskContainer.innerHTML = '';\n    \n    if (filteredTasks.length === 0) {\n      taskContainer.innerHTML = '<p>No tasks found.</p>';\n      return;\n    }\n    \n    filteredTasks.forEach(task => {\n      const taskElement = document.createElement('div');\n      taskElement.className = `task ${task.completed ? 'completed' : ''}`;\n      taskElement.innerHTML = `\n        <div class=\"task-content\">\n          <h3>${task.title}</h3>\n          <p>${task.description}</p>\n        </div>\n        <div class=\"task-actions\">\n          <button class=\"edit-btn\" data-id=\"${task.id}\">Edit</button>\n          <button class=\"toggle-btn\" data-id=\"${task.id}\">${task.completed ? 'Active' : 'Complete'}</button>\n          <button class=\"delete-btn\" data-id=\"${task.id}\">Delete</button>\n        </div>\n      `;\n      taskContainer.appendChild(taskElement);\n    });\n    \n    // Add event listeners to task buttons\n    document.querySelectorAll('.edit-btn').forEach(btn => {\n      btn.addEventListener('click', handleEditTask);\n    });\n    \n    document.querySelectorAll('.toggle-btn').forEach(btn => {\n      btn.addEventListener('click', handleToggleTask);\n    });\n    \n    document.querySelectorAll('.delete-btn').forEach(btn => {\n      btn.addEventListener('click', handleDeleteTask);\n    });\n  };\n  \n  // Handle form submission\n  taskForm.addEventListener('submit', async (e) => {\n    e.preventDefault();\n    \n    const title = document.getElementById('title').value.trim();\n    const description = document.getElementById('description').value.trim();\n    \n    if (!title) return;\n    \n    try {\n      const response = await fetch('/api/tasks', {\n        method: 'POST',\n        headers: {\n          'Content-Type': 'application/json'\n        },\n        body: JSON.stringify({ title, description })\n      });\n      \n      if (response.ok) {\n        taskForm.reset();\n        fetchTasks();\n      } else {\n        console.error('Error creating task');\n      }\n    } catch (error) {\n      console.error('Error creating task:', error);\n    }\n  });\n  \n  // Handle edit task\n  const handleEditTask = async (e) => {\n    const id = e.target.dataset.id;\n    \n    try {\n      const response = await fetch(`/api/tasks/${id}`);\n      const task = await response.json();\n      \n      // Fill form with task data\n      document.getElementById('title').value = task.title;\n      document.getElementById('description').value = task.description;\n      \n      // Change form button to update\n      const submitBtn = taskForm.querySelector('button[type=\"submit\"]');\n      submitBtn.textContent = 'Update Task';\n      \n      // Store task ID for update\n      taskForm.dataset.taskId = id;\n      \n      // Change form submit handler\n      taskForm.onsubmit = async (e) => {\n        e.preventDefault();\n        \n        const title = document.getElementById('title').value.trim();\n        const description = document.getElementById('description').value.trim();\n        \n        if (!title) return;\n        \n        try {\n          const updateResponse = await fetch(`/api/tasks/${id}`, {\n            method: 'PUT',\n            headers: {\n              'Content-Type': 'application/json'\n            },\n            body: JSON.stringify({ title, description })\n          });\n          \n          if (updateResponse.ok) {\n            taskForm.reset();\n            submitBtn.textContent = 'Add Task';\n            delete taskForm.dataset.taskId;\n            taskForm.onsubmit = null;\n            fetchTasks();\n          } else {\n            console.error('Error updating task');\n          }\n        } catch (error) {\n          console.error('Error updating task:', error);\n        }\n      };\n    } catch (error) {\n      console.error('Error fetching task for edit:', error);\n    }\n  };\n  \n  // Handle toggle task completion\n  const handleToggleTask = async (e) => {\n    const id = e.target.dataset.id;\n    \n    try {\n      // First get the task to get current completion status\n      const response = await fetch(`/api/tasks/${id}`);\n      const task = await response.json();\n      \n      // Toggle completion status\n      const completed = !task.completed;\n      \n      const updateResponse = await fetch(`/api/tasks/${id}`, {\n        method: 'PUT',\n        headers: {\n          'Content-Type': 'application/json'\n        },\n        body: JSON.stringify({ completed })\n      });\n      \n      if (updateResponse.ok) {\n        fetchTasks();\n      } else {\n        console.error('Error toggling task completion');\n      }\n    } catch (error) {\n      console.error('Error toggling task completion:', error);\n    }\n  };\n  \n  // Handle delete task\n  const handleDeleteTask = async (e) => {\n    const id = e.target.dataset.id;\n    \n    if (!confirm('Are you sure you want to delete this task?')) return;\n    \n    try {\n      const response = await fetch(`/api/tasks/${id}`, {\n        method: 'DELETE'\n      });\n      \n      if (response.ok) {\n        fetchTasks();\n      } else {\n        console.error('Error deleting task');\n      }\n    } catch (error) {\n      console.error('Error deleting task:', error);\n    }\n  };\n  \n  // Handle filter buttons\n  filterButtons.forEach(btn => {\n    btn.addEventListener('click', () => {\n      // Update active filter\n      filterButtons.forEach(b => b.classList.remove('active'));\n      btn.classList.add('active');\n      currentFilter = btn.dataset.filter;\n      \n      // Re-render tasks\n      fetchTasks();\n    });\n  });\n  \n  // Initial fetch\n  fetchTasks();\n});",
+      "verified": false,
+      "bytes": 6340,
+      "contentHash": "1d4628ff8d86901dd4b7af91b6bc4c4d8f7508fd6920ffff9963102c1b28a6a9",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "generalist-worker-2",
+          "contentHash": "",
+          "bytes": 0
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "database.js",
+      "content": "import { open } from 'node:sqlite';\nimport { sqlite3 } from 'node:sqlite';\n\n// Create or open the database\nconst openDb = async () => {\n  return await open({\n    filename: './tasks.db',\n    driver: sqlite3.Database\n  });\n};\n\n// Create a new task\nexport const createTask = async (title, description) => {\n  const db = await openDb();\n  const result = await db.run(\n    'INSERT INTO tasks (title, description) VALUES (?, ?)',\n    [title, description]\n  );\n  return await db.get('SELECT * FROM tasks WHERE id = ?', [result.lastID]);\n};\n\n// Get all tasks\nexport const getTasks = async () => {\n  const db = await openDb();\n  return await db.all('SELECT * FROM tasks');\n};\n\n// Get a task by ID\nexport const getTaskById = async (id) => {\n  const db = await openDb();\n  return await db.get('SELECT * FROM tasks WHERE id = ?', [id]);\n};\n\n// Update a task\nexport const updateTask = async (id, title, description, completed) => {\n  const db = await openDb();\n  const result = await db.run(\n    'UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?',\n    [title, description, completed ? 1 : 0, id]\n  );\n  \n  if (result.changes === 0) {\n    return null;\n  }\n  \n  return await db.get('SELECT * FROM tasks WHERE id = ?', [id]);\n};\n\n// Delete a task\nexport const deleteTask = async (id) => {\n  const db = await openDb();\n  const result = await db.run('DELETE FROM tasks WHERE id = ?', [id]);\n  return result.changes > 0;\n};",
+      "verified": false,
+      "bytes": 1427,
+      "contentHash": "6bfca87eb0440700b08de7d1a712e3e4ceccf5f1b5e2252f303494533c7ba5ad",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "generalist-worker-2",
+          "contentHash": "22c62808501c4f01320abf4434b588a8fd9716ea705d255e14dbcf97dd68e5d5",
+          "bytes": 1575
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "22c62808501c4f01320abf4434b588a8fd9716ea705d255e14dbcf97dd68e5d5",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Personal Task Manager</title>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Personal Task Manager</h1>\n    \n    <div class=\"task-form\">\n      <h2>Add New Task</h2>\n      <form id=\"taskForm\">\n        <div class=\"form-group\">\n          <label for=\"title\">Title:</label>\n          <input type=\"text\" id=\"title\" required>\n        </div>\n        <div class=\"form-group\">\n          <label for=\"description\">Description:</label>\n          <textarea id=\"description\"></textarea>\n        </div>\n        <button type=\"submit\">Add Task</button>\n      </form>\n    </div>\n    \n    <div class=\"task-filters\">\n      <button class=\"filter active\" data-filter=\"all\">All</button>\n      <button class=\"filter\" data-filter=\"active\">Active</button>\n      <button class=\"filter\" data-filter=\"completed\">Completed</button>\n    </div>\n    \n    <div class=\"task-list\">\n      <h2>Tasks</h2>\n      <div id=\"taskContainer\"></div>\n    </div>\n  </div>\n  \n  <script src=\"app.js\"></script>\n</body>\n</html>",
+      "verified": false,
+      "bytes": 1166,
+      "contentHash": "87783e8b988580a95d688d27906ad65955ed9141fe98aa28fcd15820f27363af",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "generalist-worker-2",
+          "contentHash": "",
+          "bytes": 0
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "package.json",
+      "content": "{\n  \"name\": \"task-manager\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test\",\n    \"start\": \"node server.js\"\n  }\n}",
+      "verified": false,
+      "bytes": 125,
+      "contentHash": "ca8eb85654ac376d6be66acafc67476dd36e97481cce627505b91504e81a59fc",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "generalist-worker-2",
+          "contentHash": "6575205d9dc385621f3a436c33cc5c00400a44b197983825dddffd578a086696",
+          "bytes": 106
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "6575205d9dc385621f3a436c33cc5c00400a44b197983825dddffd578a086696",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "server.js",
+      "content": "import { createServer } from 'http';\nimport { open } from 'node:sqlite';\nimport { sqlite3 } from 'node:sqlite';\nimport { fileURLToPath } from 'url';\nimport { dirname, join } from 'path';\n\nconst __filename = fileURLToPath(import.meta.url);\nconst __dirname = dirname(__filename);\n\nconst dbFile = join(__dirname, 'tasks.db');\nlet db;\n\nconst server = createServer(async (req, res) => {\n  // Handle API routes\n  if (req.url.startsWith('/api/')) {\n    handleAPI(req, res);\n    return;\n  }\n\n  // Serve static files\n  if (req.url === '/' || req.url === '/index.html') {\n    serveFile(res, join(__dirname, 'index.html'), 'text/html');\n    return;\n  }\n\n  if (req.url === '/app.js') {\n    serveFile(res, join(__dirname, 'app.js'), 'application/javascript');\n    return;\n  }\n\n  if (req.url === '/style.css') {\n    serveFile(res, join(__dirname, 'style.css'), 'text/css');\n    return;\n  }\n\n  // 404 for other routes\n  res.writeHead(404, { 'Content-Type': 'text/plain' });\n  res.end('Not Found');\n});\n\nasync function handleAPI(req, res) {\n  if (!db) {\n    db = await open({\n      filename: dbFile,\n      driver: sqlite3.Database\n    });\n    \n    // Create tasks table if not exists\n    await db.exec(`\n      CREATE TABLE IF NOT EXISTS tasks (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        title TEXT NOT NULL,\n        description TEXT,\n        completed INTEGER DEFAULT 0\n      )\n    `);\n  }\n\n  // Set CORS headers\n  res.setHeader('Access-Control-Allow-Origin', '*');\n  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');\n  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');\n\n  if (req.method === 'GET' && req.url === '/api/tasks') {\n    try {\n      const tasks = await db.all('SELECT * FROM tasks');\n      res.writeHead(200, { 'Content-Type': 'application/json' });\n      res.end(JSON.stringify(tasks));\n    } catch (error) {\n      res.writeHead(500, { 'Content-Type': 'text/plain' });\n      res.end('Server error');\n    }\n    return;\n  }\n\n  if (req.method === 'POST' && req.url === '/api/tasks') {\n    let body = '';\n    req.on('data', chunk => {\n      body += chunk.toString();\n    });\n    req.on('end', async () => {\n      try {\n        const { title, description } = JSON.parse(body);\n        if (!title) {\n          res.writeHead(400, { 'Content-Type': 'text/plain' });\n          res.end('Title is required');\n          return;\n        }\n        \n        const result = await db.run(\n          'INSERT INTO tasks (title, description) VALUES (?, ?)',\n          [title, description]\n        );\n        \n        const newTask = await db.get('SELECT * FROM tasks WHERE id = ?', [result.lastID]);\n        res.writeHead(201, { 'Content-Type': 'application/json' });\n        res.end(JSON.stringify(newTask));\n      } catch (error) {\n        res.writeHead(500, { 'Content-Type': 'text/plain' });\n        res.end('Server error');\n      }\n    });\n    return;\n  }\n\n  if (req.method === 'PUT' && req.url.match(/\\/api\\/tasks\\/(\\d+)/)) {\n    const id = req.url.match(/\\/api\\/tasks\\/(\\d+)/)[1];\n    let body = '';\n    req.on('data', chunk => {\n      body += chunk.toString();\n    });\n    req.on('end', async () => {\n      try {\n        const { title, description, completed } = JSON.parse(body);\n        \n        const result = await db.run(\n          'UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?',\n          [title, description, completed ? 1 : 0, id]\n        );\n        \n        if (result.changes === 0) {\n          res.writeHead(404, { 'Content-Type': 'text/plain' });\n          res.end('Task not found');\n          return;\n        }\n        \n        const updatedTask = await db.get('SELECT * FROM tasks WHERE id = ?', [id]);\n        res.writeHead(200, { 'Content-Type': 'application/json' });\n        res.end(JSON.stringify(updatedTask));\n      } catch (error) {\n        res.writeHead(500, { 'Content-Type': 'text/plain' });\n        res.end('Server error');\n      }\n    });\n    return;\n  }\n\n  if (req.method === 'DELETE' && req.url.match(/\\/api\\/tasks\\/(\\d+)/)) {\n    const id = req.url.match(/\\/api\\/tasks\\/(\\d+)/)[1];\n    try {\n      const result = await db.run('DELETE FROM tasks WHERE id = ?', [id]);\n      \n      if (result.changes === 0) {\n        res.writeHead(404, { 'Content-Type': 'text/plain' });\n        res.end('Task not found');\n        return;\n      }\n      \n      res.writeHead(204, { 'Content-Type': 'text/plain' });\n      res.end();\n    } catch (error) {\n      res.writeHead(500, { 'Content-Type': 'text/plain' });\n      res.end('Server error');\n    }\n    return;\n  }\n\n  res.writeHead(404, { 'Content-Type': 'text/plain' });\n  res.end('Not Found');\n}\n\nfunction serveFile(res, filePath, contentType) {\n  const fs = require('fs');\n  fs.readFile(filePath, (err, data) => {\n    if (err) {\n      res.writeHead(500, { 'Content-Type': 'text/plain' });\n      res.end('Server error');\n      return;\n    }\n    res.writeHead(200, { 'Content-Type': contentType });\n    res.end(data);\n  });\n}\n\nconst PORT = 3000;\nserver.listen(PORT, () => {\n  console.log(`Server running on http://localhost:${PORT}`);\n});",
+      "verified": false,
+      "bytes": 5062,
+      "contentHash": "344abe1a149c122e6fd08d14b0519f01f6eb1a10810beb7bad4cb229afb06b64",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "generalist-worker-2",
+          "contentHash": "",
+          "bytes": 0
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "style.css",
+      "content": "/* Global Styles */\n* {\n  box-sizing: border-box;\n  margin: 0;\n  padding: 0;\n}\n\nbody {\n  font-family: 'Arial', sans-serif;\n  line-height: 1.6;\n  color: #333;\n  background-color: #f5f5f5;\n}\n\n.container {\n  max-width: 800px;\n  margin: 0 auto;\n  padding: 20px;\n}\n\nh1, h2 {\n  margin-bottom: 20px;\n  color: #2c3e50;\n}\n\n/* Task Form Styles */\n.task-form {\n  background-color: #fff;\n  padding: 20px;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n  margin-bottom: 30px;\n}\n\n.form-group {\n  margin-bottom: 15px;\n}\n\nlabel {\n  display: block;\n  margin-bottom: 5px;\n  font-weight: bold;\n}\n\ninput[type=\"text\"],\ntextarea {\n  width: 100%;\n  padding: 10px;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n  font-size: 16px;\n}\n\ntextarea {\n  min-height: 100px;\n  resize: vertical;\n}\n\nbutton {\n  background-color: #3498db;\n  color: white;\n  border: none;\n  padding: 10px 15px;\n  border-radius: 4px;\n  cursor: pointer;\n  font-size: 16px;\n  transition: background-color 0.3s;\n}\n\nbutton:hover {\n  background-color: #2980b9;\n}\n\n/* Task Filters */\n.task-filters {\n  display: flex;\n  margin-bottom: 20px;\n  gap: 10px;\n}\n\n.filter {\n  background-color: #fff;\n  border: 1px solid #ddd;\n  padding: 8px 15px;\n  border-radius: 4px;\n  cursor: pointer;\n}\n\n.filter.active {\n  background-color: #3498db;\n  color: white;\n  border-color: #3498db;\n}\n\n/* Task List */\n.task-list {\n  background-color: #fff;\n  padding: 20px;\n  border-radius: 8px;\n  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n}\n\n#taskContainer {\n  margin-top: 20px;\n}\n\n.task {\n  display: flex;\n  justify-content: space-between;\n  align-items: flex-start;\n  padding: 15px;\n  border-bottom: 1px solid #eee;\n}\n\n.task:last-child {\n  border-bottom: none;\n}\n\n.task.completed .task-content h3 {\n  text-decoration: line-through;\n  color: #7f8c8d;\n}\n\n.task-content {\n  flex: 1;\n}\n\n.task-actions {\n  display: flex;\n  gap: 10px;\n}\n\n.task-actions button {\n  padding: 5px 10px;\n  font-size: 14px;\n}\n\n.edit-btn {\n  background-color: #f39c12;\n}\n\n.edit-btn:hover {\n  background-color: #e67e22;\n}\n\n.toggle-btn {\n  background-color: #2ecc71;\n}\n\n.toggle-btn:hover {\n  background-color: #27ae60;\n}\n\n.delete-btn {\n  background-color: #e74c3c;\n}\n\n.delete-btn:hover {\n  background-color: #c0392b;\n}\n\n/* Responsive Design */\n@media (max-width: 600px) {\n  .container {\n    padding: 10px;\n  }\n  \n  .task {\n    flex-direction: column;\n    gap: 10px;\n  }\n  \n  .task-actions {\n    width: 100%;\n    justify-content: space-between;\n  }\n}\n\n/* Empty state */\n#taskContainer p {\n  text-align: center;\n  color: #7f8c8d;\n  padding: 20px;\n}",
+      "verified": false,
+      "bytes": 2547,
+      "contentHash": "b11e1a8c91b20ed0d9c5d2bfaa28485af8bf90f00f715950e43821b126dc113f",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "generalist-worker-2",
+          "contentHash": "",
+          "bytes": 0
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    },
+    {
+      "workerId": "software-engineer-1",
+      "path": "test/app.test.js",
+      "content": "import { deepStrictEqual, strictEqual } from 'node:assert';\nimport { test } from 'node:test';\nimport { createServer } from 'http';\n\n// Test for creating a task\ntest('API - Create a task', async () => {\n  // Start server\n  const server = createServer((req, res) => {\n    if (req.url === '/api/tasks' && req.method === 'POST') {\n      let body = '';\n      req.on('data', chunk => {\n        body += chunk.toString();\n      });\n      req.on('end', () => {\n        const { title, description } = JSON.parse(body);\n        res.writeHead(201, { 'Content-Type': 'application/json' });\n        res.end(JSON.stringify({ id: 1, title, description, completed: false }));\n      });\n    } else {\n      res.writeHead(404, { 'Content-Type': 'text/plain' });\n      res.end('Not Found');\n    }\n  });\n  \n  const port = 3001;\n  server.listen(port);\n  \n  try {\n    // Create a task\n    const response = await fetch(`http://localhost:${port}/api/tasks`, {\n      method: 'POST',\n      headers: {\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ title: 'Test Task', description: 'Test Description' })\n    });\n    \n    strictEqual(response.status, 201);\n    \n    const task = await response.json();\n    strictEqual(task.title, 'Test Task');\n    strictEqual(task.description, 'Test Description');\n    strictEqual(task.completed, false);\n  } finally {\n    server.close();\n  }\n});\n\n// Test for listing tasks\ntest('API - List tasks', async () => {\n  // Start server\n  const server = createServer((req, res) => {\n    if (req.url === '/api/tasks' && req.method === 'GET') {\n      res.writeHead(200, { 'Content-Type': 'application/json' });\n      res.end(JSON.stringify([\n        { id: 1, title: 'Task 1', description: 'Description 1', completed: false },\n        { id: 2, title: 'Task 2', description: 'Description 2', completed: true }\n      ]));\n    } else {\n      res.writeHead(404, { 'Content-Type': 'text/plain' });\n      res.end('Not Found');\n    }\n  });\n  \n  const port = 3002;\n  server.listen(port);\n  \n  try {\n    // List tasks\n    const response = await fetch(`http://localhost:${port}/api/tasks`);\n    \n    strictEqual(response.status, 200);\n    \n    const tasks = await response.json();\n    strictEqual(tasks.length, 2);\n    strictEqual(tasks[0].title, 'Task 1');\n    strictEqual(tasks[1].completed, true);\n  } finally {\n    server.close();\n  }\n});\n\n// Test for completing a task\ntest('API - Complete a task', async () => {\n  // Start server\n  const server = createServer((req, res) => {\n    if (req.url === '/api/tasks/1' && req.method === 'PUT') {\n      let body = '';\n      req.on('data', chunk => {\n        body += chunk.toString();\n      });\n      req.on('end', () => {\n        const { completed } = JSON.parse(body);\n        res.writeHead(200, { 'Content-Type': 'application/json' });\n        res.end(JSON.stringify({ id: 1, title: 'Task 1', description: 'Description 1', completed }));\n      });\n    } else {\n      res.writeHead(404, { 'Content-Type': 'text/plain' });\n      res.end('Not Found');\n    }\n  });\n  \n  const port = 3003;\n  server.listen(port);\n  \n  try {\n    // Complete a task\n    const response = await fetch(`http://localhost:${port}/api/tasks/1`, {\n      method: 'PUT',\n      headers: {\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ completed: true })\n    });\n    \n    strictEqual(response.status, 200);\n    \n    const task = await response.json();\n    strictEqual(task.completed, true);\n  } finally {\n    server.close();\n  }\n});",
+      "verified": false,
+      "bytes": 3500,
+      "contentHash": "7e69f70a2de9d29c9fe7632b12b922037ee0839ca27aa3b30712ea6bdbc7e72e",
+      "conflict": true,
+      "conflictVersions": [
+        {
+          "workerId": "generalist-worker-2",
+          "contentHash": "",
+          "bytes": 0
+        }
+      ],
+      "conflictResolution": {
+        "policy": "majority-then-lexicographic",
+        "authoritativeWorkerId": "generalist-worker-2",
+        "authoritativeContentHash": "",
+        "rationale": "no majority (2 distinct versions); tiebreak by lexicographic workerId",
+        "isAuthoritative": false,
+        "isHeuristicUnverified": true
+      },
+      "verifiedPackageSelection": {
+        "policy": "verified-only-deterministic",
+        "packageIdentity": "",
+        "packageState": "UNRESOLVED",
+        "selectedWorkerId": "",
+        "rationale": "no verified package candidates (considered 2 candidate(s); 2 incomplete or unverified)",
+        "isAuthoritativePackage": false
+      }
+    }
+  ]
+}
