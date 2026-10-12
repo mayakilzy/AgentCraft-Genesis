@@ -242,9 +242,28 @@ export class VerificationLoop {
     await this.clearVerifierArtifacts();
 
     // Clean-room copy: read from each producer, write into the verifier.
+    //
+    // PILOT-002 R3 (Clean Room 404 fix): when a worker finishes without
+    // declaring any artifacts (result.artifacts === []), `source.paths` is
+    // empty, and the copy loop would do nothing — leaving the verifier's
+    // clean room empty and every `file` check failing with 404. This is
+    // the root cause of PILOT-002's PARTIAL: the SE worker wrote 8 files
+    // to disk but finished with empty `artifacts` declaration (or the
+    // `confirmed` check failed to read them back).
+    //
+    // Defensive discovery: if `source.paths` is empty but `source.computer`
+    // is available, list the workspace files directly. This does NOT
+    // violate clean-room isolation — the verifier still operates on a
+    // copy in its own workspace, never on the producer's state. It only
+    // ensures the copy includes files that exist on disk but were not
+    // declared. Workers that declare correctly are unaffected (their
+    // declared paths are used as-is).
     const copyFailures: string[] = [];
     for (const source of artifacts) {
-      for (const path of source.paths) {
+      const paths = source.paths.length > 0
+        ? source.paths
+        : await discoverWorkspacePaths(source.computer);
+      for (const path of paths) {
         try {
           const read = await source.computer.readFile(path);
           await this.verifier.writeFile(cleanRoomPath(source, path), read.text);
@@ -705,4 +724,56 @@ export function deriveChecks(
       }),
     ),
   );
+}
+
+/**
+ * PILOT-002 R3 (Clean Room 404 fix): defensively discover the paths a
+ * worker produced on disk when the orchestrator's `ArtifactSource.paths`
+ * is empty. This happens when a worker calls `finish` without declaring
+ * artifacts, or when the worker-agent's `confirmed` check fails to read
+ * back the claimed files (e.g., a transient OpenBot HTTP 404 mid-run).
+ *
+ * Bounded by:
+ *   - SNAPSHOT_MAX_FILES (4096) — same bound as computeWorkspaceSnapshot
+ *     in src/worker/completion-policy.ts; refuses to discover more.
+ *   - path traversal refusal — any path containing `..` or starting with
+ *     `/` is dropped, matching OpenBot's workspace confinement (workspace.ts).
+ *   - exclusion of OpenBot internals — `.npm/`, `.git/`, `node_modules/`
+ *     are excluded (they are build artefacts, not worker deliverables).
+ *
+ * On ANY error (listFiles throws, returns malformed data, exceeds bound),
+ * returns `[]` — the empty list. The caller (verify) then has nothing to
+ * copy, and the file checks will fail honestly with 404. This is the
+ * fail-closed guarantee: we never fabricate paths.
+ *
+ * @param computer the producing worker's computer (must be non-null)
+ * @returns the discovered relative paths, or [] on any failure
+ */
+const DISCOVERY_MAX_FILES = 4096;
+const DISCOVERY_EXCLUDE_PATTERNS = ['node_modules/', '.git/', '.npm/'];
+
+function shouldExcludeFromDiscovery(path: string): boolean {
+  if (path.includes('..') || path.startsWith('/')) return true;
+  for (const pattern of DISCOVERY_EXCLUDE_PATTERNS) {
+    if (path === pattern.slice(0, -1) || path.startsWith(pattern)) return true;
+  }
+  return false;
+}
+
+async function discoverWorkspacePaths(
+  computer: WorkerComputer,
+): Promise<readonly string[]> {
+  try {
+    const entries = await computer.listFiles();
+    const files = entries.filter(
+      (e) => e.kind === 'file' && !shouldExcludeFromDiscovery(e.path),
+    );
+    if (files.length > DISCOVERY_MAX_FILES) {
+      // Refuse to discover too many files — fail closed.
+      return [];
+    }
+    return files.map((e) => e.path);
+  } catch {
+    return [];
+  }
 }

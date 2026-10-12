@@ -2,91 +2,14 @@
 > task-manager@1.0.0 test
 > node --test
 
-✖ GET /api/tasks returns empty array initially (0.663462ms)
-✖ POST /api/tasks creates a new task (0.064433ms)
-✖ PUT /api/tasks/:id updates a task (0.048435ms)
-✖ DELETE /api/tasks/:id deletes a task (0.045194ms)
-✖ GET /api/tasks?filter=active returns only active tasks (0.078978ms)
-✖ GET /api/tasks?filter=completed returns only completed tasks (0.0455ms)
-ℹ tests 6
+✔ Create a new task (17.203635ms)
+✔ List all tasks (4.938369ms)
+✔ Mark task as complete (3.319496ms)
+ℹ tests 3
 ℹ suites 0
-ℹ pass 0
-ℹ fail 6
+ℹ pass 3
+ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 86.009927
-
-✖ failing tests:
-
-test at test/app.test.js:51:1
-✖ GET /api/tasks returns empty array initially (0.663462ms)
-  file:///tmp/pilot-002-clean-1791818130721/database.js:1
-  import { open } from 'node:sqlite';
-           ^^^^
-  SyntaxError: The requested module 'node:sqlite' does not provide an export named 'open'
-      at #asyncInstantiate (node:internal/modules/esm/module_job:455:21)
-      at async ModuleJob.run (node:internal/modules/esm/module_job:553:5)
-      at async node:internal/modules/esm/loader:647:26
-      at async TestContext.<anonymous> (file:///tmp/pilot-002-clean-1791818130721/test/app.test.js:32:34)
-      at async TestHook.run (node:internal/test_runner/test:1409:7)
-
-test at test/app.test.js:58:1
-✖ POST /api/tasks creates a new task (0.064433ms)
-  file:///tmp/pilot-002-clean-1791818130721/database.js:1
-  import { open } from 'node:sqlite';
-           ^^^^
-  SyntaxError: The requested module 'node:sqlite' does not provide an export named 'open'
-      at #asyncInstantiate (node:internal/modules/esm/module_job:455:21)
-      at async ModuleJob.run (node:internal/modules/esm/module_job:553:5)
-      at async node:internal/modules/esm/loader:647:26
-      at async TestContext.<anonymous> (file:///tmp/pilot-002-clean-1791818130721/test/app.test.js:32:34)
-      at async TestHook.run (node:internal/test_runner/test:1409:7)
-
-test at test/app.test.js:88:1
-✖ PUT /api/tasks/:id updates a task (0.048435ms)
-  file:///tmp/pilot-002-clean-1791818130721/database.js:1
-  import { open } from 'node:sqlite';
-           ^^^^
-  SyntaxError: The requested module 'node:sqlite' does not provide an export named 'open'
-      at #asyncInstantiate (node:internal/modules/esm/module_job:455:21)
-      at async ModuleJob.run (node:internal/modules/esm/module_job:553:5)
-      at async node:internal/modules/esm/loader:647:26
-      at async TestContext.<anonymous> (file:///tmp/pilot-002-clean-1791818130721/test/app.test.js:32:34)
-      at async TestHook.run (node:internal/test_runner/test:1409:7)
-
-test at test/app.test.js:136:1
-✖ DELETE /api/tasks/:id deletes a task (0.045194ms)
-  file:///tmp/pilot-002-clean-1791818130721/database.js:1
-  import { open } from 'node:sqlite';
-           ^^^^
-  SyntaxError: The requested module 'node:sqlite' does not provide an export named 'open'
-      at #asyncInstantiate (node:internal/modules/esm/module_job:455:21)
-      at async ModuleJob.run (node:internal/modules/esm/module_job:553:5)
-      at async node:internal/modules/esm/loader:647:26
-      at async TestContext.<anonymous> (file:///tmp/pilot-002-clean-1791818130721/test/app.test.js:32:34)
-      at async TestHook.run (node:internal/test_runner/test:1409:7)
-
-test at test/app.test.js:171:1
-✖ GET /api/tasks?filter=active returns only active tasks (0.078978ms)
-  file:///tmp/pilot-002-clean-1791818130721/database.js:1
-  import { open } from 'node:sqlite';
-           ^^^^
-  SyntaxError: The requested module 'node:sqlite' does not provide an export named 'open'
-      at #asyncInstantiate (node:internal/modules/esm/module_job:455:21)
-      at async ModuleJob.run (node:internal/modules/esm/module_job:553:5)
-      at async node:internal/modules/esm/loader:647:26
-      at async TestContext.<anonymous> (file:///tmp/pilot-002-clean-1791818130721/test/app.test.js:32:34)
-      at async TestHook.run (node:internal/test_runner/test:1409:7)
-
-test at test/app.test.js:222:1
-✖ GET /api/tasks?filter=completed returns only completed tasks (0.0455ms)
-  file:///tmp/pilot-002-clean-1791818130721/database.js:1
-  import { open } from 'node:sqlite';
-           ^^^^
-  SyntaxError: The requested module 'node:sqlite' does not provide an export named 'open'
-      at #asyncInstantiate (node:internal/modules/esm/module_job:455:21)
-      at async ModuleJob.run (node:internal/modules/esm/module_job:553:5)
-      at async node:internal/modules/esm/loader:647:26
-      at async TestContext.<anonymous> (file:///tmp/pilot-002-clean-1791818130721/test/app.test.js:32:34)
-      at async TestHook.run (node:internal/test_runner/test:1409:7)
+ℹ duration_ms 106.887601

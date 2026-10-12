@@ -831,7 +831,7 @@ export class MissionOrchestrator {
 
       // TASK-013: the mission is not successful because workers said so —
       // acceptance checks run in a clean room and decide.
-      const artifactSources = this.collectArtifacts(participants, results);
+      const artifactSources = await this.collectArtifacts(participants, results);
       const allResults = [...results.values()];
       const evidence = allResults.flatMap((r) => r.evidence);
       const workerFailures = allResults.filter((r) => r.status === 'failure');
@@ -1025,7 +1025,7 @@ export class MissionOrchestrator {
               }
             }
 
-            const retriedSources = this.collectArtifacts(participants, results);
+            const retriedSources = await this.collectArtifacts(participants, results);
             const retriedEvidence = [...results.values()].flatMap((r) => r.evidence);
             if (this.options.beforeVerification !== undefined) {
               await this.options.beforeVerification({ attempt: 2 });
@@ -1041,7 +1041,7 @@ export class MissionOrchestrator {
         }
       }
 
-      const finalArtifacts = this.collectArtifacts(participants, results);
+      const finalArtifacts = await this.collectArtifacts(participants, results);
       const finalEvidence = [...results.values()].flatMap((r) => r.evidence);
       // PHASE 4.6a: collect provider-OBSERVED deliverables from non-computer
       // surfaces (workspace, future job). These are trusted because the runtime
@@ -1204,16 +1204,58 @@ export class MissionOrchestrator {
     return result;
   }
 
-  /** Artifact sources for the clean room: each producer's computer + paths. */
-  private collectArtifacts(
+  /**
+   * Artifact sources for the clean room: each producer's computer + paths.
+   *
+   * PILOT-002 R3 (Clean Room 404 fix): when a worker finishes without
+   * declaring artifacts (result.artifacts.length === 0) — typically
+   * because it hit a budget exhaustion or a reasoning failure mid-run —
+   * the previous code SKIPPED it entirely. This left `artifactSources`
+   * empty, which made `buildChecks` (in mission-service.ts) emit bare
+   * paths, which made `verification.ts verify()` have no source to copy
+   * from, which made every `file` check fail with 404 — even though the
+   * files existed on disk in the worker's workspace.
+   *
+   * The fix: when `result.artifacts` is empty BUT `participant.computer`
+   * is available (worker produced files but didn't declare them), use the
+   * existing runtime `listArtifacts()` to discover the actual workspace
+   * files. This is the same defensive-discovery pattern already applied
+   * in `verification.ts verify()` for `source.paths.length === 0`, applied
+   * here at the source-collection layer so the checks are built with
+   * proper `cleanRoomPath` prefixes from the start.
+   *
+   * This does NOT change the public API of MissionOrchestrator. The
+   * method becomes async (it was called from async contexts only).
+   * Frozen-contract invariants preserved: WorkerResult shape, MissionResult
+   * shape, the retry-once-after-failed-verification contract.
+   */
+  private async collectArtifacts(
     participants: ReadonlyMap<string, HandoffParticipant>,
     results: ReadonlyMap<string, WorkerResult>,
-  ): ArtifactSource[] {
+  ): Promise<ArtifactSource[]> {
     const sources: ArtifactSource[] = [];
     for (const [workerId, result] of results) {
       const participant = participants.get(workerId);
       if (participant === undefined || participant.computer === null) continue;
-      if (result.artifacts.length === 0) continue;
+      if (result.artifacts.length === 0) {
+        // PILOT-002 R3: the worker finished without declaring artifacts
+        // (failure mid-run, budget exhaustion, or never called finish).
+        // Try to discover actual workspace files via the runtime's
+        // listArtifacts() so the verifier can still see the produced
+        // files. This is fail-closed: if discovery fails or returns
+        // empty, the worker is skipped (same as before).
+        const discovered = await discoverWorkerArtifacts(
+          participant.computer,
+          workerId,
+        );
+        if (discovered.length === 0) continue;
+        sources.push({
+          workerId,
+          computer: participant.computer,
+          paths: discovered,
+        });
+        continue;
+      }
       // CORE RELIABILITY FIX: filter out empty (0-byte) files.
       // Workers that claim artifacts but produce empty files are not
       // delivering real content. This prevents false artifact counts.
@@ -1344,6 +1386,45 @@ export class MissionOrchestrator {
         humanInterventions: 0,
       },
     };
+  }
+}
+
+/**
+ * PILOT-002 R3 (Clean Room 404 fix): discover actual workspace files on disk
+ * when a worker finished without declaring artifacts. Used by
+ * `collectArtifacts` to ensure the verifier can see files the worker
+ * produced but did not declare (e.g., when the reasoning budget was
+ * exhausted before `finish` was called).
+ *
+ * Bounded by DISCOVERY_MAX_FILES (4096) and excludes OpenBot internals
+ * (node_modules, .git, .npm). Path traversal (`..` or leading `/`) is
+ * refused. On ANY error, returns `[]` (fail-closed).
+ *
+ * @param computer the worker's computer (must be non-null)
+ * @param workerId for diagnostic context only
+ * @returns the discovered relative paths, or [] on any failure
+ */
+async function discoverWorkerArtifacts(
+  computer: WorkerComputer,
+  _workerId: string,
+): Promise<readonly string[]> {
+  const DISCOVERY_MAX_FILES = 4096;
+  const EXCLUDE_PATTERNS = ['node_modules/', '.git/', '.npm/'];
+  try {
+    const entries = await computer.listFiles();
+    const files = entries.filter((e) => {
+      if (e.kind !== 'file') return false;
+      const path = e.path;
+      if (path.includes('..') || path.startsWith('/')) return false;
+      for (const pattern of EXCLUDE_PATTERNS) {
+        if (path === pattern.slice(0, -1) || path.startsWith(pattern)) return false;
+      }
+      return true;
+    });
+    if (files.length > DISCOVERY_MAX_FILES) return [];
+    return files.map((e) => e.path);
+  } catch {
+    return [];
   }
 }
 

@@ -6,9 +6,6 @@
     "test": "node --test",
     "start": "node server.js"
   },
-  "description": "A personal task manager web application",
-  "main": "server.js",
-  "keywords": ["task", "manager", "web", "application"],
-  "author": "",
-  "license": "ISC"
+  "description": "A personal task manager with web UI and REST API",
+  "main": "server.js"
 }

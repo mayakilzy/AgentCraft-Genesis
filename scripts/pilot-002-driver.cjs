@@ -207,6 +207,18 @@ async function waitForUrl(url, timeoutMs = 120_000) {
     record('P2-TOKENS', String(snapshot.result?.cost?.tokens ?? 0), `tokens=${snapshot.result?.cost?.tokens ?? 0}`);
     record('P2-ELAPSED', String(elapsed), `${elapsed}ms`);
 
+    // PILOT-002 R3: fetch mission events for definitive worker-step diagnosis.
+    // This captures the in-process flight recorder before the gateway dies.
+    try {
+      const eventsRes = await httpCall('GET', `/v1/missions/${missionId}/events`, null, TEST_API_KEY);
+      if (eventsRes.status === 200 && eventsRes.body?.events) {
+        writeFileSync(join(EVIDENCE_DIR, 'mission-events.json'), JSON.stringify(eventsRes.body.events, null, 2), 'utf8');
+        record('P2-EVENTS', 'PASS', `captured ${eventsRes.body.events.length} events`);
+      } else {
+        record('P2-EVENTS', 'FAIL', `events endpoint returned HTTP ${eventsRes.status}`);
+      }
+    } catch (e) { record('P2-EVENTS', 'FAIL', e.message); }
+
     // Fetch artifacts
     const artRes = await httpCall('GET', `/v1/missions/${missionId}/artifacts`, null, TEST_API_KEY);
     let artifacts = [];

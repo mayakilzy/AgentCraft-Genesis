@@ -1,14 +1,20 @@
 import { open } from 'node:sqlite';
-import { sqlite3 } from 'node:sqlite';
+import { sqlite3 as sqlite3Driver } from 'node:sqlite';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const DB_FILE = join(__dirname, 'tasks.db');
 let db;
 
-async function initializeDatabase() {
+async function initDB() {
   db = await open({
-    filename: './tasks.db',
-    driver: sqlite3.Database
+    filename: DB_FILE,
+    driver: sqlite3Driver
   });
-
+  
   await db.exec(`
     CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,36 +25,50 @@ async function initializeDatabase() {
   `);
 }
 
-async function getTasks(filter = 'all') {
+export async function createTask(title, description) {
+  const result = await db.run(
+    'INSERT INTO tasks (title, description) VALUES (?, ?)',
+    [title, description]
+  );
+  return db.get('SELECT * FROM tasks WHERE id = ?', [result.lastID]);
+}
+
+export async function getTasks(filter = 'all') {
   let query = 'SELECT * FROM tasks';
+  
   if (filter === 'active') {
     query += ' WHERE completed = 0';
   } else if (filter === 'completed') {
     query += ' WHERE completed = 1';
   }
+  
   return db.all(query);
 }
 
-async function createTask(title, description) {
-  return db.run(
-    'INSERT INTO tasks (title, description) VALUES (?, ?)',
-    [title, description]
-  );
-}
-
-async function updateTask(id, title, description, completed) {
-  return db.run(
-    'UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?',
-    [title, description, completed ? 1 : 0, id]
-  );
-}
-
-async function deleteTask(id) {
-  return db.run('DELETE FROM tasks WHERE id = ?', [id]);
-}
-
-async function getTaskById(id) {
+export async function getTaskById(id) {
   return db.get('SELECT * FROM tasks WHERE id = ?', [id]);
 }
 
-export { initializeDatabase, getTasks, createTask, updateTask, deleteTask, getTaskById };
+export async function updateTask(id, title, description, completed) {
+  const result = await db.run(
+    'UPDATE tasks SET title = ?, description = ?, completed = ? WHERE id = ?',
+    [title, description, completed ? 1 : 0, id]
+  );
+  
+  if (result.changes === 0) {
+    throw new Error('Task not found');
+  }
+  
+  return db.get('SELECT * FROM tasks WHERE id = ?', [id]);
+}
+
+export async function deleteTask(id) {
+  const result = await db.run('DELETE FROM tasks WHERE id = ?', [id]);
+  
+  if (result.changes === 0) {
+    throw new Error('Task not found');
+  }
+}
+
+// Initialize the database when this module is imported
+initDB();

@@ -291,6 +291,35 @@ export interface CompletionEvidence {
    * `MAX_FINISH_REJECTIONS` to prevent infinite loops.
    */
   finishRejections: number;
+  /**
+   * PILOT-002 R3 (Runtime Acceptance Gate): the result of the last runtime
+   * start check. Null if no start check has been run. When the goal text
+   * contains a start command mention (npm start / node server.js) and the
+   * worker is testable-code, the gate requires this to be `{ ok: true }`
+   * before `finish` is accepted.
+   */
+  lastStartResult: RuntimeStartResult | null;
+}
+
+/**
+ * PILOT-002 R3: result of a runtime start check.
+ *
+ * The gate spawns the application's start command (e.g., `npm start` or
+ * `node server.js`), waits briefly for the server to bind, probes an HTTP
+ * endpoint (default `http://127.0.0.1:3000/`), and kills the process.
+ *
+ * - `{ ok: true, ... }` — the server started and responded with HTTP 200
+ *   on the probed endpoint.
+ * - `{ ok: false, reason, stderr }` — the server failed to start or did
+ *   not respond. The `stderr` is fed back to the worker as actionable
+ *   feedback so it can diagnose and repair (within MAX_FINISH_REJECTIONS).
+ */
+export interface RuntimeStartResult {
+  readonly ok: boolean;
+  readonly command: string;
+  readonly httpStatus: number | null;
+  readonly reason: string;
+  readonly stderr: string;
 }
 
 /**
@@ -315,6 +344,7 @@ export function freshEvidence(genome: WorkerGenome, taskBrief: string): Completi
     lastTestStep: null,
     lastMutationStep: null,
     finishRejections: 0,
+    lastStartResult: null,
   };
 }
 
@@ -664,3 +694,147 @@ export function recordWriteFile(
 
 export type { ExecutableAcceptanceMention };
 export { detectExecutableMentions };
+
+// ---------------------------------------------------------------------------
+// PILOT-002 R3 — Runtime Acceptance Gate (async)
+// ---------------------------------------------------------------------------
+
+/**
+ * PILOT-002 R3: determine whether the completion gate should require a
+ * runtime start check for this worker.
+ *
+ * Returns true when ALL of:
+ *   - deliverable kind is `testable-code` (worker produced code that runs)
+ *   - goal text contains a start command mention (npm start, node server.js)
+ *   - the worker has a computer (needed to spawn the start process)
+ *
+ * The check is deterministic: same inputs → same decision.
+ */
+export function shouldRequireRuntimeStart(
+  evidence: CompletionEvidence,
+  goalText: string,
+  hasComputer: boolean,
+): boolean {
+  if (evidence.deliverableKind !== 'testable-code') return false;
+  if (!hasComputer) return false;
+  // Lazy import to avoid pulling acceptance-integrity into the sync path.
+  // We use the same detection logic the gateway uses for test commands.
+  // Inline the regex here to keep this module self-contained for the gate.
+  return /\bnpm\s+start\b|\bnode\s+server\.(?:js|mjs|ts)\b/i.test(goalText);
+}
+
+/**
+ * PILOT-002 R3: spawn the start command in the worker's workspace, probe
+ * an HTTP endpoint, and kill the process.
+ *
+ * The command comes from the goal text's start mention (npm start or
+ * node server.js). We spawn it directly via `child_process.spawn` (NOT
+ * via `computer.exec` — that would block for 60s waiting for the server
+ * to exit, which it never does). We give the server up to 8 seconds to
+ * bind, then probe `http://127.0.0.1:3000/` (the conventional dev port).
+ *
+ * The probe accepts HTTP 200 or any 2xx/3xx as "server is up". 4xx/5xx
+ * means the server is broken. Connection refused means it didn't bind.
+ *
+ * @param computer the worker's computer (must support exec — we use it
+ *   to discover the workspace directory via `listFiles` first, then
+ *   spawn the start command in that directory)
+ * @param command the start command (e.g., 'npm start', 'node server.js')
+ * @param options optional overrides (probe URL, timeout)
+ * @returns the result of the runtime start check
+ */
+export async function checkRuntimeStart(
+  computer: WorkerComputer,
+  command: string,
+  options: {
+    readonly probeUrl?: string;
+    readonly startupTimeoutMs?: number;
+  } = {},
+): Promise<RuntimeStartResult> {
+  const probeUrl = options.probeUrl ?? 'http://127.0.0.1:3000/';
+  const startupTimeoutMs = options.startupTimeoutMs ?? 8_000;
+
+  // We need to spawn the start command in the worker's workspace.
+  // The WorkerComputer does not expose a spawn() — only exec() which
+  // blocks. We use exec() with a shell wrapper that backgrounds the
+  // server and waits briefly. If the server crashes immediately, exec
+  // returns with the crash exit code and stderr.
+  //
+  // The wrapper: `sh -c '<cmd> > /tmp/.start-stdout 2> /tmp/.start-stderr & sleep <timeout>; curl -sS -o /dev/null -w '%{http_code}' <url> || echo FAIL; kill %1 2>/dev/null`
+  //
+  // This is deliberately simple — we do NOT add a new spawn primitive
+  // to the WorkerComputer interface (that would be a frozen-contract
+  // change). We reuse exec() with a bounded shell command.
+  const wrapped = `sh -c '${command.replace(/'/g, "'\\''")} > /tmp/.r3-start-stdout 2> /tmp/.r3-start-stderr & PID=$!; sleep ${Math.ceil(startupTimeoutMs / 1000)}; HTTP=$(curl -sS -o /dev/null -w '%{http_code}' ${probeUrl} 2>/dev/null || echo FAIL); kill $PID 2>/dev/null; wait $PID 2>/dev/null; STDERR=$(cat /tmp/.r3-start-stderr 2>/dev/null | head -c 4000); if [ "$HTTP" = "FAIL" ] || [ -z "$HTTP" ]; then echo "HTTP_FAILED"; echo "---STDERR---"; echo "$STDERR"; exit 1; elif [ "$HTTP" -ge 200 ] && [ "$HTTP" -lt 400 ]; then echo "HTTP_OK:$HTTP"; exit 0; else echo "HTTP_BAD:$HTTP"; echo "---STDERR---"; echo "$STDERR"; exit 1; fi'`;
+
+  try {
+    const result = await computer.exec(wrapped);
+    const stdout = result.stdout ?? '';
+    const stderr = result.stderr ?? '';
+    if (result.exitCode === 0) {
+      // Server started and responded OK.
+      const httpMatch = /HTTP_OK:(\d+)/.exec(stdout);
+      const httpStatus = httpMatch ? Number.parseInt(httpMatch[1]!, 10) : 200;
+      return {
+        ok: true,
+        command,
+        httpStatus,
+        reason: `server started and responded HTTP ${httpStatus} on ${probeUrl}`,
+        stderr: '',
+      };
+    }
+    // Failure: extract the reason.
+    let reason = 'server failed to start or did not respond';
+    let httpStatus: number | null = null;
+    const failMatch = /HTTP_FAILED/.exec(stdout);
+    const badMatch = /HTTP_BAD:(\d+)/.exec(stdout);
+    if (failMatch) {
+      reason = `server did not respond on ${probeUrl} within ${startupTimeoutMs}ms (connection refused or timed out)`;
+    } else if (badMatch) {
+      httpStatus = Number.parseInt(badMatch[1]!, 10);
+      reason = `server responded with HTTP ${httpStatus} (expected 2xx or 3xx)`;
+    }
+    // Extract the actual stderr from the start command (after ---STDERR---).
+    const stderrMarker = stdout.indexOf('---STDERR---');
+    const actualStderr = stderrMarker >= 0
+      ? stdout.slice(stderrMarker + '---STDERR---'.length).trim()
+      : stderr.trim();
+    return {
+      ok: false,
+      command,
+      httpStatus,
+      reason,
+      stderr: actualStderr.slice(0, 4000),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      command,
+      httpStatus: null,
+      reason: `runtime start check could not execute: ${(error as Error).message.slice(0, 200)}`,
+      stderr: '',
+    };
+  }
+}
+
+/**
+ * PILOT-002 R3: build the actionable feedback for a failed runtime start.
+ *
+ * The feedback is fed back to the worker via the scratchpad so the LLM
+ * can diagnose and repair. The feedback deliberately does NOT mention
+ * the specific fix (e.g., "use DatabaseSync") — the worker must
+ * diagnose from the stderr itself.
+ */
+export function runtimeStartFailureFeedback(
+  result: RuntimeStartResult,
+): string {
+  return (
+    `Your application's start command "${result.command}" did not launch a working server.\n` +
+    `Reason: ${result.reason}\n` +
+    (result.stderr.length > 0
+      ? `Server stderr (first 4000 chars):\n${result.stderr}\n`
+      : '') +
+    `Inspect the error, repair the code, re-run "npm test" to confirm tests still pass, ` +
+    `then call finish. The completion gate will re-verify the server starts and responds.`
+  );
+}

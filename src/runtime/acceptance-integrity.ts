@@ -145,6 +145,83 @@ const EXECUTABLE_PATTERNS: ReadonlyArray<{
 ];
 
 /**
+ * PILOT-002 R3 (Runtime Acceptance Gate): patterns that detect runtime-start
+ * commands in goal text. Unlike test commands, start commands do NOT exit
+ * (a server keeps running). The completion gate (in src/worker/completion-policy.ts)
+ * uses these to require the worker to verify its application actually starts
+ * and responds to HTTP before `finish` is accepted.
+ *
+ * These patterns do NOT auto-add verification checks — verification runs in
+ * a clean room without `node_modules`, so `npm start` cannot work there.
+ * Instead, the completion gate runs the start command in the worker's own
+ * workspace (where node_modules exists) and probes an HTTP endpoint.
+ */
+const START_COMMAND_PATTERNS: ReadonlyArray<{
+  readonly pattern: RegExp;
+  readonly command: string;
+  readonly requiredFile: string;
+  readonly label: string;
+}> = [
+  {
+    pattern: /\bnpm\s+start\b/i,
+    command: 'npm start',
+    requiredFile: 'package.json',
+    label: 'npm start launches a working server (R3 runtime acceptance)',
+  },
+  {
+    pattern: /\bnode\s+server\.(?:js|mjs|ts)\b/i,
+    command: 'node server.js',
+    requiredFile: 'server.js',
+    label: 'node server.js launches a working server (R3 runtime acceptance)',
+  },
+];
+
+/**
+ * PILOT-002 R3: a detected runtime-start command in goal text.
+ * Unlike `ExecutableAcceptanceMention`, the start command does not have
+ * an `expectExit` — it should NOT exit (the server keeps running). The
+ * completion gate verifies the server starts and responds to HTTP.
+ */
+export interface StartCommandMention {
+  readonly phrase: string;
+  readonly command: string;
+  readonly requiredFile: string;
+  readonly label: string;
+}
+
+/**
+ * PILOT-002 R3: detect runtime-start commands in goal text.
+ *
+ * Returns a de-duplicated list of detected start commands (npm start,
+ * node server.js). Used by the completion gate to require the worker
+ * verifies its application actually starts.
+ *
+ * @param goalText the goal's outcome + context + constraints
+ *   concatenated (any order; the regex is line-blind).
+ * @returns the detected start mentions, in the order they appear in
+ *   {@link START_COMMAND_PATTERNS}.
+ */
+export function detectStartMentions(
+  goalText: string,
+): readonly StartCommandMention[] {
+  const mentions: StartCommandMention[] = [];
+  const seen = new Set<string>();
+  for (const p of START_COMMAND_PATTERNS) {
+    if (p.pattern.test(goalText)) {
+      if (seen.has(p.command)) continue;
+      seen.add(p.command);
+      mentions.push({
+        phrase: p.command,
+        command: p.command,
+        requiredFile: p.requiredFile,
+        label: p.label,
+      });
+    }
+  }
+  return mentions;
+}
+
+/**
  * Detect executable-acceptance mentions in goal text.
  *
  * Returns a list of detected mentions, de-duplicated by command

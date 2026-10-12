@@ -1,12 +1,12 @@
 {
-  "missionId": "039aa388-eac8-418c-9800-469e75db45ce",
+  "missionId": "6c8cb496-2d61-4b2e-bfa3-01ef6cff8bc9",
   "status": "RUNNING",
   "accepted": true,
   "links": {
-    "self": "/v1/missions/039aa388-eac8-418c-9800-469e75db45ce",
-    "events": "/v1/missions/039aa388-eac8-418c-9800-469e75db45ce/events",
-    "result": "/v1/missions/039aa388-eac8-418c-9800-469e75db45ce/result",
-    "artifacts": "/v1/missions/039aa388-eac8-418c-9800-469e75db45ce/artifacts",
-    "cancel": "/v1/missions/039aa388-eac8-418c-9800-469e75db45ce/cancel"
+    "self": "/v1/missions/6c8cb496-2d61-4b2e-bfa3-01ef6cff8bc9",
+    "events": "/v1/missions/6c8cb496-2d61-4b2e-bfa3-01ef6cff8bc9/events",
+    "result": "/v1/missions/6c8cb496-2d61-4b2e-bfa3-01ef6cff8bc9/result",
+    "artifacts": "/v1/missions/6c8cb496-2d61-4b2e-bfa3-01ef6cff8bc9/artifacts",
+    "cancel": "/v1/missions/6c8cb496-2d61-4b2e-bfa3-01ef6cff8bc9/cancel"
   }
 }

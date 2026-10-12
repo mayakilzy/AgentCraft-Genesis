@@ -21,6 +21,9 @@ import {
   recordRunCommand,
   recordWriteFile,
   detectExecutableMentions,
+  shouldRequireRuntimeStart,
+  checkRuntimeStart,
+  runtimeStartFailureFeedback,
   type CompletionEvidence,
   type WorkspaceSnapshot,
 } from './completion-policy.js';
@@ -980,6 +983,67 @@ export class WorkerAgent {
           continue;
         }
         // Gate accepted — proceed with the original finish path.
+        //
+        // PILOT-002 R3 (Runtime Acceptance Gate): if the goal text mentions
+        // a start command (npm start / node server.js) and this is a
+        // testable-code worker with a computer, run the start command and
+        // probe HTTP. If the server fails to start, reject `finish` and
+        // feed the stderr back to the worker as actionable feedback (the
+        // worker gets one bounded retry, then terminal failure).
+        //
+        // This gate runs AFTER checkCompletion (test gate) succeeds, so a
+        // worker that passed `npm test` but produced a broken `npm start`
+        // (e.g., import error that the test mocked away) is caught here.
+        if (
+          this.computer !== null &&
+          shouldRequireRuntimeStart(completionEvidence, this.taskBrief, true)
+        ) {
+          // Determine the start command from the goal text. We look for
+          // `npm start` first (the conventional Node.js dev command), then
+          // `node server.js`. If both appear, prefer `npm start`.
+          const startCommand = /\bnpm\s+start\b/i.test(this.taskBrief)
+            ? 'npm start'
+            : 'node server.js';
+          const startResult = await checkRuntimeStart(
+            this.computer,
+            startCommand,
+          );
+          completionEvidence.lastStartResult = startResult;
+          if (!startResult.ok) {
+            // Runtime start failed — reject finish with actionable feedback.
+            completionEvidence.finishRejections += 1;
+            const rejectionCount = completionEvidence.finishRejections;
+            const feedback = runtimeStartFailureFeedback(startResult);
+            if (rejectionCount > MAX_FINISH_REJECTIONS) {
+              return this.finish(
+                'failure',
+                `runtime start gate not satisfied after ${rejectionCount} attempts: ${startResult.reason}`,
+                base(),
+                'WORKER_FAILURE',
+                reasoningRetries,
+                completionEvidence,
+              );
+            }
+            refusals.push(
+              `finish rejected (attempt ${rejectionCount}/${MAX_FINISH_REJECTIONS}): runtime start failed — ${startResult.reason}`,
+            );
+            scratchpad.push(
+              `step ${steps + 1}: ${JSON.stringify(action)}`,
+              `observation: RUNTIME START GATE REJECTED — ${feedback}`,
+            );
+            steps += 1;
+            this.onEvent?.({
+              type: 'worker-step',
+              workerId,
+              step: steps,
+              action: 'finish',
+              ok: false,
+              elapsedMs: 0,
+            });
+            continue;
+          }
+          // Runtime start succeeded — fall through to accept finish.
+        }
         finishSummary = action.summary;
         for (const path of action.artifacts ?? []) {
           if (!artifacts.includes(path)) artifacts.push(path);
