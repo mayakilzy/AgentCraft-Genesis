@@ -1,0 +1,62 @@
+{
+  "F-00": {
+    "status": "PASS",
+    "detail": "evidence dir prepared",
+    "timestamp": "2026-10-12T09:55:57.639Z"
+  },
+  "F-01": {
+    "status": "PASS",
+    "detail": "gateway up on port 4880",
+    "timestamp": "2026-10-12T09:55:58.691Z"
+  },
+  "F-02": {
+    "status": "PASS",
+    "detail": "repair mission submitted: 94973130-a205-4838-ae0e-8d074cfd66c1",
+    "timestamp": "2026-10-12T09:55:58.702Z"
+  },
+  "F-03": {
+    "status": "INFO",
+    "detail": "waiting for repair execution (timeout 540000ms)...",
+    "timestamp": "2026-10-12T09:55:58.702Z"
+  },
+  "F-04": {
+    "status": "PASS",
+    "detail": "mission terminated: status=PARTIAL, elapsed=450410ms, tokens=176956",
+    "timestamp": "2026-10-12T10:03:29.112Z"
+  },
+  "F-STATUS": {
+    "status": "PARTIAL",
+    "detail": "missionId=94973130-a205-4838-ae0e-8d074cfd66c1",
+    "timestamp": "2026-10-12T10:03:29.112Z"
+  },
+  "F-TOKENS": {
+    "status": "176956",
+    "detail": "tokens=176956",
+    "timestamp": "2026-10-12T10:03:29.112Z"
+  },
+  "F-ARTIFACTS": {
+    "status": "PASS",
+    "detail": "artifacts: 21",
+    "timestamp": "2026-10-12T10:03:29.119Z"
+  },
+  "F-NPM_TEST": {
+    "status": "PASS",
+    "detail": "exit=0",
+    "timestamp": "2026-10-12T10:03:29.333Z"
+  },
+  "F-HTTP_ROOT": {
+    "status": "PASS",
+    "detail": "HTTP 200, 1126 bytes",
+    "timestamp": "2026-10-12T10:03:31.348Z"
+  },
+  "F-HTTP_CONVERTER": {
+    "status": "PASS",
+    "detail": "HTTP 200, 1177 bytes, has cToF=true",
+    "timestamp": "2026-10-12T10:03:31.354Z"
+  },
+  "F-BROWSER": {
+    "status": "INFO",
+    "detail": "HTTP test for /converter.js already proved the JS is loadable",
+    "timestamp": "2026-10-12T10:03:32.565Z"
+  }
+}

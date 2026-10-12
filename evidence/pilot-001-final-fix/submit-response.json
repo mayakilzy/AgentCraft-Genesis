@@ -1,0 +1,12 @@
+{
+  "missionId": "94973130-a205-4838-ae0e-8d074cfd66c1",
+  "status": "RUNNING",
+  "accepted": true,
+  "links": {
+    "self": "/v1/missions/94973130-a205-4838-ae0e-8d074cfd66c1",
+    "events": "/v1/missions/94973130-a205-4838-ae0e-8d074cfd66c1/events",
+    "result": "/v1/missions/94973130-a205-4838-ae0e-8d074cfd66c1/result",
+    "artifacts": "/v1/missions/94973130-a205-4838-ae0e-8d074cfd66c1/artifacts",
+    "cancel": "/v1/missions/94973130-a205-4838-ae0e-8d074cfd66c1/cancel"
+  }
+}

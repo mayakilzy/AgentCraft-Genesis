@@ -1,0 +1,14 @@
+
+> temp-converter@1.0.0 test
+> node --test
+
+✔ celsius to fahrenheit conversion (0.652967ms)
+✔ fahrenheit to celsius conversion (0.139666ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 60.389718

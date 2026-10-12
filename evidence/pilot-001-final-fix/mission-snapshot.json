@@ -1,0 +1,82 @@
+{
+  "missionId": "94973130-a205-4838-ae0e-8d074cfd66c1",
+  "callerId": "pilot-001ff-caller",
+  "label": "pilot-001-final-fix",
+  "status": "PARTIAL",
+  "terminal": true,
+  "acceptedAt": "2026-10-12T09:55:58.696Z",
+  "finishedAt": "2026-10-12T10:03:28.239Z",
+  "goalOutcome": "Fix a bug in an existing temperature converter web application.\n\nThe app runs on Node.js with a server.js that serves index.html on port 3000.\nThe index.html references converter.js via a script tag: <script src=\"converter.js\"></script>.\n\nBUG: The server returns HTTP 404 for /converter.js because server.js only handles \"/\" and \"/index.html\" routes. All other requests return 404.\n\nREQUIRED FIX: Modify server.js to serve ALL static files (converter.js, index.html, and any other files in the app directory) with the correct Content-Type headers.\n\nAfter fixing, verify by running \"npm test\" (must exit 0) and \"node server.js\" followed by checking that GET /converter.js returns HTTP 200 with JavaScript content.\n\nThe existing files are staged in your workspace as mission inputs. Read them first, then fix server.js, then verify.",
+  "result": {
+    "status": "partial",
+    "summary": "verification failed after retry: 1 of 17 acceptance check(s) failed: mission-input:server.js (\"server.js\" was found in software-engineer-1's workspace but its content hash does NOT match (expected=f3fe567ba38514b1…, actual=f834de3b5f59a1e4…) — possible fabrication (file exists at the right path but with different bytes).)",
+    "evidence": [
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at package.json",
+        "location": "software-engineer-1:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at server.js",
+        "location": "software-engineer-1:server.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at index.html",
+        "location": "software-engineer-1:index.html"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at converter.js",
+        "location": "software-engineer-1:converter.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at test/converter.test.js",
+        "location": "software-engineer-1:test/converter.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Software Engineer deliverable at README.md",
+        "location": "software-engineer-1:README.md"
+      },
+      {
+        "kind": "artifact",
+        "description": "Verification Engineer deliverable at package.json",
+        "location": "verification-engineer-2:package.json"
+      },
+      {
+        "kind": "artifact",
+        "description": "Verification Engineer deliverable at server.js",
+        "location": "verification-engineer-2:server.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Verification Engineer deliverable at index.html",
+        "location": "verification-engineer-2:index.html"
+      },
+      {
+        "kind": "artifact",
+        "description": "Verification Engineer deliverable at converter.js",
+        "location": "verification-engineer-2:converter.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Verification Engineer deliverable at test/converter.test.js",
+        "location": "verification-engineer-2:test/converter.test.js"
+      },
+      {
+        "kind": "artifact",
+        "description": "Verification Engineer deliverable at README.md",
+        "location": "verification-engineer-2:README.md"
+      }
+    ],
+    "cost": {
+      "usd": 0,
+      "tokens": 176956,
+      "wallMs": 449505,
+      "humanInterventions": 0
+    }
+  }
+}
