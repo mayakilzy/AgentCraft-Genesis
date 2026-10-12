@@ -59,6 +59,11 @@ import {
   type ExecutableAcceptanceMention,
 } from '../runtime/acceptance-integrity.js';
 import type { WorkerComputer } from '../runtime/computer.js';
+import {
+  applicableAcceptanceChecks,
+  parseOwnershipPrefix,
+  type OwnershipContract,
+} from './ownership-contract.js';
 
 // ---------------------------------------------------------------------------
 // A1 — Responsibility-aware completion
@@ -249,6 +254,14 @@ export interface CompletionEvidence {
   /** Inferred from genome.capabilityNeeds at construction time. */
   readonly deliverableKind: DeliverableKind;
   /**
+   * D+ B01: the ownership contract parsed from the task brief's
+   * responsibility string. May be null if no `[owns: ...]` prefix
+   * was present (e.g., Sole Operator, Generalist, or pre-B01 roles).
+   * When present, `applicableChecks` is scoped to the worker's
+   * ownedArtifacts (not the whole mission's executable mentions).
+   */
+  readonly ownershipContract: OwnershipContract | null;
+  /**
    * The last successful test command (exit 0), or null if no test has
    * run yet. "Test command" means a `run_command` whose command string
    * matches a detected executable-acceptance mention (e.g., "npm test").
@@ -280,15 +293,66 @@ export interface CompletionEvidence {
 
 /**
  * Create fresh completion evidence for a worker.
+ *
+ * D+ B01: parses the ownership prefix from the task brief's
+ * responsibility line (if present) and builds an OwnershipContract.
+ * The contract's `applicableChecks` are scoped to the worker's
+ * ownedArtifacts — a documentation worker does not inherit code-test
+ * obligations even if the goal text mentions "npm test".
  */
-export function freshEvidence(genome: WorkerGenome): CompletionEvidence {
+export function freshEvidence(genome: WorkerGenome, taskBrief: string): CompletionEvidence {
+  // D+ B01: parse the ownership contract from the task brief.
+  // The task brief contains "Your assignment in it: [owns: ...] responsibility".
+  // We extract the responsibility line and parse the [owns: ...] prefix.
+  const ownershipContract = parseOwnershipFromBrief(taskBrief, genome);
   return {
     deliverableKind: genomeDeliverableKind(genome),
+    ownershipContract,
     lastTestCommand: null,
     lastTestSnapshot: null,
     lastTestStep: null,
     lastMutationStep: null,
     finishRejections: 0,
+  };
+}
+
+/**
+ * Parse the ownership contract from the task brief.
+ *
+ * The frozen `renderTaskBrief()` (orchestrator.ts:246) produces a brief
+ * that starts with:
+ * ```
+ * Mission: "<outcome>"
+ * Your assignment in it: [owns: src/**, test/**, package.json] Implements...
+ * ```
+ *
+ * We extract the responsibility line (after "Your assignment in it: ")
+ * and parse the `[owns: ...]` prefix to build the OwnershipContract.
+ *
+ * @param taskBrief the full task brief string
+ * @param genome the worker's genome (for capabilityNeeds + deliverableKind)
+ * @returns the OwnershipContract, or null if no ownership prefix is present
+ */
+function parseOwnershipFromBrief(
+  taskBrief: string,
+  genome: WorkerGenome,
+): OwnershipContract | null {
+  // Find the "Your assignment in it: " line.
+  const match = /Your assignment in it:\s*(.+?)(?:\n|$)/.exec(taskBrief);
+  if (match === null) return null;
+  const responsibilityLine = match[1]!;
+  const { ownedArtifacts, cleanResponsibility } = parseOwnershipPrefix(responsibilityLine);
+  if (ownedArtifacts.length === 0) return null; // no prefix → no contract
+  // Build a minimal contract (without re-detecting mentions — that's
+  // done in checkCompletion where the goalText is available).
+  return {
+    workerId: genome.identity.id,
+    role: genome.role,
+    responsibility: cleanResponsibility,
+    deliverableKind: genomeDeliverableKind(genome),
+    ownedArtifacts,
+    upstreamDependencies: [], // not yet known in B01 — B02 will populate
+    applicableChecks: [], // populated in checkCompletion where goalText is available
   };
 }
 
@@ -443,17 +507,35 @@ export function checkCompletion(
   goalText: string,
   currentSnapshot: WorkspaceSnapshot | null,
 ): CompletionCheckResult {
-  const mentions = detectExecutableMentions(goalText);
+  const allMentions = detectExecutableMentions(goalText);
 
-  // For testable-code workers with executable mentions in the goal text
-  if (evidence.deliverableKind === 'testable-code' && mentions.length > 0) {
+  // D+ B01: scope applicable checks to the worker's ownership contract.
+  // If the worker has an ownership contract, only checks whose
+  // requiredFile matches the worker's ownedArtifacts apply. If no
+  // contract is present (pre-B01 or Generalist), fall back to Task A
+  // behavior (all mentions apply to testable-code workers).
+  let applicableMentions: readonly ExecutableAcceptanceMention[];
+  if (evidence.ownershipContract !== null) {
+    // Re-build the contract with applicableChecks populated from goalText
+    const contractWithChecks: OwnershipContract = {
+      ...evidence.ownershipContract,
+      applicableChecks: applicableAcceptanceChecks(allMentions, evidence.ownershipContract),
+    };
+    applicableMentions = contractWithChecks.applicableChecks;
+  } else {
+    // Pre-B01 fallback: all mentions apply to testable-code workers
+    applicableMentions = evidence.deliverableKind === 'testable-code' ? allMentions : [];
+  }
+
+  // For testable-code workers with applicable executable mentions
+  if (evidence.deliverableKind === 'testable-code' && applicableMentions.length > 0) {
     if (evidence.lastTestCommand === null) {
       return {
         ok: false,
         reason: 'no successful test command has been run',
         actionableFeedback:
           `This mission's goal requires the following executable acceptance checks to pass:\n` +
-          mentions.map((m) => `- "${m.command}" (must exit ${m.expectExit})`).join('\n') +
+          applicableMentions.map((m) => `- "${m.command}" (must exit ${m.expectExit})`).join('\n') +
           `\nRun the required test command(s) via run_command, verify they exit 0, ` +
           `then call finish. If you cannot satisfy a check, finish with a summary explaining what blocked you.`,
       };
@@ -500,16 +582,11 @@ export function checkCompletion(
     return { ok: true };
   }
 
-  // For documentation workers: require at least one file written.
-  // The worker-agent's existing artifact-existence check (line 1001-1018)
-  // already confirms the file exists; here we just confirm that the worker
-  // produced SOMETHING. If the worker called finish with zero artifacts,
-  // the existing check fails. If the goal text mentions executable acceptance
-  // but the worker is a documentation writer, we DON'T require the test
-  // (the code worker runs the test, not the doc worker — A09).
+  // D+ B01: documentation workers with ownership contract — no test required.
+  // The ownership contract's applicableChecks is empty for non-testable-code
+  // workers (see applicableAcceptanceChecks in ownership-contract.ts).
+  // The existing artifact-existence check in worker-agent.ts remains the gate.
   if (evidence.deliverableKind === 'documentation') {
-    // Documentation workers are not required to run tests (A09).
-    // The existing artifact-existence check is sufficient.
     return { ok: true };
   }
 

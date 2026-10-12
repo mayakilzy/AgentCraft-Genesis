@@ -7,6 +7,8 @@ import type {
   OrganizationPlan,
   PlannedWorker,
 } from '../contracts/core.js';
+// D+ B01: encode ownership contract into responsibility string
+import { encodeOwnershipPrefix } from '../worker/ownership-contract.js';
 
 /**
  * GROUP 4 (TASK-027): an advisory organizational pattern the planner may
@@ -66,7 +68,7 @@ export const DEFAULT_MAX_WORKERS = 5;
 
 type Scope = 'minimal' | 'standard' | 'complex';
 
-type RoleTemplate = readonly [role: string, responsibility: string];
+type RoleTemplate = readonly [role: string, responsibility: string, ownedArtifacts?: readonly string[]];
 
 const COMPLEXITY_SIGNALS: readonly string[] = [
   'comprehensive',
@@ -78,7 +80,17 @@ const COMPLEXITY_SIGNALS: readonly string[] = [
   'full',
 ];
 
-/** Compact per-domain role templates — deliberately NOT a large catalog. */
+/**
+ * Compact per-domain role templates — deliberately NOT a large catalog.
+ *
+ * D+ B01: each role template now carries an optional `ownedArtifacts`
+ * list — the artifact path patterns the role typically produces. This
+ * is the source of truth for the OwnershipContract (see
+ * `src/worker/ownership-contract.ts`). The `buildSpecialists()`
+ * function encodes this into the `responsibility` string as a
+ * `[owns: ...]` prefix, so it flows through the frozen
+ * `renderTaskBrief()` without a frozen-contract change.
+ */
 const ROLE_TEMPLATES: Readonly<
   Record<MissionDomain, Partial<Record<string, RoleTemplate>>>
 > = {
@@ -86,46 +98,56 @@ const ROLE_TEMPLATES: Readonly<
     'web-research': [
       'Web Researcher',
       'Gathers online sources and evidence relevant to the outcome',
+      ['research/**', 'sources.md'],
     ],
     'data-analysis': [
       'Data Analyst',
       'Analyzes collected data and derives quantitative insights',
+      ['analysis/**', 'data/**'],
     ],
     'document-authoring': [
       'Report Writer',
       'Synthesizes findings into the final written deliverable',
+      ['report.md', 'README.md'],
     ],
   },
   'software-engineering': {
     'code-execution': [
       'Software Engineer',
       'Implements, runs and fixes the code changes',
+      ['src/**', 'test/**', 'package.json'],
     ],
     'browser-verification': [
       'Verification Engineer',
       'Verifies behavior end-to-end in a real browser',
+      ['e2e/**', 'verification-report.md'],
     ],
     'document-authoring': [
       'Documentation Writer',
       'Documents the change and its usage',
+      ['README.md', 'docs/**'],
     ],
   },
   diagnostic: {
     'data-analysis': [
       'Diagnostic Analyst',
       'Analyzes telemetry and evidence to isolate the fault',
+      ['analysis/**', 'diagnosis.md'],
     ],
     'code-execution': [
       'Reproduction Engineer',
       'Reproduces the failure and tests hypotheses hands-on',
+      ['repro/**', 'test/**'],
     ],
     'web-research': [
       'Technical Researcher',
       'Researches known issues and reference material',
+      ['research/**', 'references.md'],
     ],
     'document-authoring': [
       'Report Writer',
       'Writes the diagnosis report with evidence',
+      ['report.md', 'diagnosis.md'],
     ],
   },
   general: {},
@@ -188,15 +210,32 @@ function buildSpecialists(
     const existing = specialists.find((worker) => worker.role === template[0]);
     if (existing) {
       const index = specialists.indexOf(existing);
+      // D+ B01: merge capability needs when a specialist absorbs multiple needs.
+      // The responsibility string's [owns: ...] prefix is preserved from the
+      // first add — we do NOT overwrite it on merge (the first ownership
+      // declaration wins). If the existing specialist had no prefix but the
+      // new template does, encode it now.
       specialists[index] = {
         ...existing,
         capabilityNeeds: [...new Set([...existing.capabilityNeeds, need])],
       };
+      if (!specialists[index]!.responsibility.includes('[owns:') && template[2] !== undefined) {
+        specialists[index] = {
+          ...specialists[index]!,
+          responsibility: encodeOwnershipPrefix(template[2], template[1]),
+        };
+      }
     } else {
+      // D+ B01: encode the [owns: ...] prefix into the responsibility
+      // string so it flows through the frozen renderTaskBrief().
+      const ownedArtifacts = template[2];
+      const responsibility = ownedArtifacts !== undefined
+        ? encodeOwnershipPrefix(ownedArtifacts, template[1])
+        : template[1];
       specialists.push({
         id: `${slugify(template[0])}-${specialists.length + 1}`,
         role: template[0],
-        responsibility: template[1],
+        responsibility,
         capabilityNeeds: [need],
       });
     }

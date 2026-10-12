@@ -844,7 +844,11 @@ export class WorkerAgent {
     // The mentions are detected once (deterministic regex from goal text)
     // and reused on every gate check. The evidence is mutated as the
     // worker executes actions.
-    const completionEvidence = freshEvidence(this.genome);
+    //
+    // D+ B01: freshEvidence now parses the ownership contract from the
+    // task brief's responsibility line. The contract scopes applicable
+    // checks to the worker's ownedArtifacts.
+    const completionEvidence = freshEvidence(this.genome, this.taskBrief);
     const mentions = detectExecutableMentions(this.taskBrief);
 
     const base = (): Omit<WorkerResult, 'status' | 'summary' | 'evidence' | 'failureClass' | 'reasoningRetries'> => ({
