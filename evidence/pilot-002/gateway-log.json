@@ -2,36 +2,71 @@
   {
     "stream": "stderr",
     "t": "[genesis-gateway] No MCP config (GENESIS_MCP_SERVERS_CONFIG not set).\n",
-    "ts": "2026-10-12T19:06:44.366Z"
+    "ts": "2026-10-12T19:56:21.077Z"
   },
   {
     "stream": "stderr",
     "t": "[genesis-gateway] EXECUTION MODE: production (real providers required)\n",
-    "ts": "2026-10-12T19:06:44.367Z"
+    "ts": "2026-10-12T19:56:21.077Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T19:06:44.432Z\",\"component\":\"history_recovery\",\"message\":\"loaded 5 mission record(s) from disk\"}\n",
-    "ts": "2026-10-12T19:06:44.433Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T19:56:21.099Z\",\"component\":\"history_recovery\",\"message\":\"loaded 23 mission record(s) from disk\"}\n",
+    "ts": "2026-10-12T19:56:21.100Z"
   },
   {
     "stream": "stderr",
-    "t": "[genesis-gateway] HTTP API listening on http://127.0.0.1:5080\n",
-    "ts": "2026-10-12T19:06:44.474Z"
+    "t": "[genesis-gateway] HTTP API listening on http://127.0.0.1:5080\n[genesis-gateway] A2A inbound listening on http://127.0.0.1:5081\n",
+    "ts": "2026-10-12T19:56:21.156Z"
   },
   {
     "stream": "stderr",
-    "t": "[genesis-gateway] A2A inbound listening on http://127.0.0.1:5081\n[genesis-gateway] Agent Card at http://127.0.0.1:5081/.well-known/agent-card.json\n[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.\n[genesis-gateway] 1 caller(s) configured.\n[genesis-gateway] Execution mode: production\n[genesis-gateway] In-process mission state; no durability across restart.\n[genesis-gateway] Conversations are durable (JSONL on disk).\n[genesis-gateway] Projects are durable (atomic JSON on disk).\n",
-    "ts": "2026-10-12T19:06:44.474Z"
+    "t": "[genesis-gateway] Agent Card at http://127.0.0.1:5081/.well-known/agent-card.json\n[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.\n[genesis-gateway] 1 caller(s) configured.\n[genesis-gateway] Execution mode: production\n[genesis-gateway] In-process mission state; no durability across restart.\n[genesis-gateway] Conversations are durable (JSONL on disk).\n[genesis-gateway] Projects are durable (atomic JSON on disk).\n",
+    "ts": "2026-10-12T19:56:21.156Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T19:06:44.618Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"2bac80f6-fc61-4c75-a645-8e6f8ee83bce\",\"callerId\":\"pilot-002-caller\"}\n",
-    "ts": "2026-10-12T19:06:44.619Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T19:56:21.394Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"26272224-3d2b-48d9-8ca8-02c0958d0f4e\",\"callerId\":\"pilot-002-caller\"}\n",
+    "ts": "2026-10-12T19:56:21.395Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T19:12:39.240Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"2bac80f6-fc61-4c75-a645-8e6f8ee83bce\",\"status\":\"PARTIAL\",\"callerId\":\"pilot-002-caller\"}\n",
-    "ts": "2026-10-12T19:12:39.241Z"
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1492:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1119:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1222:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1016:30)\n",
+    "ts": "2026-10-12T20:04:56.384Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1492:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1119:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1222:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1016:30)\n",
+    "ts": "2026-10-12T20:05:01.406Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1492:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1119:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1222:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1016:30)\n",
+    "ts": "2026-10-12T20:05:16.438Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1492:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1119:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1222:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1016:30)\n",
+    "ts": "2026-10-12T20:05:46.469Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1492:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1119:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1222:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1016:30)\n",
+    "ts": "2026-10-12T20:06:46.497Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] received SIGTERM, shutting down...\n",
+    "ts": "2026-10-12T20:07:06.561Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T20:07:06.906Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"26272224-3d2b-48d9-8ca8-02c0958d0f4e\",\"status\":\"PARTIAL\",\"callerId\":\"pilot-002-caller\"}\n",
+    "ts": "2026-10-12T20:07:06.906Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "[genesis-gateway] shutdown: 1 drained, 0 timed out, 1 runtimes closed, 0 close errors (elapsed 347ms)\n",
+    "ts": "2026-10-12T20:07:06.908Z"
   }
 ]

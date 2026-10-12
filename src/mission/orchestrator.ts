@@ -979,6 +979,24 @@ export class MissionOrchestrator {
             });
             for (const worker of specialists) {
               if (controller.signal.aborted) break;
+              // PILOT-002 R3.2 (TASK 02): Progress-Preserving Continuation.
+              // When a worker fails before finish, the retry must be a
+              // CONTINUATION, not a blind restart. Discover the files the
+              // worker already produced and include them in the retry brief.
+              // The worker sees: (a) what files already exist, (b) what
+              // verification checks failed, (c) the reviewer guidance.
+              // The worker can then avoid rewriting correct files and focus
+              // on the actual gaps.
+              const participant = participants.get(worker.id);
+              let existingFiles: readonly string[] = [];
+              if (participant?.computer !== null && participant?.computer !== undefined) {
+                existingFiles = await discoverWorkspacePathsForRetry(participant.computer);
+              }
+              const existingFilesSummary = existingFiles.length === 0
+                ? '(no files were produced in the previous attempt — start fresh)'
+                : `Files already in your workspace (DO NOT rewrite unless they are wrong):\n${
+                  existingFiles.map((p) => `  - ${p}`).join('\n')
+                }`;
               const brief =
                 `${this.briefFor(
                   worker,
@@ -986,6 +1004,7 @@ export class MissionOrchestrator {
                   upstreamResults(plan, worker, results),
                 )}\n\n` +
                 `A previous attempt failed verification: ${reason}\n` +
+                `${existingFilesSummary}\n` +
                 `Failed checks: ${verification.outcomes
                   .filter((o) => !o.ok)
                   .map((o) => `${o.label} (${o.detail})`)
@@ -993,7 +1012,7 @@ export class MissionOrchestrator {
                 (verification.diagnosis?.guidance === undefined
                   ? ''
                   : `Reviewer guidance: ${verification.diagnosis.guidance}\n`) +
-                'Fix the issues and produce correct deliverables.';
+                'Fix the issues and produce correct deliverables. Continue from the existing workspace state — do NOT start over.';
               const result = await this.runWorker(
                 worker,
                 genomes.get(worker.id)!,
@@ -1426,6 +1445,21 @@ async function discoverWorkerArtifacts(
   } catch {
     return [];
   }
+}
+
+/**
+ * PILOT-002 R3.2 (TASK 02): discover workspace paths for progress-preserving
+ * continuation. Used by the retry loop to tell the worker what files already
+ * exist so it does not rewrite them.
+ *
+ * Same filtering as discoverWorkerArtifacts (excludes node_modules/.git/.npm,
+ * refuses path traversal). Bounded by 4096 files. Fail-closed: returns []
+ * on any error.
+ */
+async function discoverWorkspacePathsForRetry(
+  computer: WorkerComputer,
+): Promise<readonly string[]> {
+  return discoverWorkerArtifacts(computer, 'retry');
 }
 
 function upstreamResults(

@@ -148,9 +148,14 @@ describe('WorkerAgent — the acting loop', () => {
   });
 
   it('fails loudly after repeated unparseable replies', async () => {
+    // PILOT-002 R3.2: MAX_PARSE_FAILURES increased from 2 to 4 to give the
+    // worker more room to recover from malformed JSON. This test now
+    // provides 4 unparseable responses to trigger the failure.
     const reasoning = new ScriptedReasoning([
       'I will first check the workspace, then…',
       'Sure! Let me think about what to do next…',
+      'Let me try again…',
+      'Still thinking…',
     ]);
     const result = await new WorkerAgent({
       genome: genome(),

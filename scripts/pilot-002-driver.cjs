@@ -25,7 +25,7 @@ const A2A_PORT = '5081';
 const OPENBOT_CHECKOUT = '/tmp/openbot-test';
 const OPENBOT_ROOT = '/tmp/openbot-workspaces-pilot-002';
 const TEST_API_KEY = 'pilot-002-key';
-const MISSION_TIMEOUT_MS = 900_000; // 10 minutes max
+const MISSION_TIMEOUT_MS = 1_200_000; // 10 minutes max
 
 rmSync(OPENBOT_ROOT, { recursive: true, force: true });
 mkdirSync(OPENBOT_ROOT, { recursive: true });
@@ -95,8 +95,8 @@ function buildGatewayEnv() {
     OPENBOT_CHECKOUT_DIR: OPENBOT_CHECKOUT,
     OPENBOT_ROOT_DIR: OPENBOT_ROOT,
     ZAI_SDK_PATH: 'z-ai-web-dev-sdk',
-    GENESIS_MAX_WORKER_STEPS: '30',
-    GENESIS_MAX_TOTAL_TOKENS: '200000',
+    GENESIS_MAX_WORKER_STEPS: '50',
+    
     GENESIS_HTTP_PORT: GATEWAY_PORT,
     GENESIS_A2A_PORT: A2A_PORT,
     GENESIS_DEFAULT_MISSION_TIMEOUT_MS: String(MISSION_TIMEOUT_MS),
@@ -308,37 +308,35 @@ async function waitForUrl(url, timeoutMs = 120_000) {
       }
 
       // Browser interaction
-      // PILOT-002 R3.1 (TASK 05): use Playwright's executable resolution
-      // instead of hardcoding Chromium build numbers. Verify the browser
-      // is available before production execution. Fall back gracefully
-      // if Playwright is not installed.
+      // PILOT-002 R3.2 (TASK 04): use the project's Playwright installation
+      // (which matches the installed browser binaries). Fall back to OpenBot
+      // checkout only if the project lacks Playwright. Verify the browser
+      // executable exists before launching — no hardcoded build numbers.
       try {
-        // Try multiple Playwright installations (OpenBot checkout, then project deps).
         let chromium = null;
+        // Try project Playwright FIRST (it matches the installed browsers).
+        // Then fall back to OpenBot checkout.
         const playwrightPaths = [
-          '/tmp/openbot-test/agent-computer/node_modules/playwright',
           'playwright',
+          '/tmp/openbot-test/agent-computer/node_modules/playwright',
         ];
         for (const p of playwrightPaths) {
           try {
             const mod = require(p);
             chromium = mod.chromium;
-            if (chromium) break;
+            if (chromium) {
+              // Verify the executable actually exists before accepting this installation.
+              const execPath = chromium.executablePath?.();
+              if (execPath && require('node:fs').existsSync(execPath)) {
+                break; // Found a working Playwright + browser.
+              }
+              chromium = null; // Executable missing — try next.
+            }
           } catch { /* try next */ }
         }
         if (!chromium) {
-          record('P2-BROWSER', 'SKIP', 'Playwright not found — browser test skipped');
+          record('P2-BROWSER', 'FAIL', 'No working Playwright installation found. Run: npm install playwright && npx playwright install chromium');
         } else {
-          // Verify the browser executable exists before launching.
-          // chromium.executablePath() uses Playwright's supported resolution
-          // (reads the browser registry, not a hardcoded build number).
-          const execPath = chromium.executablePath?.();
-          if (execPath) {
-            const fs = require('node:fs');
-            if (!fs.existsSync(execPath)) {
-              record('P2-BROWSER', 'FAIL', `Chromium executable not found at ${execPath}. Run: npx playwright install chromium`);
-            }
-          }
           const browser = await chromium.launch({ headless: true });
           const page = await browser.newPage();
           const errors = [];

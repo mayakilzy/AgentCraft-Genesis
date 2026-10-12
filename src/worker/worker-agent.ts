@@ -237,7 +237,7 @@ const GRANT_BROWSER = 'openbot:browser-chromium';
 /** v0.1 default step ceiling — generous for real work, small enough to bound cost. */
 export const DEFAULT_MAX_WORKER_STEPS = 10;
 
-const MAX_PARSE_FAILURES = 2;
+const MAX_PARSE_FAILURES = 4;
 /**
  * Maximum stdout/content length included in a single observation.
  *
@@ -521,14 +521,194 @@ export class WorkerAgent {
       .trim();
     const start = cleaned.indexOf('{');
     const end = cleaned.lastIndexOf('}');
-    if (start === -1 || end <= start) return undefined;
-    try {
-      const parsed = JSON.parse(cleaned.slice(start, end + 1)) as WorkerAction;
-      if (typeof parsed.action !== 'string') return undefined;
-      return parsed;
-    } catch {
+    // PILOT-002 R3.2 (TASK 01): if there's no closing brace, do NOT return
+    // undefined immediately — try the truncated-JSON repair first.
+    if (start === -1) return undefined;
+    if (end > start) {
+      // Normal case: we have both braces. Try direct parse, then repairs.
+      try {
+        const parsed = JSON.parse(cleaned.slice(start, end + 1)) as WorkerAction;
+        if (typeof parsed.action === 'string') return parsed;
+      } catch {
+        const repaired = this.tryRepairJson(cleaned, start, end);
+        if (repaired !== undefined) return repaired;
+      }
       return undefined;
     }
+    // Truncated: no closing brace. Try repairs (strategy 1 adds the brace).
+    const repaired = this.tryRepairJson(cleaned, start, end);
+    return repaired;
+  }
+
+  /**
+   * PILOT-002 R3.2 (TASK 01): attempt to repair common LLM JSON defects.
+   *
+   * Each repair strategy is tried in order. The first that produces a
+   * valid WorkerAction wins. If none succeed, returns undefined.
+   *
+   * Repair strategies:
+   *   1. Trailing comma removal: `{"a":1,}` → `{"a":1}`
+   *   2. Missing closing brace: `{"a":1` → `{"a":1}`
+   *   3. Single→double quote: `{'a':'b'}` → `{"a":"b"}`
+   *   4. Extended JSON object search (find the last `}` even if
+   *      there's trailing text after a complete object)
+   *
+   * @param cleaned the trimmed text with markdown fences removed
+   * @param start index of the first `{`
+   * @param end index of the last `}` (may be -1 if no closing brace)
+   * @returns a parsed WorkerAction, or undefined if all repairs fail
+   */
+  private tryRepairJson(
+    cleaned: string,
+    start: number,
+    end: number,
+  ): WorkerAction | undefined {
+    // Strategy 1: if there's no closing brace, try adding one.
+    if (end <= start) {
+      let candidate = cleaned.slice(start) + '}';
+      // Also remove trailing comma if present (common LLM defect).
+      candidate = candidate.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+      try {
+        const parsed = JSON.parse(candidate) as WorkerAction;
+        if (typeof parsed.action === 'string') return parsed;
+      } catch { /* try next */ }
+    }
+
+    // Strategy 2: trailing comma removal + single→double quotes.
+    if (end > start) {
+      let slice = cleaned.slice(start, end + 1);
+      // Try trailing comma removal first.
+      const noTrailingComma = slice.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+      if (noTrailingComma !== slice) {
+        try {
+          const parsed = JSON.parse(noTrailingComma) as WorkerAction;
+          if (typeof parsed.action === 'string') return parsed;
+        } catch { /* try next */ }
+        slice = noTrailingComma;
+      }
+
+      // Strategy 3: single→double quotes (only if the string uses single quotes).
+      if (slice.includes("'")) {
+        const doubleQuoted = slice.replace(/'/g, '"');
+        try {
+          const parsed = JSON.parse(doubleQuoted) as WorkerAction;
+          if (typeof parsed.action === 'string') return parsed;
+        } catch { /* try next */ }
+      }
+
+      // Strategy 4: find the first complete JSON object (in case there's
+      // trailing text after a valid object). We scan for balanced braces.
+      const balanced = this.findBalancedJson(cleaned, start);
+      if (balanced !== null) {
+        try {
+          const parsed = JSON.parse(balanced) as WorkerAction;
+          if (typeof parsed.action === 'string') return parsed;
+        } catch { /* give up */ }
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * PILOT-002 R3.2 (TASK 01): find the first balanced JSON object in text.
+   * Scans from `start` counting braces until balanced. Returns the
+   * substring if a complete object is found, or null.
+   */
+  private findBalancedJson(text: string, start: number): string | null {
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let i = start; i < text.length; i++) {
+      const ch = text[i]!;
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === '{') depth++;
+      else if (ch === '}') {
+        depth--;
+        if (depth === 0) {
+          return text.slice(start, i + 1);
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * PILOT-002 R3.2 (TASK 01): build actionable feedback for a parse failure.
+   *
+   * Instead of the generic "your reply was not a single JSON object",
+   * this returns a specific diagnosis: was the JSON truncated? Was there
+   * a trailing comma? Was the action field missing? The LLM can use this
+   * to correct its next response.
+   */
+  private diagnoseParseFailure(text: string): string {
+    const cleaned = text
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/, '')
+      .trim();
+    if (cleaned.length === 0) {
+      return 'your reply was empty. Reply with exactly ONE JSON object.';
+    }
+    if (!cleaned.includes('{')) {
+      return `your reply contained no JSON object (first 200 chars: "${cleaned.slice(0, 200)}"). Reply with ONE JSON object like {"action":"write_file","path":"...","contents":"..."}`;
+    }
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (lastBrace === -1) {
+      return `your JSON was truncated — no closing '}'. Reply with a complete JSON object. (first 200 chars: "${cleaned.slice(0, 200)}")`;
+    }
+    // Try to extract the action field
+    const actionMatch = /"action"\s*:\s*"([^"]+)"/.exec(cleaned);
+    if (actionMatch === null) {
+      return `your JSON is missing the "action" field. Every action must have "action":"<action-name>". (first 200 chars: "${cleaned.slice(0, 200)}")`;
+    }
+    return `your JSON could not be parsed (possible trailing comma, missing quote, or unescaped character). Reply with ONE valid JSON object. (action found: "${actionMatch[1]}", first 200 chars: "${cleaned.slice(0, 200)}")`;
+  }
+
+  /**
+   * PILOT-002 R3.2 (TASK 05): build a compact summary of omitted scratchpad
+   * entries. Preserves important information that the worker must not forget:
+   *
+   *   - Files written (path + bytes) — so the worker doesn't rewrite them.
+   *   - Errors encountered (PARSE FAILURE, GATE REJECTED, runtime failures).
+   *   - Successful gates (RUNTIME START GATE passed) — so the worker knows
+   *     the application was working at some point.
+   *   - Commands run and their exit codes.
+   *
+   * The summary is compact (bounded by 500 chars) so it doesn't defeat
+   * the purpose of windowing.
+   */
+  private summarizeOmittedSteps(omitted: readonly string[]): string {
+    const filesWritten = new Set<string>();
+    const errors: string[] = [];
+    const commands: string[] = [];
+    for (const entry of omitted) {
+      // Extract file writes: "step N: {"action":"write_file","path":"x.js",...}"
+      const writeMatch = /"action"\s*:\s*"write_file"[^}]*"path"\s*:\s*"([^"]+)"/.exec(entry);
+      if (writeMatch) filesWritten.add(writeMatch[1]!);
+      // Extract errors
+      if (entry.includes('PARSE FAILURE')) errors.push('parse failure');
+      if (entry.includes('GATE REJECTED')) errors.push('gate rejected');
+      if (entry.includes('RUNTIME START GATE')) errors.push('runtime start issue');
+      // Extract commands
+      const cmdMatch = /"command"\s*:\s*"([^"]+)"/.exec(entry);
+      if (cmdMatch) commands.push(cmdMatch[1]!.slice(0, 50));
+    }
+    const parts: string[] = [`(… ${omitted.length} earlier step(s) summarized)`];
+    if (filesWritten.size > 0) {
+      parts.push(`Files written: ${[...filesWritten].join(', ')}`);
+    }
+    if (commands.length > 0) {
+      parts.push(`Commands run: ${[...new Set(commands)].slice(0, 5).join(', ')}`);
+    }
+    if (errors.length > 0) {
+      parts.push(`Issues encountered: ${[...new Set(errors)].join(', ')}`);
+    }
+    // Bound the summary to prevent prompt bloat.
+    const summary = parts.join(' | ');
+    return summary.length > 500 ? summary.slice(0, 500) + '…' : summary;
   }
 
   private grantsFor(action: WorkerAction): string | null {
@@ -890,17 +1070,27 @@ export class WorkerAgent {
         return this.finish('failure', 'mission aborted before completion', base(), 'CANCELLED', reasoningRetries);
       }
 
-      // PILOT-002 R3.1 (TASK 04): scratchpad windowing.
+      // PILOT-002 R3.1 (TASK 04) + R3.2 (TASK 05): scratchpad windowing.
       // When the scratchpad exceeds SCRATCHPAD_WINDOW entries, keep only
-      // the most recent entries and prepend a one-line summary. This
-      // prevents the prompt from growing linearly with step count.
-      const visibleScratchpad =
-        scratchpad.length <= SCRATCHPAD_WINDOW
-          ? scratchpad
-          : [
-              `(… ${scratchpad.length - SCRATCHPAD_WINDOW} earlier step(s) omitted — see flight recorder for full history)`,
-              ...scratchpad.slice(-SCRATCHPAD_WINDOW),
-            ];
+      // the most recent entries AND prepend a persistent summary of
+      // important events from the omitted steps.
+      //
+      // R3.2 improvement: the persistent summary preserves:
+      //   - Unresolved errors (PARSE FAILURE, GATE REJECTED)
+      //   - File decisions (which files were written, with sizes)
+      //   - Successful repairs (RUNTIME START GATE passed)
+      //   - Remaining acceptance requirements
+      // This prevents the worker from repeating mistakes or forgetting
+      // what it already decided.
+      let visibleScratchpad: string[];
+      if (scratchpad.length <= SCRATCHPAD_WINDOW) {
+        visibleScratchpad = scratchpad;
+      } else {
+        // Build a compact summary of the omitted entries.
+        const omitted = scratchpad.slice(0, scratchpad.length - SCRATCHPAD_WINDOW);
+        const summary = this.summarizeOmittedSteps(omitted);
+        visibleScratchpad = [summary, ...scratchpad.slice(-SCRATCHPAD_WINDOW)];
+      }
 
       const prompt = [
         'TASK:',
@@ -947,14 +1137,15 @@ export class WorkerAgent {
       const action = this.parseAction(text);
       if (action === undefined) {
         parseFailures += 1;
+        // PILOT-002 R3.2 (TASK 01): actionable diagnosis instead of generic message.
+        const diagnosis = this.diagnoseParseFailure(text);
         scratchpad.push(
-          `step ${steps + 1}: your reply was not a single JSON object ` +
-            `(attempt ${parseFailures}/${MAX_PARSE_FAILURES})`,
+          `step ${steps + 1}: PARSE FAILURE (attempt ${parseFailures}/${MAX_PARSE_FAILURES}) — ${diagnosis}`,
         );
         if (parseFailures >= MAX_PARSE_FAILURES) {
           return this.finish(
             'failure',
-            'the worker could not produce a valid action after repeated attempts',
+            `the worker could not produce a valid action after ${MAX_PARSE_FAILURES} attempts: ${diagnosis.slice(0, 200)}`,
             base(),
             'PROVIDER_FAILURE',
             reasoningRetries,

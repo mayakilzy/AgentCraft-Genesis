@@ -2,81 +2,91 @@
   "P2-00": {
     "status": "PASS",
     "detail": "evidence dir prepared",
-    "timestamp": "2026-10-12T19:06:43.564Z"
+    "timestamp": "2026-10-12T19:56:20.340Z"
   },
   "P2-01": {
     "status": "PASS",
     "detail": "gateway up on port 5080",
-    "timestamp": "2026-10-12T19:06:44.613Z"
+    "timestamp": "2026-10-12T19:56:21.389Z"
   },
   "P2-02": {
     "status": "PASS",
-    "detail": "mission submitted: 2bac80f6-fc61-4c75-a645-8e6f8ee83bce",
-    "timestamp": "2026-10-12T19:06:44.623Z"
+    "detail": "mission submitted: 26272224-3d2b-48d9-8ca8-02c0958d0f4e",
+    "timestamp": "2026-10-12T19:56:21.399Z"
   },
   "P2-03": {
     "status": "INFO",
-    "detail": "waiting (timeout 900000ms, budget 60K tokens)...",
-    "timestamp": "2026-10-12T19:06:44.623Z"
+    "detail": "waiting (timeout 1200000ms, budget 60K tokens)...",
+    "timestamp": "2026-10-12T19:56:21.399Z"
   },
   "P2-04": {
     "status": "PASS",
-    "detail": "terminated: status=PARTIAL, elapsed=356306ms, tokens=202070",
-    "timestamp": "2026-10-12T19:12:40.930Z"
+    "detail": "terminated: status=PARTIAL, elapsed=674630ms, tokens=310582",
+    "timestamp": "2026-10-12T20:07:36.029Z"
   },
   "P2-STATUS": {
     "status": "PARTIAL",
-    "detail": "missionId=2bac80f6-fc61-4c75-a645-8e6f8ee83bce",
-    "timestamp": "2026-10-12T19:12:40.930Z"
+    "detail": "missionId=26272224-3d2b-48d9-8ca8-02c0958d0f4e",
+    "timestamp": "2026-10-12T20:07:36.029Z"
   },
   "P2-TOKENS": {
-    "status": "202070",
-    "detail": "tokens=202070",
-    "timestamp": "2026-10-12T19:12:40.930Z"
+    "status": "310582",
+    "detail": "tokens=310582",
+    "timestamp": "2026-10-12T20:07:36.029Z"
   },
   "P2-ELAPSED": {
-    "status": "356306",
-    "detail": "356306ms",
-    "timestamp": "2026-10-12T19:12:40.930Z"
+    "status": "674630",
+    "detail": "674630ms",
+    "timestamp": "2026-10-12T20:07:36.029Z"
   },
   "P2-EVENTS": {
     "status": "PASS",
-    "detail": "captured 50 events",
-    "timestamp": "2026-10-12T19:12:40.932Z"
+    "detail": "captured 0 events",
+    "timestamp": "2026-10-12T20:07:36.030Z"
   },
   "P2-ARTIFACTS": {
-    "status": "PASS",
-    "detail": "artifacts: 12",
-    "timestamp": "2026-10-12T19:12:40.938Z"
+    "status": "PARTIAL",
+    "detail": "artifacts: 0",
+    "timestamp": "2026-10-12T20:07:36.031Z"
   },
-  "P2-NPM_TEST": {
-    "status": "FAIL",
-    "detail": "exit=1",
-    "timestamp": "2026-10-12T19:12:41.205Z"
+  "P2-FILE-package.json": {
+    "status": "MISSING",
+    "detail": "package.json",
+    "timestamp": "2026-10-12T20:07:36.032Z"
   },
-  "P2-HTTP_ROOT": {
-    "status": "FAIL",
-    "detail": "fetch failed",
-    "timestamp": "2026-10-12T19:12:43.208Z"
+  "P2-FILE-server.js": {
+    "status": "MISSING",
+    "detail": "server.js",
+    "timestamp": "2026-10-12T20:07:36.032Z"
   },
-  "P2-API_CREATE": {
-    "status": "FAIL",
-    "detail": "fetch failed",
-    "timestamp": "2026-10-12T19:12:43.212Z"
+  "P2-FILE-database.js": {
+    "status": "MISSING",
+    "detail": "database.js",
+    "timestamp": "2026-10-12T20:07:36.032Z"
   },
-  "P2-API_LIST": {
-    "status": "FAIL",
-    "detail": "fetch failed",
-    "timestamp": "2026-10-12T19:12:43.213Z"
+  "P2-FILE-index.html": {
+    "status": "MISSING",
+    "detail": "index.html",
+    "timestamp": "2026-10-12T20:07:36.032Z"
   },
-  "P2-BROWSER": {
-    "status": "FAIL",
-    "detail": "browserType.launch: Executable doesn't exist at /home/z/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     npx playwright install                                 ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝",
-    "timestamp": "2026-10-12T19:12:43.502Z"
+  "P2-FILE-app.js": {
+    "status": "MISSING",
+    "detail": "app.js",
+    "timestamp": "2026-10-12T20:07:36.032Z"
   },
-  "P2-PERSISTENCE": {
-    "status": "FAIL",
-    "detail": "fetch failed",
-    "timestamp": "2026-10-12T19:12:46.508Z"
+  "P2-FILE-style.css": {
+    "status": "MISSING",
+    "detail": "style.css",
+    "timestamp": "2026-10-12T20:07:36.032Z"
+  },
+  "P2-FILE-test/app.test.js": {
+    "status": "MISSING",
+    "detail": "test/app.test.js",
+    "timestamp": "2026-10-12T20:07:36.032Z"
+  },
+  "P2-FILE-README.md": {
+    "status": "MISSING",
+    "detail": "README.md",
+    "timestamp": "2026-10-12T20:07:36.032Z"
   }
 }
