@@ -40,18 +40,34 @@ import { stageUpstreamArtifactsForWorker, type StagingResult } from '../runtime/
 function topologicalSort(
   workers: readonly PlannedWorker[],
   edges: readonly CollaborationEdge[],
+  allPlanWorkers: readonly PlannedWorker[],
 ): PlannedWorker[] {
   const workerIds = new Set(workers.map((w) => w.id));
+  const allPlanIds = new Set(allPlanWorkers.map((w) => w.id));
   const deps = new Map<string, Set<string>>();
   for (const w of workers) {
     deps.set(w.id, new Set());
   }
   for (const edge of edges) {
     if (edge.kind !== 'handoff') continue;
-    // L2: only check dependencies between workers IN the current set.
-    // The coordinator is filtered out of specialists but may appear in
-    // edges — that's not a cycle or missing dependency, just an edge
-    // to/from a worker that runs separately.
+    // P1: validate edge endpoints against the FULL plan (including coordinator)
+    if (!allPlanIds.has(edge.from)) {
+      throw new Error(
+        `handoff dependency error: "${edge.from}" (producer) is not in the plan`,
+      );
+    }
+    if (!allPlanIds.has(edge.to)) {
+      throw new Error(
+        `handoff dependency error: "${edge.to}" (consumer) is not in the plan`,
+      );
+    }
+    // P1: edges to/from the coordinator (which runs after specialists) are
+    // skipped for topological sort — the coordinator's handoff to a specialist
+    // is architecturally unsatisfiable (coordinator hasn't run when the
+    // specialist needs its output), but existing plans contain such edges.
+    // We skip them rather than throwing, to preserve backward compatibility.
+    // This is a known limitation — a future planner fix should not generate
+    // coordinator→specialist handoff edges.
     if (!workerIds.has(edge.from) || !workerIds.has(edge.to)) continue;
     deps.get(edge.to)!.add(edge.from);
   }
@@ -702,6 +718,7 @@ export class MissionOrchestrator {
         specialists = topologicalSort(
           plan.workers.filter((w) => w.role !== COORDINATOR_ROLE),
           plan.collaboration,
+          plan.workers,
         );
       } catch (sortError) {
         const reason = sortError instanceof Error ? sortError.message : String(sortError);
