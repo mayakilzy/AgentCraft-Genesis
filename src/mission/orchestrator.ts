@@ -1036,6 +1036,12 @@ export class MissionOrchestrator {
                 (verification.diagnosis?.guidance === undefined
                   ? ''
                   : `Reviewer guidance: ${verification.diagnosis.guidance}\n`) +
+                // PILOT-003 R4.2 (Task C): preserve mission scope during recovery.
+                // The worker must NOT switch to a different target application
+                // or repository during retry. The original goal + target path
+                // must remain fixed.
+                `IMPORTANT: Continue with the SAME target application you were working on in the previous attempt. Do NOT switch to a different example, directory, or application. ` +
+                `The workspace already contains your previous work — fix the specific failing checks, do NOT start over or change targets.\n` +
                 'Fix the issues and produce correct deliverables. Continue from the existing workspace state — do NOT start over.';
               const result = await this.runWorker(
                 worker,

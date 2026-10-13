@@ -734,6 +734,156 @@ export class WorkerAgent {
   }
 
   /**
+   * PILOT-003 R4.2 (Task B): Execute a server-start command in background + probe HTTP.
+   *
+   * Development servers (npm start, npm run dev, webpack serve, etc.) do NOT
+   * exit — they block until killed. The default exec() waits 60s then times out.
+   * This method wraps the command:
+   *
+   * 1. Runs the command in background: `sh -c '<cmd> > /tmp/.server-stdout 2> /tmp/.server-stderr & echo $!'`
+   * 2. Waits for the server to bind (probes common ports: 3000, 5173, 4173, 7002, 8080).
+   * 3. Returns immediately with the server status — does NOT wait for the server to exit.
+   *
+   * The worker sees: { ok: true, httpStatus: 200, port: 3000, ... } when the
+   * server is ready, or { ok: false, stderr: "..." } when it crashes.
+   *
+   * This is GENERIC (not TodoMVC-specific) — it works for any Node.js dev server.
+   */
+  private async executeServerStartCommand(command: string): Promise<{ ok: boolean; observation: string }> {
+    if (this.computer === null) {
+      return { ok: false, observation: 'no computer available' };
+    }
+
+    // Common dev server ports to probe (in order of likelihood).
+    const PORTS_TO_PROBE = [3000, 5173, 4173, 7002, 8080, 3001, 5000];
+
+    // Start the server in background, capturing its PID + output.
+    const wrappedCmd = `sh -c '${command.replace(/'/g, "'\\''")} > /tmp/.genesis-server-stdout 2> /tmp/.genesis-server-stderr & echo "PID=$!"'`;
+
+    let pid: string | null = null;
+    try {
+      const startResult = await this.computer.exec(wrappedCmd);
+      // Extract PID from stdout.
+      const pidMatch = /PID=(\d+)/.exec(startResult.stdout);
+      if (pidMatch) pid = pidMatch[1]!;
+    } catch {
+      // The background command itself failed.
+      return {
+        ok: false,
+        observation: JSON.stringify({
+          command,
+          exitCode: -1,
+          stdout: '',
+          stderr: 'failed to start server in background',
+          timedOut: false,
+          elapsedMs: 0,
+        }),
+      };
+    }
+
+    // Wait for the server to bind. Probe HTTP on each port.
+    const startupTimeoutMs = 10_000; // 10 seconds max.
+    const startTime = Date.now();
+    let readyPort: number | null = null;
+    let httpStatus: number | null = null;
+
+    while (Date.now() - startTime < startupTimeoutMs) {
+      await new Promise((r) => setTimeout(r, 1000)); // check every 1s.
+      for (const port of PORTS_TO_PROBE) {
+        try {
+          const probeResult = await this.computer.exec(
+            `curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:${port}/ 2>/dev/null || echo FAIL`,
+          );
+          const code = probeResult.stdout.trim();
+          if (code !== 'FAIL' && code.length > 0) {
+            const status = Number.parseInt(code, 10);
+            if (status >= 200 && status < 400) {
+              readyPort = port;
+              httpStatus = status;
+              break;
+            }
+          }
+        } catch {
+          // port not ready yet — continue.
+        }
+      }
+      if (readyPort !== null) break;
+    }
+
+    // Read the server's stderr for diagnostics.
+    let serverStderr = '';
+    try {
+      const stderrResult = await this.computer.exec('cat /tmp/.genesis-server-stderr 2>/dev/null | head -c 2000');
+      serverStderr = stderrResult.stdout;
+    } catch { /* ignore */ }
+
+    if (readyPort !== null) {
+      // Server is ready!
+      // Update the acceptance contract evidence.
+      if (this.lastEvidence !== undefined) {
+        this.lastEvidence.lastStartResult = {
+          ok: true,
+          command,
+          httpStatus,
+          reason: `server started on port ${readyPort}, HTTP ${httpStatus}`,
+          stderr: '',
+        };
+      }
+      return {
+        ok: true,
+        observation: JSON.stringify({
+          command,
+          exitCode: 0,
+          stdout: `Server started successfully on port ${readyPort}.\nHTTP ${httpStatus} from http://127.0.0.1:${readyPort}/\nPID: ${pid ?? 'unknown'}\nThe server is running in the background. Do NOT restart it.`,
+          stderr: '',
+          timedOut: false,
+          elapsedMs: Date.now() - startTime,
+          serverPort: readyPort,
+          httpStatus,
+        }),
+      };
+    }
+
+    // Server didn't become ready. Check if the process is still alive.
+    let processAlive = false;
+    if (pid !== null) {
+      try {
+        const checkResult = await this.computer.exec(`kill -0 ${pid} 2>/dev/null && echo ALIVE || echo DEAD`);
+        processAlive = checkResult.stdout.trim() === 'ALIVE';
+      } catch { /* ignore */ }
+    }
+
+    if (processAlive) {
+      // Process is alive but no HTTP response yet — might need more time.
+      return {
+        ok: true,
+        observation: JSON.stringify({
+          command,
+          exitCode: 0,
+          stdout: `Server process (PID ${pid}) is running but did not respond to HTTP within ${startupTimeoutMs}ms. It may still be starting up. Try probing http://127.0.0.1:<port>/ after a few seconds, or check /tmp/.genesis-server-stderr for errors.`,
+          stderr: serverStderr.slice(0, OBSERVATION_STDOUT_LIMIT),
+          timedOut: false,
+          elapsedMs: Date.now() - startTime,
+          serverPort: null,
+        }),
+      };
+    }
+
+    // Process died — return the stderr for diagnosis.
+    return {
+      ok: false,
+      observation: JSON.stringify({
+        command,
+        exitCode: 1,
+        stdout: '',
+        stderr: serverStderr.slice(0, OBSERVATION_STDOUT_LIMIT) || 'server process exited unexpectedly',
+        timedOut: false,
+        elapsedMs: Date.now() - startTime,
+      }),
+    };
+  }
+
+  /**
    * PILOT-003 R4 (TASK 3): build the verification context from the worker's
    * current completion evidence + workspace files. Used by the mission state
    * summary and the acceptance contract gate.
@@ -1105,6 +1255,52 @@ export class WorkerAgent {
               ok: false,
               observation: `refused by Genesis-layer command policy: ${policyViolation}`,
             };
+          }
+          // PILOT-003 R4.2 (Task B): Long-Running Server Process Handling.
+          // Commands like `npm start`, `npm run dev`, `npm run serve`, `webpack serve`
+          // start a development server that does NOT exit — it blocks until killed.
+          // The default exec() blocks for 60s then times out, making the worker
+          // think the server failed. Instead, detect server-start commands and
+          // wrap them: background the process, wait briefly, probe HTTP readiness.
+          const SERVER_START_PATTERNS = /\b(npm\s+start|npm\s+run\s+(dev|serve|preview)|webpack\s+serve|vite|npx\s+http-server|node\s+server\.(?:js|mjs|ts))\b/i;
+          if (SERVER_START_PATTERNS.test(action.command)) {
+            // PILOT-003 R4.2 (Task D): check prerequisites before starting server.
+            // If dependencies are not installed yet, reject with specific feedback.
+            if (this.lastEvidence !== undefined && !this.lastEvidence.dependenciesInstalled) {
+              return {
+                ok: false,
+                observation: JSON.stringify({
+                  command: action.command,
+                  exitCode: 1,
+                  stdout: '',
+                  stderr: 'SERVER STARTUP NOT READY: Required dependency installation has not been verified.\n' +
+                    'NEXT ACTION: Complete dependency installation (npm install) and verify its result first.\n' +
+                    'Do not attempt server startup until dependencies are installed.',
+                  timedOut: false,
+                  elapsedMs: 0,
+                }),
+              };
+            }
+            const serverResult = await this.executeServerStartCommand(action.command);
+            return serverResult;
+          }
+          // PILOT-003 R4.2 (Task D): detect build commands attempted before install.
+          if (/\b(npm\s+run\s+build|webpack|tsc|vite\s+build)\b/i.test(action.command)) {
+            if (this.lastEvidence !== undefined && !this.lastEvidence.dependenciesInstalled) {
+              return {
+                ok: false,
+                observation: JSON.stringify({
+                  command: action.command,
+                  exitCode: 1,
+                  stdout: '',
+                  stderr: 'BUILD NOT READY: Required dependency installation has not been verified.\n' +
+                    'NEXT ACTION: Run "npm install" first, then retry the build.\n' +
+                    'Do not attempt to build until dependencies are installed.',
+                  timedOut: false,
+                  elapsedMs: 0,
+                }),
+              };
+            }
           }
           const result = await this.computer.exec(action.command);
           const stdout =
