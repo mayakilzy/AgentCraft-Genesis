@@ -755,7 +755,7 @@ export class WorkerAgent {
     }
 
     // Common dev server ports to probe (in order of likelihood).
-    const PORTS_TO_PROBE = [3000, 5173, 4173, 7002, 8080, 3001, 5000];
+    const PORTS_TO_PROBE = [3000, 5173, 4173, 7002, 8080, 3001, 5000, 3999];
 
     // Start the server in background, capturing its PID + output.
     const wrappedCmd = `sh -c '${command.replace(/'/g, "'\\''")} > /tmp/.genesis-server-stdout 2> /tmp/.genesis-server-stderr & echo "PID=$!"'`;
@@ -1632,51 +1632,57 @@ export class WorkerAgent {
           this.computer !== null &&
           shouldRequireRuntimeStart(completionEvidence, this.taskBrief, true)
         ) {
-          // Determine the start command from the goal text. We look for
-          // `npm start` first (the conventional Node.js dev command), then
-          // `node server.js`. If both appear, prefer `npm start`.
-          const startCommand = /\bnpm\s+start\b/i.test(this.taskBrief)
-            ? 'npm start'
-            : 'node server.js';
-          const startResult = await checkRuntimeStart(
-            this.computer,
-            startCommand,
-          );
-          completionEvidence.lastStartResult = startResult;
-          if (!startResult.ok) {
-            // Runtime start failed — reject finish with actionable feedback.
-            completionEvidence.finishRejections += 1;
-            const rejectionCount = completionEvidence.finishRejections;
-            const feedback = runtimeStartFailureFeedback(startResult);
-            if (rejectionCount > MAX_FINISH_REJECTIONS) {
-              return this.finish(
-                'failure',
-                `runtime start gate not satisfied after ${rejectionCount} attempts: ${startResult.reason}`,
-                base(),
-                'WORKER_FAILURE',
-                reasoningRetries,
-                completionEvidence,
+          // PILOT-003 R4.2: if executeServerStartCommand already started the server
+          // (lastStartResult.ok === true), skip the redundant checkRuntimeStart.
+          // The server is already running — re-checking would try to start it
+          // again on the same port, causing a conflict.
+          if (completionEvidence.lastStartResult?.ok === true) {
+            // Server already verified as running — skip re-check.
+          } else {
+            // Determine the start command from the goal text.
+            const startCommand = /\bnpm\s+start\b/i.test(this.taskBrief)
+              ? 'npm start'
+              : 'node server.js';
+            const startResult = await checkRuntimeStart(
+              this.computer,
+              startCommand,
+            );
+            completionEvidence.lastStartResult = startResult;
+            if (!startResult.ok) {
+              // Runtime start failed — reject finish with actionable feedback.
+              completionEvidence.finishRejections += 1;
+              const rejectionCount = completionEvidence.finishRejections;
+              const feedback = runtimeStartFailureFeedback(startResult);
+              if (rejectionCount > MAX_FINISH_REJECTIONS) {
+                return this.finish(
+                  'failure',
+                  `runtime start gate not satisfied after ${rejectionCount} attempts: ${startResult.reason}`,
+                  base(),
+                  'WORKER_FAILURE',
+                  reasoningRetries,
+                  completionEvidence,
+                );
+              }
+              refusals.push(
+                `finish rejected (attempt ${rejectionCount}/${MAX_FINISH_REJECTIONS}): runtime start failed — ${startResult.reason}`,
               );
+              scratchpad.push(
+                `step ${steps + 1}: ${JSON.stringify(action)}`,
+                `observation: RUNTIME START GATE REJECTED — ${feedback}`,
+              );
+              steps += 1;
+              this.onEvent?.({
+                type: 'worker-step',
+                workerId,
+                step: steps,
+                action: 'finish',
+                ok: false,
+                elapsedMs: 0,
+              });
+              continue;
             }
-            refusals.push(
-              `finish rejected (attempt ${rejectionCount}/${MAX_FINISH_REJECTIONS}): runtime start failed — ${startResult.reason}`,
-            );
-            scratchpad.push(
-              `step ${steps + 1}: ${JSON.stringify(action)}`,
-              `observation: RUNTIME START GATE REJECTED — ${feedback}`,
-            );
-            steps += 1;
-            this.onEvent?.({
-              type: 'worker-step',
-              workerId,
-              step: steps,
-              action: 'finish',
-              ok: false,
-              elapsedMs: 0,
-            });
-            continue;
           }
-          // Runtime start succeeded — fall through to accept finish.
+          // Runtime start succeeded (or already running) — fall through to accept finish.
         }
         // PILOT-003 R4: Evidence-Based Acceptance Contract Gate.
         // After the test gate and runtime gate pass, check the FULL acceptance
