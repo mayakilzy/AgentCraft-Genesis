@@ -2,36 +2,106 @@
   {
     "stream": "stderr",
     "t": "[genesis-gateway] No MCP config (GENESIS_MCP_SERVERS_CONFIG not set).\n",
-    "ts": "2026-10-12T22:46:23.111Z"
+    "ts": "2026-10-12T23:49:43.147Z"
   },
   {
     "stream": "stderr",
     "t": "[genesis-gateway] EXECUTION MODE: production (real providers required)\n",
-    "ts": "2026-10-12T22:46:23.112Z"
+    "ts": "2026-10-12T23:49:43.148Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T22:46:23.133Z\",\"component\":\"history_recovery\",\"message\":\"loaded 19 mission record(s) from disk\"}\n",
-    "ts": "2026-10-12T22:46:23.133Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T23:49:43.181Z\",\"component\":\"history_recovery\",\"message\":\"loaded 23 mission record(s) from disk\"}\n",
+    "ts": "2026-10-12T23:49:43.182Z"
   },
   {
     "stream": "stderr",
-    "t": "[genesis-gateway] HTTP API listening on http://127.0.0.1:5090\n[genesis-gateway] A2A inbound listening on http://127.0.0.1:5091\n[genesis-gateway] Agent Card at http://127.0.0.1:5091/.well-known/agent-card.json\n",
-    "ts": "2026-10-12T22:46:23.183Z"
+    "t": "[genesis-gateway] HTTP API listening on http://127.0.0.1:5090\n[genesis-gateway] A2A inbound listening on http://127.0.0.1:5091\n",
+    "ts": "2026-10-12T23:49:43.230Z"
   },
   {
     "stream": "stderr",
-    "t": "[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.\n[genesis-gateway] 1 caller(s) configured.\n[genesis-gateway] Execution mode: production\n[genesis-gateway] In-process mission state; no durability across restart.\n[genesis-gateway] Conversations are durable (JSONL on disk).\n[genesis-gateway] Projects are durable (atomic JSON on disk).\n",
-    "ts": "2026-10-12T22:46:23.183Z"
+    "t": "[genesis-gateway] Agent Card at http://127.0.0.1:5091/.well-known/agent-card.json\n[genesis-gateway] A2A server uses official @a2a-js/sdk server abstractions.\n[genesis-gateway] 1 caller(s) configured.\n[genesis-gateway] Execution mode: production\n[genesis-gateway] In-process mission state; no durability across restart.\n[genesis-gateway] Conversations are durable (JSONL on disk).\n[genesis-gateway] Projects are durable (atomic JSON on disk).\n",
+    "ts": "2026-10-12T23:49:43.231Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T22:46:23.403Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"0e8c8576-2dc1-4138-84d7-dd3ad72e2a8c\",\"callerId\":\"pilot-003-caller\"}\n",
-    "ts": "2026-10-12T22:46:23.403Z"
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T23:49:43.406Z\",\"component\":\"gateway\",\"message\":\"mission accepted\",\"missionId\":\"4afb3795-8d24-4c0e-92db-ad8a45836f4b\",\"callerId\":\"pilot-003-caller\"}\n",
+    "ts": "2026-10-12T23:49:43.406Z"
   },
   {
     "stream": "stderr",
-    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-12T23:17:21.382Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"0e8c8576-2dc1-4138-84d7-dd3ad72e2a8c\",\"status\":\"PARTIAL\",\"callerId\":\"pilot-003-caller\"}\n",
-    "ts": "2026-10-12T23:17:21.382Z"
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:09:20.596Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:09:25.627Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:09:40.657Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:11:11.908Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:11:16.948Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:11:31.971Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:12:02.005Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:13:02.039Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:15:02.071Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:18:02.107Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:18:03.120Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:18:08.153Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:18:23.192Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "Failed to make API request: Error: API request failed with status 429: {\"error\":\"Too many requests, please try again later\"}\n    at ZAI.createChatCompletion (file:///home/z/my-project/workspace/AgentCraft-Genesis/node_modules/z-ai-web-dev-sdk/dist/index.js:103:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ZAIReasoningProvider.attemptReason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:299:24)\n    at async ZAIReasoningProvider.reason (/home/z/my-project/workspace/AgentCraft-Genesis/src/providers/zai-reasoning.ts:248:18)\n    at async WorkerAgent.callReasoningWithRetry (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1803:13)\n    at async WorkerAgent.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/worker/worker-agent.ts:1331:16)\n    at async MissionOrchestrator.runWorker (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1248:20)\n    at async MissionOrchestrator.run (/home/z/my-project/workspace/AgentCraft-Genesis/src/mission/orchestrator.ts:1040:30)\n",
+    "ts": "2026-10-13T00:18:53.227Z"
+  },
+  {
+    "stream": "stderr",
+    "t": "{\"level\":\"info\",\"timestamp\":\"2026-10-13T00:19:45.980Z\",\"component\":\"gateway\",\"message\":\"mission completed\",\"missionId\":\"4afb3795-8d24-4c0e-92db-ad8a45836f4b\",\"status\":\"PARTIAL\",\"callerId\":\"pilot-003-caller\"}\n",
+    "ts": "2026-10-13T00:19:45.980Z"
   }
 ]

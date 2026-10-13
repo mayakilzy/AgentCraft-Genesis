@@ -2,61 +2,61 @@
   "P3-00": {
     "status": "PASS",
     "detail": "evidence dir prepared",
-    "timestamp": "2026-10-12T22:46:22.349Z"
+    "timestamp": "2026-10-12T23:49:42.346Z"
   },
   "P3-01": {
     "status": "PASS",
     "detail": "gateway up on port 5090",
-    "timestamp": "2026-10-12T22:46:23.397Z"
+    "timestamp": "2026-10-12T23:49:43.400Z"
   },
   "P3-02": {
     "status": "PASS",
-    "detail": "mission submitted: 0e8c8576-2dc1-4138-84d7-dd3ad72e2a8c",
-    "timestamp": "2026-10-12T22:46:23.408Z"
+    "detail": "mission submitted: 4afb3795-8d24-4c0e-92db-ad8a45836f4b",
+    "timestamp": "2026-10-12T23:49:43.411Z"
   },
   "P3-03": {
     "status": "INFO",
     "detail": "waiting (timeout 1800000ms, no token ceiling)...",
-    "timestamp": "2026-10-12T22:46:23.409Z"
+    "timestamp": "2026-10-12T23:49:43.412Z"
   },
   "P3-04": {
     "status": "PASS",
-    "detail": "terminated: status=PARTIAL, elapsed=1858701ms, tokens=603364",
-    "timestamp": "2026-10-12T23:17:22.110Z"
+    "detail": "terminated: status=PARTIAL, elapsed=1804659ms, tokens=253465",
+    "timestamp": "2026-10-13T00:19:48.072Z"
   },
   "P3-STATUS": {
     "status": "PARTIAL",
-    "detail": "missionId=0e8c8576-2dc1-4138-84d7-dd3ad72e2a8c",
-    "timestamp": "2026-10-12T23:17:22.110Z"
+    "detail": "missionId=4afb3795-8d24-4c0e-92db-ad8a45836f4b",
+    "timestamp": "2026-10-13T00:19:48.072Z"
   },
   "P3-TOKENS": {
-    "status": "603364",
-    "detail": "tokens=603364",
-    "timestamp": "2026-10-12T23:17:22.110Z"
+    "status": "253465",
+    "detail": "tokens=253465",
+    "timestamp": "2026-10-13T00:19:48.072Z"
   },
   "P3-ELAPSED": {
-    "status": "1858701",
-    "detail": "1858701ms",
-    "timestamp": "2026-10-12T23:17:22.110Z"
+    "status": "1804659",
+    "detail": "1804659ms",
+    "timestamp": "2026-10-13T00:19:48.072Z"
   },
   "P3-EVENTS": {
     "status": "PASS",
-    "detail": "captured 81 events",
-    "timestamp": "2026-10-12T23:17:22.114Z"
+    "detail": "captured 75 events",
+    "timestamp": "2026-10-13T00:19:48.075Z"
   },
   "P3-ARTIFACTS": {
     "status": "PASS",
     "detail": "artifacts: 4096",
-    "timestamp": "2026-10-12T23:17:23.281Z"
+    "timestamp": "2026-10-13T00:19:49.359Z"
   },
   "P3-DELIVERY_SOURCE": {
     "status": "FAIL",
     "detail": "todomvc repo not found in worker workspace",
-    "timestamp": "2026-10-12T23:17:23.445Z"
+    "timestamp": "2026-10-13T00:19:49.502Z"
   },
   "P3-HTTP_FOUND": {
     "status": "FAIL",
     "detail": "app not responding on any common port",
-    "timestamp": "2026-10-12T23:17:23.451Z"
+    "timestamp": "2026-10-13T00:19:49.508Z"
   }
 }
